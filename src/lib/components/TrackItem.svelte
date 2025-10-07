@@ -1,0 +1,105 @@
+<script lang="ts">
+  import { BASE_URL, fetchRandomTracks } from "$lib/api";
+  import { playerStore } from "$lib/stores/player.svelte";
+  import * as ContextMenu from "$lib/components/ui/context-menu";
+  import { SkipForwardIcon, PlusIcon, DownloadIcon } from "./icons";
+
+  interface Props {
+    track: AudioFile;
+    fromQueue?: boolean;
+  }
+
+  let { track, fromQueue = false }: Props = $props();
+
+  const isCurrentTrack = $derived(playerStore.currentTrack?.id === track.id);
+  const title = $derived(track.metadata?.title ?? track.filename);
+  const artist = $derived(track.metadata?.artist ?? "Unknown");
+
+  async function handlePlay() {
+    if (fromQueue) {
+      const trackIndex = playerStore.trackQueue.findIndex(
+        (t) => t.id === track.id
+      );
+      if (trackIndex !== -1) {
+        playerStore.queueIndex = trackIndex;
+        playerStore.play(track);
+        return;
+      }
+    }
+
+    const seed = `${Date.now()}-${track.id}`;
+
+    try {
+      const result = await fetchRandomTracks({
+        limit: 50,
+        seed,
+        firstTrackId: track.id,
+      });
+
+      playerStore.setQueue(result.tracks, 0, seed);
+    } catch (error) {
+      console.error("Failed to load random queue:", error);
+      playerStore.play(track);
+    }
+  }
+
+  function handlePlayNext() {
+    playerStore.addNextInQueue(track);
+  }
+
+  function handleAddToQueue() {
+    playerStore.addToQueue(track);
+  }
+
+  function handleDownload() {
+    const downloadUrl = `${BASE_URL}/${track.id}/stream`;
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+</script>
+
+<ContextMenu.Root>
+  <ContextMenu.Trigger>
+    <button
+      class="flex items-center gap-4 w-full hover:bg-muted/30 p-3 border-b"
+      class:bg-muted={isCurrentTrack}
+      class:text-primary={isCurrentTrack}
+      onclick={handlePlay}
+    >
+      <div class="border size-16 flex-shrink-0 overflow-hidden">
+        <img
+          loading="lazy"
+          src="{BASE_URL}/{track.id}/image"
+          alt={track.id}
+          class="size-full object-cover"
+        />
+      </div>
+      <div class="flex flex-col text-left flex-1 min-w-0">
+        <p class="font-medium truncate">
+          {title}
+        </p>
+        <p class="truncate text-muted-foreground text-sm">
+          {artist}
+        </p>
+      </div>
+    </button>
+  </ContextMenu.Trigger>
+  <ContextMenu.Content>
+    <ContextMenu.Item onclick={handlePlayNext}>
+      <SkipForwardIcon size={16} class="mr-2" />
+      Play Next
+    </ContextMenu.Item>
+    <ContextMenu.Item onclick={handleAddToQueue}>
+      <PlusIcon size={16} class="mr-2" />
+      Add to Queue
+    </ContextMenu.Item>
+    <ContextMenu.Separator />
+    <ContextMenu.Item onclick={handleDownload}>
+      <DownloadIcon size={16} class="mr-2" />
+      Download
+    </ContextMenu.Item>
+  </ContextMenu.Content>
+</ContextMenu.Root>

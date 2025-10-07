@@ -1,0 +1,386 @@
+import { BASE_URL, fetchRandomTracks } from "$lib/api";
+import type { CarouselAPI } from "$lib/components/ui/carousel/context";
+import { createLocalStorageState } from "./localStorage.svelte";
+
+interface PersistedPlayerState {
+  currentTrack: AudioFile | null;
+  trackQueue: AudioFile[];
+  queueIndex: number;
+  currentSeed: string | null;
+  currentPage: number;
+  hasMoreInQueue: boolean;
+  isMuted: boolean;
+  volume: number;
+  currentTime: number;
+}
+
+class PlayerState {
+  playerRef: HTMLAudioElement | null = $state(null);
+  carouselApi: CarouselAPI | null = $state(null);
+  isPlaying: boolean = $state(false);
+  duration: number = $state(0);
+  isFetchingMore: boolean = $state(false);
+
+  private persistedState = createLocalStorageState<PersistedPlayerState>(
+    "cadence-player-state",
+    {
+      currentTrack: null,
+      trackQueue: [],
+      queueIndex: 0,
+      currentSeed: null,
+      currentPage: 1,
+      hasMoreInQueue: true,
+      isMuted: false,
+      volume: 1,
+      currentTime: 0,
+    }
+  );
+
+  get currentTrack() {
+    return this.persistedState.value.currentTrack;
+  }
+  set currentTrack(value: AudioFile | null) {
+    this.persistedState.value = {
+      ...this.persistedState.value,
+      currentTrack: value,
+    };
+  }
+
+  get trackQueue() {
+    return this.persistedState.value.trackQueue;
+  }
+  set trackQueue(value: AudioFile[]) {
+    this.persistedState.value = {
+      ...this.persistedState.value,
+      trackQueue: value,
+    };
+  }
+
+  get queueIndex() {
+    return this.persistedState.value.queueIndex;
+  }
+  set queueIndex(value: number) {
+    this.persistedState.value = {
+      ...this.persistedState.value,
+      queueIndex: value,
+    };
+  }
+
+  get currentSeed() {
+    return this.persistedState.value.currentSeed;
+  }
+  set currentSeed(value: string | null) {
+    this.persistedState.value = {
+      ...this.persistedState.value,
+      currentSeed: value,
+    };
+  }
+
+  get currentPage() {
+    return this.persistedState.value.currentPage;
+  }
+  set currentPage(value: number) {
+    this.persistedState.value = {
+      ...this.persistedState.value,
+      currentPage: value,
+    };
+  }
+
+  get hasMoreInQueue() {
+    return this.persistedState.value.hasMoreInQueue;
+  }
+  set hasMoreInQueue(value: boolean) {
+    this.persistedState.value = {
+      ...this.persistedState.value,
+      hasMoreInQueue: value,
+    };
+  }
+
+  get isMuted() {
+    return this.persistedState.value.isMuted;
+  }
+  set isMuted(value: boolean) {
+    this.persistedState.value = {
+      ...this.persistedState.value,
+      isMuted: value,
+    };
+  }
+
+  get volume() {
+    return this.persistedState.value.volume;
+  }
+  set volume(value: number) {
+    this.persistedState.value = { ...this.persistedState.value, volume: value };
+  }
+
+  get currentTime() {
+    return this.persistedState.value.currentTime;
+  }
+  set currentTime(value: number) {
+    this.persistedState.value = {
+      ...this.persistedState.value,
+      currentTime: value,
+    };
+  }
+
+  get progress() {
+    return this.duration ? this.currentTime / this.duration : 0;
+  }
+
+  get isLoaded() {
+    return this.playerRef !== null && this.carouselApi !== null;
+  }
+
+  get currentStreamUrl() {
+    return this.currentTrack
+      ? `${BASE_URL}/${this.currentTrack.id}/stream`
+      : "";
+  }
+
+  get currentImageUrl() {
+    return this.currentTrack ? `${BASE_URL}/${this.currentTrack.id}/image` : "";
+  }
+
+  get currentQueuePosition() {
+    return this.queueIndex + 1;
+  }
+
+  get queueLength() {
+    return this.trackQueue.length;
+  }
+
+  initialize(player: HTMLAudioElement, api: CarouselAPI) {
+    this.playerRef = player;
+    this.carouselApi = api;
+
+    if (this.isMuted) {
+      this.playerRef.muted = true;
+    }
+    this.playerRef.volume = this.volume;
+
+    if (this.playerRef && this.currentTrack) {
+      this.updateMetadata(this.currentTrack);
+    }
+
+    this.playerRef.addEventListener("timeupdate", () => {
+      this.currentTime = this.playerRef!.currentTime || 0;
+    });
+
+    this.playerRef.addEventListener("ended", () => {
+      this.isPlaying = false;
+      this.playNext();
+    });
+
+    this.playerRef.addEventListener("loadedmetadata", () => {
+      this.duration = this.playerRef!.duration || 0;
+      if (this.currentTime > 0 && this.currentTime < this.duration) {
+        this.playerRef!.currentTime = this.currentTime;
+      }
+    });
+
+    this.carouselApi.on("select", () => {
+      const newIndex = this.carouselApi?.selectedScrollSnap() ?? 0;
+      if (newIndex !== this.queueIndex) {
+        this.playAtIndex(newIndex);
+      }
+    });
+
+    if (this.currentTrack && this.trackQueue.length > 0) {
+      this.syncCarouselToTrack(this.queueIndex, true);
+    }
+  }
+
+  updateMetadata(track: AudioFile) {
+    if (!this.playerRef) return;
+    this.playerRef.src = `${BASE_URL}/${track.id}/stream`;
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: track.metadata?.title || track.filename || "Unknown Title",
+        artist: track.metadata?.artist || "Unknown Artist",
+        album:
+          track.metadata?.album || track.metadata?.title || "Unknown Album",
+        artwork: [
+          {
+            src: `${BASE_URL}/${track.id}/image`,
+            type: "image/png",
+          },
+        ],
+      });
+
+      navigator.mediaSession.setActionHandler("play", () => this.play());
+      navigator.mediaSession.setActionHandler("pause", () => this.pause());
+      navigator.mediaSession.setActionHandler("seekto", (e) =>
+        this.seek(e.seekTime ?? 0)
+      );
+      navigator.mediaSession.setActionHandler("previoustrack", () =>
+        this.playPrevious()
+      );
+      navigator.mediaSession.setActionHandler("nexttrack", () =>
+        this.playNext()
+      );
+    }
+  }
+
+  play(track?: AudioFile) {
+    if (this.playerRef) {
+      if (track && this.currentTrack?.id !== track.id) {
+        this.currentTrack = track;
+        const trackIndex = this.trackQueue.findIndex((t) => t.id === track.id);
+        this.queueIndex = trackIndex;
+        this.syncCarouselToTrack(trackIndex);
+        this.checkAndFetchMore();
+        this.currentTime = 0;
+        this.updateMetadata(track);
+      }
+      this.isPlaying = true;
+      this.playerRef.play();
+    }
+  }
+
+  pause() {
+    if (this.playerRef && this.isPlaying) {
+      this.isPlaying = false;
+      this.playerRef.pause();
+    }
+  }
+
+  togglePlayPause() {
+    if (this.isPlaying) {
+      this.pause();
+    } else {
+      this.play();
+    }
+  }
+
+  playNext() {
+    if (this.queueIndex < this.trackQueue.length - 1) {
+      this.queueIndex++;
+      this.play(this.trackQueue[this.queueIndex]);
+    } else if (this.trackQueue.length > 0) {
+      this.queueIndex = 0;
+      this.play(this.trackQueue[0]);
+    } else {
+      this.pause();
+    }
+  }
+
+  playPrevious() {
+    if (this.queueIndex > 0) {
+      this.queueIndex--;
+      this.play(this.trackQueue[this.queueIndex]);
+    } else if (this.trackQueue[0]) {
+      this.play(this.trackQueue[this.trackQueue.length - 1]);
+    }
+  }
+
+  playAtIndex(index: number) {
+    if (this.trackQueue[index]) {
+      this.queueIndex = index;
+      this.syncCarouselToTrack(index);
+      this.play(this.trackQueue[index]);
+    }
+  }
+
+  seek(time: number) {
+    if (this.playerRef) {
+      this.playerRef.currentTime = time;
+      this.currentTime = time;
+    }
+  }
+
+  setQueue(tracks: AudioFile[], startIndex: number = 0, seed?: string) {
+    this.trackQueue = tracks;
+    this.queueIndex = startIndex;
+    this.currentSeed = seed || null;
+    this.currentPage = 1;
+    this.hasMoreInQueue = true;
+    if (tracks[startIndex]) {
+      this.play(tracks[startIndex]);
+    }
+  }
+
+  addToQueue(track: AudioFile) {
+    this.trackQueue.push(track);
+  }
+
+  addNextInQueue(track: AudioFile) {
+    this.trackQueue.splice(this.queueIndex + 1, 0, track);
+  }
+
+  removeFromQueue(index: number) {
+    if (index === this.queueIndex) {
+      this.trackQueue.splice(index, 1);
+      if (this.queueIndex >= this.trackQueue.length) {
+        this.queueIndex = this.trackQueue.length - 1;
+      }
+      if (this.trackQueue[this.queueIndex]) {
+        this.play(this.trackQueue[this.queueIndex]);
+      } else {
+        this.pause();
+        this.currentTrack = null;
+      }
+    } else {
+      this.trackQueue.splice(index, 1);
+      if (index < this.queueIndex) {
+        this.queueIndex--;
+      }
+    }
+  }
+
+  clearQueue() {
+    this.trackQueue = [];
+    this.queueIndex = -1;
+  }
+
+  syncCarouselToTrack(index: number, jump: boolean = false) {
+    if (this.carouselApi) {
+      this.carouselApi.scrollTo(index, jump);
+    }
+  }
+
+  checkAndFetchMore() {
+    const THRESHOLD = 5;
+    const remaining = this.trackQueue.length - this.queueIndex;
+
+    if (
+      remaining <= THRESHOLD &&
+      this.hasMoreInQueue &&
+      !this.isFetchingMore &&
+      this.currentSeed
+    ) {
+      this.fetchMoreTracks();
+    }
+  }
+
+  async fetchMoreTracks() {
+    if (!this.currentSeed || this.isFetchingMore || !this.hasMoreInQueue)
+      return;
+
+    this.isFetchingMore = true;
+
+    try {
+      const nextPage = this.currentPage + 1;
+      const result = await fetchRandomTracks({
+        page: nextPage,
+        limit: 50,
+        seed: this.currentSeed,
+        firstTrackId: this.trackQueue[0]?.id,
+      });
+
+      if (result.tracks.length > 0) {
+        this.trackQueue = [...this.trackQueue, ...result.tracks];
+        this.currentPage = nextPage;
+        this.hasMoreInQueue = result.hasMore;
+      } else {
+        this.hasMoreInQueue = false;
+      }
+    } catch (error) {
+      console.error("Failed to fetch more tracks:", error);
+      this.hasMoreInQueue = false;
+    } finally {
+      this.isFetchingMore = false;
+    }
+  }
+}
+
+export const playerStore = new PlayerState();
