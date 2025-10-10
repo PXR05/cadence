@@ -1,4 +1,4 @@
-import { BASE_URL, fetchRandomTracks } from "$lib/api";
+import { BASE_URL } from "$lib/api";
 import type { CarouselAPI } from "$lib/components/ui/carousel/context";
 import { createLocalStorageState } from "./localStorage.svelte";
 
@@ -6,9 +6,6 @@ interface PersistedPlayerState {
   currentTrack: AudioFile | null;
   trackQueue: AudioFile[];
   queueIndex: number;
-  currentSeed: string | null;
-  currentPage: number;
-  hasMoreInQueue: boolean;
   isMuted: boolean;
   volume: number;
   currentTime: number;
@@ -18,7 +15,6 @@ class PlayerState {
   playerRef: HTMLAudioElement | null = $state(null);
   isPlaying: boolean = $state(false);
   duration: number = $state(0);
-  isFetchingMore: boolean = $state(false);
   private carousels = new Map<
     string,
     { api: CarouselAPI; handler: () => void }
@@ -30,9 +26,6 @@ class PlayerState {
       currentTrack: null,
       trackQueue: [],
       queueIndex: 0,
-      currentSeed: null,
-      currentPage: 1,
-      hasMoreInQueue: true,
       isMuted: false,
       volume: 1,
       currentTime: 0,
@@ -66,36 +59,6 @@ class PlayerState {
     this.persistedState.value = {
       ...this.persistedState.value,
       queueIndex: value,
-    };
-  }
-
-  get currentSeed() {
-    return this.persistedState.value.currentSeed;
-  }
-  set currentSeed(value: string | null) {
-    this.persistedState.value = {
-      ...this.persistedState.value,
-      currentSeed: value,
-    };
-  }
-
-  get currentPage() {
-    return this.persistedState.value.currentPage;
-  }
-  set currentPage(value: number) {
-    this.persistedState.value = {
-      ...this.persistedState.value,
-      currentPage: value,
-    };
-  }
-
-  get hasMoreInQueue() {
-    return this.persistedState.value.hasMoreInQueue;
-  }
-  set hasMoreInQueue(value: boolean) {
-    this.persistedState.value = {
-      ...this.persistedState.value,
-      hasMoreInQueue: value,
     };
   }
 
@@ -243,7 +206,6 @@ class PlayerState {
         const trackIndex = this.trackQueue.findIndex((t) => t.id === track.id);
         this.queueIndex = trackIndex;
         this.syncCarouselToTrack(trackIndex);
-        this.checkAndFetchMore();
         this.currentTime = 0;
         this.updateMetadata(track);
       }
@@ -303,12 +265,9 @@ class PlayerState {
     }
   }
 
-  setQueue(tracks: AudioFile[], startIndex: number = 0, seed?: string) {
+  setQueue(tracks: AudioFile[], startIndex: number = 0) {
     this.trackQueue = tracks;
     this.queueIndex = startIndex;
-    this.currentSeed = seed || null;
-    this.currentPage = 1;
-    this.hasMoreInQueue = true;
     if (tracks[startIndex]) {
       this.play(tracks[startIndex]);
     }
@@ -350,50 +309,6 @@ class PlayerState {
   syncCarouselToTrack(index: number, jump: boolean = false) {
     for (const { api } of this.carousels.values()) {
       api.scrollTo(index, jump);
-    }
-  }
-
-  checkAndFetchMore() {
-    const THRESHOLD = 5;
-    const remaining = this.trackQueue.length - this.queueIndex;
-
-    if (
-      remaining <= THRESHOLD &&
-      this.hasMoreInQueue &&
-      !this.isFetchingMore &&
-      this.currentSeed
-    ) {
-      this.fetchMoreTracks();
-    }
-  }
-
-  async fetchMoreTracks() {
-    if (!this.currentSeed || this.isFetchingMore || !this.hasMoreInQueue)
-      return;
-
-    this.isFetchingMore = true;
-
-    try {
-      const nextPage = this.currentPage + 1;
-      const result = await fetchRandomTracks({
-        page: nextPage,
-        limit: 50,
-        seed: this.currentSeed,
-        firstTrackId: this.trackQueue[0]?.id,
-      });
-
-      if (result.tracks.length > 0) {
-        this.trackQueue = [...this.trackQueue, ...result.tracks];
-        this.currentPage = nextPage;
-        this.hasMoreInQueue = result.hasMore;
-      } else {
-        this.hasMoreInQueue = false;
-      }
-    } catch (error) {
-      console.error("Failed to fetch more tracks:", error);
-      this.hasMoreInQueue = false;
-    } finally {
-      this.isFetchingMore = false;
     }
   }
 }

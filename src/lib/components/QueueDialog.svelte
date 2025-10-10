@@ -87,11 +87,5 @@
         {/each}
       {/if}
     </div>
-
-    {#if playerStore.isFetchingMore}
-      <div class="text-center py-2 text-sm text-muted-foreground">
-        Loading more tracks...
-      </div>
-    {/if}
   </Dialog.Content>
 </Dialog.Root>

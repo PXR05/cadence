@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { BASE_URL, fetchRandomTracks } from "$lib/api";
+  import { BASE_URL } from "$lib/api";
   import { playerStore } from "$lib/stores/player.svelte";
+  import { tracksStore } from "$lib/stores/tracks.svelte";
   import * as ContextMenu from "$lib/components/ui/context-menu";
   import { SkipForwardIcon, PlusIcon, DownloadIcon } from "./icons";
 
@@ -27,20 +28,8 @@
       }
     }
 
-    const seed = `${Date.now()}-${track.id}`;
-
-    try {
-      const result = await fetchRandomTracks({
-        limit: 50,
-        seed,
-        firstTrackId: track.id,
-      });
-
-      playerStore.setQueue(result.tracks, 0, seed);
-    } catch (error) {
-      console.error("Failed to load random queue:", error);
-      playerStore.play(track);
-    }
+    const shuffledTracks = tracksStore.getShuffledTracks(track);
+    playerStore.setQueue(shuffledTracks, 0);
   }
 
   function handlePlayNext() {
