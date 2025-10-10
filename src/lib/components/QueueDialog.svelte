@@ -17,7 +17,9 @@
 </script>
 
 <Dialog.Root bind:open {onOpenChange}>
-  <Dialog.Content class="sm:max-w-2xl max-h-[90vh] flex flex-col">
+  <Dialog.Content
+    class="sm:max-w-2xl h-dvh md:max-h-[90vh] max-w-dvw flex flex-col z-60"
+  >
     <Dialog.Header>
       <Dialog.Title>Queue</Dialog.Title>
       <Dialog.Description>

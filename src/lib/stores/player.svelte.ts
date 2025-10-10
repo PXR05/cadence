@@ -16,10 +16,13 @@ interface PersistedPlayerState {
 
 class PlayerState {
   playerRef: HTMLAudioElement | null = $state(null);
-  carouselApi: CarouselAPI | null = $state(null);
   isPlaying: boolean = $state(false);
   duration: number = $state(0);
   isFetchingMore: boolean = $state(false);
+  private carousels = new Map<
+    string,
+    { api: CarouselAPI; handler: () => void }
+  >();
 
   private persistedState = createLocalStorageState<PersistedPlayerState>(
     "cadence-player-state",
@@ -128,7 +131,7 @@ class PlayerState {
   }
 
   get isLoaded() {
-    return this.playerRef !== null && this.carouselApi !== null;
+    return this.playerRef !== null;
   }
 
   get currentStreamUrl() {
@@ -149,9 +152,8 @@ class PlayerState {
     return this.trackQueue.length;
   }
 
-  initialize(player: HTMLAudioElement, api: CarouselAPI) {
+  initialize(player: HTMLAudioElement) {
     this.playerRef = player;
-    this.carouselApi = api;
 
     if (this.isMuted) {
       this.playerRef.muted = true;
@@ -177,13 +179,26 @@ class PlayerState {
         this.playerRef!.currentTime = this.currentTime;
       }
     });
+  }
 
-    this.carouselApi.on("select", () => {
-      const newIndex = this.carouselApi?.selectedScrollSnap() ?? 0;
+  initializeCarousel(id: string, api: CarouselAPI) {
+    const existing = this.carousels.get(id);
+    if (existing) {
+      existing.api.off("select", existing.handler);
+    }
+
+    const handler = () => {
+      const carousel = this.carousels.get(id);
+      if (!carousel) return;
+
+      const newIndex = carousel.api.selectedScrollSnap() ?? 0;
       if (newIndex !== this.queueIndex) {
         this.playAtIndex(newIndex);
       }
-    });
+    };
+
+    this.carousels.set(id, { api, handler });
+    api.on("select", handler);
 
     if (this.currentTrack && this.trackQueue.length > 0) {
       this.syncCarouselToTrack(this.queueIndex, true);
@@ -333,8 +348,8 @@ class PlayerState {
   }
 
   syncCarouselToTrack(index: number, jump: boolean = false) {
-    if (this.carouselApi) {
-      this.carouselApi.scrollTo(index, jump);
+    for (const { api } of this.carousels.values()) {
+      api.scrollTo(index, jump);
     }
   }
 

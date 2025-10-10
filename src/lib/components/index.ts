@@ -5,3 +5,8 @@ export { default as TrackList } from "./TrackList.svelte";
 export { default as TrackItem } from "./TrackItem.svelte";
 export { default as EmptyState } from "./EmptyState.svelte";
 export { default as SearchView } from "./SearchView.svelte";
+export { default as QueueDialog } from "./QueueDialog.svelte";
+export { default as PlayerDetailDialog } from "./PlayerDetailDialog.svelte";
+export { default as TrackCarousel } from "./TrackCarousel.svelte";
+export { default as PlaybackControls } from "./PlaybackControls.svelte";
+export { default as VolumeControl } from "./VolumeControl.svelte";
