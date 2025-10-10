@@ -3,6 +3,7 @@
   import * as Dialog from "$lib/components/ui/dialog";
   import { PlayIcon } from "./icons";
   import { formatTime } from "$lib/utils/format";
+  import { ChevronDown } from "@lucide/svelte";
 
   interface Props {
     open: boolean;
@@ -18,16 +19,27 @@
 
 <Dialog.Root bind:open {onOpenChange}>
   <Dialog.Content
+    showCloseButton={false}
     class="sm:max-w-2xl h-dvh md:max-h-[90vh] max-w-dvw flex flex-col z-60"
   >
-    <Dialog.Header>
-      <Dialog.Title>Queue</Dialog.Title>
-      <Dialog.Description>
-        {playerStore.queueLength} track{playerStore.queueLength !== 1
-          ? "s"
-          : ""} in queue
-      </Dialog.Description>
-    </Dialog.Header>
+    <div class="flex justify-between items-start">
+      <Dialog.Close class="opacity-70 transition-opacity hover:opacity-100">
+        <ChevronDown />
+      </Dialog.Close>
+
+      <Dialog.Header>
+        <Dialog.Title>Queue</Dialog.Title>
+        <Dialog.Description>
+          {playerStore.queueLength} track{playerStore.queueLength !== 1
+            ? "s"
+            : ""} in queue
+        </Dialog.Description>
+      </Dialog.Header>
+
+      <Dialog.Close class="opacity-0 pointer-events-none">
+        <ChevronDown />
+      </Dialog.Close>
+    </div>
 
     <div class="flex-1 overflow-y-auto -mx-4 px-4 space-y-1">
       {#if playerStore.trackQueue.length === 0}

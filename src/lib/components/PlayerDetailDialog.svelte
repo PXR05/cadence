@@ -1,14 +1,11 @@
 <script lang="ts">
+  import { BASE_URL } from "$lib/api";
   import { playerStore } from "$lib/stores/player.svelte";
   import * as Dialog from "$lib/components/ui/dialog";
-  import * as Carousel from "$lib/components/ui/carousel";
-  import type { CarouselAPI } from "$lib/components/ui/carousel/context";
-  import ProgressBar from "./ProgressBar.svelte";
-  import PlaybackControls from "./PlaybackControls.svelte";
-  import VolumeControl from "./VolumeControl.svelte";
-  import { QueueListIcon } from "./icons";
-  import { BASE_URL } from "$lib/api";
+  import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import { ChevronDown, EllipsisIcon } from "@lucide/svelte";
+  import { DownloadIcon } from "./icons";
+  import PlayerDetails from "./PlayerDetails.svelte";
 
   interface Props {
     open: boolean;
@@ -19,12 +16,15 @@
   let { open = $bindable(), onOpenChange, onQueueOpen }: Props = $props();
 
   const track = $derived(playerStore.currentTrack);
-  const trackTitle = $derived(track?.metadata?.title ?? track?.filename ?? "");
-  const trackArtist = $derived(track?.metadata?.artist ?? "Unknown Artist");
 
-  function setDetailCarouselApi(api: CarouselAPI | null) {
-    if (api) {
-      playerStore.initializeCarousel("detail", api);
+  function handleDownload() {
+    if (track) {
+      const downloadUrl = `${BASE_URL}/${track.id}/stream`;
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   }
 </script>
@@ -38,55 +38,23 @@
       <Dialog.Close class="opacity-70 transition-opacity hover:opacity-100">
         <ChevronDown />
       </Dialog.Close>
-      <button>
-        <EllipsisIcon />
-      </button>
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger>
+          <button class="opacity-70 transition-opacity hover:opacity-100">
+            <EllipsisIcon />
+          </button>
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Content>
+          <DropdownMenu.Item onclick={handleDownload}>
+            <DownloadIcon size={16} class="mr-2" />
+            Download
+          </DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu.Root>
     </div>
 
     {#if track}
-      <div class="flex-1 flex flex-col justify-center gap-12">
-        <div class="flex-shrink-0 overflow-hidden m-auto px-6 w-full">
-          <Carousel.Root
-            class="w-full"
-            opts={{ loop: true }}
-            setApi={(emblaApi) => setDetailCarouselApi(emblaApi ?? null)}
-          >
-            <Carousel.Content>
-              {#each playerStore.trackQueue as queueTrack}
-                <Carousel.Item>
-                  <img
-                    loading="lazy"
-                    src="{BASE_URL}/{queueTrack.id}/image"
-                    alt={queueTrack.id}
-                    class="h-[40dvh] aspect-square object-cover mx-auto"
-                  />
-                </Carousel.Item>
-              {/each}
-            </Carousel.Content>
-          </Carousel.Root>
-        </div>
-
-        <div class="flex flex-col gap-8 px-6">
-          <div class="text-center">
-            <h2 class="text-xl font-bold truncate">{trackTitle}</h2>
-            <p class="text-lg text-muted-foreground truncate">{trackArtist}</p>
-          </div>
-
-          <div class="space-y-2">
-            <ProgressBar />
-          </div>
-
-          <PlaybackControls variant="large" />
-        </div>
-
-        <button
-          onclick={onQueueOpen}
-          class="w-full py-3 px-4 bg-muted hover:bg-muted/80 transition-colors rounded-lg flex items-center justify-center gap-2"
-        >
-          <QueueListIcon size={20} />
-          <span>Open Queue</span>
-        </button>
-      </div>
+      <PlayerDetails {track} {onQueueOpen} />
     {/if}
   </Dialog.Content>
 </Dialog.Root>
