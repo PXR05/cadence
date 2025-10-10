@@ -11,7 +11,7 @@ interface TracksState {
 
 class TracksStore {
   private persistedState = createLocalStorageState<TracksState>(
-    "cadence-tracks-cache",
+    "cadence.tracks_cache",
     {
       tracks: [],
       lastFetchedAt: null,

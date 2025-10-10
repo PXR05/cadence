@@ -1,6 +1,8 @@
-import { BASE_URL } from "$lib/api";
 import type { CarouselAPI } from "$lib/components/ui/carousel/context";
 import { createLocalStorageState } from "./localStorage.svelte";
+
+export const getStreamUrl = (id: string) => `/api/proxy/${id}/stream`;
+export const getImageUrl = (id: string) => `/api/proxy/${id}/image`;
 
 interface PersistedPlayerState {
   currentTrack: AudioFile | null;
@@ -21,7 +23,7 @@ class PlayerState {
   >();
 
   private persistedState = createLocalStorageState<PersistedPlayerState>(
-    "cadence-player-state",
+    "cadence.player_state",
     {
       currentTrack: null,
       trackQueue: [],
@@ -98,13 +100,11 @@ class PlayerState {
   }
 
   get currentStreamUrl() {
-    return this.currentTrack
-      ? `${BASE_URL}/${this.currentTrack.id}/stream`
-      : "";
+    return this.currentTrack ? getStreamUrl(this.currentTrack.id) : "";
   }
 
   get currentImageUrl() {
-    return this.currentTrack ? `${BASE_URL}/${this.currentTrack.id}/image` : "";
+    return this.currentTrack ? getImageUrl(this.currentTrack.id) : "";
   }
 
   get currentQueuePosition() {
@@ -170,7 +170,7 @@ class PlayerState {
 
   updateMetadata(track: AudioFile) {
     if (!this.playerRef) return;
-    this.playerRef.src = `${BASE_URL}/${track.id}/stream`;
+    this.playerRef.src = getStreamUrl(track.id);
     if ("mediaSession" in navigator) {
       navigator.mediaSession.metadata = new MediaMetadata({
         title: track.metadata?.title || track.filename || "Unknown Title",
@@ -179,7 +179,7 @@ class PlayerState {
           track.metadata?.album || track.metadata?.title || "Unknown Album",
         artwork: [
           {
-            src: `${BASE_URL}/${track.id}/image`,
+            src: getImageUrl(track.id),
             type: "image/png",
           },
         ],

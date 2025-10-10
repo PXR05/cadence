@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { BASE_URL } from "$lib/api";
+  import { getStreamUrl } from "$lib/stores/player.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
   import * as Dialog from "$lib/components/ui/dialog";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
@@ -19,7 +19,7 @@
 
   function handleDownload() {
     if (track) {
-      const downloadUrl = `${BASE_URL}/${track.id}/stream`;
+      const downloadUrl = getStreamUrl(track.id);
       const link = document.createElement("a");
       link.href = downloadUrl;
       document.body.appendChild(link);
@@ -32,7 +32,7 @@
 <Dialog.Root bind:open {onOpenChange}>
   <Dialog.Content
     showCloseButton={false}
-    class="md:max-w-2xl h-dvh md:max-h-[90vh] max-w-dvw flex flex-col p-0"
+    class="md:max-w-2xl h-dvh md:max-h-[90vh] sm:max-w-dvw max-w-dvw flex flex-col p-0"
   >
     <div class="flex justify-between items-center p-6">
       <Dialog.Close class="opacity-70 transition-opacity hover:opacity-100">

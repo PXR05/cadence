@@ -1,19 +1,27 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import "../app.css";
   import NavBar from "$lib/components/NavBar.svelte";
   import PlayerBar from "$lib/components/PlayerBar.svelte";
+  import AuthDialog from "$lib/components/AuthDialog.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
+  import { authStore } from "$lib/stores/auth.svelte";
   import { goto } from "$app/navigation";
+  import { onMount } from "svelte";
 
   let { children } = $props();
 
   onMount(() => {
+    if (authStore.isAuthenticated) {
+      loadInitialData();
+    }
+  });
+
+  function loadInitialData() {
     tracksStore.loadAllTracks().catch((error) => {
       console.error("Failed to load tracks on app initialization:", error);
     });
-  });
+  }
 
   function handleKeyboardEvent(e: KeyboardEvent) {
     const target = e.target as HTMLElement;
@@ -72,10 +80,14 @@
 
 <svelte:window onkeydown={(e) => handleKeyboardEvent(e)} />
 
-<div class="relative bg-background min-h-dvh flex flex-col font-mono">
-  <NavBar />
-  <div class="flex-1">
-    {@render children?.()}
+{#if !authStore.isAuthenticated}
+  <AuthDialog onAuthenticated={loadInitialData} />
+{:else}
+  <div class="relative bg-background min-h-dvh flex flex-col font-mono">
+    <NavBar />
+    <div class="flex-1">
+      {@render children?.()}
+    </div>
+    <PlayerBar />
   </div>
-  <PlayerBar />
-</div>
+{/if}

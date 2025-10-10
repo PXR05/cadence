@@ -19,7 +19,6 @@
           : 'text-muted-foreground'}
           {i === 0 ? 'border-l' : ''}"
       >
-        <span class="text-muted-foreground">$</span>
         {tab.label}
       </a>
     {/each}

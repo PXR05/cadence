@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { BASE_URL } from "$lib/api";
+  import { getImageUrl } from "$lib/stores/player.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
   import { ProgressBar, PlaybackControls } from ".";
   import { QueueListIcon } from "./icons";
@@ -24,7 +24,7 @@
 </script>
 
 <div class="flex-1 flex flex-col justify-center gap-12">
-  <div class="flex-shrink-0 overflow-hidden m-auto px-6 w-full">
+  <div class="flex-shrink-0 overflow-hidden m-auto w-full">
     <Carousel.Root
       class="w-full"
       opts={{ loop: true }}
@@ -32,10 +32,10 @@
     >
       <Carousel.Content>
         {#each playerStore.trackQueue as queueTrack}
-          <Carousel.Item>
+          <Carousel.Item onclick={() => playerStore.togglePlayPause()}>
             <img
               loading="lazy"
-              src="{BASE_URL}/{queueTrack.id}/image"
+              src={getImageUrl(queueTrack.id)}
               alt={queueTrack.id}
               class="h-[40dvh] aspect-square object-cover mx-auto"
             />
@@ -47,8 +47,8 @@
 
   <div class="flex flex-col gap-8 px-6">
     <div class="text-center">
-      <h2 class="text-xl font-bold truncate">{trackTitle}</h2>
-      <p class="text-lg text-muted-foreground truncate">{trackArtist}</p>
+      <h2 class="text-xl font-semibold truncate">{trackTitle}</h2>
+      <p class="text-muted-foreground truncate">{trackArtist}</p>
     </div>
 
     <div class="space-y-2">

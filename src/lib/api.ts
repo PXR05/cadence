@@ -1,4 +1,5 @@
-export const BASE_URL = "http://100.114.57.103:3000/audio";
+// Client-side API that proxies through SvelteKit API routes
+export const BASE_URL = "/api/proxy";
 
 export type SortBy = "filename" | "size" | "uploadedAt" | "title";
 export type SortOrder = "asc" | "desc";

@@ -29,7 +29,7 @@
 
 <div class="fixed bottom-0 left-0 right-0 select-none">
   <div
-    class="relative flex md:grid md:grid-cols-3 items-center gap-3 px-3 py-2 min-h-16 bg-muted"
+    class="relative flex md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center max-md:justify-between py-2 min-h-16 bg-muted"
   >
     <TrackCarousel
       onTrackClick={() => playerDetailDialog.open()}
@@ -42,7 +42,7 @@
 
     {#if playerStore.currentTrack}
       <div
-        class="hidden md:flex items-center gap-2 flex-shrink-0 self-center justify-self-end"
+        class="hidden md:flex items-center gap-2 flex-shrink-0 self-center justify-self-end pr-3"
       >
         <button
           onclick={() => queueDialog.open()}
@@ -56,7 +56,7 @@
 
       <button
         onclick={() => playerStore.togglePlayPause()}
-        class="md:hidden size-8 grid place-items-center hover:bg-background/50 transition-colors flex-shrink-0"
+        class="md:hidden size-12 pr-3 grid place-items-center hover:bg-background/50 transition-colors flex-shrink-0"
         aria-label={playerStore.isPlaying ? "Pause" : "Play"}
       >
         {#if playerStore.isPlaying}

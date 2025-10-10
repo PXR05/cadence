@@ -20,7 +20,7 @@
 <Dialog.Root bind:open {onOpenChange}>
   <Dialog.Content
     showCloseButton={false}
-    class="sm:max-w-2xl h-dvh md:max-h-[90vh] max-w-dvw flex flex-col z-60"
+    class="md:max-w-2xl h-dvh md:max-h-[90vh] sm:max-w-dvw max-w-dvw flex flex-col z-60"
   >
     <div class="flex justify-between items-start">
       <Dialog.Close class="opacity-70 transition-opacity hover:opacity-100">
@@ -28,7 +28,7 @@
       </Dialog.Close>
 
       <Dialog.Header>
-        <Dialog.Title>Queue</Dialog.Title>
+        <Dialog.Title class="text-center">Queue</Dialog.Title>
         <Dialog.Description>
           {playerStore.queueLength} track{playerStore.queueLength !== 1
             ? "s"

@@ -12,7 +12,7 @@
 </script>
 
 <Carousel.Root
-  class="w-[calc(100dvw-4.5rem)] md:w-full self-center"
+  class="w-[calc(100dvw-3rem)] md:w-full self-center"
   opts={{ loop: true }}
   setApi={(emblaApi) => setApi(emblaApi ?? null)}
 >
@@ -26,7 +26,7 @@
         <Carousel.Item>
           <button
             onclick={onTrackClick}
-            class="md:pointer-events-none flex items-center flex-1 min-w-0 gap-3 text-left w-full"
+            class="md:pointer-events-none flex items-center flex-1 min-w-0 gap-3 text-left w-full pl-3"
           >
             <div class="text-left flex-1 min-w-0">
               <p class="font-medium truncate">{trackTitle}</p>
@@ -38,5 +38,9 @@
         </Carousel.Item>
       {/each}
     </Carousel.Content>
+    <span
+      class="pointer-events-none absolute top-0 right-0 w-8 h-11 bg-gradient-to-r from-transparent to-muted"
+    >
+    </span>
   {/if}
 </Carousel.Root>

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { BASE_URL } from "$lib/api";
+  import { getStreamUrl, getImageUrl } from "$lib/stores/player.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import * as ContextMenu from "$lib/components/ui/context-menu";
@@ -41,7 +41,7 @@
   }
 
   function handleDownload() {
-    const downloadUrl = `${BASE_URL}/${track.id}/stream`;
+    const downloadUrl = getStreamUrl(track.id);
     const link = document.createElement("a");
     link.href = downloadUrl;
     document.body.appendChild(link);
@@ -61,7 +61,7 @@
       <div class="border size-16 flex-shrink-0 overflow-hidden">
         <img
           loading="lazy"
-          src="{BASE_URL}/{track.id}/image"
+          src={getImageUrl(track.id)}
           alt={track.id}
           class="size-full object-cover"
         />
