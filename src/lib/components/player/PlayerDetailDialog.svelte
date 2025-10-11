@@ -4,7 +4,7 @@
   import * as Dialog from "$lib/components/ui/dialog";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import { ChevronDown, EllipsisIcon } from "@lucide/svelte";
-  import { DownloadIcon } from "./icons";
+  import { DownloadIcon } from "../icons";
   import PlayerDetails from "./PlayerDetails.svelte";
 
   interface Props {

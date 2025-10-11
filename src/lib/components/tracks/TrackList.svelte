@@ -35,7 +35,6 @@
           class="p-4 flex items-center justify-center gap-2 text-muted-foreground border-t"
         >
           <LoaderIcon class="animate-spin text-muted-foreground" size={16} />
-          <span class="text-sm">Loading more tracks...</span>
         </div>
       {/if}
 

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { playerStore } from "$lib/stores/player.svelte";
   import * as Dialog from "$lib/components/ui/dialog";
-  import { PlayIcon } from "./icons";
+  import { PlayIcon } from "../icons";
   import { formatTime } from "$lib/utils/format";
   import { ChevronDown } from "@lucide/svelte";
 

@@ -3,7 +3,7 @@
   import { playerStore } from "$lib/stores/player.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import * as ContextMenu from "$lib/components/ui/context-menu";
-  import { SkipForwardIcon, PlusIcon, DownloadIcon } from "./icons";
+  import { SkipForwardIcon, PlusIcon, DownloadIcon } from "../icons";
 
   interface Props {
     track: AudioFile;

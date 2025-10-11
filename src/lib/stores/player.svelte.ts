@@ -1,8 +1,9 @@
+import { BASE_URL } from "$lib/api";
 import type { CarouselAPI } from "$lib/components/ui/carousel/context";
 import { createLocalStorageState } from "./localStorage.svelte";
 
-export const getStreamUrl = (id: string) => `/api/proxy/${id}/stream`;
-export const getImageUrl = (id: string) => `/api/proxy/${id}/image`;
+export const getStreamUrl = (id: string) => `${BASE_URL}/${id}/stream`;
+export const getImageUrl = (id: string) => `${BASE_URL}/${id}/image`;
 
 interface PersistedPlayerState {
   currentTrack: AudioFile | null;
@@ -127,20 +128,22 @@ class PlayerState {
       this.updateMetadata(this.currentTrack);
     }
 
-    this.playerRef.addEventListener("timeupdate", () => {
-      this.currentTime = this.playerRef!.currentTime || 0;
-    });
-
-    this.playerRef.addEventListener("ended", () => {
-      this.isPlaying = false;
-      this.playNext();
-    });
-
     this.playerRef.addEventListener("loadedmetadata", () => {
       this.duration = this.playerRef!.duration || 0;
       if (this.currentTime > 0 && this.currentTime < this.duration) {
         this.playerRef!.currentTime = this.currentTime;
       }
+    });
+
+    this.playerRef.addEventListener("timeupdate", () => {
+      if (this.playerRef && this.playerRef?.currentTime > 0) {
+        this.currentTime = this.playerRef.currentTime;
+      }
+    });
+
+    this.playerRef.addEventListener("ended", () => {
+      this.isPlaying = false;
+      this.playNext();
     });
   }
 

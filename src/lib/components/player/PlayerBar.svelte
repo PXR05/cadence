@@ -8,7 +8,7 @@
   import TrackCarousel from "./TrackCarousel.svelte";
   import PlaybackControls from "./PlaybackControls.svelte";
   import VolumeControl from "./VolumeControl.svelte";
-  import { PlayIcon, PauseIcon, QueueListIcon } from "./icons";
+  import { PlayIcon, PauseIcon, QueueListIcon } from "../icons";
 
   let audioEl: HTMLAudioElement | null = $state(null);
   const queueDialog = useDialogState("queue");
@@ -27,7 +27,7 @@
   }
 </script>
 
-<div class="fixed bottom-0 left-0 right-0 select-none">
+<div class="fixed bottom-0 left-0 right-0 select-none z-50">
   <div
     class="relative flex md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center max-md:justify-between py-2 min-h-16 bg-muted"
   >

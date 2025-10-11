@@ -1,9 +1,9 @@
 <script lang="ts">
   import { authStore } from "$lib/stores/auth.svelte";
+  import { checkToken } from "$lib/api";
   import {
     Dialog,
     DialogContent,
-    DialogDescription,
     DialogHeader,
     DialogTitle,
   } from "$lib/components/ui/dialog";
@@ -13,15 +13,15 @@
     onAuthenticated: () => void;
   }>();
 
-  let password = $state("");
+  let token = $state("");
   let isProcessing = $state(false);
   let error = $state("");
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
 
-    if (!password.trim()) {
-      error = "Password is required";
+    if (!token.trim()) {
+      error = "Token is required";
       return;
     }
 
@@ -29,10 +29,18 @@
     error = "";
 
     try {
-      await authStore.setPassword(password);
+      if (typeof document !== "undefined") {
+        document.cookie = `cadence.token=${token}; path=/; max-age=31536000; SameSite=Strict`;
+      }
+
+      await checkToken();
+      await authStore.setToken(token);
       onAuthenticated();
     } catch (err) {
-      error = "Failed to set password. Please try again.";
+      if (typeof document !== "undefined") {
+        document.cookie = "cadence.token=; path=/; max-age=0";
+      }
+      error = "Invalid token. Please check and try again.";
       console.error(err);
     } finally {
       isProcessing = false;
@@ -44,6 +52,7 @@
   <DialogContent
     showCloseButton={false}
     onInteractOutside={(e) => e.preventDefault()}
+    onEscapeKeydown={(e) => e.preventDefault()}
   >
     <DialogHeader>
       <DialogTitle>Authentication Required</DialogTitle>
@@ -51,14 +60,14 @@
 
     <form onsubmit={handleSubmit} class="space-y-4">
       <div class="space-y-2">
-        <label for="password" class="text-sm font-medium">Password</label>
+        <label for="password" class="text-sm font-medium">Token</label>
         <input
-          id="password"
+          id="token"
           type="password"
-          bind:value={password}
+          bind:value={token}
           disabled={isProcessing}
-          class="w-full px-3 py-2 border rounded-md bg-background"
-          placeholder="Enter your password"
+          class="w-full px-3 py-2 border bg-background"
+          placeholder="Enter your token"
           autocomplete="current-password"
         />
         {#if error}

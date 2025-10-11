@@ -2,9 +2,9 @@
   import { getImageUrl } from "$lib/stores/player.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
   import { ProgressBar, PlaybackControls } from ".";
-  import { QueueListIcon } from "./icons";
-  import * as Carousel from "./ui/carousel";
-  import type { CarouselAPI } from "./ui/carousel/context";
+  import { QueueListIcon } from "../icons";
+  import * as Carousel from "../ui/carousel";
+  import type { CarouselAPI } from "../ui/carousel/context";
 
   interface Props {
     track: AudioFile;
@@ -60,7 +60,7 @@
 
   <button
     onclick={onQueueOpen}
-    class="w-full py-3 px-4 bg-muted hover:bg-muted/80 transition-colors rounded-lg flex items-center justify-center gap-2"
+    class="w-full py-3 px-4 bg-muted hover:bg-muted/80 transition-colors flex items-center justify-center gap-2"
   >
     <QueueListIcon size={20} />
     <span>Open Queue</span>

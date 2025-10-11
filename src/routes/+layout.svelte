@@ -1,8 +1,8 @@
 <script lang="ts">
   import "../app.css";
-  import NavBar from "$lib/components/NavBar.svelte";
-  import PlayerBar from "$lib/components/PlayerBar.svelte";
-  import AuthDialog from "$lib/components/AuthDialog.svelte";
+  import { NavBar } from "$lib/components";
+  import { PlayerBar } from "$lib/components";
+  import { AuthDialog } from "$lib/components";
   import { playerStore } from "$lib/stores/player.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { authStore } from "$lib/stores/auth.svelte";

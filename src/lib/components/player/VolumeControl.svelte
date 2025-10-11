@@ -1,11 +1,12 @@
 <script lang="ts">
   import { playerStore } from "$lib/stores/player.svelte";
-  import { VolumeIcon, VolumeXIcon } from "./icons";
+  import { VolumeIcon, VolumeXIcon } from "../icons";
 
   function handleVolumeChange(e: Event) {
     const target = e.target as HTMLInputElement;
     playerStore.volume = parseFloat(target.value);
     if (playerStore.volume > 0) playerStore.isMuted = false;
+    playerStore.playerRef!.volume = playerStore.volume;
   }
 
   function toggleMute() {

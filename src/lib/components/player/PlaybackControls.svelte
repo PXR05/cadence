@@ -1,6 +1,6 @@
 <script lang="ts">
   import { playerStore } from "$lib/stores/player.svelte";
-  import { PlayIcon, PauseIcon, SkipBackIcon, SkipForwardIcon } from "./icons";
+  import { PlayIcon, PauseIcon, SkipBackIcon, SkipForwardIcon } from "../icons";
 
   interface Props {
     variant?: "compact" | "large";
@@ -27,7 +27,7 @@
     'large'
       ? 'muted'
       : 'background/50'} transition-colors {variant === 'large'
-      ? 'rounded-full'
+      ? ''
       : 'disabled:opacity-30 disabled:cursor-not-allowed'}"
     aria-label="Previous track"
   >
@@ -39,9 +39,7 @@
     class="size-{size.primary} grid place-items-center hover:bg-{variant ===
     'large'
       ? 'muted'
-      : 'background/50'} transition-colors {variant === 'large'
-      ? 'rounded-full'
-      : ''}"
+      : 'background/50'} transition-colors {variant === 'large' ? '' : ''}"
     aria-label={playerStore.isPlaying ? "Pause" : "Play"}
   >
     {#if playerStore.isPlaying}
@@ -57,7 +55,7 @@
     'large'
       ? 'muted'
       : 'background/50'} transition-colors {variant === 'large'
-      ? 'rounded-full'
+      ? ''
       : 'disabled:opacity-30 disabled:cursor-not-allowed'}"
     aria-label="Next track"
   >

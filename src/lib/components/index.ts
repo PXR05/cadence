@@ -1,11 +1,6 @@
-export { default as NavBar } from "./NavBar.svelte";
-export { default as PlayerBar } from "./PlayerBar.svelte";
-export { default as ProgressBar } from "./ProgressBar.svelte";
-export { default as TrackList } from "./TrackList.svelte";
-export { default as TrackItem } from "./TrackItem.svelte";
-export { default as SearchView } from "./SearchView.svelte";
-export { default as QueueDialog } from "./QueueDialog.svelte";
-export { default as PlayerDetailDialog } from "./PlayerDetailDialog.svelte";
-export { default as TrackCarousel } from "./TrackCarousel.svelte";
-export { default as PlaybackControls } from "./PlaybackControls.svelte";
-export { default as VolumeControl } from "./VolumeControl.svelte";
+export * from "./admin";
+export * from "./auth";
+export * from "./layout";
+export * from "./player";
+export * from "./tracks";
+export * from "./icons";

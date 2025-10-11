@@ -1,5 +1,5 @@
 <script lang="ts">
-  import TrackList from "$lib/components/TrackList.svelte";
+  import { TrackList } from "$lib/components";
 </script>
 
 <TrackList />
