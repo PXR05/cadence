@@ -15,6 +15,7 @@
     DeleteTrackDialog,
     TrackPagination,
   } from "$lib/components/admin";
+  import { tracksStore } from "$lib/stores/tracks.svelte";
   import {
     checkToken,
     listTokens,
@@ -60,13 +61,13 @@
       const result = await checkToken();
       isAdmin = result.data.isAdmin;
       if (!isAdmin) {
-        goto("/personal");
+        goto("/");
         return;
       }
       await loadTokens();
       await loadTracks();
     } catch {
-      goto("/personal");
+      goto("/");
     } finally {
       loading = false;
     }
@@ -210,6 +211,7 @@
         setMessage("success", "File uploaded successfully");
       }
       await loadTracks(currentPage);
+      tracksStore.loadAllTracks(true);
     } catch {
       setMessage("error", "Failed to upload files");
     } finally {
@@ -225,6 +227,7 @@
       await downloadYoutube(url);
       setMessage("success", "Downloaded from YouTube");
       await loadTracks(currentPage);
+      tracksStore.loadAllTracks(true);
     } catch {
       setMessage("error", "Failed to download from YouTube");
     } finally {
@@ -247,6 +250,7 @@
     try {
       await deleteTrack(selectedTrack.id);
       await loadTracks(currentPage);
+      tracksStore.loadAllTracks(true);
       setMessage("success", "Track deleted");
     } catch {
       setMessage("error", "Failed to delete track");

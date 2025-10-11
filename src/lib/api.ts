@@ -1,5 +1,6 @@
 export const BASE_URL = "/api/audio";
 export const TOKEN_URL = "/api/token";
+export const PLAYLIST_URL = "/api/playlist";
 
 export type SortBy = "filename" | "size" | "uploadedAt" | "title";
 export type SortOrder = "asc" | "desc";
@@ -307,4 +308,161 @@ export async function deleteTrack(id: string): Promise<DeleteTrackResponse> {
   if (!res.ok) throw new Error(`Failed to delete track: ${res.statusText}`);
 
   return (await res.json()) as DeleteTrackResponse;
+}
+
+export interface CreatePlaylistResponse {
+  success: boolean;
+  playlist: Playlist;
+  message: string;
+}
+
+export interface UpdatePlaylistResponse {
+  success: boolean;
+  playlist: Playlist;
+  message: string;
+}
+
+export interface DeletePlaylistResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface ListPlaylistsResponse {
+  playlists: Playlist[];
+}
+
+export interface GetPlaylistResponse {
+  playlist: PlaylistDetail;
+}
+
+export interface AddItemToPlaylistResponse {
+  success: boolean;
+  item: PlaylistItem;
+  message: string;
+}
+
+export interface RemoveItemFromPlaylistResponse {
+  success: boolean;
+  message: string;
+}
+
+export async function createPlaylist(
+  name: string,
+  coverImage?: File
+): Promise<CreatePlaylistResponse> {
+  const formData = new FormData();
+  formData.append("name", name);
+  if (coverImage) {
+    formData.append("coverImage", coverImage);
+  }
+
+  const res = await fetch(`${PLAYLIST_URL}`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!res.ok) throw new Error(`Failed to create playlist: ${res.statusText}`);
+
+  return (await res.json()) as CreatePlaylistResponse;
+}
+
+export async function getUserPlaylists(): Promise<ListPlaylistsResponse> {
+  const res = await fetch(`${PLAYLIST_URL}`);
+  if (!res.ok) throw new Error(`Failed to fetch playlists: ${res.statusText}`);
+
+  return (await res.json()) as ListPlaylistsResponse;
+}
+
+export async function getPlaylistById(
+  id: string
+): Promise<GetPlaylistResponse> {
+  const res = await fetch(`${PLAYLIST_URL}/${id}`);
+  if (!res.ok) throw new Error(`Failed to fetch playlist: ${res.statusText}`);
+
+  return (await res.json()) as GetPlaylistResponse;
+}
+
+export async function updatePlaylist(
+  id: string,
+  name?: string,
+  coverImage?: File
+): Promise<UpdatePlaylistResponse> {
+  const formData = new FormData();
+  if (name) formData.append("name", name);
+  if (coverImage) formData.append("coverImage", coverImage);
+
+  const res = await fetch(`${PLAYLIST_URL}/${id}`, {
+    method: "PATCH",
+    body: formData,
+  });
+
+  if (!res.ok) throw new Error(`Failed to update playlist: ${res.statusText}`);
+
+  return (await res.json()) as UpdatePlaylistResponse;
+}
+
+export async function deletePlaylist(
+  id: string
+): Promise<DeletePlaylistResponse> {
+  const res = await fetch(`${PLAYLIST_URL}/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!res.ok) throw new Error(`Failed to delete playlist: ${res.statusText}`);
+
+  return (await res.json()) as DeletePlaylistResponse;
+}
+
+export async function addItemToPlaylist(
+  playlistId: string,
+  audioId: string
+): Promise<AddItemToPlaylistResponse> {
+  const res = await fetch(`${PLAYLIST_URL}/${playlistId}/items`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ audioId }),
+  });
+
+  if (!res.ok)
+    throw new Error(`Failed to add item to playlist: ${res.statusText}`);
+
+  return (await res.json()) as AddItemToPlaylistResponse;
+}
+
+export async function removeItemFromPlaylist(
+  playlistId: string,
+  itemId: string
+): Promise<RemoveItemFromPlaylistResponse> {
+  const res = await fetch(`${PLAYLIST_URL}/${playlistId}/items/${itemId}`, {
+    method: "DELETE",
+  });
+
+  if (!res.ok)
+    throw new Error(`Failed to remove item from playlist: ${res.statusText}`);
+
+  return (await res.json()) as RemoveItemFromPlaylistResponse;
+}
+
+export async function reorderPlaylistItem(
+  playlistId: string,
+  itemId: string,
+  position: number
+): Promise<RemoveItemFromPlaylistResponse> {
+  const res = await fetch(
+    `${PLAYLIST_URL}/${playlistId}/items/${itemId}/position`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ position }),
+    }
+  );
+
+  if (!res.ok)
+    throw new Error(`Failed to reorder playlist item: ${res.statusText}`);
+
+  return (await res.json()) as RemoveItemFromPlaylistResponse;
 }

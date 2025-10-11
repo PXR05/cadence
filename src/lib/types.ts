@@ -29,3 +29,30 @@ interface AudioListResponse {
   hasNext: boolean;
   hasPrev: boolean;
 }
+
+interface PlaylistItem {
+  id: string;
+  position: number;
+  addedAt: Date;
+  audio: AudioFile;
+}
+
+interface Playlist {
+  id: string;
+  name: string;
+  userId: string;
+  coverImage?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  itemCount?: number;
+}
+
+interface PlaylistDetail {
+  id: string;
+  name: string;
+  userId: string;
+  coverImage?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  items: PlaylistItem[];
+}

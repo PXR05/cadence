@@ -4,17 +4,22 @@
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import * as ContextMenu from "$lib/components/ui/context-menu";
   import { SkipForwardIcon, PlusIcon, DownloadIcon } from "../icons";
+  import { ManagePlaylistsDialog } from "../playlists";
+  import { ListMusicIcon } from "@lucide/svelte";
 
   interface Props {
     track: AudioFile;
     fromQueue?: boolean;
+    onRemovedFromPlaylist?: (trackId: string, playlistIds: string[]) => void;
   }
 
-  let { track, fromQueue = false }: Props = $props();
+  let { track, fromQueue = false, onRemovedFromPlaylist }: Props = $props();
 
   const isCurrentTrack = $derived(playerStore.currentTrack?.id === track.id);
   const title = $derived(track.metadata?.title ?? track.filename);
   const artist = $derived(track.metadata?.artist ?? "Unknown");
+
+  let managePlaylistsDialogOpen = $state(false);
 
   async function handlePlay() {
     if (fromQueue) {
@@ -86,9 +91,23 @@
       Add to Queue
     </ContextMenu.Item>
     <ContextMenu.Separator />
+    <ContextMenu.Item onclick={() => (managePlaylistsDialogOpen = true)}>
+      <ListMusicIcon size={16} class="mr-2" />
+      Add to Playlist
+    </ContextMenu.Item>
+    <ContextMenu.Separator />
     <ContextMenu.Item onclick={handleDownload}>
       <DownloadIcon size={16} class="mr-2" />
       Download
     </ContextMenu.Item>
   </ContextMenu.Content>
 </ContextMenu.Root>
+
+<ManagePlaylistsDialog
+  open={managePlaylistsDialogOpen}
+  onOpenChange={(open) => (managePlaylistsDialogOpen = open)}
+  trackId={track.id}
+  trackTitle={title}
+  onSuccess={(removedFromPlaylists) =>
+    onRemovedFromPlaylist?.(track.id, removedFromPlaylists)}
+/>

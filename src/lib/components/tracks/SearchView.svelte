@@ -139,7 +139,7 @@
       </div>
     {:else if hasSearched}
       {#if tracks.length > 0}
-        {#each tracks as track, i (track.id)}
+        {#each tracks as track (track.id)}
           <TrackItem {track} />
         {/each}
         <div class="h-24"></div>
