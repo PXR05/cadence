@@ -238,7 +238,7 @@
       />
     </div>
 
-    <div class="flex-1 overflow-y-auto">
+    <div class="flex-1 overflow-y-auto pb-24">
       {#if !searchQuery.trim()}
         <button
           onclick={() => addTracksDialog.open()}

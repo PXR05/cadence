@@ -52,13 +52,7 @@
       <LoaderIcon class="animate-spin text-muted-foreground" size={24} />
     </div>
   {:else}
-    <div class="border-b p-4 flex items-center gap-3">
-      <span class="text-sm text-muted-foreground">
-        {playlists.length} playlist{playlists.length !== 1 ? "s" : ""}
-      </span>
-    </div>
-
-    <div class="flex-1 overflow-y-auto">
+    <div class="flex-1 overflow-y-auto pb-24">
       {#if playlists.length === 0}
         <div class="flex items-center justify-center h-full">
           <p class="text-muted-foreground">No playlists found</p>
