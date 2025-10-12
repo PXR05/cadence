@@ -1,0 +1,12 @@
+services:
+  web:
+    build: .
+    command: ["bun", "--bun", "run", "."]
+    restart: always
+    environment:
+      BODY_SIZE_LIMIT: Infinity
+      PROTOCOL: ${PROTOCOL}
+      ORIGIN: ${PROTOCOL}://${DOMAIN}
+      API_URL: ${API_URL}
+    ports:
+      - "6128:3000"
