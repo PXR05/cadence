@@ -22,7 +22,6 @@
     createToken,
     deleteToken,
     fetchTracks,
-    uploadFiles,
     downloadYoutube,
     deleteTrack,
     type TokenInfo,
@@ -196,27 +195,19 @@
     }
   }
 
-  async function handleFileUpload(files: File[]) {
-    tracksLoading = true;
+  async function handleUploadComplete(
+    successCount: number,
+    totalCount: number
+  ) {
     clearMessages();
+    setMessage("success", `Uploaded ${successCount}/${totalCount} files`);
+    await loadTracks(currentPage);
+    tracksStore.loadAllTracks(true);
+  }
 
-    try {
-      const result = await uploadFiles(files);
-      if ("results" in result) {
-        setMessage(
-          "success",
-          `Uploaded ${result.successfulUploads}/${result.totalFiles} files`
-        );
-      } else {
-        setMessage("success", "File uploaded successfully");
-      }
-      await loadTracks(currentPage);
-      tracksStore.loadAllTracks(true);
-    } catch {
-      setMessage("error", "Failed to upload files");
-    } finally {
-      tracksLoading = false;
-    }
+  function handleUploadError(error: string) {
+    clearMessages();
+    setMessage("error", error);
   }
 
   async function handleYoutubeUpload(url: string) {
@@ -296,23 +287,7 @@
       </button>
     </div>
 
-    <div class="p-4 space-y-4 pb-24">
-      {#if errorMessage}
-        <MessageDisplay
-          type="error"
-          message={errorMessage}
-          onDismiss={clearMessages}
-        />
-      {/if}
-
-      {#if successMessage}
-        <MessageDisplay
-          type="success"
-          message={successMessage}
-          onDismiss={clearMessages}
-        />
-      {/if}
-
+    <div class="relative p-4 space-y-4 pb-24">
       {#if activeTab === "tokens"}
         <TokenForm
           bind:name={newTokenName}
@@ -342,7 +317,8 @@
       {:else}
         <TrackUploadForm
           loading={tracksLoading}
-          onFileUpload={handleFileUpload}
+          onUploadComplete={handleUploadComplete}
+          onUploadError={handleUploadError}
           onYoutubeUpload={handleYoutubeUpload}
         />
 
@@ -385,3 +361,19 @@
     "this track"}
   onConfirm={confirmDeleteTrack}
 />
+
+{#if errorMessage}
+  <MessageDisplay
+    type="error"
+    message={errorMessage}
+    onDismiss={clearMessages}
+  />
+{/if}
+
+{#if successMessage}
+  <MessageDisplay
+    type="success"
+    message={successMessage}
+    onDismiss={clearMessages}
+  />
+{/if}
