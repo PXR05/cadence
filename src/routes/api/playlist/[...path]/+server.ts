@@ -48,7 +48,12 @@ async function proxyRequest(
   }
 }
 
-export const GET: RequestHandler = async ({ params, url, cookies }) => {
+export const GET: RequestHandler = async ({
+  params,
+  url,
+  cookies,
+  request,
+}) => {
   const { path } = params;
   const authHash = cookies.get("cadence.token");
 
@@ -56,7 +61,81 @@ export const GET: RequestHandler = async ({ params, url, cookies }) => {
     throw error(401, "Unauthorized: No authentication provided");
   }
 
-  return proxyRequest("GET", path, authHash, url);
+  const backendUrl = new URL(`/playlist/${path}`, BACKEND_URL);
+  url.searchParams.forEach((value, key) => {
+    backendUrl.searchParams.append(key, value);
+  });
+
+  const headers: HeadersInit = {
+    Authorization: `Bearer ${authHash}`,
+  };
+
+  const rangeHeader = request.headers.get("range");
+  if (rangeHeader) {
+    headers["Range"] = rangeHeader;
+  }
+
+  try {
+    const response = await fetch(backendUrl.toString(), {
+      headers,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw error(
+        response.status,
+        errorData.error || `Backend error: ${response.statusText}`
+      );
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+
+    if (contentType.includes("application/json")) {
+      const data = await response.json();
+      return json(data);
+    }
+
+    const responseHeaders: Record<string, string> = {
+      "Content-Type": contentType,
+    };
+
+    const headersToPreserve = [
+      "content-length",
+      "accept-ranges",
+      "content-range",
+      "content-disposition",
+      "cache-control",
+      "etag",
+      "last-modified",
+    ];
+
+    headersToPreserve.forEach((header) => {
+      const value = response.headers.get(header);
+      if (value) {
+        responseHeaders[
+          header
+            .split("-")
+            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+            .join("-")
+        ] = value;
+      }
+    });
+
+    if (contentType.startsWith("image/") && !responseHeaders["Cache-Control"]) {
+      responseHeaders["Cache-Control"] = "public, max-age=31536000";
+    }
+
+    return new Response(response.body, {
+      status: response.status,
+      headers: responseHeaders,
+    });
+  } catch (err) {
+    console.error("Playlist proxy error:", backendUrl, err);
+    if (err && typeof err === "object" && "status" in err) {
+      throw err;
+    }
+    throw error(500, "Failed to fetch from backend");
+  }
 };
 
 export const POST: RequestHandler = async ({

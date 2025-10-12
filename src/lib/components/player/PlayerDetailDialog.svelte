@@ -3,9 +3,10 @@
   import { playerStore } from "$lib/stores/player.svelte";
   import * as Dialog from "$lib/components/ui/dialog";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
-  import { ChevronDown, EllipsisIcon } from "@lucide/svelte";
+  import { ChevronDown, EllipsisIcon, ListMusicIcon } from "@lucide/svelte";
   import { DownloadIcon } from "../icons";
   import PlayerDetails from "./PlayerDetails.svelte";
+  import { ManagePlaylistsDialog } from "../playlists";
 
   interface Props {
     open: boolean;
@@ -16,6 +17,9 @@
   let { open = $bindable(), onOpenChange, onQueueOpen }: Props = $props();
 
   const track = $derived(playerStore.currentTrack);
+  const title = $derived(track?.metadata?.title ?? track?.filename ?? "");
+
+  let managePlaylistsDialogOpen = $state(false);
 
   function handleDownload() {
     if (track) {
@@ -45,6 +49,11 @@
           </button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Content>
+          <DropdownMenu.Item onclick={() => (managePlaylistsDialogOpen = true)}>
+            <ListMusicIcon size={16} class="mr-2" />
+            Add to Playlist
+          </DropdownMenu.Item>
+          <DropdownMenu.Separator />
           <DropdownMenu.Item onclick={handleDownload}>
             <DownloadIcon size={16} class="mr-2" />
             Download
@@ -58,3 +67,12 @@
     {/if}
   </Dialog.Content>
 </Dialog.Root>
+
+{#if track}
+  <ManagePlaylistsDialog
+    open={managePlaylistsDialogOpen}
+    onOpenChange={(open) => (managePlaylistsDialogOpen = open)}
+    trackId={track.id}
+    trackTitle={title}
+  />
+{/if}

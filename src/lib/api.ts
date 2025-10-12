@@ -366,8 +366,10 @@ export async function createPlaylist(
   return (await res.json()) as CreatePlaylistResponse;
 }
 
-export async function getUserPlaylists(): Promise<ListPlaylistsResponse> {
-  const res = await fetch(`${PLAYLIST_URL}`);
+export async function getUserPlaylists(
+  type?: "user" | "artist" | "album" | "auto"
+): Promise<ListPlaylistsResponse> {
+  const res = await fetch(`${PLAYLIST_URL}${type ? `?type=${type}` : ""}`);
   if (!res.ok) throw new Error(`Failed to fetch playlists: ${res.statusText}`);
 
   return (await res.json()) as ListPlaylistsResponse;

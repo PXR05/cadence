@@ -35,7 +35,7 @@
   async function loadPlaylists() {
     loading = true;
     try {
-      const response = await getUserPlaylists();
+      const response = await getUserPlaylists("user");
       playlists = response.playlists;
 
       const trackInPlaylists = new SvelteSet<string>();
@@ -132,7 +132,7 @@
       </Dialog.Description>
     </Dialog.Header>
 
-    <div class="space-y-4">
+    <div class="space-y-4 truncate">
       {#if loading}
         <div class="flex items-center justify-center p-8">
           <LoaderIcon class="animate-spin text-muted-foreground" size={24} />
@@ -147,7 +147,7 @@
             {@const isSelected = playlistsWithTrack.has(playlist.id)}
             <button
               onclick={() => togglePlaylist(playlist.id)}
-              class="w-full flex items-center gap-3 p-3 border-b hover:bg-muted/30 transition-colors text-left"
+              class="w-full flex items-center gap-3 p-3 border-b hover:bg-muted/30 transition-colors text-left truncate"
               class:bg-muted={isSelected}
               disabled={saving}
             >
@@ -156,7 +156,7 @@
                   <div class="size-2 bg-primary"></div>
                 {/if}
               </div>
-              <div class="flex-1 min-w-0">
+              <div class="flex-1 min-w-0 truncate">
                 <p class="text-sm font-medium truncate">{playlist.name}</p>
                 <p class="text-xs text-muted-foreground">
                   {playlist.itemCount ?? 0} tracks

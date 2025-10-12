@@ -17,7 +17,7 @@
   const isValid = $derived(name.trim() && userId.trim() && !loading);
 </script>
 
-<div class="flex gap-2">
+<div class="flex max-md:flex-col gap-2">
   <input
     type="text"
     bind:value={name}

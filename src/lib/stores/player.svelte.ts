@@ -1,9 +1,11 @@
-import { BASE_URL } from "$lib/api";
+import { BASE_URL, PLAYLIST_URL } from "$lib/api";
 import type { CarouselAPI } from "$lib/components/ui/carousel/context";
 import { createLocalStorageState } from "./localStorage.svelte";
 
 export const getStreamUrl = (id: string) => `${BASE_URL}/${id}/stream`;
 export const getImageUrl = (id: string) => `${BASE_URL}/${id}/image`;
+export const getPlaylistImageUrl = (id: string) =>
+  `${PLAYLIST_URL}/${id}/image`;
 
 interface PersistedPlayerState {
   currentTrack: AudioFile | null;

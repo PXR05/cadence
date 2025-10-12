@@ -283,7 +283,7 @@
           ? 'border-primary text-primary'
           : 'border-transparent text-muted-foreground hover:text-foreground'}"
       >
-        Token Management
+        Tokens
       </button>
       <button
         onclick={() => switchTab("tracks")}
@@ -292,7 +292,7 @@
           ? 'border-primary text-primary'
           : 'border-transparent text-muted-foreground hover:text-foreground'}"
       >
-        Track Management
+        Tracks
       </button>
     </div>
 

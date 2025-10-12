@@ -43,7 +43,7 @@
 
   <div class="border p-4">
     <h3 class="font-medium mb-3">Download from YouTube</h3>
-    <form onsubmit={handleYoutubeSubmit} class="flex gap-2">
+    <form onsubmit={handleYoutubeSubmit} class="flex max-md:flex-col gap-2">
       <input
         type="url"
         bind:value={youtubeUrl}
