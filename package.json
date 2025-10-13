@@ -34,7 +34,6 @@
 	"dependencies": {
 		"dexie": "^4.2.1",
 		"dotenv": "^17.2.3",
-		"hash-wasm": "^4.12.0",
 		"jszip": "^3.10.1",
 		"valibot": "^1.1.0"
 	}
