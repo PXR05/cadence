@@ -3,8 +3,7 @@
   import { playerStore } from "$lib/stores/player.svelte";
   import * as Dialog from "$lib/components/ui/dialog";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
-  import { ChevronDown, EllipsisIcon, ListMusicIcon } from "@lucide/svelte";
-  import { DownloadIcon } from "../icons";
+  import { ChevronDown, DownloadIcon, EllipsisIcon, ListMusicIcon } from "@lucide/svelte";
   import PlayerDetails from "./PlayerDetails.svelte";
   import { ManagePlaylistsDialog } from "../playlists";
 

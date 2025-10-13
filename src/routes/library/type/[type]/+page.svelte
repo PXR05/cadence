@@ -44,15 +44,19 @@
   }
 </script>
 
+<svelte:head>
+  <title>{title} | Cadence</title>
+</svelte:head>
+
 <div
-  class="flex flex-col max-w-4xl mx-auto w-full h-[calc(100dvh-3rem-2px)] border-x"
+  class="flex flex-col max-w-4xl mx-auto w-full h-full border-x"
 >
   {#if loading}
     <div class="flex items-center justify-center h-full">
       <LoaderIcon class="animate-spin text-muted-foreground" size={24} />
     </div>
   {:else}
-    <div class="flex-1 overflow-y-auto pb-24">
+    <div class="flex-1 overflow-y-auto">
       {#if playlists.length === 0}
         <div class="flex items-center justify-center h-full">
           <p class="text-muted-foreground">No playlists found</p>

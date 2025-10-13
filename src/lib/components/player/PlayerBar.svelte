@@ -8,7 +8,7 @@
   import TrackCarousel from "./TrackCarousel.svelte";
   import PlaybackControls from "./PlaybackControls.svelte";
   import VolumeControl from "./VolumeControl.svelte";
-  import { PlayIcon, PauseIcon, QueueListIcon } from "../icons";
+  import { ListMusicIcon, PauseIcon, PlayIcon } from "@lucide/svelte";
 
   let audioEl: HTMLAudioElement | null = $state(null);
   const queueDialog = useDialogState("queue");
@@ -27,7 +27,7 @@
   }
 </script>
 
-<div class="fixed bottom-0 left-0 right-0 select-none z-50">
+<div class="select-none border-t">
   <div
     class="relative flex md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center max-md:justify-between py-2 min-h-16 bg-muted"
   >
@@ -49,7 +49,7 @@
           class="size-8 grid place-items-center hover:bg-background/50 transition-colors"
           aria-label="Open queue"
         >
-          <QueueListIcon size={20} />
+          <ListMusicIcon size={18} />
         </button>
         <VolumeControl />
       </div>
@@ -60,9 +60,9 @@
         aria-label={playerStore.isPlaying ? "Pause" : "Play"}
       >
         {#if playerStore.isPlaying}
-          <PauseIcon />
+          <PauseIcon absoluteStrokeWidth strokeWidth={2} fill="currentColor" />
         {:else}
-          <PlayIcon />
+          <PlayIcon absoluteStrokeWidth strokeWidth={2} fill="currentColor" />
         {/if}
       </button>
     {/if}

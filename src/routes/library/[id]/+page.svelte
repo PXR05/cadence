@@ -28,7 +28,7 @@
     PencilIcon,
     EllipsisIcon,
     MusicIcon,
-    AlbumIcon,
+    Disc3Icon,
     UserIcon,
   } from "@lucide/svelte";
 
@@ -135,9 +135,11 @@
   }
 </script>
 
-<div
-  class="flex flex-col max-w-4xl mx-auto w-full h-[calc(100dvh-3rem-2px)] border-x"
->
+<svelte:head>
+  <title>{playlist?.name ?? "Playlist"} | Cadence</title>
+</svelte:head>
+
+<div class="flex flex-col max-w-4xl mx-auto w-full h-full border-x">
   {#if loading}
     <div class="flex items-center justify-center h-full">
       <LoaderIcon class="animate-spin text-muted-foreground" size={24} />
@@ -161,7 +163,7 @@
               class="text-muted-foreground"
             />
           {:else if playlist && isAlbumPlaylist(playlist.id)}
-            <AlbumIcon
+            <Disc3Icon
               size={48}
               absoluteStrokeWidth
               strokeWidth={2}
@@ -238,7 +240,7 @@
       />
     </div>
 
-    <div class="flex-1 overflow-y-auto pb-24">
+    <div class="flex-1 overflow-y-auto">
       {#if !searchQuery.trim()}
         <button
           onclick={() => addTracksDialog.open()}

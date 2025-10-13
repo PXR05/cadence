@@ -39,6 +39,10 @@
   }
 </script>
 
+<svelte:head>
+  <title>Library | Cadence</title>
+</svelte:head>
+
 {#snippet sectionHeader(
   title: string,
   showAllLink?: string,
@@ -59,14 +63,14 @@
 {/snippet}
 
 <div
-  class="flex flex-col max-w-4xl mx-auto w-full h-[calc(100dvh-3rem-2px)] border-x overflow-y-auto"
+  class="flex flex-col max-w-4xl mx-auto w-full h-full border-x overflow-y-auto"
 >
   {#if loading}
     <div class="flex items-center justify-center h-full">
       <LoaderIcon class="animate-spin text-muted-foreground" size={24} />
     </div>
   {:else}
-    <div class="space-y-2 p-4 pb-24">
+    <div class="space-y-2 p-4">
       <section>
         {@render sectionHeader(
           "Your Playlists",
@@ -78,7 +82,7 @@
             onclick={() => (createDialogOpen = true)}
             class="aspect-square w-40 flex-shrink-0 border hover:bg-muted/50 transition-colors grid place-items-center"
           >
-            <PlusIcon size={48} class="text-muted-foreground" />
+            <PlusIcon size={48} absoluteStrokeWidth strokeWidth={2} class="text-muted-foreground" />
           </button>
           {#each userPlaylists.slice(0, 8) as playlist (playlist.id)}
             <PlaylistCard {playlist} />

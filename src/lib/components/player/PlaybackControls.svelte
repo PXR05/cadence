@@ -1,6 +1,11 @@
 <script lang="ts">
   import { playerStore } from "$lib/stores/player.svelte";
-  import { PlayIcon, PauseIcon, SkipBackIcon, SkipForwardIcon } from "../icons";
+  import {
+    PauseIcon,
+    PlayIcon,
+    SkipBackIcon,
+    SkipForwardIcon,
+  } from "@lucide/svelte";
 
   interface Props {
     variant?: "compact" | "large";
@@ -31,7 +36,12 @@
       : 'disabled:opacity-30 disabled:cursor-not-allowed'}"
     aria-label="Previous track"
   >
-    <SkipBackIcon size={size.icon} />
+    <SkipBackIcon
+      absoluteStrokeWidth
+      strokeWidth={2}
+      fill="currentColor"
+      size={size.icon}
+    />
   </button>
 
   <button
@@ -43,9 +53,19 @@
     aria-label={playerStore.isPlaying ? "Pause" : "Play"}
   >
     {#if playerStore.isPlaying}
-      <PauseIcon size={size.primaryIcon} />
+      <PauseIcon
+        absoluteStrokeWidth
+        strokeWidth={2}
+        fill="currentColor"
+        size={size.primaryIcon}
+      />
     {:else}
-      <PlayIcon size={size.primaryIcon} />
+      <PlayIcon
+        absoluteStrokeWidth
+        strokeWidth={2}
+        fill="currentColor"
+        size={size.primaryIcon}
+      />
     {/if}
   </button>
 
@@ -59,6 +79,11 @@
       : 'disabled:opacity-30 disabled:cursor-not-allowed'}"
     aria-label="Next track"
   >
-    <SkipForwardIcon size={size.icon} />
+    <SkipForwardIcon
+      absoluteStrokeWidth
+      strokeWidth={2}
+      fill="currentColor"
+      size={size.icon}
+    />
   </button>
 </div>

@@ -1,5 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { Button } from "../ui/button";
+  import { XIcon } from "@lucide/svelte";
 
   let {
     type,
@@ -44,15 +46,17 @@
     : '0'}"
 >
   <div
-    class="border px-4 py-3 rounded-lg shadow-lg flex items-start justify-between gap-3 {bgClasses}"
+    class="border p-2 rounded-lg shadow-lg flex items-start justify-between gap-3 {bgClasses}"
   >
     <p class="text-sm font-medium">{message}</p>
-    <button
+    <Button
       onclick={handleDismiss}
-      class="hover:opacity-80 flex-shrink-0 text-lg leading-none"
+      variant="ghost"
+      size="icon"
+      class="flex-shrink-0 text-lg leading-none size-fit"
       aria-label="Dismiss"
     >
-      ✕
-    </button>
+      <XIcon size={16} />
+    </Button>
   </div>
 </div>

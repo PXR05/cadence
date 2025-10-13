@@ -1,8 +1,8 @@
 <script lang="ts">
   import { getImageUrl } from "$lib/stores/player.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
+  import { ListMusicIcon } from "@lucide/svelte";
   import { ProgressBar, PlaybackControls } from ".";
-  import { QueueListIcon } from "../icons";
   import * as Carousel from "../ui/carousel";
   import type { CarouselAPI } from "../ui/carousel/context";
 
@@ -62,7 +62,7 @@
     onclick={onQueueOpen}
     class="w-full py-3 px-4 bg-muted hover:bg-muted/80 transition-colors flex items-center justify-center gap-2"
   >
-    <QueueListIcon size={20} />
+    <ListMusicIcon size={20} />
     <span>Open Queue</span>
   </button>
 </div>

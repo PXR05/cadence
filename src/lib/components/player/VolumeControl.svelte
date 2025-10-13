@@ -1,6 +1,6 @@
 <script lang="ts">
   import { playerStore } from "$lib/stores/player.svelte";
-  import { VolumeIcon, VolumeXIcon } from "../icons";
+  import { Volume2Icon, VolumeXIcon } from "@lucide/svelte";
 
   function handleVolumeChange(e: Event) {
     const target = e.target as HTMLInputElement;
@@ -24,9 +24,13 @@
     aria-label={isMuted ? "Unmute" : "Mute"}
   >
     {#if isMuted}
-      <VolumeXIcon size={20} />
+      <VolumeXIcon
+        size={18}
+      />
     {:else}
-      <VolumeIcon size={20} />
+      <Volume2Icon
+        size={18}
+      />
     {/if}
   </button>
 

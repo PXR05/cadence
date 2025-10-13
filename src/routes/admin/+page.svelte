@@ -258,13 +258,17 @@
   }
 </script>
 
+<svelte:head>
+  <title>Admin | Cadence</title>
+</svelte:head>
+
 {#if loading}
-  <div class="flex items-center justify-center h-[calc(100dvh-3rem-2px)]">
+  <div class="flex items-center justify-center h-full">
     <LoaderIcon class="animate-spin text-muted-foreground" size={24} />
   </div>
 {:else}
   <div
-    class="relative flex flex-col max-w-4xl mx-auto w-full h-[calc(100dvh-3rem-2px)] border-x overflow-y-auto"
+    class="relative flex flex-col max-w-4xl mx-auto w-full h-full border-x overflow-y-auto"
   >
     <div class="flex border-b sticky top-0 bg-background z-50">
       <button
@@ -287,7 +291,7 @@
       </button>
     </div>
 
-    <div class="relative p-4 space-y-4 pb-24">
+    <div class="relative p-4 space-y-4">
       {#if activeTab === "tokens"}
         <TokenForm
           bind:name={newTokenName}

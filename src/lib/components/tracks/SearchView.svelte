@@ -100,7 +100,7 @@
   });
 </script>
 
-<div class="flex flex-col max-w-4xl mx-auto w-full h-[calc(100dvh-3rem-2px)]">
+<div class="flex flex-col max-w-4xl mx-auto w-full h-full">
   <form onsubmit={handleSubmit} class="relative border border-t-0">
     <div class="flex items-center">
       <SearchIcon size={20} class="ml-3 text-muted-foreground flex-shrink-0" />
@@ -131,7 +131,7 @@
   </form>
 
   <div
-    class="flex-1 border border-t-0 h-[calc(100dvh-6rem-2px)] overflow-y-auto"
+    class="flex-1 border-x overflow-y-auto"
   >
     {#if loading}
       <div class="flex flex-col items-center justify-center flex-1 p-8 h-full">
@@ -142,7 +142,6 @@
         {#each tracks as track (track.id)}
           <TrackItem {track} />
         {/each}
-        <div class="h-24"></div>
       {:else}
         <div class="h-full flex flex-col items-center justify-center p-8">
           <p class="text-muted-foreground mb-2">No results found</p>

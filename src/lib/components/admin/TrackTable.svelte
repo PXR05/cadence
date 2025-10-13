@@ -23,7 +23,7 @@
 </script>
 
 <div
-  class="border relative flex flex-col max-h-[calc(100vh-33em)] overflow-hidden"
+  class="border relative flex flex-col max-h-[calc(100vh-36rem)] overflow-hidden"
 >
   <div class="overflow-auto flex-1">
     <table class="w-full caption-bottom text-sm">

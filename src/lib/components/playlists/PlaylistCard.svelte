@@ -2,11 +2,10 @@
   import { getPlaylistImageUrl } from "$lib/stores/player.svelte";
   import {
     getPlaylistDisplayName,
-    handlePlaylistImageError,
     isArtistPlaylist,
     isAlbumPlaylist,
   } from "$lib/utils/playlist";
-  import { MusicIcon, AlbumIcon, UserIcon } from "@lucide/svelte";
+  import { MusicIcon, Disc3Icon, UserIcon } from "@lucide/svelte";
 
   interface Props {
     playlist: Playlist;
@@ -27,15 +26,8 @@
 </script>
 
 <a href="/library/{playlist.id}" class={cardClass}>
-  <div class="h-full overflow-hidden">
-    <img
-      loading="lazy"
-      src={getPlaylistImageUrl(playlist.id)}
-      alt={playlist.name}
-      class="w-full h-full object-cover"
-      onerror={handlePlaylistImageError}
-    />
-    <div class="w-full h-full hidden place-items-center">
+  <div class="h-full overflow-hidden relative grid place-items-center">
+    <div class="absolute inset-0 grid place-items-center">
       {#if isArtist}
         <UserIcon
           size={48}
@@ -44,7 +36,7 @@
           class="text-muted-foreground"
         />
       {:else if isAlbum}
-        <AlbumIcon
+        <Disc3Icon
           size={48}
           absoluteStrokeWidth
           strokeWidth={2}
@@ -59,6 +51,14 @@
         />
       {/if}
     </div>
+    {#if !isArtist && !isAlbum && playlist.coverImage}
+      <img
+        loading="lazy"
+        src={getPlaylistImageUrl(playlist.id)}
+        alt={playlist.name}
+        class="w-full h-full object-cover relative z-10"
+      />
+    {/if}
   </div>
   <div class="py-1 px-2 bg-muted border-t">
     <p class="text-sm font-medium truncate leading-tight">

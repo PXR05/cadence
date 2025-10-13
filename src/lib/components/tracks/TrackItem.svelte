@@ -3,9 +3,8 @@
   import { playerStore } from "$lib/stores/player.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import * as ContextMenu from "$lib/components/ui/context-menu";
-  import { SkipForwardIcon, PlusIcon, DownloadIcon } from "../icons";
   import { ManagePlaylistsDialog } from "../playlists";
-  import { ListMusicIcon } from "@lucide/svelte";
+  import { DownloadIcon, ListMusicIcon, PlusIcon, SkipForwardIcon } from "@lucide/svelte";
 
   interface Props {
     track: AudioFile;

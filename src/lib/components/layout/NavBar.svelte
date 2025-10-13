@@ -49,7 +49,7 @@
 </script>
 
 {#if isTopRoute}
-  <nav class="sticky top-0 z-10 bg-background border-y overflow-x-auto">
+  <nav class="bg-background border-y overflow-x-auto">
     <div class="max-w-4xl mx-auto flex">
       {#each tabs as tab, i}
         {@const activeClass = isActive(tab.path)

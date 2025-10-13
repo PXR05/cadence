@@ -9,9 +9,7 @@
   const error = $derived(tracksStore.error);
 </script>
 
-<div
-  class="max-w-4xl mx-auto w-full h-[calc(100dvh-3rem-2px)] border-x overflow-y-auto"
->
+<div class="max-w-4xl mx-auto w-full border-x">
   {#if isInitialLoad}
     <div class="grid place-items-center flex-1 p-8 h-full">
       <LoaderIcon class="animate-spin text-muted-foreground" />
@@ -36,10 +34,6 @@
         >
           <LoaderIcon class="animate-spin text-muted-foreground" size={16} />
         </div>
-      {/if}
-
-      {#if tracks.length > 0}
-        <div class="h-48"></div>
       {/if}
     </div>
   {/if}

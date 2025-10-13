@@ -85,7 +85,7 @@
 {:else}
   <div class="relative bg-background min-h-dvh flex flex-col font-mono">
     <NavBar />
-    <div class="flex-1">
+    <div class="h-[calc(100dvh-8.5rem-1px)] overflow-auto">
       {@render children?.()}
     </div>
     <PlayerBar />
