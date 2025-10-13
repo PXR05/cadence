@@ -57,7 +57,7 @@
 
 {#if isInitialLoad}
   <div
-    class="max-w-4xl mx-auto w-full border-x h-[calc(100dvh-5.5rem-2px)] grid place-items-center p-8"
+    class="max-w-4xl mx-auto w-full border-x h-full grid place-items-center p-8"
   >
     <LoaderIcon class="animate-spin text-muted-foreground" />
   </div>
@@ -75,7 +75,7 @@
   </div>
 {:else}
   <div
-    class="max-w-4xl mx-auto w-full border-x h-[calc(100dvh-5.5rem-2px)] overflow-y-auto"
+    class="max-w-4xl mx-auto w-full border-x h-full overflow-y-auto"
     bind:this={containerRef}
   >
     <div
