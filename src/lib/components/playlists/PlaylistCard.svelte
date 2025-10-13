@@ -5,7 +5,14 @@
     isArtistPlaylist,
     isAlbumPlaylist,
   } from "$lib/utils/playlist";
-  import { MusicIcon, Disc3Icon, UserIcon } from "@lucide/svelte";
+  import {
+    MusicIcon,
+    Disc3Icon,
+    UserIcon,
+    LibraryIcon,
+    CloudCheckIcon,
+  } from "@lucide/svelte";
+  import { SPECIAL_PLAYLIST_IDS } from "$lib/utils/playlist";
 
   interface Props {
     playlist: Playlist;
@@ -28,7 +35,21 @@
 <a href="/library/{playlist.id}" class={cardClass}>
   <div class="h-full overflow-hidden relative grid place-items-center">
     <div class="absolute inset-0 grid place-items-center">
-      {#if isArtist}
+      {#if playlist.id === SPECIAL_PLAYLIST_IDS.ALL_SONGS}
+        <LibraryIcon
+          size={48}
+          absoluteStrokeWidth
+          strokeWidth={2}
+          class="text-muted-foreground"
+        />
+      {:else if playlist.id === SPECIAL_PLAYLIST_IDS.DOWNLOADED}
+        <CloudCheckIcon
+          size={48}
+          absoluteStrokeWidth
+          strokeWidth={2}
+          class="text-muted-foreground"
+        />
+      {:else if isArtist}
         <UserIcon
           size={48}
           absoluteStrokeWidth
@@ -51,7 +72,7 @@
         />
       {/if}
     </div>
-    {#if !isArtist && !isAlbum && playlist.coverImage}
+    {#if playlist.coverImage}
       <img
         loading="lazy"
         src={getPlaylistImageUrl(playlist.id)}

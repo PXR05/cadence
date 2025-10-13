@@ -3,30 +3,30 @@
   import { getUserPlaylists } from "$lib/api";
   import { CreatePlaylistDialog, PlaylistCard } from "$lib/components";
   import { LoaderIcon, PlusIcon, ChevronRightIcon } from "@lucide/svelte";
+  import { getSpecialPlaylists } from "$lib/utils/playlist";
 
   let createDialogOpen = $state(false);
-  let allPlaylists = $state<Playlist[]>([]);
+  let userPlaylists = $state<Playlist[]>([]);
+  let artistPlaylists = $state<Playlist[]>([]);
+  let albumPlaylists = $state<Playlist[]>([]);
   let loading = $state(true);
-
-  const userPlaylists = $derived(
-    allPlaylists.filter(
-      (p) => !p.id.startsWith("artist_") && !p.id.startsWith("album_")
-    )
-  );
-  const artistPlaylists = $derived(
-    allPlaylists.filter((p) => p.id.startsWith("artist_"))
-  );
-  const albumPlaylists = $derived(
-    allPlaylists.filter((p) => p.id.startsWith("album_"))
-  );
 
   onMount(() => loadPlaylists());
 
   async function loadPlaylists() {
     loading = true;
     try {
-      const response = await getUserPlaylists();
-      allPlaylists = response.playlists;
+      const [userResponse, artistResponse, albumResponse, special] =
+        await Promise.all([
+          getUserPlaylists("user", 10),
+          getUserPlaylists("artist", 10),
+          getUserPlaylists("album", 10),
+          getSpecialPlaylists(),
+        ]);
+
+      userPlaylists = [...special, ...userResponse.playlists];
+      artistPlaylists = artistResponse.playlists;
+      albumPlaylists = albumResponse.playlists;
     } catch (error) {
       console.error("Failed to load playlists:", error);
     } finally {
@@ -82,7 +82,12 @@
             onclick={() => (createDialogOpen = true)}
             class="aspect-square w-40 flex-shrink-0 border hover:bg-muted/50 transition-colors grid place-items-center"
           >
-            <PlusIcon size={48} absoluteStrokeWidth strokeWidth={2} class="text-muted-foreground" />
+            <PlusIcon
+              size={48}
+              absoluteStrokeWidth
+              strokeWidth={2}
+              class="text-muted-foreground"
+            />
           </button>
           {#each userPlaylists.slice(0, 8) as playlist (playlist.id)}
             <PlaylistCard {playlist} />

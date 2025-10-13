@@ -4,7 +4,15 @@
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import * as ContextMenu from "$lib/components/ui/context-menu";
   import { ManagePlaylistsDialog } from "../playlists";
-  import { DownloadIcon, ListMusicIcon, PlusIcon, SkipForwardIcon } from "@lucide/svelte";
+  import {
+    DownloadIcon,
+    ListMusicIcon,
+    PlusIcon,
+    SkipForwardIcon,
+    CloudCheckIcon,
+  } from "@lucide/svelte";
+  import { isTrackOffline } from "$lib/db/offline";
+  import { onMount } from "svelte";
 
   interface Props {
     track: AudioFile;
@@ -19,6 +27,11 @@
   const artist = $derived(track.metadata?.artist ?? "Unknown");
 
   let managePlaylistsDialogOpen = $state(false);
+  let isOffline = $state(false);
+
+  onMount(async () => {
+    isOffline = await isTrackOffline(track.id);
+  });
 
   async function handlePlay() {
     if (fromQueue) {
@@ -71,9 +84,17 @@
         />
       </div>
       <div class="flex flex-col text-left flex-1 min-w-0">
-        <p class="font-medium truncate">
-          {title}
-        </p>
+        <div class="flex items-center gap-1.5">
+          <p class="font-medium truncate">
+            {title}
+          </p>
+          {#if isOffline}
+            <CloudCheckIcon
+              size={14}
+              class="flex-shrink-0 text-muted-foreground"
+            />
+          {/if}
+        </div>
         <p class="truncate text-muted-foreground text-sm">
           {artist}
         </p>

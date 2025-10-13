@@ -8,7 +8,6 @@
   import * as Breadcrumb from "$lib/components/ui/breadcrumb";
 
   let isAdmin = $state(false);
-  let loading = $state(true);
 
   onMount(async () => {
     try {
@@ -16,8 +15,6 @@
       isAdmin = result.data.isAdmin;
     } catch (error) {
       isAdmin = false;
-    } finally {
-      loading = false;
     }
   });
 
@@ -78,7 +75,7 @@
         <ArrowLeftIcon size={18} />
       </Button>
 
-      <div class="flex-1 min-w-0 px-2">
+      <div class="flex-1 min-w-0 px-4">
         <Breadcrumb.Root>
           <Breadcrumb.List>
             {#each navigationStore.breadcrumbs as crumb, i}

@@ -139,7 +139,7 @@
             {@const artist = track.metadata?.artist || "Unknown"}
             <button
               onclick={() => toggleTrack(track.id)}
-              class="w-full flex items-center gap-3 p-3 border-b hover:bg-muted/30 transition-colors text-left"
+              class="w-full flex items-center gap-3 p-3 border-b hover:bg-muted/30 text-left"
               class:bg-muted={isSelected}
               disabled={loading}
             >

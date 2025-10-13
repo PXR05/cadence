@@ -1,36 +1,29 @@
 <script lang="ts">
   import { page } from "$app/state";
   import { goto } from "$app/navigation";
-  import { onMount } from "svelte";
   import { SvelteSet } from "svelte/reactivity";
-  import { getPlaylistById } from "$lib/api";
-  import { playerStore, getPlaylistImageUrl } from "$lib/stores/player.svelte";
+  import { getPlaylistById, fetchTracks } from "$lib/api";
+  import { playerStore } from "$lib/stores/player.svelte";
   import { navigationStore } from "$lib/stores/navigation.svelte";
-  import { useDialogState } from "$lib/hooks";
+  import { useDialogState, usePlaylistOffline } from "$lib/hooks";
   import {
     getPlaylistDisplayName,
-    handlePlaylistImageError,
     isArtistPlaylist,
     isAlbumPlaylist,
   } from "$lib/utils/playlist";
   import {
-    TrackItem,
     AddTracksDialog,
     EditPlaylistDialog,
+    PlaylistHeader,
+    VirtualizedPlaylistTracks,
   } from "$lib/components";
-  import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
+  import { LoaderIcon } from "@lucide/svelte";
+  import { db } from "$lib/db/offline";
   import {
-    LoaderIcon,
-    PlayIcon,
-    ShuffleIcon,
-    SearchIcon,
-    PlusIcon,
-    PencilIcon,
-    EllipsisIcon,
-    MusicIcon,
-    Disc3Icon,
-    UserIcon,
-  } from "@lucide/svelte";
+    isSpecialPlaylist,
+    getSpecialPlaylist,
+    SPECIAL_PLAYLIST_IDS,
+  } from "$lib/utils/playlist";
 
   const playlistId = $derived(page.params.id);
 
@@ -40,9 +33,21 @@
 
   const addTracksDialog = useDialogState("add-tracks");
   const editDialog = useDialogState("edit-playlist");
+  const offline = usePlaylistOffline();
 
   const existingTrackIds = $derived(
     new SvelteSet(playlist?.items.map((item) => item.audio.id) ?? [])
+  );
+
+  const isNonModifiable = $derived(
+    playlist &&
+      (isSpecialPlaylist(playlist.id) ||
+        isArtistPlaylist(playlist.id) ||
+        isAlbumPlaylist(playlist.id))
+  );
+
+  const hasAddButton = $derived(
+    !searchQuery.trim() && playlist && !isNonModifiable
   );
 
   const filteredTracks = $derived(
@@ -51,63 +56,9 @@
       : (playlist?.items ?? [])
   );
 
-  const ROW_HEIGHT = 88;
-  const ADD_BUTTON_HEIGHT = 88;
-  const OVERSCAN = 10;
-
-  let pagination = $state({
-    offset: 0,
-    pageSize: 20,
-  });
-
-  const range = $derived({
-    start: Math.max(0, pagination.offset - OVERSCAN),
-    end: Math.min(
-      filteredTracks.length,
-      pagination.offset + pagination.pageSize + OVERSCAN
-    ),
-  });
-
-  let containerRef = $state<HTMLDivElement | null>(null);
-
-  function handleResize(ref: HTMLDivElement | null) {
-    if (!ref) return;
-    const clientHeight = ref.clientHeight;
-    const visibleRows = Math.ceil(clientHeight / ROW_HEIGHT);
-    pagination.pageSize = visibleRows;
-  }
-
-  function handleScroll(e: Event) {
-    const ref = e.target as HTMLDivElement;
-    let scrollTop = ref.scrollTop;
-    if (!searchQuery.trim()) {
-      scrollTop = Math.max(0, scrollTop - ADD_BUTTON_HEIGHT);
-    }
-    pagination.offset = Math.floor(scrollTop / ROW_HEIGHT);
-  }
-
   $effect(() => {
-    searchQuery;
-    playlistId;
-    pagination.offset = 0;
-    if (containerRef) {
-      containerRef.scrollTop = 0;
-    }
-  });
-
-  onMount(() => {
-    loadPlaylist();
-
-    if (containerRef) {
-      handleResize(containerRef);
-      const resizeHandler = () => handleResize(containerRef);
-      window.addEventListener("resize", resizeHandler);
-      containerRef.addEventListener("scroll", handleScroll);
-
-      return () => {
-        window.removeEventListener("resize", resizeHandler);
-        containerRef?.removeEventListener("scroll", handleScroll);
-      };
+    if (playlistId) {
+      loadPlaylist();
     }
   });
 
@@ -144,13 +95,99 @@
 
     loading = true;
     try {
-      const response = await getPlaylistById(playlistId);
-      playlist = response.playlist;
-      if (playlist) updateNavigation(playlist.name);
+      if (isSpecialPlaylist(playlistId)) {
+        await loadSpecialPlaylist(playlistId);
+      } else {
+        const response = await getPlaylistById(playlistId);
+        playlist = response.playlist;
+        if (playlist) {
+          updateNavigation(playlist.name);
+          offline.checkOfflineStatus(playlistId);
+        }
+      }
     } catch (error) {
       console.error("Failed to load playlist:", error);
     } finally {
       loading = false;
+    }
+  }
+
+  async function loadSpecialPlaylist(id: string) {
+    const specialPlaylist = getSpecialPlaylist(id);
+    if (!specialPlaylist) return;
+
+    const now = new Date();
+    playlist = {
+      id: specialPlaylist.id,
+      name: specialPlaylist.name,
+      userId: specialPlaylist.userId,
+      createdAt: new Date(specialPlaylist.createdAt),
+      updatedAt: now,
+      items: [],
+    };
+
+    updateNavigation(specialPlaylist.name);
+    offline.checkOfflineStatus(id);
+
+    if (id === SPECIAL_PLAYLIST_IDS.ALL_SONGS) {
+      let page = 1;
+      let hasMore = true;
+
+      while (hasMore) {
+        const result = await fetchTracks({
+          page,
+          limit: 100,
+          sortBy: "title",
+          sortOrder: "asc",
+        });
+
+        if (playlist && playlist.id === id) {
+          const currentLength = playlist.items.length;
+          const newItems = result.tracks.map(
+            (track, index): PlaylistItem => ({
+              id: `${track.id}_${currentLength + index}`,
+              position: currentLength + index,
+              addedAt: now,
+              audio: track,
+            })
+          );
+
+          playlist = {
+            ...playlist,
+            items: [...playlist.items, ...newItems],
+          };
+        }
+
+        hasMore = result.hasMore;
+        page++;
+      }
+    } else if (id === SPECIAL_PLAYLIST_IDS.DOWNLOADED) {
+      const offlineTracks = await db.tracks.toArray();
+      const tracks = offlineTracks.map(
+        (track) =>
+          ({
+            id: track.id,
+            filename: track.filename,
+            metadata: {
+              title: track.metadata.title,
+              artist: track.metadata.artist,
+              album: track.metadata.album,
+              duration: track.metadata.duration,
+            },
+          }) as AudioFile
+      );
+
+      if (playlist && playlist.id === id) {
+        playlist = {
+          ...playlist,
+          items: tracks.map((track, index) => ({
+            id: `${track.id}_${index}`,
+            position: index,
+            addedAt: now,
+            audio: track,
+          })),
+        };
+      }
     }
   }
 
@@ -189,7 +226,7 @@
   }
 
   function handlePlaylistDeleted() {
-    goto("/library");
+    goto("/library", { replaceState: true });
   }
 </script>
 
@@ -203,155 +240,53 @@
       <LoaderIcon class="animate-spin text-muted-foreground" size={24} />
     </div>
   {:else if playlist}
-    <div class="border-b p-4 flex max-md:flex-col gap-4 items-end relative">
-      <div class="size-48 border max-md:mx-auto flex-shrink-0 overflow-hidden">
-        <img
-          loading="lazy"
-          src={getPlaylistImageUrl(playlist.id)}
-          alt={playlist.name}
-          class="w-full h-full object-cover"
-          onerror={handlePlaylistImageError}
-        />
-        <div class="w-full h-full bg-muted hidden place-items-center">
-          {#if playlist && isArtistPlaylist(playlist.id)}
-            <UserIcon
-              size={48}
-              absoluteStrokeWidth
-              strokeWidth={2}
-              class="text-muted-foreground"
-            />
-          {:else if playlist && isAlbumPlaylist(playlist.id)}
-            <Disc3Icon
-              size={48}
-              absoluteStrokeWidth
-              strokeWidth={2}
-              class="text-muted-foreground"
-            />
-          {:else}
-            <MusicIcon
-              size={48}
-              absoluteStrokeWidth
-              strokeWidth={2}
-              class="text-muted-foreground"
-            />
-          {/if}
-        </div>
-      </div>
-
-      <div
-        class="flex-1 min-w-0 flex max-md:w-full max-md:flex-col max-md:text-center md:items-end items-center justify-between gap-4"
-      >
-        <div class="flex-1 min-w-0">
-          <h1 class="text-2xl font-semibold truncate">{playlist.name}</h1>
+    {#if offline.downloadProgress}
+      <div class="border-b p-4 bg-muted/50">
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-sm font-medium">
+            Downloading {offline.downloadProgress.current} of {offline
+              .downloadProgress.total} tracks
+          </p>
           <p class="text-sm text-muted-foreground">
-            {playlist.items.length} tracks
+            {Math.round(
+              (offline.downloadProgress.current /
+                offline.downloadProgress.total) *
+                100
+            )}%
           </p>
         </div>
-
-        <div class="flex max-md:w-full gap-2 flex-shrink-0">
-          <button
-            onclick={handlePlay}
-            disabled={playlist.items.length === 0}
-            class="max-md:w-full px-4 py-2 border bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center max-md:justify-center gap-2"
-          >
-            <PlayIcon size={16} />
-            Play
-          </button>
-          <button
-            onclick={handleShuffle}
-            disabled={playlist.items.length === 0}
-            class="max-md:w-full px-4 py-2 border hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center max-md:justify-center gap-2"
-          >
-            <ShuffleIcon size={16} />
-            Shuffle
-          </button>
+        <div class="w-full bg-muted border overflow-hidden h-2">
+          <div
+            class="h-full bg-primary transition-all duration-300"
+            style="width: {(offline.downloadProgress.current /
+              offline.downloadProgress.total) *
+              100}%"
+          ></div>
         </div>
       </div>
+    {/if}
 
-      <div class="absolute top-4 right-4">
-        <DropdownMenu.Root>
-          <DropdownMenu.Trigger>
-            <button
-              class="p-2 hover:bg-muted transition-colors border"
-              title="Playlist options"
-            >
-              <EllipsisIcon size={20} />
-            </button>
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Content align="end">
-            <DropdownMenu.Item onclick={() => editDialog.open()}>
-              <PencilIcon size={16} class="mr-2" />
-              Edit Playlist
-            </DropdownMenu.Item>
-          </DropdownMenu.Content>
-        </DropdownMenu.Root>
-      </div>
-    </div>
+    <PlaylistHeader
+      {playlist}
+      isOffline={offline.isOffline}
+      isDownloading={offline.isDownloading}
+      isNonModifiable={!!isNonModifiable}
+      onPlay={handlePlay}
+      onShuffle={handleShuffle}
+      onEdit={() => editDialog.open()}
+      onDownload={() => playlist && offline.downloadPlaylist(playlist)}
+      onMakeOffline={() =>
+        playlist && playlistId && offline.makeOffline(playlist, playlistId)}
+      onRemoveOffline={() => playlistId && offline.removeOffline(playlistId)}
+    />
 
-    <div class="flex items-center border-b">
-      <SearchIcon size={16} class="ml-3 text-muted-foreground flex-shrink-0" />
-      <input
-        type="text"
-        bind:value={searchQuery}
-        placeholder="Search in playlist..."
-        class="flex-1 bg-transparent p-3 outline-none font-mono placeholder:text-muted-foreground"
-      />
-    </div>
-
-    <div class="flex-1 overflow-y-auto" bind:this={containerRef}>
-      {#if !searchQuery.trim()}
-        <button
-          onclick={() => addTracksDialog.open()}
-          class="w-full flex items-center gap-4 p-3 border-b hover:bg-muted/50 transition-colors"
-        >
-          <div
-            class="size-16 border flex-shrink-0 bg-muted grid place-items-center"
-          >
-            <PlusIcon size={24} class="text-muted-foreground" />
-          </div>
-          <div class="flex-1 text-left">
-            <p class="font-medium">Add Tracks</p>
-            <p class="text-sm text-muted-foreground">
-              Add tracks to this playlist
-            </p>
-          </div>
-        </button>
-      {/if}
-
-      {#if filteredTracks.length === 0}
-        <div
-          class={searchQuery.trim()
-            ? "flex flex-col items-center justify-center p-8 h-full"
-            : "h-24"}
-        >
-          {#if searchQuery.trim()}
-            <p class="text-muted-foreground mb-2">No tracks found</p>
-            <p class="text-sm text-muted-foreground">
-              Try a different search query
-            </p>
-          {/if}
-        </div>
-      {:else}
-        <div
-          style="height: {filteredTracks.length *
-            ROW_HEIGHT}px; position: relative; width: 100%;"
-        >
-          <div
-            style="position: absolute; top: {range.start *
-              ROW_HEIGHT}px; left: 0; right: 0;"
-          >
-            {#each filteredTracks.slice(range.start, range.end) as item (item.id)}
-              <TrackItem
-                track={item.audio}
-                fromQueue={false}
-                onRemovedFromPlaylist={handleTrackRemovedFromPlaylist}
-              />
-            {/each}
-          </div>
-        </div>
-        <div class="h-24"></div>
-      {/if}
-    </div>
+    <VirtualizedPlaylistTracks
+      items={filteredTracks}
+      bind:searchQuery
+      {hasAddButton}
+      onAddTracks={() => addTracksDialog.open()}
+      onTrackRemovedFromPlaylist={handleTrackRemovedFromPlaylist}
+    />
   {:else}
     <div class="flex items-center justify-center h-full">
       <p class="text-muted-foreground">Playlist not found</p>
@@ -359,7 +294,7 @@
   {/if}
 </div>
 
-{#if playlist && playlistId}
+{#if playlist && playlistId && !isNonModifiable}
   <AddTracksDialog
     open={addTracksDialog.isOpen}
     onOpenChange={(open) => !open && addTracksDialog.close()}

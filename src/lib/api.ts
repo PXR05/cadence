@@ -81,6 +81,26 @@ export async function fetchTracks(
   };
 }
 
+export async function fetchAllTracks(): Promise<AudioFile[]> {
+  const allTracks: AudioFile[] = [];
+  let page = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const result = await fetchTracks({
+      page,
+      limit: 100,
+      sortBy: "title",
+      sortOrder: "asc",
+    });
+    allTracks.push(...result.tracks);
+    hasMore = result.hasMore;
+    page++;
+  }
+
+  return allTracks;
+}
+
 export async function searchTracks(
   options: SearchTracksOptions
 ): Promise<FetchTracksResult> {
@@ -367,9 +387,17 @@ export async function createPlaylist(
 }
 
 export async function getUserPlaylists(
-  type?: "user" | "artist" | "album" | "auto"
+  type?: "user" | "artist" | "album" | "auto",
+  limit?: number
 ): Promise<ListPlaylistsResponse> {
-  const res = await fetch(`${PLAYLIST_URL}${type ? `?type=${type}` : ""}`);
+  const params = new URLSearchParams();
+  if (type) params.append("type", type);
+  if (limit) params.append("limit", limit.toString());
+
+  const queryString = params.toString();
+  const res = await fetch(
+    `${PLAYLIST_URL}${queryString ? `?${queryString}` : ""}`
+  );
   if (!res.ok) throw new Error(`Failed to fetch playlists: ${res.statusText}`);
 
   return (await res.json()) as ListPlaylistsResponse;

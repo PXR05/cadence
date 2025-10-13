@@ -1,6 +1,7 @@
 import { BASE_URL, PLAYLIST_URL } from "$lib/api";
 import type { CarouselAPI } from "$lib/components/ui/carousel/context";
 import { createLocalStorageState } from "./localStorage.svelte";
+import { getAudioUrl, revokeAudioUrl } from "$lib/utils/offline";
 
 export const getStreamUrl = (id: string) => `${BASE_URL}/${id}/stream`;
 export const getImageUrl = (id: string) => `${BASE_URL}/${id}/image`;
@@ -24,6 +25,7 @@ class PlayerState {
     string,
     { api: CarouselAPI; handler: () => void }
   >();
+  private currentBlobUrl: string | null = null;
 
   private persistedState = createLocalStorageState<PersistedPlayerState>(
     "cadence.player_state",
@@ -149,6 +151,13 @@ class PlayerState {
     });
   }
 
+  cleanup() {
+    if (this.currentBlobUrl) {
+      revokeAudioUrl(this.currentBlobUrl);
+      this.currentBlobUrl = null;
+    }
+  }
+
   initializeCarousel(id: string, api: CarouselAPI) {
     const existing = this.carousels.get(id);
     if (existing) {
@@ -173,9 +182,22 @@ class PlayerState {
     }
   }
 
-  updateMetadata(track: AudioFile) {
+  async updateMetadata(track: AudioFile) {
     if (!this.playerRef) return;
-    this.playerRef.src = getStreamUrl(track.id);
+
+    if (this.currentBlobUrl) {
+      revokeAudioUrl(this.currentBlobUrl);
+      this.currentBlobUrl = null;
+    }
+
+    const audioUrl = await getAudioUrl(track.id);
+    this.playerRef.src = audioUrl;
+    this.playerRef.load();
+
+    if (audioUrl.startsWith("blob:")) {
+      this.currentBlobUrl = audioUrl;
+    }
+
     if ("mediaSession" in navigator) {
       navigator.mediaSession.metadata = new MediaMetadata({
         title: track.metadata?.title || track.filename || "Unknown Title",
@@ -204,7 +226,7 @@ class PlayerState {
     }
   }
 
-  play(track?: AudioFile) {
+  async play(track?: AudioFile) {
     if (this.playerRef) {
       if (track && this.currentTrack?.id !== track.id) {
         this.currentTrack = track;
@@ -212,10 +234,15 @@ class PlayerState {
         this.queueIndex = trackIndex;
         this.syncCarouselToTrack(trackIndex);
         this.currentTime = 0;
-        this.updateMetadata(track);
+        await this.updateMetadata(track);
       }
       this.isPlaying = true;
-      this.playerRef.play();
+      try {
+        await this.playerRef.play();
+      } catch (error) {
+        console.error("Failed to play audio:", error);
+        this.isPlaying = false;
+      }
     }
   }
 

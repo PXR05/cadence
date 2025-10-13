@@ -9,6 +9,7 @@
   import PlaybackControls from "./PlaybackControls.svelte";
   import VolumeControl from "./VolumeControl.svelte";
   import { ListMusicIcon, PauseIcon, PlayIcon } from "@lucide/svelte";
+  import { onDestroy } from "svelte";
 
   let audioEl: HTMLAudioElement | null = $state(null);
   const queueDialog = useDialogState("queue");
@@ -18,6 +19,10 @@
     if (audioEl && !playerStore.isLoaded) {
       playerStore.initialize(audioEl);
     }
+  });
+
+  onDestroy(() => {
+    playerStore.cleanup();
   });
 
   function setCarouselApi(api: CarouselAPI | null) {
