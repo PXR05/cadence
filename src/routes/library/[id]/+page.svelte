@@ -51,7 +51,65 @@
       : (playlist?.items ?? [])
   );
 
-  onMount(() => loadPlaylist());
+  const ROW_HEIGHT = 88;
+  const ADD_BUTTON_HEIGHT = 88;
+  const OVERSCAN = 10;
+
+  let pagination = $state({
+    offset: 0,
+    pageSize: 20,
+  });
+
+  const range = $derived({
+    start: Math.max(0, pagination.offset - OVERSCAN),
+    end: Math.min(
+      filteredTracks.length,
+      pagination.offset + pagination.pageSize + OVERSCAN
+    ),
+  });
+
+  let containerRef = $state<HTMLDivElement | null>(null);
+
+  function handleResize(ref: HTMLDivElement | null) {
+    if (!ref) return;
+    const clientHeight = ref.clientHeight;
+    const visibleRows = Math.ceil(clientHeight / ROW_HEIGHT);
+    pagination.pageSize = visibleRows;
+  }
+
+  function handleScroll(e: Event) {
+    const ref = e.target as HTMLDivElement;
+    let scrollTop = ref.scrollTop;
+    if (!searchQuery.trim()) {
+      scrollTop = Math.max(0, scrollTop - ADD_BUTTON_HEIGHT);
+    }
+    pagination.offset = Math.floor(scrollTop / ROW_HEIGHT);
+  }
+
+  $effect(() => {
+    searchQuery;
+    playlistId;
+    pagination.offset = 0;
+    if (containerRef) {
+      containerRef.scrollTop = 0;
+    }
+  });
+
+  onMount(() => {
+    loadPlaylist();
+
+    if (containerRef) {
+      handleResize(containerRef);
+      const resizeHandler = () => handleResize(containerRef);
+      window.addEventListener("resize", resizeHandler);
+      containerRef.addEventListener("scroll", handleScroll);
+
+      return () => {
+        window.removeEventListener("resize", resizeHandler);
+        containerRef?.removeEventListener("scroll", handleScroll);
+      };
+    }
+  });
 
   function filterTracks(items: PlaylistItem[], query: string) {
     const lowerQuery = query.toLowerCase();
@@ -240,7 +298,7 @@
       />
     </div>
 
-    <div class="flex-1 overflow-y-auto">
+    <div class="flex-1 overflow-y-auto" bind:this={containerRef}>
       {#if !searchQuery.trim()}
         <button
           onclick={() => addTracksDialog.open()}
@@ -274,13 +332,23 @@
           {/if}
         </div>
       {:else}
-        {#each filteredTracks as item (item.id)}
-          <TrackItem
-            track={item.audio}
-            fromQueue={false}
-            onRemovedFromPlaylist={handleTrackRemovedFromPlaylist}
-          />
-        {/each}
+        <div
+          style="height: {filteredTracks.length *
+            ROW_HEIGHT}px; position: relative; width: 100%;"
+        >
+          <div
+            style="position: absolute; top: {range.start *
+              ROW_HEIGHT}px; left: 0; right: 0;"
+          >
+            {#each filteredTracks.slice(range.start, range.end) as item (item.id)}
+              <TrackItem
+                track={item.audio}
+                fromQueue={false}
+                onRemovedFromPlaylist={handleTrackRemovedFromPlaylist}
+              />
+            {/each}
+          </div>
+        </div>
         <div class="h-24"></div>
       {/if}
     </div>
