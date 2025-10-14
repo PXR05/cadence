@@ -1,5 +1,4 @@
 import { db } from "$lib/db/offline";
-import { fetchTracks } from "$lib/api";
 
 export function getPlaylistDisplayName(playlist: Playlist): string {
   if (playlist.name.startsWith("artist:")) {
@@ -24,6 +23,10 @@ export function isArtistPlaylist(playlistId: string): boolean {
 
 export function isAlbumPlaylist(playlistId: string): boolean {
   return playlistId.startsWith("album_");
+}
+
+export function isYoutubePlaylist(playlistId: string): boolean {
+  return playlistId.startsWith("youtube_");
 }
 
 export const SPECIAL_PLAYLIST_IDS = {

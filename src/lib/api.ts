@@ -387,7 +387,7 @@ export async function createPlaylist(
 }
 
 export async function getUserPlaylists(
-  type?: "user" | "artist" | "album" | "auto",
+  type?: "user" | "artist" | "album" | "auto" | "youtube",
   limit?: number
 ): Promise<ListPlaylistsResponse> {
   const params = new URLSearchParams();

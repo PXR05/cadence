@@ -7,8 +7,7 @@
 
   let createDialogOpen = $state(false);
   let userPlaylists = $state<Playlist[]>([]);
-  let artistPlaylists = $state<Playlist[]>([]);
-  let albumPlaylists = $state<Playlist[]>([]);
+  let youtubePlaylists = $state<Playlist[]>([]);
   let loading = $state(true);
 
   onMount(() => loadPlaylists());
@@ -16,17 +15,15 @@
   async function loadPlaylists() {
     loading = true;
     try {
-      const [userResponse, artistResponse, albumResponse, special] =
+      const [userResponse, youtubeResponse, special] =
         await Promise.all([
           getUserPlaylists("user", 10),
-          getUserPlaylists("artist", 10),
-          getUserPlaylists("album", 10),
+          getUserPlaylists("youtube", 10),
           getSpecialPlaylists(),
         ]);
 
       userPlaylists = [...special, ...userResponse.playlists];
-      artistPlaylists = artistResponse.playlists;
-      albumPlaylists = albumResponse.playlists;
+      youtubePlaylists = youtubeResponse.playlists;
     } catch (error) {
       console.error("Failed to load playlists:", error);
     } finally {
@@ -89,36 +86,21 @@
               class="text-muted-foreground"
             />
           </button>
-          {#each userPlaylists.slice(0, 8) as playlist (playlist.id)}
+          {#each userPlaylists as playlist (playlist.id)}
             <PlaylistCard {playlist} />
           {/each}
         </div>
       </section>
 
-      {#if artistPlaylists.length > 0}
+      {#if youtubePlaylists.length > 0}
         <section>
           {@render sectionHeader(
-            "Artists",
-            "/library/type/artist",
-            artistPlaylists.length
+            "YouTube",
+            "/library/type/youtube",
+            youtubePlaylists.length
           )}
           <div class="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4">
-            {#each artistPlaylists.slice(0, 9) as playlist (playlist.id)}
-              <PlaylistCard {playlist} />
-            {/each}
-          </div>
-        </section>
-      {/if}
-
-      {#if albumPlaylists.length > 0}
-        <section>
-          {@render sectionHeader(
-            "Albums",
-            "/library/type/album",
-            albumPlaylists.length
-          )}
-          <div class="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4">
-            {#each albumPlaylists.slice(0, 9) as playlist (playlist.id)}
+            {#each youtubePlaylists as playlist (playlist.id)}
               <PlaylistCard {playlist} />
             {/each}
           </div>

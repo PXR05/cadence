@@ -9,7 +9,6 @@
   let { loading, onUploadComplete, onUploadError, onYoutubeUpload }: Props =
     $props();
 
-  let fileInput: HTMLInputElement;
   let youtubeUrl = $state("");
   let isUploading = $state(false);
   let currentFileIndex = $state(0);
@@ -114,7 +113,6 @@
     <h3 class="font-medium mb-3">Upload Audio Files</h3>
     <input
       type="file"
-      bind:this={fileInput}
       onchange={handleFileChange}
       multiple
       accept="audio/*"

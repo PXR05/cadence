@@ -4,6 +4,7 @@
     getPlaylistDisplayName,
     isArtistPlaylist,
     isAlbumPlaylist,
+    isYoutubePlaylist,
   } from "$lib/utils/playlist";
   import {
     MusicIcon,
@@ -11,6 +12,7 @@
     UserIcon,
     LibraryIcon,
     CloudCheckIcon,
+    YoutubeIcon,
   } from "@lucide/svelte";
   import { SPECIAL_PLAYLIST_IDS } from "$lib/utils/playlist";
 
@@ -22,6 +24,7 @@
   let { playlist, size = "small" }: Props = $props();
 
   const displayName = $derived(getPlaylistDisplayName(playlist));
+  const isYoutube = $derived(isYoutubePlaylist(playlist.id));
   const isArtist = $derived(isArtistPlaylist(playlist.id));
   const isAlbum = $derived(isAlbumPlaylist(playlist.id));
 
@@ -58,6 +61,13 @@
         />
       {:else if isAlbum}
         <Disc3Icon
+          size={48}
+          absoluteStrokeWidth
+          strokeWidth={2}
+          class="text-muted-foreground"
+        />
+      {:else if isYoutube}
+        <YoutubeIcon
           size={48}
           absoluteStrokeWidth
           strokeWidth={2}
