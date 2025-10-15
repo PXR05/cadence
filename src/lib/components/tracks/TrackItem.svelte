@@ -16,11 +16,17 @@
 
   interface Props {
     track: AudioFile;
+    playlist?: PlaylistItem[];
     fromQueue?: boolean;
     onRemovedFromPlaylist?: (trackId: string, playlistIds: string[]) => void;
   }
 
-  let { track, fromQueue = false, onRemovedFromPlaylist }: Props = $props();
+  let {
+    track,
+    playlist,
+    fromQueue = false,
+    onRemovedFromPlaylist,
+  }: Props = $props();
 
   const isCurrentTrack = $derived(playerStore.currentTrack?.id === track.id);
   const title = $derived(track.metadata?.title ?? track.filename);
@@ -36,7 +42,7 @@
   async function handlePlay() {
     if (fromQueue) {
       const trackIndex = playerStore.trackQueue.findIndex(
-        (t) => t.id === track.id
+        (t) => t.id === track.id,
       );
       if (trackIndex !== -1) {
         playerStore.queueIndex = trackIndex;
@@ -44,15 +50,14 @@
         return;
       }
     }
-    
-    if (onRemovedFromPlaylist) {
-      const trackIndex = playerStore.trackQueue.findIndex(
-        (t) => t.id === track.id
-      );
-      playerStore.setQueue([], trackIndex);
+
+    if (playlist) {
+      const tracks = playlist.map((item) => item.audio);
+      const trackIndex = tracks.findIndex((t) => t.id === track.id);
+      playerStore.setQueue(tracks, trackIndex);
     } else {
-    const shuffledTracks = tracksStore.getShuffledTracks(track);
-    playerStore.setQueue(shuffledTracks, 0);
+      const shuffledTracks = tracksStore.getShuffledTracks(track);
+      playerStore.setQueue(shuffledTracks, 0);
     }
   }
 
@@ -96,10 +101,7 @@
             {title}
           </p>
           {#if isOffline}
-            <CloudCheckIcon
-              size={16}
-              class="flex-shrink-0 text-primary"
-            />
+            <CloudCheckIcon size={16} class="flex-shrink-0 text-primary" />
           {/if}
         </div>
         <p class="truncate text-muted-foreground text-sm">

@@ -88,7 +88,9 @@
   <AuthDialog onAuthenticated={loadInitialData} />
 {:else}
   <div class="relative bg-background min-h-dvh flex flex-col font-mono">
-    <NavBar />
+    <div class="max-md:hidden">
+      <NavBar />
+    </div>
     <div
       class="overflow-auto transition-all duration-300"
       class:h-[calc(100dvh-8.5rem-2px)]={!hasDownloadProgress}
@@ -98,5 +100,8 @@
     </div>
     <GlobalDownloadProgress />
     <PlayerBar />
+    <div class="md:hidden">
+      <NavBar />
+    </div>
   </div>
 {/if}

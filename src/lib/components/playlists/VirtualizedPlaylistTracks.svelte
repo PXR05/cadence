@@ -134,6 +134,7 @@
       >
         {#each items.slice(range.start, range.end) as item (item.id)}
           <TrackItem
+            playlist={items}
             track={item.audio}
             fromQueue={false}
             onRemovedFromPlaylist={onTrackRemovedFromPlaylist}
