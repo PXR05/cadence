@@ -15,8 +15,6 @@
 
   let { children } = $props();
 
-  const hasDownloadProgress = $derived(downloadStore.progress !== null);
-
   onMount(() => {
     if (authStore.isAuthenticated) {
       loadInitialData();
@@ -98,8 +96,8 @@
     {/if}
     <div
       class="overflow-auto transition-all duration-300"
-      class:h-[calc(100dvh-8.5rem-2px)]={!hasDownloadProgress}
-      class:h-[calc(100dvh-8.5rem-2px-4.15rem)]={hasDownloadProgress}
+      class:h-[calc(100dvh-8.5rem-2px)]={!downloadStore.isDownloading}
+      class:h-[calc(100dvh-8.5rem-2px-4.15rem)]={downloadStore.isDownloading}
     >
       {@render children?.()}
     </div>

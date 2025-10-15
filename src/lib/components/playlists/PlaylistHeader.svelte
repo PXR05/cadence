@@ -102,9 +102,11 @@
       {/if}
     </div>
 
-    <div class="flex max-md:flex-col justify-between gap-2 md:items-end w-full">
-      <div class="flex-1">
-        <div class="flex items-center gap-2">
+    <div
+      class="flex max-md:flex-col justify-between gap-2 md:items-end w-full truncate"
+    >
+      <div class="flex-1 truncate">
+        <div class="flex items-center gap-2 truncate">
           <h1 class="text-2xl font-semibold truncate">{playlist.name}</h1>
           {#if isOffline}
             <CloudCheckIcon size={20} class="flex-shrink-0" />
