@@ -10,6 +10,8 @@
   import { downloadStore } from "$lib/stores/download.svelte";
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
+  import { innerWidth } from "svelte/reactivity/window";
+  import { page } from "$app/state";
 
   let { children } = $props();
 
@@ -80,6 +82,9 @@
       }
     }
   }
+
+  const isMobile = $derived((innerWidth.current ?? 0) <= 768);
+  const isTopRoute = $derived(page.url.pathname.split("/").length <= 2);
 </script>
 
 <svelte:window onkeydown={(e) => handleKeyboardEvent(e)} />
@@ -88,9 +93,9 @@
   <AuthDialog onAuthenticated={loadInitialData} />
 {:else}
   <div class="relative bg-background min-h-dvh flex flex-col font-mono">
-    <div class="max-md:hidden">
+    {#if !isMobile || !isTopRoute}
       <NavBar />
-    </div>
+    {/if}
     <div
       class="overflow-auto transition-all duration-300"
       class:h-[calc(100dvh-8.5rem-2px)]={!hasDownloadProgress}
@@ -100,8 +105,8 @@
     </div>
     <GlobalDownloadProgress />
     <PlayerBar />
-    <div class="md:hidden">
+    {#if isMobile && isTopRoute}
       <NavBar />
-    </div>
+    {/if}
   </div>
 {/if}
