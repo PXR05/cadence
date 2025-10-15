@@ -33,27 +33,27 @@
 
   const addTracksDialog = useDialogState("add-tracks");
   const editDialog = useDialogState("edit-playlist");
-  const offline = usePlaylistOffline();
+  const offline = usePlaylistOffline(() => playlistId);
 
   const existingTrackIds = $derived(
-    new SvelteSet(playlist?.items.map((item) => item.audio.id) ?? [])
+    new SvelteSet(playlist?.items.map((item) => item.audio.id) ?? []),
   );
 
   const isNonModifiable = $derived(
     playlist &&
       (isSpecialPlaylist(playlist.id) ||
         isArtistPlaylist(playlist.id) ||
-        isAlbumPlaylist(playlist.id))
+        isAlbumPlaylist(playlist.id)),
   );
 
   const hasAddButton = $derived(
-    !searchQuery.trim() && playlist && !isNonModifiable
+    !searchQuery.trim() && playlist && !isNonModifiable,
   );
 
   const filteredTracks = $derived(
     searchQuery.trim()
       ? filterTracks(playlist?.items ?? [], searchQuery)
-      : (playlist?.items ?? [])
+      : (playlist?.items ?? []),
   );
 
   $effect(() => {
@@ -77,7 +77,7 @@
   function updateNavigation(playlistName: string) {
     navigationStore.setNavigation(
       [{ label: "Library", path: "/library" }],
-      getPlaylistDisplayName({ name: playlistName } as Playlist)
+      getPlaylistDisplayName({ name: playlistName } as Playlist),
     );
   }
 
@@ -102,7 +102,7 @@
         playlist = response.playlist;
         if (playlist) {
           updateNavigation(playlist.name);
-          offline.checkOfflineStatus(playlistId);
+          offline.checkOfflineStatus();
         }
       }
     } catch (error) {
@@ -127,7 +127,7 @@
     };
 
     updateNavigation(specialPlaylist.name);
-    offline.checkOfflineStatus(id);
+    offline.checkOfflineStatus();
 
     if (id === SPECIAL_PLAYLIST_IDS.ALL_SONGS) {
       let page = 1;
@@ -149,7 +149,7 @@
               position: currentLength + index,
               addedAt: now,
               audio: track,
-            })
+            }),
           );
 
           playlist = {
@@ -174,7 +174,7 @@
               album: track.metadata.album,
               duration: track.metadata.duration,
             },
-          }) as AudioFile
+          }) as AudioFile,
       );
 
       if (playlist && playlist.id === id) {
@@ -193,7 +193,7 @@
 
   function handleTrackRemovedFromPlaylist(
     trackId: string,
-    removedFromPlaylists: string[]
+    removedFromPlaylists: string[],
   ) {
     if (!playlist || !playlistId) return;
     if (!removedFromPlaylists.includes(playlistId)) return;
@@ -240,32 +240,6 @@
       <LoaderIcon class="animate-spin text-muted-foreground" size={24} />
     </div>
   {:else if playlist}
-    {#if offline.downloadProgress}
-      <div class="border-b p-4 bg-muted/50">
-        <div class="flex items-center justify-between mb-2">
-          <p class="text-sm font-medium">
-            Downloading {offline.downloadProgress.current} of {offline
-              .downloadProgress.total} tracks
-          </p>
-          <p class="text-sm text-muted-foreground">
-            {Math.round(
-              (offline.downloadProgress.current /
-                offline.downloadProgress.total) *
-                100
-            )}%
-          </p>
-        </div>
-        <div class="w-full bg-muted border overflow-hidden h-2">
-          <div
-            class="h-full bg-primary transition-all duration-300"
-            style="width: {(offline.downloadProgress.current /
-              offline.downloadProgress.total) *
-              100}%"
-          ></div>
-        </div>
-      </div>
-    {/if}
-
     <PlaylistHeader
       {playlist}
       isOffline={offline.isOffline}
@@ -275,9 +249,8 @@
       onShuffle={handleShuffle}
       onEdit={() => editDialog.open()}
       onDownload={() => playlist && offline.downloadPlaylist(playlist)}
-      onMakeOffline={() =>
-        playlist && playlistId && offline.makeOffline(playlist, playlistId)}
-      onRemoveOffline={() => playlistId && offline.removeOffline(playlistId)}
+      onMakeOffline={() => playlist && offline.makeOffline(playlist)}
+      onRemoveOffline={() => offline.removeOffline()}
     />
 
     <VirtualizedPlaylistTracks

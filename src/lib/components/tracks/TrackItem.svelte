@@ -44,9 +44,16 @@
         return;
       }
     }
-
+    
+    if (onRemovedFromPlaylist) {
+      const trackIndex = playerStore.trackQueue.findIndex(
+        (t) => t.id === track.id
+      );
+      playerStore.setQueue([], trackIndex);
+    } else {
     const shuffledTracks = tracksStore.getShuffledTracks(track);
     playerStore.setQueue(shuffledTracks, 0);
+    }
   }
 
   function handlePlayNext() {
@@ -90,8 +97,8 @@
           </p>
           {#if isOffline}
             <CloudCheckIcon
-              size={14}
-              class="flex-shrink-0 text-muted-foreground"
+              size={16}
+              class="flex-shrink-0 text-primary"
             />
           {/if}
         </div>

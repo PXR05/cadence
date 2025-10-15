@@ -3,13 +3,17 @@
   import { NavBar } from "$lib/components";
   import { PlayerBar } from "$lib/components";
   import { AuthDialog } from "$lib/components";
+  import { GlobalDownloadProgress } from "$lib/components/layout";
   import { playerStore } from "$lib/stores/player.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { authStore } from "$lib/stores/auth.svelte";
+  import { downloadStore } from "$lib/stores/download.svelte";
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
 
   let { children } = $props();
+
+  const hasDownloadProgress = $derived(downloadStore.progress !== null);
 
   onMount(() => {
     if (authStore.isAuthenticated) {
@@ -85,9 +89,14 @@
 {:else}
   <div class="relative bg-background min-h-dvh flex flex-col font-mono">
     <NavBar />
-    <div class="h-[calc(100dvh-8.5rem-2px)] overflow-auto">
+    <div
+      class="overflow-auto transition-all duration-300"
+      class:h-[calc(100dvh-8.5rem-2px)]={!hasDownloadProgress}
+      class:h-[calc(100dvh-8.5rem-2px-4.15rem)]={hasDownloadProgress}
+    >
       {@render children?.()}
     </div>
+    <GlobalDownloadProgress />
     <PlayerBar />
   </div>
 {/if}
