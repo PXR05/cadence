@@ -32,7 +32,7 @@
 <a
   href="/library/{playlist.id}"
   class="relative rounded-lg overflow-clip aspect-square border hover:bg-muted/20 transition-colors flex flex-col
-  {size === 'large' ? '' : 'w-40 flex-shrink-0'}
+  {size === 'large' ? 'w-full flex-shrink-0' : 'w-40 flex-shrink-0'}
   "
 >
   <div class="h-full overflow-hidden relative grid place-items-center">

@@ -104,8 +104,8 @@
   const isEmpty = $derived(searchQuery.trim().length === 0);
 </script>
 
-<div class="flex flex-col max-w-4xl mx-auto w-full h-full border-x overflow-auto">
-  <form onsubmit={handleSubmit} style="--h: 6rem;" class="p-1 md:p-2 sticky top-0 z-10">
+<div class="flex flex-col mx-auto w-full h-full border-x overflow-auto">
+  <form onsubmit={handleSubmit} style="--h: 6rem;" class="p-2 sticky top-0 z-10">
      <!-- <div class="_bg _blur absolute inset-0 -z-10"></div> -->
     <div class="_bg _color absolute inset-0 -z-10"></div>
     <div

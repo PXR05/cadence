@@ -2,7 +2,6 @@
   import { page } from "$app/state";
   import { checkToken } from "$lib/api";
   import {
-    ArrowLeftIcon,
     HouseIcon,
     ListMusicIcon,
     SearchIcon,
@@ -10,9 +9,6 @@
   } from "@lucide/svelte";
   import { onMount } from "svelte";
   import { navigationStore } from "$lib/stores/navigation.svelte";
-  import { Button } from "$lib/components/ui/button";
-  import * as Breadcrumb from "$lib/components/ui/breadcrumb";
-  import { slide } from "svelte/transition";
   import { flip } from "svelte/animate";
 
   const {
@@ -52,10 +48,6 @@
     return page.url.pathname.startsWith(tabPath);
   }
 
-  function goBack() {
-    window.history.back();
-  }
-
   $effect(() => {
     if (isTopRoute) {
       navigationStore.clear();
@@ -65,7 +57,7 @@
 
 {#if isTopRoute}
   <nav
-    class="overflow-clip max-w-4xl mx-auto flex rounded-xl border border-input bg-muted/50 backdrop-blur-md relative p-1.5 gap-1.5
+    class="overflow-clip mx-auto flex rounded-xl border border-input bg-muted/50 backdrop-blur-md relative p-1.5 gap-1.5
       {orientation === 'horizontal' ? 'flex-row w-full' : 'flex-col h-full'}"
   >
     {#if activeTabIndex >= 0}
@@ -88,8 +80,9 @@
     {#each tabs as tab (tab.path)}
       {@const active = isActive(tab.path)}
       <a
-        animate:flip={{ duration: 200 }}
         href={tab.path}
+        draggable="false"
+        animate:flip={{ duration: 200 }}
         class="relative flex-1 z-10 grid place-items-center"
       >
         <div
@@ -103,39 +96,5 @@
         </div>
       </a>
     {/each}
-  </nav>
-{:else}
-  <nav class="sticky top-0 z-10 bg-background border-y">
-    <div class="max-w-4xl mx-auto flex items-center border-x">
-      <Button
-        variant="ghost"
-        size="icon"
-        class="size-12 border-r"
-        onclick={goBack}
-      >
-        <ArrowLeftIcon size={18} />
-      </Button>
-
-      <div class="flex-1 min-w-0 px-4">
-        <Breadcrumb.Root>
-          <Breadcrumb.List>
-            {#each navigationStore.breadcrumbs as crumb, i}
-              <Breadcrumb.Item>
-                <Breadcrumb.Link href={crumb.path}>
-                  {crumb.label}
-                </Breadcrumb.Link>
-              </Breadcrumb.Item>
-              <Breadcrumb.Separator />
-            {/each}
-
-            {#if navigationStore.title}
-              <Breadcrumb.Item>
-                <Breadcrumb.Page>{navigationStore.title}</Breadcrumb.Page>
-              </Breadcrumb.Item>
-            {/if}
-          </Breadcrumb.List>
-        </Breadcrumb.Root>
-      </div>
-    </div>
   </nav>
 {/if}

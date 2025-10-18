@@ -36,7 +36,7 @@
     loading = true;
     try {
       const response = await getUserPlaylists("user");
-      playlists = response.playlists;
+      playlists = response;
 
       const trackInPlaylists = new SvelteSet<string>();
       await Promise.all(

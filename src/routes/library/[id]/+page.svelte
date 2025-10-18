@@ -1,8 +1,6 @@
 <script lang="ts">
-  import { page } from "$app/state";
-  import { goto } from "$app/navigation";
+  import { goto, invalidateAll } from "$app/navigation";
   import { SvelteSet } from "svelte/reactivity";
-  import { getPlaylistById, fetchTracks } from "$lib/api";
   import { playerStore } from "$lib/stores/player.svelte";
   import { navigationStore } from "$lib/stores/navigation.svelte";
   import { useDialogState, usePlaylistOffline } from "$lib/hooks";
@@ -10,6 +8,7 @@
     getPlaylistDisplayName,
     isArtistPlaylist,
     isAlbumPlaylist,
+    isSpecialPlaylist,
   } from "$lib/utils/playlist";
   import {
     AddTracksDialog,
@@ -18,19 +17,13 @@
     VirtualizedPlaylistTracks,
   } from "$lib/components";
   import PlaylistSearch from "$lib/components/playlists/PlaylistSearch.svelte";
-  import { LoaderIcon } from "@lucide/svelte";
-  import { db } from "$lib/db/offline";
-  import {
-    isSpecialPlaylist,
-    getSpecialPlaylist,
-    SPECIAL_PLAYLIST_IDS,
-  } from "$lib/utils/playlist";
   import { innerWidth } from "svelte/reactivity/window";
 
-  const playlistId = $derived(page.params.id);
+  let { data } = $props();
 
-  let playlist = $state<PlaylistDetail | null>(null);
-  let loading = $state(true);
+  const playlistId = $derived(data.playlistId);
+  const loadedPlaylist = $derived(data.playlist);
+
   let searchQuery = $state("");
   let isScrolled = $state(false);
 
@@ -38,31 +31,40 @@
   const editDialog = useDialogState("edit-playlist");
   const offline = usePlaylistOffline(() => playlistId);
 
-  const existingTrackIds = $derived(
-    new SvelteSet(playlist?.items.map((item) => item.audio.id) ?? [])
-  );
+  const existingTrackIds = $derived.by(async () => {
+    const pl = await loadedPlaylist;
+    return new SvelteSet(pl?.items.map((item) => item.audio.id) ?? []);
+  });
 
-  const isNonModifiable = $derived(
-    playlist &&
+  const isNonModifiable = $derived.by(async () => {
+    const playlist = await loadedPlaylist;
+    return (
+      playlist &&
       (isSpecialPlaylist(playlist.id) ||
         isArtistPlaylist(playlist.id) ||
         isAlbumPlaylist(playlist.id))
-  );
+    );
+  });
 
-  const hasAddButton = $derived(
-    !searchQuery.trim() && playlist && !isNonModifiable
-  );
+  const hasAddButton = $derived.by(async () => {
+    const playlist = await loadedPlaylist;
+    const nonModifiable = await isNonModifiable;
+    return !searchQuery.trim() && playlist && !nonModifiable;
+  });
 
-  const filteredTracks = $derived(
-    searchQuery.trim()
-      ? filterTracks(playlist?.items ?? [], searchQuery)
-      : (playlist?.items ?? [])
-  );
+  const filteredTracks = $derived.by(async () => {
+    const playlist = await loadedPlaylist;
+    const items = playlist?.items ?? [];
+    return searchQuery.trim() ? filterTracks(items, searchQuery) : items;
+  });
 
   $effect(() => {
-    if (playlistId) {
-      loadPlaylist();
-    }
+    Promise.resolve(loadedPlaylist).then((playlist) => {
+      if (playlist) {
+        updateNavigation(playlist.name);
+        offline.checkOfflineStatus();
+      }
+    });
   });
 
   function filterTracks(items: PlaylistItem[], query: string) {
@@ -93,139 +95,23 @@
     return shuffled;
   }
 
-  async function loadPlaylist() {
-    if (!playlistId) return;
-
-    loading = true;
-    try {
-      if (isSpecialPlaylist(playlistId)) {
-        await loadSpecialPlaylist(playlistId);
-      } else {
-        const response = await getPlaylistById(playlistId);
-        playlist = response.playlist;
-        if (playlist) {
-          updateNavigation(playlist.name);
-          offline.checkOfflineStatus();
-        }
-      }
-    } catch (error) {
-      console.error("Failed to load playlist:", error);
-    } finally {
-      loading = false;
-    }
-  }
-
-  async function loadSpecialPlaylist(id: string) {
-    const specialPlaylist = getSpecialPlaylist(id);
-    if (!specialPlaylist) return;
-
-    const now = new Date();
-    playlist = {
-      id: specialPlaylist.id,
-      name: specialPlaylist.name,
-      userId: specialPlaylist.userId,
-      createdAt: new Date(specialPlaylist.createdAt),
-      updatedAt: now,
-      items: [],
-    };
-
-    updateNavigation(specialPlaylist.name);
-    offline.checkOfflineStatus();
-
-    if (id === SPECIAL_PLAYLIST_IDS.ALL_SONGS) {
-      let page = 1;
-      let hasMore = true;
-
-      while (hasMore) {
-        const result = await fetchTracks({
-          page,
-          limit: 100,
-          sortBy: "title",
-          sortOrder: "asc",
-        });
-
-        if (playlist && playlist.id === id) {
-          const currentLength = playlist.items.length;
-          const newItems = result.tracks.map(
-            (track, index): PlaylistItem => ({
-              id: `${track.id}_${currentLength + index}`,
-              position: currentLength + index,
-              addedAt: now,
-              audio: track,
-            })
-          );
-
-          playlist = {
-            ...playlist,
-            items: [...playlist.items, ...newItems],
-          };
-        }
-
-        hasMore = result.hasMore;
-        page++;
-      }
-    } else if (id === SPECIAL_PLAYLIST_IDS.DOWNLOADED) {
-      const offlineTracks = await db.tracks.toArray();
-      const tracks = offlineTracks.map(
-        (track) =>
-          ({
-            id: track.id,
-            filename: track.filename,
-            metadata: {
-              title: track.metadata.title,
-              artist: track.metadata.artist,
-              album: track.metadata.album,
-              duration: track.metadata.duration,
-            },
-          }) as AudioFile
-      );
-
-      if (playlist && playlist.id === id) {
-        playlist = {
-          ...playlist,
-          items: tracks.map((track, index) => ({
-            id: `${track.id}_${index}`,
-            position: index,
-            addedAt: now,
-            audio: track,
-          })),
-        };
-      }
-    }
-  }
-
-  function handleTrackRemovedFromPlaylist(
-    trackId: string,
-    removedFromPlaylists: string[]
-  ) {
-    if (!playlist || !playlistId) return;
-    if (!removedFromPlaylists.includes(playlistId)) return;
-
-    playlist = {
-      ...playlist,
-      items: playlist.items.filter((item) => item.audio.id !== trackId),
-    };
-  }
-
-  function handlePlay() {
+  async function handlePlay() {
+    const playlist = await loadedPlaylist;
     if (!playlist || playlist.items.length === 0) return;
     const tracks = playlist.items.map((item) => item.audio);
     playerStore.setQueue(tracks, 0);
-  }
-
-  function handleShuffle() {
-    if (!playlist || playlist.items.length === 0) return;
-    const tracks = playlist.items.map((item) => item.audio);
-    playerStore.setQueue(shuffleArray(tracks), 0);
   }
 
   function handlePlaylistUpdated(updated: {
     name: string;
     coverImage?: string;
   }) {
-    if (!playlist) return;
-    playlist = { ...playlist, ...updated };
     updateNavigation(updated.name);
+    invalidateAll();
+  }
+
+  async function handleTrackRemovedFromPlaylist() {
+    await invalidateAll();
   }
 
   function handlePlaylistDeleted() {
@@ -236,86 +122,86 @@
 </script>
 
 <svelte:head>
-  <title>{playlist?.name ?? "Playlist"} | Cadence</title>
+  {#await loadedPlaylist then playlist}
+    <title>{playlist?.name ?? "Playlist"} | Cadence</title>
+  {/await}
 </svelte:head>
 
-<div class="flex flex-col max-w-4xl mx-auto w-full h-full border-x relative">
-  {#if loading}
-    <div class="flex items-center justify-center h-full">
-      <LoaderIcon class="animate-spin text-muted-foreground" size={24} />
-    </div>
-  {:else if playlist}
-    <div
-      style="--h: 10rem;"
-      class="z-20 max-w-4xl p-1.5 flex flex-col
-      {isScrolled ? 'fixed top-0 w-full' : 'relative'}"
-    >
-      <!-- <div class="_bg _blur absolute inset-0 -z-10"></div> -->
-      <div class="_bg _color absolute inset-0 -z-10"></div>
+<div class="flex flex-col mx-auto w-full h-full border-x relative">
+  {#await loadedPlaylist then playlist}
+    {#if playlist}
       <div
-        class="transition-all duration-150 {isScrolled ? 'pb-1.5' : 'p-1.5'}"
+        style="--h: {isScrolled ? 10 : 16}rem;"
+        class="z-20 p-1.5 md:p-2 flex flex-col absolute top-0 w-full gap-1.5 md:gap-2"
       >
-        <PlaylistHeader
-          {playlist}
-          {isScrolled}
-          isOffline={offline.isOffline}
-          isDownloading={offline.isDownloading}
-          isNonModifiable={!!isNonModifiable}
-          onPlay={handlePlay}
-          onShuffle={handleShuffle}
-          onEdit={() => editDialog.open()}
-          onDownload={() => playlist && offline.downloadPlaylist(playlist)}
-          onMakeOffline={() => playlist && offline.makeOffline(playlist)}
-          onRemoveOffline={() => offline.removeOffline()}
-        />
-      </div>
+        <div class="_bg _blur absolute inset-0 -z-10"></div>
+        <div class="_bg _color absolute inset-0 -z-10"></div>
+        {#await isNonModifiable then nonModifiable}
+          <PlaylistHeader
+            {playlist}
+            {isScrolled}
+            isOffline={offline.isOffline}
+            isDownloading={offline.isDownloading}
+            isNonModifiable={!!nonModifiable}
+            onPlay={handlePlay}
+            onEdit={() => editDialog.open()}
+            onDownload={() => playlist && offline.downloadPlaylist(playlist)}
+            onMakeOffline={() => playlist && offline.makeOffline(playlist)}
+            onRemoveOffline={() => offline.removeOffline()}
+          />
+        {/await}
 
-      <div
-        class="transition-all duration-150
-        {isScrolled ? '' : 'p-1.5'}"
-      >
         <PlaylistSearch bind:searchQuery />
       </div>
-    </div>
 
-    <VirtualizedPlaylistTracks
-      items={filteredTracks}
-      {hasAddButton}
-      {isScrolled}
-      onAddTracks={() => addTracksDialog.open()}
-      onTrackRemovedFromPlaylist={handleTrackRemovedFromPlaylist}
-      onScroll={(scrollTop) => {
-        if (isScrolled && scrollTop < 154) {
-          isScrolled = false;
-        } else if (!isScrolled && scrollTop > (isMobile ? 245 : 273)) {
-          isScrolled = true;
-        }
-      }}
-    />
-  {:else}
+      {#await filteredTracks then tracks}
+        {#await hasAddButton then showAddButton}
+          <VirtualizedPlaylistTracks
+            items={tracks}
+            hasAddButton={showAddButton}
+            onAddTracks={() => addTracksDialog.open()}
+            onTrackRemovedFromPlaylist={handleTrackRemovedFromPlaylist}
+            onScroll={(scrollTop) => {
+              if (isScrolled && scrollTop < 154) {
+                isScrolled = false;
+              } else if (!isScrolled && scrollTop > (isMobile ? 245 : 273)) {
+                isScrolled = true;
+              }
+            }}
+          />
+        {/await}
+      {/await}
+    {:else}
+      <div class="flex items-center justify-center h-full">
+        <p class="text-muted-foreground">Playlist not found</p>
+      </div>
+    {/if}
+  {:catch error}
     <div class="flex items-center justify-center h-full">
-      <p class="text-muted-foreground">Playlist not found</p>
+      <p class="text-muted-foreground">{error.message}</p>
     </div>
-  {/if}
+  {/await}
 </div>
 
-{#if playlist && playlistId && !isNonModifiable}
-  <AddTracksDialog
-    open={addTracksDialog.isOpen}
-    onOpenChange={(open) => !open && addTracksDialog.close()}
-    {playlistId}
-    {existingTrackIds}
-    onTracksAdded={loadPlaylist}
-  />
+{#await Promise.all( [loadedPlaylist, isNonModifiable, existingTrackIds] ) then [playlist, nonModifiable, trackIds]}
+  {#if playlist && playlistId && !nonModifiable}
+    <AddTracksDialog
+      open={addTracksDialog.isOpen}
+      onOpenChange={(open) => !open && addTracksDialog.close()}
+      {playlistId}
+      existingTrackIds={trackIds}
+      onTracksAdded={() => invalidateAll()}
+    />
 
-  <EditPlaylistDialog
-    open={editDialog.isOpen}
-    onOpenChange={(open) => !open && editDialog.close()}
-    {playlist}
-    onUpdated={handlePlaylistUpdated}
-    onDeleted={handlePlaylistDeleted}
-  />
-{/if}
+    <EditPlaylistDialog
+      open={editDialog.isOpen}
+      onOpenChange={(open) => !open && editDialog.close()}
+      {playlist}
+      onUpdated={handlePlaylistUpdated}
+      onDeleted={handlePlaylistDeleted}
+    />
+  {/if}
+{/await}
 
 <style>
   ._bg {
@@ -345,10 +231,10 @@
     }
   }
 
-  /* ._blur {
+  ._blur {
     &::before,
     &::after {
       backdrop-filter: blur(1rem) saturate(120%) contrast(120%) brightness(120%);
     }
-  } */
+  }
 </style>

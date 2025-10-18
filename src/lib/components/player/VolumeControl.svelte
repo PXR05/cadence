@@ -33,7 +33,7 @@
   </Button>
 
   <div
-    class="rounded-lg overflow-clip group relative w-24 h-2 flex items-center"
+    class="rounded-lg overflow-clip group relative w-24 h-1.5 flex items-center"
   >
     <div class="absolute inset-0 bg-secondary/20 pointer-events-none">
       <div

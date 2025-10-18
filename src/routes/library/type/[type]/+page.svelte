@@ -1,86 +1,70 @@
 <script lang="ts">
-  import { page } from "$app/state";
   import { onMount } from "svelte";
-  import { getUserPlaylists } from "$lib/api";
   import { navigationStore } from "$lib/stores/navigation.svelte";
   import { PlaylistCard } from "$lib/components";
-  import { LoaderIcon } from "@lucide/svelte";
-  import { getSpecialPlaylists } from "$lib/utils/playlist";
+  import { Button } from "$lib/components/ui/button/index.js";
+  import * as Breadcrumb from "$lib/components/ui/breadcrumb";
+  import { ArrowLeftIcon } from "@lucide/svelte";
 
-  const type = $derived(page.params.type as "user" | "artist" | "album");
+  let { data } = $props();
 
-  let playlists = $state<Playlist[]>([]);
-  let specialPlaylists = $state<Playlist[]>([]);
-  let loading = $state(true);
+  const type = $derived(data.type);
 
-  const displayPlaylists = $derived(
-    type === "user" ? [...specialPlaylists, ...playlists] : playlists
-  );
-
-  const title = $derived.by(() => {
-    switch (type) {
-      case "user":
-        return "Your Playlists";
-      case "artist":
-        return "Artists";
-      case "album":
-        return "Albums";
-      default:
-        return "Playlists";
-    }
+  const displayPlaylists = $derived.by(async () => {
+    const [specials, regular] = await Promise.all([
+      data.specialPlaylists,
+      data.playlists,
+    ]);
+    return type === "user" ? [...specials, ...regular] : regular;
   });
 
-  onMount(() => loadPlaylists());
-
-  async function loadPlaylists() {
-    loading = true;
-    try {
-      if (type === "user") {
-        const [regularPlaylists, special] = await Promise.all([
-          getUserPlaylists(type),
-          getSpecialPlaylists(),
-        ]);
-        playlists = regularPlaylists.playlists;
-        specialPlaylists = special;
-      } else {
-        const response = await getUserPlaylists(type);
-        playlists = response.playlists;
-      }
-
-      navigationStore.setNavigation(
-        [{ label: "Library", path: "/library" }],
-        title
-      );
-    } catch (error) {
-      console.error("Failed to load playlists:", error);
-    } finally {
-      loading = false;
-    }
-  }
+  onMount(() => {
+    navigationStore.setNavigation(
+      [{ label: "Library", path: "/library" }],
+      type
+    );
+  });
 </script>
 
 <svelte:head>
-  <title>{title} | Cadence</title>
+  <title>{type.charAt(0).toUpperCase() + type.slice(1)} | Cadence</title>
 </svelte:head>
 
-<div class="flex flex-col max-w-4xl mx-auto w-full h-full border-x">
-  {#if loading}
+<div class="absolute top-0 w-full p-1.5 md:p-2 z-50">
+  <div
+    class="flex-1 flex items-center flex-row gap-1.5 md:gap-2 bg-muted/50 rounded-xl p-1.5 md:p-2 backdrop-blur-md border border-input"
+  >
+    <Button
+      variant="ghost"
+      size="icon"
+      class="size-10"
+      onclick={() => history.back()}
+    >
+      <ArrowLeftIcon />
+    </Button>
+
+    <h1 class="flex items-center gap-2 font-semibold truncate text-2xl">
+      {type.charAt(0).toUpperCase() + type.slice(1)}
+    </h1>
+  </div>
+</div>
+
+<div class="flex flex-col mx-auto w-full h-full border-x overflow-y-auto pt-15 md:pt-16.5">
+  {#await displayPlaylists then playlists}
+    {#if playlists.length === 0}
+      <div class="flex items-center justify-center h-full">
+        <p class="text-muted-foreground">No playlists found</p>
+      </div>
+    {:else}
+      <div class="p-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+        {#each playlists as playlist (playlist.id)}
+          <PlaylistCard {playlist} size="large" />
+        {/each}
+      </div>
+    {/if}
+  {:catch error}
     <div class="flex items-center justify-center h-full">
-      <LoaderIcon class="animate-spin text-muted-foreground" size={24} />
+      {error.message}
     </div>
-  {:else}
-    <div class="flex-1 overflow-y-auto">
-      {#if displayPlaylists.length === 0}
-        <div class="flex items-center justify-center h-full">
-          <p class="text-muted-foreground">No playlists found</p>
-        </div>
-      {:else}
-        <div class="p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {#each displayPlaylists as playlist (playlist.id)}
-            <PlaylistCard {playlist} size="large" />
-          {/each}
-        </div>
-      {/if}
-    </div>
-  {/if}
+  {/await}
 </div>

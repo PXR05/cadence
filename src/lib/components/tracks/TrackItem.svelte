@@ -77,47 +77,43 @@
     link.click();
     document.body.removeChild(link);
   }
-
-
 </script>
 
 <ContextMenu.Root>
-  <ContextMenu.Trigger>
-    <button
-      class="flex items-center gap-4 w-full hover:bg-muted/30 p-2 border"
-      class:bg-muted={isCurrentTrack}
-      onclick={handlePlay}
-    >
-      <div class="border rounded-md size-16 flex-shrink-0 overflow-hidden">
-        <img
-          loading="lazy"
-          src={getImageUrl(track.id)}
-          alt={track.id}
-          class="size-full object-cover"
-        />
-      </div>
-      <div class="flex flex-col text-left flex-1 min-w-0">
-        <div class="flex items-center gap-1.5">
-          <p
-            class="font-medium truncate {isCurrentTrack
-              ? 'text-primary'
-              : 'text-foreground'}"
-          >
-            {title}
-          </p>
-          {#if isOffline}
-            <CloudCheckIcon size={16} class="flex-shrink-0 text-primary" />
-          {/if}
-        </div>
+  <ContextMenu.Trigger
+    class="relative flex items-center gap-4 w-full hover:bg-muted/30 p-2 border 
+    {isCurrentTrack ? 'bg-muted/50' : ''}"
+    onclick={handlePlay}
+  >
+    <div class="border rounded-md size-16 flex-shrink-0 overflow-hidden">
+      <img
+        loading="lazy"
+        src={getImageUrl(track.id)}
+        alt={track.id}
+        class="size-full object-cover"
+      />
+    </div>
+    <div class="flex flex-col text-left flex-1 min-w-0">
+      <div class="flex items-center gap-1.5">
         <p
-          class="truncate text-sm {isCurrentTrack
-            ? 'text-primary/50'
-            : 'text-muted-foreground'}"
+          class="font-medium truncate {isCurrentTrack
+            ? 'text-primary'
+            : 'text-foreground'}"
         >
-          {artist}
+          {title}
         </p>
+        {#if isOffline}
+          <CloudCheckIcon size={16} class="flex-shrink-0 text-primary" />
+        {/if}
       </div>
-    </button>
+      <p
+        class="truncate text-sm {isCurrentTrack
+          ? 'text-primary/50'
+          : 'text-muted-foreground'}"
+      >
+        {artist}
+      </p>
+    </div>
   </ContextMenu.Trigger>
   <ContextMenu.Content>
     <ContextMenu.Item onclick={handlePlayNext}>

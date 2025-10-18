@@ -6,7 +6,6 @@
   interface Props {
     items: PlaylistItem[];
     hasAddButton?: boolean | null;
-    isScrolled?: boolean;
     onAddTracks?: () => void;
     onTrackRemovedFromPlaylist?: (
       trackId: string,
@@ -18,7 +17,6 @@
   let {
     items,
     hasAddButton = false,
-    isScrolled = false,
     onAddTracks,
     onTrackRemovedFromPlaylist,
     onScroll,
@@ -71,7 +69,6 @@
   });
 
   $effect(() => {
-    isScrolled;
     if (containerRef) {
       handleResize(containerRef);
       const resizeHandler = () => handleResize(containerRef);
@@ -89,23 +86,6 @@
 </script>
 
 <div class="overflow-y-auto transition-all" bind:this={containerRef}>
-  {#if showAddButton && onAddTracks}
-    <button
-      onclick={onAddTracks}
-      class="w-full flex items-center gap-4 p-2 border-b hover:bg-muted/50 transition-colors"
-    >
-      <div
-        class="size-16 border flex-shrink-0 bg-muted grid place-items-center rounded-md"
-      >
-        <PlusIcon size={24} class="text-muted-foreground" />
-      </div>
-      <div class="flex-1 text-left">
-        <p class="font-medium">Add Tracks</p>
-        <p class="text-sm text-muted-foreground">Add tracks to this playlist</p>
-      </div>
-    </button>
-  {/if}
-
   {#if items.length === 0}
     <div class="h-24"></div>
   {:else}
@@ -115,12 +95,29 @@
     >
       <div
         style="
-        position: absolute; 
-        top: {range.start * ROW_HEIGHT +
-          (isScrolled ? (isMobile ? 245 : 273) : 0)}px; 
-        left: 0; 
-        right: 0;"
+    position: absolute; 
+    top: {range.start * ROW_HEIGHT + (isMobile ? 227 + 6 : 255 + 6)}px; 
+    left: 0; 
+    right: 0;"
       >
+        {#if showAddButton && onAddTracks}
+          <button
+            onclick={onAddTracks}
+            class="w-full flex items-center gap-4 p-2 border-b hover:bg-muted/50 transition-colors"
+          >
+            <div
+              class="size-16 border flex-shrink-0 bg-muted grid place-items-center rounded-md"
+            >
+              <PlusIcon size={24} class="text-muted-foreground" />
+            </div>
+            <div class="flex-1 text-left">
+              <p class="font-medium">Add Tracks</p>
+              <p class="text-sm text-muted-foreground">
+                Add tracks to this playlist
+              </p>
+            </div>
+          </button>
+        {/if}
         {#each items.slice(range.start, range.end) as item (item.id)}
           <TrackItem
             playlist={items}

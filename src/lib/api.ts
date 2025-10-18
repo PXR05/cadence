@@ -347,10 +347,6 @@ export interface DeletePlaylistResponse {
   message: string;
 }
 
-export interface ListPlaylistsResponse {
-  playlists: Playlist[];
-}
-
 export interface GetPlaylistResponse {
   playlist: PlaylistDetail;
 }
@@ -389,7 +385,7 @@ export async function createPlaylist(
 export async function getUserPlaylists(
   type?: "user" | "artist" | "album" | "auto" | "youtube",
   limit?: number
-): Promise<ListPlaylistsResponse> {
+): Promise<Playlist[]> {
   const params = new URLSearchParams();
   if (type) params.append("type", type);
   if (limit) params.append("limit", limit.toString());
@@ -400,7 +396,9 @@ export async function getUserPlaylists(
   );
   if (!res.ok) throw new Error(`Failed to fetch playlists: ${res.statusText}`);
 
-  return (await res.json()) as ListPlaylistsResponse;
+  const data = (await res.json()) as { playlists: Playlist[] };
+
+  return data.playlists as Playlist[];
 }
 
 export async function getPlaylistById(

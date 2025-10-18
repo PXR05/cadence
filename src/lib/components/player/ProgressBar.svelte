@@ -2,7 +2,7 @@
   import { playerStore } from "$lib/stores/player.svelte";
   import { formatTime } from "$lib/utils/format";
 
-  const { height = 8, showTime } = $props<{
+  const { height = 6, showTime } = $props<{
     height?: number;
     showTime?: boolean;
   }>();

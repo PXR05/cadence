@@ -85,6 +85,11 @@
 
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
   const isTopRoute = $derived(page.url.pathname.split("/").length <= 2);
+  const isDownloading = $derived(downloadStore.isDownloading);
+
+  const navHeight = $derived(isMobile && isTopRoute ? 3.5 : 0);
+  const playerHeight = 5.5;
+  const downloadHeight = $derived(isDownloading ? 4.5 : 0);
 </script>
 
 <svelte:window onkeydown={(e) => handleKeyboardEvent(e)} />
@@ -96,7 +101,7 @@
 {:else}
   <div
     class="relative bg-background min-h-dvh flex flex-col"
-    style="--h: {isTopRoute && isMobile ? '14rem' : '10rem'}"
+    style="--h: {navHeight + playerHeight + downloadHeight + 1}rem;"
   >
     {#if !isMobile && isTopRoute}
       <div
@@ -104,21 +109,18 @@
           axis: "x",
           duration: 200,
         }}
-      class="fixed left-2 top-1/2 -translate-y-1/2 z-50">
+        class="fixed left-2 top-1/2 -translate-y-1/2 z-50"
+      >
         <NavBar orientation="vertical" size={48} />
       </div>
     {/if}
-    <div
-      class="overflow-auto transition-all duration-300 h-dvh"
-      class:md:h-dvh={!downloadStore.isDownloading}
-      class:md:h-[calc(100dvh-4.15rem)]={downloadStore.isDownloading}
-    >
+    <div class="overflow-auto h-dvh max-w-4xl w-full mx-auto">
       {@render children?.()}
     </div>
-    <GlobalDownloadProgress />
     <div class="flex flex-col gap-1.5 fixed bottom-0 left-0 right-0 z-50 p-1.5">
-      <!-- <div class="_bg _blur absolute inset-0 -z-10"></div> -->
+      <div class="_bg _blur absolute inset-0 -z-10"></div>
       <div class="_bg _color absolute inset-0 -z-10"></div>
+      <GlobalDownloadProgress />
       <PlayerBar />
       {#if isMobile && isTopRoute}
         <div

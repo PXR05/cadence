@@ -57,25 +57,25 @@
 
 {#if isInitialLoad}
   <div
-    class="max-w-4xl mx-auto w-full border-x h-full grid place-items-center p-8"
+    class="mx-auto w-full h-full grid place-items-center p-8"
   >
     <LoaderIcon class="animate-spin text-muted-foreground" />
   </div>
 {:else if error}
   <div
-    class="max-w-4xl mx-auto w-full border-x p-4 text-destructive text-center"
+    class="mx-auto w-full p-4 text-destructive text-center"
   >
     Error loading tracks: {error}
   </div>
 {:else if tracks.length === 0}
   <div
-    class="max-w-4xl mx-auto w-full border-x p-4 text-muted-foreground text-center"
+    class="mx-auto w-full p-4 text-muted-foreground text-center"
   >
     No audio files found.
   </div>
 {:else}
   <div
-    class="max-w-4xl mx-auto w-full border h-dvh overflow-y-auto"
+    class="mx-auto w-full border h-dvh overflow-y-auto"
     bind:this={containerRef}
   >
     <div

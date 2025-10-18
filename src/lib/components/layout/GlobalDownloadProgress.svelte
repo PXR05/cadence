@@ -2,11 +2,11 @@
   import { downloadStore } from "$lib/stores/download.svelte";
   import { XIcon } from "@lucide/svelte";
   import * as AlertDialog from "$lib/components/ui/alert-dialog";
-  import { Button } from "$lib/components/ui/button";
+  import { Button } from "../ui/button";
 
   const progress = $derived(downloadStore.progress);
   const percentage = $derived(
-    progress ? Math.round((progress.current / progress.total) * 100) : 0,
+    progress ? Math.round((progress.current / progress.total) * 100) : 0
   );
 
   let showCancelDialog = $state(false);
@@ -22,10 +22,12 @@
 </script>
 
 {#if progress}
-  <div class="border-b bg-muted/50 relative">
-    <div class="flex items-center justify-between p-3 gap-4">
+  <div
+    class="border rounded-xl overflow-clip border-input bg-muted/50 backdrop-blur-md"
+  >
+    <div class="flex items-center justify-between p-3 gap-2">
       <div class="flex-1 min-w-0">
-        <div class="flex items-center justify-between mb-1.5">
+        <div class="flex items-center justify-between mb-1">
           <p class="text-sm font-medium truncate">
             {progress.type === "offline" ? "Saving offline" : "Downloading"}: {progress.playlistName}
           </p>
@@ -33,25 +35,22 @@
             {progress.current} / {progress.total}
           </p>
         </div>
-        <div class="flex items-center gap-3">
-          <div class="flex-1 bg-muted border overflow-hidden h-2 rounded-sm">
-            <div
-              class="h-full bg-primary transition-all duration-300"
-              style="width: {percentage}%"
-            ></div>
-          </div>
-          <span class="text-xs text-muted-foreground tabular-nums min-w-[3ch]">
-            {percentage}%
-          </span>
+        <div class="w-full bg-muted border overflow-hidden h-1.5 rounded-sm">
+          <div
+            class="h-full bg-primary transition-all duration-300"
+            style="width: {percentage}%"
+          ></div>
         </div>
       </div>
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         onclick={handleCancelClick}
-        class="p-1.5 hover:bg-muted rounded transition-colors shrink-0"
+        class="size-7 transition-colors shrink-0"
         title="Cancel download"
       >
         <XIcon size={16} class="text-muted-foreground" />
-      </button>
+      </Button>
     </div>
   </div>
 {/if}
