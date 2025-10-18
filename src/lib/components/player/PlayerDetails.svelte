@@ -5,6 +5,7 @@
   import { ProgressBar, PlaybackControls } from ".";
   import * as Carousel from "../ui/carousel";
   import type { CarouselAPI } from "../ui/carousel/context";
+  import { Button } from "../ui/button";
 
   interface Props {
     track: AudioFile;
@@ -37,7 +38,7 @@
               loading="lazy"
               src={getImageUrl(queueTrack.id)}
               alt={queueTrack.id}
-              class="h-[40dvh] aspect-square object-cover mx-auto"
+              class="h-[min(42.5dvh,90dvw)] aspect-square object-cover mx-auto rounded-2xl bg-muted"
             />
           </Carousel.Item>
         {/each}
@@ -52,17 +53,20 @@
     </div>
 
     <div class="space-y-2">
-      <ProgressBar />
+      <ProgressBar height={12} showTime />
     </div>
 
     <PlaybackControls variant="large" />
   </div>
 
-  <button
-    onclick={onQueueOpen}
-    class="w-full py-3 px-4 bg-muted hover:bg-muted/80 transition-colors flex items-center justify-center gap-2"
-  >
-    <ListMusicIcon size={20} />
-    <span>Open Queue</span>
-  </button>
+  <div class="p-4">
+    <Button
+      variant="outline"
+      onclick={onQueueOpen}
+      class="w-full py-3 px-4 transition-colors flex items-center justify-center gap-2"
+    >
+      <ListMusicIcon size={20} />
+      <span>Open Queue</span>
+    </Button>
+  </div>
 </div>

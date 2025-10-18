@@ -17,6 +17,7 @@
     PlaylistHeader,
     VirtualizedPlaylistTracks,
   } from "$lib/components";
+  import PlaylistSearch from "$lib/components/playlists/PlaylistSearch.svelte";
   import { LoaderIcon } from "@lucide/svelte";
   import { db } from "$lib/db/offline";
   import {
@@ -24,36 +25,38 @@
     getSpecialPlaylist,
     SPECIAL_PLAYLIST_IDS,
   } from "$lib/utils/playlist";
+  import { innerWidth } from "svelte/reactivity/window";
 
   const playlistId = $derived(page.params.id);
 
   let playlist = $state<PlaylistDetail | null>(null);
   let loading = $state(true);
   let searchQuery = $state("");
+  let isScrolled = $state(false);
 
   const addTracksDialog = useDialogState("add-tracks");
   const editDialog = useDialogState("edit-playlist");
   const offline = usePlaylistOffline(() => playlistId);
 
   const existingTrackIds = $derived(
-    new SvelteSet(playlist?.items.map((item) => item.audio.id) ?? []),
+    new SvelteSet(playlist?.items.map((item) => item.audio.id) ?? [])
   );
 
   const isNonModifiable = $derived(
     playlist &&
       (isSpecialPlaylist(playlist.id) ||
         isArtistPlaylist(playlist.id) ||
-        isAlbumPlaylist(playlist.id)),
+        isAlbumPlaylist(playlist.id))
   );
 
   const hasAddButton = $derived(
-    !searchQuery.trim() && playlist && !isNonModifiable,
+    !searchQuery.trim() && playlist && !isNonModifiable
   );
 
   const filteredTracks = $derived(
     searchQuery.trim()
       ? filterTracks(playlist?.items ?? [], searchQuery)
-      : (playlist?.items ?? []),
+      : (playlist?.items ?? [])
   );
 
   $effect(() => {
@@ -77,7 +80,7 @@
   function updateNavigation(playlistName: string) {
     navigationStore.setNavigation(
       [{ label: "Library", path: "/library" }],
-      getPlaylistDisplayName({ name: playlistName } as Playlist),
+      getPlaylistDisplayName({ name: playlistName } as Playlist)
     );
   }
 
@@ -149,7 +152,7 @@
               position: currentLength + index,
               addedAt: now,
               audio: track,
-            }),
+            })
           );
 
           playlist = {
@@ -174,7 +177,7 @@
               album: track.metadata.album,
               duration: track.metadata.duration,
             },
-          }) as AudioFile,
+          }) as AudioFile
       );
 
       if (playlist && playlist.id === id) {
@@ -193,7 +196,7 @@
 
   function handleTrackRemovedFromPlaylist(
     trackId: string,
-    removedFromPlaylists: string[],
+    removedFromPlaylists: string[]
   ) {
     if (!playlist || !playlistId) return;
     if (!removedFromPlaylists.includes(playlistId)) return;
@@ -228,37 +231,66 @@
   function handlePlaylistDeleted() {
     goto("/library", { replaceState: true });
   }
+
+  const isMobile = $derived((innerWidth.current ?? 0) <= 768);
 </script>
 
 <svelte:head>
   <title>{playlist?.name ?? "Playlist"} | Cadence</title>
 </svelte:head>
 
-<div class="flex flex-col max-w-4xl mx-auto w-full h-full border-x">
+<div class="flex flex-col max-w-4xl mx-auto w-full h-full border-x relative">
   {#if loading}
     <div class="flex items-center justify-center h-full">
       <LoaderIcon class="animate-spin text-muted-foreground" size={24} />
     </div>
   {:else if playlist}
-    <PlaylistHeader
-      {playlist}
-      isOffline={offline.isOffline}
-      isDownloading={offline.isDownloading}
-      isNonModifiable={!!isNonModifiable}
-      onPlay={handlePlay}
-      onShuffle={handleShuffle}
-      onEdit={() => editDialog.open()}
-      onDownload={() => playlist && offline.downloadPlaylist(playlist)}
-      onMakeOffline={() => playlist && offline.makeOffline(playlist)}
-      onRemoveOffline={() => offline.removeOffline()}
-    />
+    <div
+      style="--h: 10rem;"
+      class="z-20 max-w-4xl p-1.5 flex flex-col
+      {isScrolled ? 'fixed top-0 w-full' : 'relative'}"
+    >
+      <!-- <div class="_bg _blur absolute inset-0 -z-10"></div> -->
+      <div class="_bg _color absolute inset-0 -z-10"></div>
+      <div
+        class="transition-all duration-150 {isScrolled ? 'pb-1.5' : 'p-1.5'}"
+      >
+        <PlaylistHeader
+          {playlist}
+          {isScrolled}
+          isOffline={offline.isOffline}
+          isDownloading={offline.isDownloading}
+          isNonModifiable={!!isNonModifiable}
+          onPlay={handlePlay}
+          onShuffle={handleShuffle}
+          onEdit={() => editDialog.open()}
+          onDownload={() => playlist && offline.downloadPlaylist(playlist)}
+          onMakeOffline={() => playlist && offline.makeOffline(playlist)}
+          onRemoveOffline={() => offline.removeOffline()}
+        />
+      </div>
+
+      <div
+        class="transition-all duration-150
+        {isScrolled ? '' : 'p-1.5'}"
+      >
+        <PlaylistSearch bind:searchQuery />
+      </div>
+    </div>
 
     <VirtualizedPlaylistTracks
       items={filteredTracks}
-      bind:searchQuery
       {hasAddButton}
+      {isScrolled}
       onAddTracks={() => addTracksDialog.open()}
       onTrackRemovedFromPlaylist={handleTrackRemovedFromPlaylist}
+      onScroll={(scrollTop) => {
+        if (isScrolled && scrollTop < 154) {
+          isScrolled = false;
+        } else if (!isScrolled && scrollTop > (isMobile ? 245 : 273)) {
+          isScrolled = true;
+        }
+      }}
     />
   {:else}
     <div class="flex items-center justify-center h-full">
@@ -284,3 +316,39 @@
     onDeleted={handlePlaylistDeleted}
   />
 {/if}
+
+<style>
+  ._bg {
+    &::before,
+    &::after {
+      pointer-events: none;
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: -1;
+      mask: linear-gradient(to top, transparent, black);
+    }
+    &::before {
+      height: var(--h);
+    }
+    &::after {
+      height: calc(var(--h) - 1rem);
+    }
+  }
+
+  ._color {
+    &::before,
+    &::after {
+      background-color: hsl(from var(--background) h s l / 0.8);
+    }
+  }
+
+  /* ._blur {
+    &::before,
+    &::after {
+      backdrop-filter: blur(1rem) saturate(120%) contrast(120%) brightness(120%);
+    }
+  } */
+</style>

@@ -1,31 +1,33 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import TrackItem from "$lib/components/tracks/TrackItem.svelte";
-  import { SearchIcon, PlusIcon } from "@lucide/svelte";
+  import { PlusIcon } from "@lucide/svelte";
+  import { innerWidth } from "svelte/reactivity/window";
 
   interface Props {
     items: PlaylistItem[];
-    searchQuery?: string;
     hasAddButton?: boolean | null;
+    isScrolled?: boolean;
     onAddTracks?: () => void;
     onTrackRemovedFromPlaylist?: (
       trackId: string,
       removedFromPlaylists: string[]
     ) => void;
+    onScroll?: (scrollTop: number) => void;
   }
 
   let {
     items,
-    searchQuery = $bindable(""),
     hasAddButton = false,
+    isScrolled = false,
     onAddTracks,
     onTrackRemovedFromPlaylist,
+    onScroll,
   }: Props = $props();
 
   const showAddButton = $derived(hasAddButton ?? false);
 
-  const ROW_HEIGHT = 88;
-  const ADD_BUTTON_HEIGHT = 88;
+  const ROW_HEIGHT = 81;
+  const ADD_BUTTON_HEIGHT = 81;
   const OVERSCAN = 10;
 
   let pagination = $state({
@@ -57,10 +59,11 @@
       scrollTop = Math.max(0, scrollTop - ADD_BUTTON_HEIGHT);
     }
     pagination.offset = Math.floor(scrollTop / ROW_HEIGHT);
+    onScroll?.(ref.scrollTop);
   }
 
   $effect(() => {
-    searchQuery;
+    items;
     pagination.offset = 0;
     if (containerRef) {
       containerRef.scrollTop = 0;
@@ -68,6 +71,7 @@
   });
 
   $effect(() => {
+    isScrolled;
     if (containerRef) {
       handleResize(containerRef);
       const resizeHandler = () => handleResize(containerRef);
@@ -80,26 +84,18 @@
       };
     }
   });
+
+  const isMobile = $derived((innerWidth.current ?? 0) <= 768);
 </script>
 
-<div class="flex items-center border-b">
-  <SearchIcon size={16} class="ml-3 text-muted-foreground flex-shrink-0" />
-  <input
-    type="text"
-    bind:value={searchQuery}
-    placeholder="Search in playlist..."
-    class="flex-1 bg-transparent p-3 outline-none font-mono placeholder:text-muted-foreground"
-  />
-</div>
-
-<div class="flex-1 overflow-y-auto" bind:this={containerRef}>
+<div class="overflow-y-auto transition-all" bind:this={containerRef}>
   {#if showAddButton && onAddTracks}
     <button
       onclick={onAddTracks}
-      class="w-full flex items-center gap-4 p-3 border-b hover:bg-muted/50 transition-colors"
+      class="w-full flex items-center gap-4 p-2 border-b hover:bg-muted/50 transition-colors"
     >
       <div
-        class="size-16 border flex-shrink-0 bg-muted grid place-items-center"
+        class="size-16 border flex-shrink-0 bg-muted grid place-items-center rounded-md"
       >
         <PlusIcon size={24} class="text-muted-foreground" />
       </div>
@@ -111,26 +107,19 @@
   {/if}
 
   {#if items.length === 0}
-    <div
-      class={searchQuery.trim()
-        ? "flex flex-col items-center justify-center p-8 h-full"
-        : "h-24"}
-    >
-      {#if searchQuery.trim()}
-        <p class="text-muted-foreground mb-2">No tracks found</p>
-        <p class="text-sm text-muted-foreground">
-          Try a different search query
-        </p>
-      {/if}
-    </div>
+    <div class="h-24"></div>
   {:else}
     <div
       style="height: {items.length *
         ROW_HEIGHT}px; position: relative; width: 100%;"
     >
       <div
-        style="position: absolute; top: {range.start *
-          ROW_HEIGHT}px; left: 0; right: 0;"
+        style="
+        position: absolute; 
+        top: {range.start * ROW_HEIGHT +
+          (isScrolled ? (isMobile ? 245 : 273) : 0)}px; 
+        left: 0; 
+        right: 0;"
       >
         {#each items.slice(range.start, range.end) as item (item.id)}
           <TrackItem
@@ -142,6 +131,6 @@
         {/each}
       </div>
     </div>
-    <div class="h-24"></div>
+    <div class="h-[50dvh]"></div>
   {/if}
 </div>

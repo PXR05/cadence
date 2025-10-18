@@ -3,6 +3,7 @@
   import * as Dialog from "$lib/components/ui/dialog";
   import { formatTime } from "$lib/utils/format";
   import { ChevronDown, PlayIcon } from "@lucide/svelte";
+  import { Button } from "../ui/button";
 
   interface Props {
     open: boolean;
@@ -52,14 +53,19 @@
           {@const trackArtist = track.metadata?.artist ?? "Unknown Artist"}
           {@const trackDuration = track.metadata?.duration ?? 0}
 
-          <button
+          <Button
+            variant="ghost"
             onclick={() => handleTrackClick(index)}
-            class="w-full flex items-center gap-3 p-2 hover:bg-muted/50 transition-colors text-left group"
-            class:bg-muted={isCurrentTrack}
+            class="h-auto !transition-none w-full flex items-center gap-3 p-2 text-left group 
+            {isCurrentTrack ? 'bg-muted' : ''}"
           >
             <div class="w-8 text-center flex-shrink-0">
               {#if isCurrentTrack && playerStore.isPlaying}
-                <PlayIcon size={16} class="inline-block text-primary" />
+                <PlayIcon
+                  size={16}
+                  fill="currentColor"
+                  class="text-primary m-auto"
+                />
               {:else}
                 <span class="text-sm text-muted-foreground">{index + 1}</span>
               {/if}
@@ -67,12 +73,17 @@
 
             <div class="flex-1 min-w-0">
               <p
-                class="font-medium truncate text-sm"
-                class:text-primary={isCurrentTrack}
+                class="font-medium truncate text-sm {isCurrentTrack
+                  ? 'text-primary'
+                  : 'text-foreground'}"
               >
                 {trackTitle}
               </p>
-              <p class="text-xs truncate text-muted-foreground">
+              <p
+                class="text-xs truncate {isCurrentTrack
+                  ? 'text-primary/50'
+                  : 'text-muted-foreground'}"
+              >
                 {trackArtist}
               </p>
             </div>
@@ -82,7 +93,7 @@
                 {formatTime(trackDuration)}
               </span>
             {/if}
-          </button>
+          </Button>
         {/each}
       {/if}
     </div>

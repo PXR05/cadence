@@ -2,9 +2,11 @@
   import { onMount } from "svelte";
   import { page } from "$app/state";
   import { goto } from "$app/navigation";
-  import { LoaderIcon, SearchIcon } from "@lucide/svelte";
+  import { LoaderIcon, SearchIcon, XIcon } from "@lucide/svelte";
   import TrackItem from "./TrackItem.svelte";
   import { searchTracks } from "$lib/api";
+  import { Input } from "../ui/input";
+  import { Button } from "../ui/button";
 
   const LIMIT = 10;
   const DEBOUNCE_MS = 300;
@@ -98,41 +100,49 @@
       if (searchDebounce) clearTimeout(searchDebounce);
     };
   });
+
+  const isEmpty = $derived(searchQuery.trim().length === 0);
 </script>
 
-<div class="flex flex-col max-w-4xl mx-auto w-full h-full">
-  <form onsubmit={handleSubmit} class="relative border border-t-0">
-    <div class="flex items-center">
-      <SearchIcon size={20} class="ml-3 text-muted-foreground flex-shrink-0" />
-      <input
-        bind:this={searchInput}
+<div class="flex flex-col max-w-4xl mx-auto w-full h-full border-x overflow-auto">
+  <form onsubmit={handleSubmit} style="--h: 6rem;" class="p-1 md:p-2 sticky top-0 z-10">
+     <!-- <div class="_bg _blur absolute inset-0 -z-10"></div> -->
+    <div class="_bg _color absolute inset-0 -z-10"></div>
+    <div
+      class="flex items-center relative bg-muted/50 backdrop-blur-md rounded-xl overflow-clip border border-input"
+    >
+      <SearchIcon
+        size={16}
+        class="absolute transition-all text-muted-foreground flex-shrink-0 
+      {!isEmpty ? 'left-0 opacity-0' : 'left-3'}"
+      />
+      <Input
+        bind:ref={searchInput}
         bind:value={searchQuery}
         oninput={handleInput}
         type="text"
         placeholder="search..."
-        class="flex-1 bg-transparent p-3 outline-none font-mono placeholder:text-muted-foreground"
+        class="flex-1 text-base h-auto !bg-transparent border-0 transition-all p-3 outline-none font-mono placeholder:text-muted-foreground 
+        {!isEmpty ? '' : 'pl-9'}"
       />
-      {#if searchQuery}
+      <Button
+        variant="ghost"
+        size="icon"
+        class="text-muted-foreground absolute 
+        {isEmpty ? '-right-2 opacity-0' : 'right-1'}"
+        onclick={clearSearch}
+        disabled={isEmpty || isDebouncing || loading}
+      >
         {#if isDebouncing || loading}
-          <div class="px-3">
-            <LoaderIcon class="animate-spin text-muted-foreground" size={16} />
-          </div>
-        {:else}
-          <button
-            type="button"
-            onclick={clearSearch}
-            class="px-3 text-muted-foreground hover:text-foreground"
-          >
-            ✕
-          </button>
+          <LoaderIcon class="animate-spin" size={16} />
+        {:else if !isEmpty}
+          <XIcon size={16} />
         {/if}
-      {/if}
+      </Button>
     </div>
   </form>
 
-  <div
-    class="flex-1 border-x overflow-y-auto"
-  >
+  <div class="flex-1">
     {#if loading}
       <div class="flex flex-col items-center justify-center flex-1 p-8 h-full">
         <LoaderIcon class="animate-spin text-muted-foreground" />
@@ -142,6 +152,7 @@
         {#each tracks as track (track.id)}
           <TrackItem {track} />
         {/each}
+        <div class="h-[50dvh]"></div>
       {:else}
         <div class="h-full flex flex-col items-center justify-center p-8">
           <p class="text-muted-foreground mb-2">No results found</p>
@@ -151,7 +162,7 @@
         </div>
       {/if}
     {:else}
-      <div class="flex flex-col items-center justify-center flex-1 p-8 h-full">
+      <div class="flex flex-col items-center justify-center flex-1 p-8 pb-48 md:pb-36 h-full">
         <SearchIcon size={48} class="text-muted-foreground mb-4" />
         <p class="text-muted-foreground text-center">
           Search by track title, artist, or album
@@ -160,3 +171,40 @@
     {/if}
   </div>
 </div>
+
+
+<style>
+  ._bg {
+    &::before,
+    &::after {
+      pointer-events: none;
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: -1;
+      mask: linear-gradient(to top, transparent, black);
+    }
+    &::before {
+      height: var(--h);
+    }
+    &::after {
+      height: calc(var(--h) - 1rem);
+    }
+  }
+
+  ._color {
+    &::before,
+    &::after {
+      background-color: hsl(from var(--background) h s l / 0.8);
+    }
+  }
+
+  /* ._blur {
+    &::before,
+    &::after {
+      backdrop-filter: blur(1rem) saturate(120%) contrast(120%) brightness(120%);
+    }
+  } */
+</style>

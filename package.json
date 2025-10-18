@@ -32,9 +32,11 @@
 		"vite": "^7.1.9"
 	},
 	"dependencies": {
+		"color.js": "^1.2.0",
 		"dexie": "^4.2.1",
 		"dotenv": "^17.2.3",
 		"jszip": "^3.10.1",
+		"mode-watcher": "^1.1.0",
 		"valibot": "^1.1.0"
 	}
 }

@@ -77,7 +77,7 @@
         <div class="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4">
           <button
             onclick={() => (createDialogOpen = true)}
-            class="aspect-square w-40 flex-shrink-0 border hover:bg-muted/50 transition-colors grid place-items-center"
+            class="rounded-lg aspect-square w-40 flex-shrink-0 border hover:bg-muted/50 transition-colors grid place-items-center"
           >
             <PlusIcon
               size={48}

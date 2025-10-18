@@ -1,3 +1,4 @@
+import { prominent } from "color.js";
 import { BASE_URL, PLAYLIST_URL } from "$lib/api";
 import type { CarouselAPI } from "$lib/components/ui/carousel/context";
 import { createLocalStorageState } from "./localStorage.svelte";
@@ -10,6 +11,7 @@ export const getPlaylistImageUrl = (id: string) =>
 
 interface PersistedPlayerState {
   currentTrack: AudioFile | null;
+  trackColor: string;
   trackQueue: AudioFile[];
   queueIndex: number;
   isMuted: boolean;
@@ -31,6 +33,7 @@ class PlayerState {
     "cadence.player_state",
     {
       currentTrack: null,
+      trackColor: "",
       trackQueue: [],
       queueIndex: 0,
       isMuted: false,
@@ -47,6 +50,10 @@ class PlayerState {
       ...this.persistedState.value,
       currentTrack: value,
     };
+  }
+
+  get trackColor() {
+    return this.persistedState.value.trackColor;
   }
 
   get trackQueue() {
@@ -224,6 +231,8 @@ class PlayerState {
         this.playNext()
       );
     }
+
+    await this.loadTrackColor(track);
   }
 
   async play(track?: AudioFile) {
@@ -342,6 +351,27 @@ class PlayerState {
     for (const { api } of this.carousels.values()) {
       api.scrollTo(index, jump);
     }
+  }
+
+  async loadTrackColor(track: AudioFile) {
+    const color = await prominent(getImageUrl(track.id), {
+      amount: 1,
+    });
+
+    const hex = (color as number[])
+      .map((c) =>
+        Math.min(c + 80, 255)
+          .toString(16)
+          .padStart(2, "0")
+      )
+      .join("");
+
+    // document.body.style.setProperty("--primary", `#${hex}`);
+
+    this.persistedState.value = {
+      ...this.persistedState.value,
+      trackColor: hex,
+    };
   }
 }
 

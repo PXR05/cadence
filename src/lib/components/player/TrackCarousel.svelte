@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { playerStore } from "$lib/stores/player.svelte";
+  import { getImageUrl, playerStore } from "$lib/stores/player.svelte";
   import * as Carousel from "$lib/components/ui/carousel";
   import type { CarouselAPI } from "$lib/components/ui/carousel/context";
 
@@ -12,7 +12,7 @@
 </script>
 
 <Carousel.Root
-  class="w-[calc(100dvw-3rem)] md:w-full self-center"
+  class="w-[calc(100dvw-5rem)] md:w-full self-center"
   opts={{ loop: true }}
   setApi={(emblaApi) => setApi(emblaApi ?? null)}
 >
@@ -26,8 +26,16 @@
         <Carousel.Item>
           <button
             onclick={onTrackClick}
-            class="md:pointer-events-none flex items-center flex-1 min-w-0 gap-3 text-left w-full pl-3"
+            class="md:pointer-events-none flex items-center flex-1 min-w-0 gap-2 text-left w-full pl-2"
           >
+            <div class="rounded-md size-12 flex-shrink-0 overflow-hidden">
+              <img
+                loading="lazy"
+                src={getImageUrl(track.id)}
+                alt={track.id}
+                class="size-full object-cover"
+              />
+            </div>
             <div class="text-left flex-1 min-w-0">
               <p class="font-medium truncate">{trackTitle}</p>
               <p class="text-sm truncate text-muted-foreground">
@@ -38,9 +46,5 @@
         </Carousel.Item>
       {/each}
     </Carousel.Content>
-    <span
-      class="pointer-events-none absolute top-0 right-0 w-8 h-11 bg-gradient-to-r from-transparent to-muted"
-    >
-    </span>
   {/if}
 </Carousel.Root>

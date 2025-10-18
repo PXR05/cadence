@@ -6,6 +6,7 @@
     SkipBackIcon,
     SkipForwardIcon,
   } from "@lucide/svelte";
+  import { Button } from "../ui/button";
 
   interface Props {
     variant?: "compact" | "large";
@@ -14,8 +15,8 @@
   let { variant = "compact" }: Props = $props();
 
   const sizes = {
-    compact: { button: 8, primary: 10, icon: 18, primaryIcon: 22 },
-    large: { button: 12, primary: 16, icon: 24, primaryIcon: 32 },
+    compact: { button: 8, primary: 10, icon: 4, primaryIcon: 6 },
+    large: { button: 12, primary: 16, icon: 6, primaryIcon: 8 },
   };
 
   const size = $derived(sizes[variant]);
@@ -26,30 +27,24 @@
     ? 'justify-center'
     : ''} gap-{variant === 'large' ? '4' : '2'}"
 >
-  <button
+  <Button
+    variant="ghost"
     onclick={() => playerStore.playPrevious()}
-    class="size-{size.button} grid place-items-center hover:bg-{variant ===
-    'large'
-      ? 'muted'
-      : 'background/50'} transition-colors {variant === 'large'
-      ? ''
-      : 'disabled:opacity-30 disabled:cursor-not-allowed'}"
+    class="size-{size.button} grid place-items-center"
     aria-label="Previous track"
   >
     <SkipBackIcon
       absoluteStrokeWidth
       strokeWidth={2}
       fill="currentColor"
-      size={size.icon}
+      class="size-{size.icon}"
     />
-  </button>
+  </Button>
 
-  <button
+  <Button
+    variant="ghost"
     onclick={() => playerStore.togglePlayPause()}
-    class="size-{size.primary} grid place-items-center hover:bg-{variant ===
-    'large'
-      ? 'muted'
-      : 'background/50'} transition-colors {variant === 'large' ? '' : ''}"
+    class="size-{size.primary} grid place-items-center"
     aria-label={playerStore.isPlaying ? "Pause" : "Play"}
   >
     {#if playerStore.isPlaying}
@@ -57,33 +52,29 @@
         absoluteStrokeWidth
         strokeWidth={2}
         fill="currentColor"
-        size={size.primaryIcon}
+        class="size-{size.primaryIcon}"
       />
     {:else}
       <PlayIcon
         absoluteStrokeWidth
         strokeWidth={2}
         fill="currentColor"
-        size={size.primaryIcon}
+        class="size-{size.primaryIcon}"
       />
     {/if}
-  </button>
+  </Button>
 
-  <button
+  <Button
+    variant="ghost"
     onclick={() => playerStore.playNext()}
-    class="size-{size.button} grid place-items-center hover:bg-{variant ===
-    'large'
-      ? 'muted'
-      : 'background/50'} transition-colors {variant === 'large'
-      ? ''
-      : 'disabled:opacity-30 disabled:cursor-not-allowed'}"
+    class="size-{size.button} grid place-items-center"
     aria-label="Next track"
   >
     <SkipForwardIcon
       absoluteStrokeWidth
       strokeWidth={2}
       fill="currentColor"
-      size={size.icon}
+      class="size-{size.icon}"
     />
-  </button>
+  </Button>
 </div>

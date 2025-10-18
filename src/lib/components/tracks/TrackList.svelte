@@ -9,7 +9,7 @@
   const isLoadingMore = $derived(tracksStore.isLoadingMore);
   const error = $derived(tracksStore.error);
 
-  const ROW_HEIGHT = 88;
+  const ROW_HEIGHT = 81;
   const OVERSCAN = 10;
 
   let pagination = $state({
@@ -75,7 +75,7 @@
   </div>
 {:else}
   <div
-    class="max-w-4xl mx-auto w-full border-x h-full overflow-y-auto"
+    class="max-w-4xl mx-auto w-full border h-dvh overflow-y-auto"
     bind:this={containerRef}
   >
     <div
@@ -98,6 +98,8 @@
       >
         <LoaderIcon class="animate-spin text-muted-foreground" size={16} />
       </div>
+    {:else}
+      <div class="h-[50dvh]"></div>
     {/if}
   </div>
 {/if}

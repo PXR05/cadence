@@ -8,6 +8,7 @@
     DialogTitle,
   } from "$lib/components/ui/dialog";
   import { Button } from "$lib/components/ui/button";
+  import { Input } from "../ui/input";
 
   let { onAuthenticated } = $props<{
     onAuthenticated: () => void;
@@ -61,12 +62,12 @@
     <form onsubmit={handleSubmit} class="space-y-4">
       <div class="space-y-2">
         <label for="password" class="text-sm font-medium">Token</label>
-        <input
+        <Input
           id="token"
           type="password"
           bind:value={token}
           disabled={isProcessing}
-          class="w-full px-3 py-2 border bg-background"
+          class="w-full px-3 py-2"
           placeholder="Enter your token"
           autocomplete="current-password"
         />

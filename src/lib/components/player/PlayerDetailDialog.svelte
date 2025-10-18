@@ -1,9 +1,14 @@
 <script lang="ts">
-  import { getStreamUrl } from "$lib/stores/player.svelte";
+  import { getImageUrl, getStreamUrl } from "$lib/stores/player.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
   import * as Dialog from "$lib/components/ui/dialog";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
-  import { ChevronDown, DownloadIcon, EllipsisIcon, ListMusicIcon } from "@lucide/svelte";
+  import {
+    ChevronDown,
+    DownloadIcon,
+    EllipsisIcon,
+    ListMusicIcon,
+  } from "@lucide/svelte";
   import PlayerDetails from "./PlayerDetails.svelte";
   import { ManagePlaylistsDialog } from "../playlists";
 
@@ -35,7 +40,7 @@
 <Dialog.Root bind:open {onOpenChange}>
   <Dialog.Content
     showCloseButton={false}
-    class="md:max-w-2xl h-dvh md:max-h-[90vh] sm:max-w-dvw max-w-dvw flex flex-col p-0"
+    class="md:max-w-2xl h-dvh md:max-h-[90dvh] sm:max-w-dvw max-w-dvw flex flex-col p-0"
   >
     <div class="flex justify-between items-center p-6">
       <Dialog.Close class="opacity-70 transition-opacity hover:opacity-100">

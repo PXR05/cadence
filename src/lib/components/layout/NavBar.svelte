@@ -12,6 +12,16 @@
   import { navigationStore } from "$lib/stores/navigation.svelte";
   import { Button } from "$lib/components/ui/button";
   import * as Breadcrumb from "$lib/components/ui/breadcrumb";
+  import { slide } from "svelte/transition";
+  import { flip } from "svelte/animate";
+
+  const {
+    orientation = "horizontal",
+    size = 36,
+  }: {
+    orientation?: "vertical" | "horizontal";
+    size?: number;
+  } = $props();
 
   let isAdmin = $state(false);
 
@@ -33,6 +43,8 @@
 
   const isTopRoute = $derived(page.url.pathname.split("/").length <= 2);
 
+  const activeTabIndex = $derived(tabs.findIndex((tab) => isActive(tab.path)));
+
   function isActive(tabPath: string): boolean {
     if (tabPath === "/") {
       return page.url.pathname === "/";
@@ -52,29 +64,45 @@
 </script>
 
 {#if isTopRoute}
-  <nav class="bg-background md:border-y overflow-x-auto">
-    <div class="max-w-4xl mx-auto flex">
-      {#each tabs as tab, i}
-        {@const activeClass = isActive(tab.path)
-          ? "bg-muted text-foreground"
-          : "text-muted-foreground"}
-        <a
-          href={tab.path}
-          class="relative flex-1 py-3 md:py-2 hover:bg-muted/30 transition-colors border-r text-center flex gap-2 items-center justify-center
-      {activeClass}
-      {i === 0 ? 'border-l' : ''}"
+  <nav
+    class="overflow-clip max-w-4xl mx-auto flex rounded-xl border border-input bg-muted/50 backdrop-blur-md relative p-1.5 gap-1.5
+      {orientation === 'horizontal' ? 'flex-row w-full' : 'flex-col h-full'}"
+  >
+    {#if activeTabIndex >= 0}
+      <div
+        class="absolute top-1.5 bottom-1.5 rounded-lg bg-primary transition-all duration-500 pointer-events-none"
+        style="{orientation === 'horizontal'
+          ? `
+            left: calc(${activeTabIndex} * (100% - 0.25rem) / ${tabs.length} + 0.375rem); 
+            width: calc((100% - 0.75rem) / ${tabs.length} - 0.375rem);
+            `
+          : `
+            top: calc(${activeTabIndex} * (100% - 0.25rem) / ${tabs.length} + 0.375rem); 
+            height: calc((100% - 0.75rem) / ${tabs.length} - 0.375rem);
+            width: calc(100% - 0.75rem);
+            `}
+            transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);"
+      ></div>
+    {/if}
+
+    {#each tabs as tab (tab.path)}
+      {@const active = isActive(tab.path)}
+      <a
+        animate:flip={{ duration: 200 }}
+        href={tab.path}
+        class="relative flex-1 z-10 grid place-items-center"
+      >
+        <div
+          class="text-center flex gap-2 items-center justify-center p-2 rounded-lg transition-colors
+            {active
+            ? 'text-primary-foreground'
+            : 'text-muted-foreground hover:text-accent-foreground'}"
+          style="width: {size}px; height: {size}px;"
         >
-          <tab.icon
-            absoluteStrokeWidth
-            strokeWidth={1.5}
-            class="size-6 md:size-4"
-          />
-          <span class="capitalize max-md:hidden">
-            {tab.label}
-          </span>
-        </a>
-      {/each}
-    </div>
+          <tab.icon absoluteStrokeWidth strokeWidth={2} class="size-5 m-auto" />
+        </div>
+      </a>
+    {/each}
   </nav>
 {:else}
   <nav class="sticky top-0 z-10 bg-background border-y">

@@ -27,17 +27,16 @@
   const isYoutube = $derived(isYoutubePlaylist(playlist.id));
   const isArtist = $derived(isArtistPlaylist(playlist.id));
   const isAlbum = $derived(isAlbumPlaylist(playlist.id));
-
-  const cardClass = $derived(
-    size === "large"
-      ? "aspect-square border hover:bg-muted/50 transition-colors flex flex-col"
-      : "aspect-square w-40 flex-shrink-0 border hover:bg-muted/50 transition-colors flex flex-col"
-  );
 </script>
 
-<a href="/library/{playlist.id}" class={cardClass}>
+<a
+  href="/library/{playlist.id}"
+  class="relative rounded-lg overflow-clip aspect-square border hover:bg-muted/20 transition-colors flex flex-col
+  {size === 'large' ? '' : 'w-40 flex-shrink-0'}
+  "
+>
   <div class="h-full overflow-hidden relative grid place-items-center">
-    <div class="absolute inset-0 grid place-items-center">
+    <div class="absolute inset-0 grid place-items-center pb-10">
       {#if playlist.id === SPECIAL_PLAYLIST_IDS.ALL_SONGS}
         <LibraryIcon
           size={48}
@@ -91,12 +90,16 @@
       />
     {/if}
   </div>
-  <div class="py-1 px-2 bg-muted border-t">
-    <p class="text-sm font-medium truncate leading-tight">
-      {displayName}
-    </p>
-    <p class="text-xs text-muted-foreground leading-tight">
-      {playlist.itemCount ?? 0} tracks
-    </p>
+  <div class="absolute bottom-0 w-full z-10 p-1">
+    <div
+      class="py-1 px-2 bg-muted/80 dark:bg-muted/50 backdrop-blur-md border border-input/20 rounded-md"
+    >
+      <p class="text-sm font-medium truncate leading-tight">
+        {displayName}
+      </p>
+      <p class="text-xs text-muted-foreground leading-tight">
+        {playlist.itemCount ?? 0} tracks
+      </p>
+    </div>
   </div>
 </a>

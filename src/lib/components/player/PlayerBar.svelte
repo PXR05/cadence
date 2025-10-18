@@ -10,6 +10,7 @@
   import VolumeControl from "./VolumeControl.svelte";
   import { ListMusicIcon, PauseIcon, PlayIcon } from "@lucide/svelte";
   import { onDestroy } from "svelte";
+  import { Button } from "../ui/button";
 
   let audioEl: HTMLAudioElement | null = $state(null);
   const queueDialog = useDialogState("queue");
@@ -32,48 +33,64 @@
   }
 </script>
 
-<div class="select-none border-t">
-  <div
-    class="relative flex md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center max-md:justify-between py-2 min-h-16 bg-muted"
-  >
-    <TrackCarousel
-      onTrackClick={() => playerDetailDialog.open()}
-      setApi={(emblaApi) => setCarouselApi(emblaApi)}
-    />
+<div class="select-none">
+  <div class="border rounded-xl overflow-clip border-input bg-muted/50 backdrop-blur-md">
+    <div
+      class=" relative flex md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center max-md:justify-between py-2 min-h-16"
+    >
+      <TrackCarousel
+        onTrackClick={() => playerDetailDialog.open()}
+        setApi={(emblaApi) => setCarouselApi(emblaApi)}
+      />
 
-    <div class="hidden md:flex place-self-center">
-      <PlaybackControls />
-    </div>
-
-    {#if playerStore.currentTrack}
-      <div
-        class="hidden md:flex items-center gap-2 flex-shrink-0 self-center justify-self-end pr-3"
-      >
-        <button
-          onclick={() => queueDialog.open()}
-          class="size-8 grid place-items-center hover:bg-background/50 transition-colors"
-          aria-label="Open queue"
-        >
-          <ListMusicIcon size={18} />
-        </button>
-        <VolumeControl />
+      <div class="hidden md:flex place-self-center">
+        <PlaybackControls />
       </div>
 
-      <button
-        onclick={() => playerStore.togglePlayPause()}
-        class="md:hidden size-12 pr-3 grid place-items-center hover:bg-background/50 transition-colors flex-shrink-0"
-        aria-label={playerStore.isPlaying ? "Pause" : "Play"}
-      >
-        {#if playerStore.isPlaying}
-          <PauseIcon absoluteStrokeWidth strokeWidth={2} fill="currentColor" />
-        {:else}
-          <PlayIcon absoluteStrokeWidth strokeWidth={2} fill="currentColor" />
-        {/if}
-      </button>
-    {/if}
-  </div>
+      {#if playerStore.currentTrack}
+        <div
+          class="hidden md:flex items-center gap-2 flex-shrink-0 self-center justify-self-end pr-3"
+        >
+          <Button
+            variant="ghost"
+            onclick={() => queueDialog.open()}
+            class="size-8 grid place-items-center"
+            aria-label="Open queue"
+          >
+            <ListMusicIcon size={18} />
+          </Button>
+          <VolumeControl />
+        </div>
 
-  <ProgressBar />
+        <Button
+          variant="ghost"
+          onclick={() => playerStore.togglePlayPause()}
+          class="md:hidden size-12 grid place-items-center flex-shrink-0 mr-2 p-0"
+          aria-label={playerStore.isPlaying ? "Pause" : "Play"}
+        >
+          {#if playerStore.isPlaying}
+            <PauseIcon
+              absoluteStrokeWidth
+              strokeWidth={2}
+              fill="currentColor"
+              class="size-6"
+            />
+          {:else}
+            <PlayIcon
+              absoluteStrokeWidth
+              strokeWidth={2}
+              fill="currentColor"
+              class="size-6"
+            />
+          {/if}
+        </Button>
+      {/if}
+    </div>
+
+    <div class="px-2 pb-2">
+      <ProgressBar />
+    </div>
+  </div>
 
   <audio bind:this={audioEl}></audio>
 

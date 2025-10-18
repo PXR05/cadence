@@ -1,6 +1,7 @@
 <script lang="ts">
   import { playerStore } from "$lib/stores/player.svelte";
   import { Volume2Icon, VolumeXIcon } from "@lucide/svelte";
+  import { Button } from "../ui/button";
 
   function handleVolumeChange(e: Event) {
     const target = e.target as HTMLInputElement;
@@ -18,27 +19,26 @@
 </script>
 
 <div class="flex items-center gap-2">
-  <button
+  <Button
+    variant="ghost"
     onclick={toggleMute}
     class="size-8 grid place-items-center hover:bg-background/50 transition-colors"
     aria-label={isMuted ? "Unmute" : "Mute"}
   >
     {#if isMuted}
-      <VolumeXIcon
-        size={18}
-      />
+      <VolumeXIcon size={18} />
     {:else}
-      <Volume2Icon
-        size={18}
-      />
+      <Volume2Icon size={18} />
     {/if}
-  </button>
+  </Button>
 
-  <div class="group relative w-24 h-4 flex items-center bg-background">
-    <div class="absolute inset-0 bg-muted/50 pointer-events-none">
+  <div
+    class="rounded-lg overflow-clip group relative w-24 h-2 flex items-center"
+  >
+    <div class="absolute inset-0 bg-secondary/20 pointer-events-none">
       <div
         style="width: {playerStore.volume * 100}%"
-        class="h-full bg-foreground/30 group-hover:border-r-12 border-foreground"
+        class="h-full bg-secondary rounded-lg"
       ></div>
     </div>
     <input

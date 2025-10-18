@@ -2,6 +2,11 @@
   import { playerStore } from "$lib/stores/player.svelte";
   import { formatTime } from "$lib/utils/format";
 
+  const { height = 8, showTime } = $props<{
+    height?: number;
+    showTime?: boolean;
+  }>();
+
   let progressBar: HTMLDivElement | null = $state(null);
   let isDragging = $state(false);
   let pendingSeekPosition = $state<number | null>(null);
@@ -75,7 +80,8 @@
 
 <div
   bind:this={progressBar}
-  class="relative group h-6 bg-background cursor-pointer transition-colors px-2 flex items-center justify-between text-xs font-mono touch-none"
+  style="height: {height}px;"
+  class="relative group cursor-pointer transition-colors flex items-center justify-between text-xs touch-none"
   onmousedown={handleProgressMouseDown}
   ontouchstart={handleProgressTouchStart}
   role="slider"
@@ -85,25 +91,25 @@
   aria-valuemax={playerStore.duration}
   aria-valuenow={playerStore.currentTime}
 >
-  <div class="absolute inset-0 bg-muted/50 pointer-events-none">
+  <div class="absolute inset-0 bg-primary/20 pointer-events-none rounded-lg">
     <div
       style="width: {currentProgress}%; transition: {isDragging
         ? 'none'
         : 'width 100ms linear'};"
-      class="h-full bg-foreground/30 group-hover:border-r-16 border-foreground"
+      class="h-full bg-primary rounded-lg"
     ></div>
   </div>
-
-  <span
-    draggable={false}
-    class="relative z-10 text-foreground select-none pointer-events-none"
-  >
-    {formatTime(displayTime)}
-  </span>
-  <span
-    draggable={false}
-    class="relative z-10 text-foreground select-none pointer-events-none"
-  >
-    {formatTime(playerStore.duration)}
-  </span>
+  {#if showTime}
+    <div
+      style="padding-top: {height * 3}px;"
+      class="w-full flex justify-between gap-2 text-muted-foreground select-none pointer-events-none tabular-nums"
+    >
+      <span draggable={false}>
+        {formatTime(displayTime)}
+      </span>
+      <span draggable={false}>
+        {formatTime(playerStore.duration)}
+      </span>
+    </div>
+  {/if}
 </div>
