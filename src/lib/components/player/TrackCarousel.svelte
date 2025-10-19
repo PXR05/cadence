@@ -9,6 +9,10 @@
   }
 
   let { onTrackClick, setApi }: Props = $props();
+
+  const textColor = $derived(
+    `color-mix(in oklab, #${playerStore.trackColor} 80%, var(--foreground))`
+  );
 </script>
 
 <Carousel.Root

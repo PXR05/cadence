@@ -20,6 +20,10 @@
   };
 
   const size = $derived(sizes[variant]);
+
+  const textColor = $derived(
+    `color-mix(in oklab, #${playerStore.trackColor} 50%, var(--foreground))`
+  );
 </script>
 
 <div
@@ -31,6 +35,7 @@
     variant="ghost"
     onclick={() => playerStore.playPrevious()}
     class="size-{size.button} grid place-items-center"
+    style="color: {textColor};"
     aria-label="Previous track"
   >
     <SkipBackIcon
@@ -45,6 +50,7 @@
     variant="ghost"
     onclick={() => playerStore.togglePlayPause()}
     class="size-{size.primary} grid place-items-center"
+    style="color: {textColor};"
     aria-label={playerStore.isPlaying ? "Pause" : "Play"}
   >
     {#if playerStore.isPlaying}
@@ -68,6 +74,7 @@
     variant="ghost"
     onclick={() => playerStore.playNext()}
     class="size-{size.button} grid place-items-center"
+    style="color: {textColor};"
     aria-label="Next track"
   >
     <SkipForwardIcon

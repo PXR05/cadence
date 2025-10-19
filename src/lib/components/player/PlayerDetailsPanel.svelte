@@ -41,9 +41,8 @@
 </script>
 
 <div
-  class="bg-background h-dvh flex flex-col transition-all duration-300
-  {open ? 'opacity-100' : 'opacity-0'}
-  "
+  class="bg-background relative h-dvh flex flex-col transition-all duration-300
+  {open ? 'opacity-100' : 'opacity-0'}"
 >
   <div class="flex justify-between items-center p-6">
     <button

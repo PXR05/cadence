@@ -45,7 +45,7 @@
   "
 >
   <div
-    class="border rounded-xl overflow-clip border-input bg-muted/50 backdrop-blur-md transition-all duration-200
+    class="rounded-xl overflow-clip border border-input bg-muted/50 backdrop-blur-md transition-all duration-200
     {panelState.isOpen ? 'opacity-0' : 'opacity-100'}"
   >
     <div

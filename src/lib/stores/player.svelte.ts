@@ -1,4 +1,4 @@
-import { prominent } from "color.js";
+import { average } from "color.js";
 import { BASE_URL, PLAYLIST_URL } from "$lib/api";
 import type { CarouselAPI } from "$lib/components/ui/carousel/context";
 import { createLocalStorageState } from "./localStorage.svelte";
@@ -354,13 +354,13 @@ class PlayerState {
   }
 
   async loadTrackColor(track: AudioFile) {
-    const color = await prominent(getImageUrl(track.id), {
+    const color = await average(getImageUrl(track.id), {
       amount: 1,
     });
 
     const hex = (color as number[])
       .map((c) =>
-        Math.min(c + 80, 255)
+        Math.min(c + 60, 255)
           .toString(16)
           .padStart(2, "0")
       )

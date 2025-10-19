@@ -1,5 +1,4 @@
 export { default as PlayerBar } from "./PlayerBar.svelte";
-export { default as PlayerDetailDialog } from "./PlayerDetailDialog.svelte";
 export { default as PlayerDetailsPanel } from "./PlayerDetailsPanel.svelte";
 export { default as PlayerDetails } from "./PlayerDetails.svelte";
 export { default as PlaybackControls } from "./PlaybackControls.svelte";

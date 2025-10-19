@@ -91,12 +91,15 @@
   aria-valuemax={playerStore.duration}
   aria-valuenow={playerStore.currentTime}
 >
-  <div class="absolute inset-0 bg-primary/20 pointer-events-none rounded-lg">
+  <div
+    class="absolute inset-0 pointer-events-none rounded-lg"
+    style="background-color: color-mix(in oklab, #{playerStore.trackColor} 20%, transparent);"
+  >
     <div
-      style="width: {currentProgress}%; transition: {isDragging
-        ? 'none'
-        : 'width 100ms linear'};"
-      class="h-full bg-primary rounded-lg"
+      style="width: {currentProgress}%; 
+      transition: {isDragging ? 'none' : 'width 100ms linear'};
+      background-color: color-mix(in oklab, #{playerStore.trackColor} 80%, var(--foreground));"
+      class="h-full rounded-lg"
     ></div>
   </div>
   {#if showTime}

@@ -24,10 +24,19 @@
   }
 </script>
 
-<div class="flex-1 flex flex-col justify-center gap-12">
-  <div class="flex-shrink-0 overflow-hidden m-auto w-full">
+<div class="flex-1 flex flex-col justify-between">
+  <div class="relative flex-shrink-0 my-auto w-full z-20">
+    <img
+      loading="lazy"
+      src={playerStore.currentImageUrl}
+      alt={playerStore.currentTrack?.id ?? ""}
+      draggable="false"
+      onauxclick={() => false}
+      oncontextmenu={() => false}
+      class="h-[min(42.5dvh,90dvw)] scale-150 aspect-square object-cover absolute inset-0 m-auto pointer-events-none blur-3xl"
+    />
     <Carousel.Root
-      class="w-full"
+      class="w-full z-20"
       opts={{ loop: true }}
       setApi={(emblaApi) => setDetailCarouselApi(emblaApi ?? null)}
     >
@@ -38,7 +47,7 @@
               loading="lazy"
               src={getImageUrl(queueTrack.id)}
               alt={queueTrack.id}
-              class="h-[min(42.5dvh,90dvw)] aspect-square object-cover mx-auto rounded-2xl bg-muted"
+              class="h-[min(42.5dvh,90dvw)] aspect-square object-cover mx-auto rounded-2xl"
             />
           </Carousel.Item>
         {/each}
@@ -46,10 +55,20 @@
     </Carousel.Root>
   </div>
 
-  <div class="flex flex-col gap-8 px-6">
+  <div class="flex flex-col gap-8 px-6 my-auto z-20">
     <div class="text-center">
-      <h2 class="text-xl font-semibold truncate">{trackTitle}</h2>
-      <p class="text-muted-foreground truncate">{trackArtist}</p>
+      <h2
+        class="text-xl font-semibold truncate"
+        style="color: color-mix(in oklab, #{playerStore.trackColor} 50%, var(--foreground));"
+      >
+        {trackTitle}
+      </h2>
+      <p
+        class="text-muted-foreground truncate"
+        style="color: color-mix(in oklab, #{playerStore.trackColor} 30%, var(--muted-foreground));"
+      >
+        {trackArtist}
+      </p>
     </div>
 
     <div class="space-y-2">
@@ -59,7 +78,7 @@
     <PlaybackControls variant="large" />
   </div>
 
-  <div class="p-4">
+  <div class="p-4 z-20">
     <Button
       variant="outline"
       onclick={onQueueOpen}
