@@ -39,13 +39,12 @@
 </script>
 
 <div
-  class="select-none h-20
-  transition-all duration-300
-  {panelState.isOpen ? 'h-[calc(100dvh+5rem)]' : 'h-20'}
-  "
+  class="select-none h-20 transition-all duration-200 backdrop-blur-md"
+  style="transform: translateY({panelState.isOpen ? '-100dvh' : '0'});
+    view-transition-name: player;"
 >
   <div
-    class="rounded-xl overflow-clip border border-input bg-muted/50 backdrop-blur-md transition-all duration-200
+    class="rounded-xl overflow-clip border border-input bg-muted/50 transition-all duration-200
     {panelState.isOpen ? 'opacity-0' : 'opacity-100'}"
   >
     <div
@@ -56,11 +55,11 @@
         setApi={(emblaApi) => setCarouselApi(emblaApi)}
       />
 
-      <div class="hidden md:flex place-self-center">
-        <PlaybackControls />
-      </div>
-
       {#if playerStore.currentTrack}
+        <div class="hidden md:flex place-self-center">
+          <PlaybackControls />
+        </div>
+
         <div
           class="hidden md:flex items-center gap-2 flex-shrink-0 self-center justify-self-end pr-3"
         >

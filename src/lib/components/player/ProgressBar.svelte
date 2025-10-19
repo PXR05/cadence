@@ -14,7 +14,7 @@
   const currentProgress = $derived(
     pendingSeekPosition !== null
       ? (pendingSeekPosition / playerStore.duration) * 100
-      : playerStore.progress * 100
+      : playerStore.progress * 100,
   );
 
   const displayTime = $derived(pendingSeekPosition ?? playerStore.currentTime);
@@ -93,12 +93,26 @@
 >
   <div
     class="absolute inset-0 pointer-events-none rounded-lg"
-    style="background-color: color-mix(in oklab, #{playerStore.trackColor} 20%, transparent);"
+    style="background-color:
+      color-mix(
+        in oklab,
+        {playerStore.trackColor
+      ? '#' + playerStore.trackColor
+      : 'var(--primary)'} 20%,
+        transparent
+      );"
   >
     <div
-      style="width: {currentProgress}%; 
+      style="width: {currentProgress}%;
       transition: {isDragging ? 'none' : 'width 100ms linear'};
-      background-color: color-mix(in oklab, #{playerStore.trackColor} 80%, var(--foreground));"
+      background-color:
+        color-mix(
+          in oklab,
+          {playerStore.trackColor
+        ? '#' + playerStore.trackColor
+        : 'var(--primary)'} 80%,
+          var(--foreground)
+        );"
       class="h-full rounded-lg"
     ></div>
   </div>

@@ -18,7 +18,8 @@
   <SearchIcon
     size={16}
     class="absolute transition-all text-muted-foreground flex-shrink-0 
-      {!isEmpty ? 'left-0 opacity-0' : 'left-3'}"
+    {!isEmpty ? 'opacity-0' : ''}"
+    style="transform: translateX({!isEmpty ? '0' : '0.75rem'})"
   />
   <Input
     type="text"
@@ -30,8 +31,9 @@
   <Button
     variant="ghost"
     size="icon"
-    class="text-muted-foreground absolute 
-      {isEmpty ? '-right-2 opacity-0 pointer-events-none' : 'right-0'}"
+    class="text-muted-foreground absolute right-0
+      {isEmpty ? 'opacity-0' : ''}"
+    style="transform: translateX({isEmpty ? '0.5rem' : '0rem'})"
     onclick={() => (searchQuery = "")}
     aria-label="Clear search"
   >

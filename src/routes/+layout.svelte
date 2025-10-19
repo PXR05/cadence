@@ -6,7 +6,7 @@
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { authStore } from "$lib/stores/auth.svelte";
   import { downloadStore } from "$lib/stores/download.svelte";
-  import { goto } from "$app/navigation";
+  import { goto, onNavigate } from "$app/navigation";
   import { onMount } from "svelte";
   import { innerWidth } from "svelte/reactivity/window";
   import { page } from "$app/state";
@@ -79,6 +79,18 @@
       }
     }
   }
+
+  onNavigate(() => {
+    return new Promise(async (resolve) => {
+      if (document.startViewTransition) {
+        document.startViewTransition(async () => {
+          resolve();
+        });
+      } else {
+        resolve();
+      }
+    });
+  });
 
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
   const isTopRoute = $derived(page.url.pathname.split("/").length <= 2);

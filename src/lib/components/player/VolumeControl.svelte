@@ -35,10 +35,15 @@
   <div
     class="rounded-lg overflow-clip group relative w-24 h-1.5 flex items-center"
   >
-    <div class="absolute inset-0 bg-secondary/20 pointer-events-none">
+    <div
+      class="absolute inset-0 pointer-events-none"
+      style="background-color: color-mix(in oklab, #{playerStore.trackColor} 20%, transparent);"
+    >
       <div
-        style="width: {playerStore.volume * 100}%"
-        class="h-full bg-secondary rounded-lg"
+        class="h-full rounded-lg"
+        style="
+          width: {playerStore.volume * 100}%;
+          background-color: color-mix(in oklab, #{playerStore.trackColor} 80%, var(--foreground));"
       ></div>
     </div>
     <input

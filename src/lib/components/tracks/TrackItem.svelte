@@ -2,6 +2,7 @@
   import { getStreamUrl, getImageUrl } from "$lib/stores/player.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
+  import { downloadStore } from "$lib/stores/download.svelte";
   import * as ContextMenu from "$lib/components/ui/context-menu";
   import { ManagePlaylistsDialog } from "../playlists";
   import {
@@ -10,8 +11,9 @@
     PlusIcon,
     SkipForwardIcon,
     CloudCheckIcon,
+    CloudDownloadIcon,
+    CloudOffIcon,
   } from "@lucide/svelte";
-  import { isTrackOffline } from "$lib/db/offline";
   import { onMount } from "svelte";
 
   interface Props {
@@ -36,13 +38,13 @@
   let isOffline = $state(false);
 
   onMount(async () => {
-    isOffline = await isTrackOffline(track.id);
+    isOffline = await downloadStore.checkTrackOfflineStatus(track.id);
   });
 
   async function handlePlay() {
     if (fromQueue) {
       const trackIndex = playerStore.trackQueue.findIndex(
-        (t) => t.id === track.id
+        (t) => t.id === track.id,
       );
       if (trackIndex !== -1) {
         playerStore.queueIndex = trackIndex;
@@ -77,11 +79,29 @@
     link.click();
     document.body.removeChild(link);
   }
+
+  async function handleToggleOffline() {
+    if (isOffline) {
+      await downloadStore.removeTrackOffline(track.id);
+    } else {
+      await downloadStore.makeTrackOffline(
+        track.id,
+        {
+          title: track.metadata?.title,
+          artist: track.metadata?.artist,
+          album: track.metadata?.album,
+          duration: track.metadata?.duration,
+        },
+        track.filename,
+      );
+    }
+    isOffline = await downloadStore.checkTrackOfflineStatus(track.id);
+  }
 </script>
 
 <ContextMenu.Root>
   <ContextMenu.Trigger
-    class="relative flex items-center gap-4 w-full hover:bg-muted/30 p-2 border 
+    class="relative flex items-center gap-4 w-full hover:bg-muted/30 p-2 border
     {isCurrentTrack ? 'bg-muted/50' : ''}"
     onclick={handlePlay}
   >
@@ -133,6 +153,15 @@
     <ContextMenu.Item onclick={handleDownload}>
       <DownloadIcon size={16} class="mr-2" />
       Download
+    </ContextMenu.Item>
+    <ContextMenu.Item onclick={handleToggleOffline}>
+      {#if isOffline}
+        <CloudOffIcon size={16} class="mr-2" />
+        Remove from Offline
+      {:else}
+        <CloudDownloadIcon size={16} class="mr-2" />
+        Make Available Offline
+      {/if}
     </ContextMenu.Item>
   </ContextMenu.Content>
 </ContextMenu.Root>
