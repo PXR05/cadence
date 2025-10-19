@@ -109,7 +109,7 @@
   <div
     class="relative w-full flex sm:justify-between sm:items-end gap-2 truncate transition-all duration-200
     {isScrolled
-      ? 'flex-row items-center h-9 justify-between'
+      ? 'flex-row items-center justify-between h-9'
       : 'h-40 md:h-48 max-sm:flex-col justify-end'}"
   >
     <Button
@@ -122,10 +122,10 @@
       <ArrowLeft />
     </Button>
 
-    <div class="truncate">
+    <div class="flex flex-col truncate h-full justify-end">
       <h1
         class="flex items-center gap-2 font-semibold truncate transition-all duration-200 text-2xl
-        {isScrolled ? 'pl-10' : ''}"
+        {isScrolled ? 'pl-10 mb-0.5' : ''}"
       >
         {playlist.name}
         {#if isOffline}

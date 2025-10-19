@@ -5,6 +5,7 @@
   import { Button } from "$lib/components/ui/button/index.js";
   import * as Breadcrumb from "$lib/components/ui/breadcrumb";
   import { ArrowLeftIcon } from "@lucide/svelte";
+  import { ScrollArea } from "$lib/components/ui/scroll-area";
 
   let { data } = $props();
 
@@ -49,22 +50,25 @@
   </div>
 </div>
 
-<div class="flex flex-col mx-auto w-full h-full border-x overflow-y-auto pt-15 md:pt-16.5">
-  {#await displayPlaylists then playlists}
-    {#if playlists.length === 0}
+<ScrollArea class="h-dvh">
+  <div class="flex flex-col mx-auto w-full h-full border-x pt-15 md:pt-16.5">
+    {#await displayPlaylists then playlists}
+      {#if playlists.length === 0}
+        <div class="flex items-center justify-center h-full">
+          <p class="text-muted-foreground">No playlists found</p>
+        </div>
+      {:else}
+        <div class="p-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+          {#each playlists as playlist (playlist.id)}
+            <PlaylistCard {playlist} size="large" />
+          {/each}
+        </div>
+        <div class="h-[50dvh]"></div>
+      {/if}
+    {:catch error}
       <div class="flex items-center justify-center h-full">
-        <p class="text-muted-foreground">No playlists found</p>
+        {error.message}
       </div>
-    {:else}
-      <div class="p-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-        {#each playlists as playlist (playlist.id)}
-          <PlaylistCard {playlist} size="large" />
-        {/each}
-      </div>
-    {/if}
-  {:catch error}
-    <div class="flex items-center justify-center h-full">
-      {error.message}
-    </div>
-  {/await}
-</div>
+    {/await}
+  </div>
+</ScrollArea>

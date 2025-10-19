@@ -3,6 +3,7 @@
   import TrackItem from "./TrackItem.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { onMount } from "svelte";
+  import { ScrollArea } from "../ui/scroll-area";
 
   const tracks = $derived(tracksStore.tracks);
   const isInitialLoad = $derived(tracksStore.isInitialLoad);
@@ -56,28 +57,19 @@
 </script>
 
 {#if isInitialLoad}
-  <div
-    class="mx-auto w-full h-full grid place-items-center p-8"
-  >
+  <div class="mx-auto w-full h-full grid place-items-center p-8">
     <LoaderIcon class="animate-spin text-muted-foreground" />
   </div>
 {:else if error}
-  <div
-    class="mx-auto w-full p-4 text-destructive text-center"
-  >
+  <div class="mx-auto w-full p-4 text-destructive text-center">
     Error loading tracks: {error}
   </div>
 {:else if tracks.length === 0}
-  <div
-    class="mx-auto w-full p-4 text-muted-foreground text-center"
-  >
+  <div class="mx-auto w-full p-4 text-muted-foreground text-center">
     No audio files found.
   </div>
 {:else}
-  <div
-    class="mx-auto w-full border h-dvh overflow-y-auto"
-    bind:this={containerRef}
-  >
+  <ScrollArea class="border h-dvh" bind:ref={containerRef}>
     <div
       style="height: {tracks.length *
         ROW_HEIGHT}px; position: relative; width: 100%;"
@@ -101,5 +93,5 @@
     {:else}
       <div class="h-[50dvh]"></div>
     {/if}
-  </div>
+  </ScrollArea>
 {/if}

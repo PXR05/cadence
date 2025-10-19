@@ -2,6 +2,7 @@
   import TrackItem from "$lib/components/tracks/TrackItem.svelte";
   import { PlusIcon } from "@lucide/svelte";
   import { innerWidth } from "svelte/reactivity/window";
+  import { ScrollArea } from "../ui/scroll-area";
 
   interface Props {
     items: PlaylistItem[];
@@ -85,7 +86,7 @@
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
 </script>
 
-<div class="overflow-y-auto transition-all" bind:this={containerRef}>
+<ScrollArea orientation="vertical" class="h-dvh" bind:ref={containerRef}>
   {#if items.length === 0}
     <div class="h-24"></div>
   {:else}
@@ -95,10 +96,10 @@
     >
       <div
         style="
-    position: absolute; 
-    top: {range.start * ROW_HEIGHT + (isMobile ? 227 + 6 : 255 + 6)}px; 
-    left: 0; 
-    right: 0;"
+      position: absolute; 
+      top: {range.start * ROW_HEIGHT + (isMobile ? 227 + 6 : 255 + 6)}px; 
+      left: 0; 
+      right: 0;"
       >
         {#if showAddButton && onAddTracks}
           <button
@@ -130,4 +131,4 @@
     </div>
     <div class="h-[50dvh]"></div>
   {/if}
-</div>
+</ScrollArea>

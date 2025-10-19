@@ -7,6 +7,7 @@
   import { searchTracks } from "$lib/api";
   import { Input } from "../ui/input";
   import { Button } from "../ui/button";
+  import { ScrollArea } from "../ui/scroll-area";
 
   const LIMIT = 10;
   const DEBOUNCE_MS = 300;
@@ -104,74 +105,81 @@
   const isEmpty = $derived(searchQuery.trim().length === 0);
 </script>
 
-<div class="flex flex-col mx-auto w-full h-full border-x overflow-auto">
-  <form onsubmit={handleSubmit} style="--h: 6rem;" class="p-2 sticky top-0 z-10">
-     <!-- <div class="_bg _blur absolute inset-0 -z-10"></div> -->
-    <div class="_bg _color absolute inset-0 -z-10"></div>
-    <div
-      class="flex items-center relative bg-muted/50 backdrop-blur-md rounded-xl overflow-clip border border-input"
-    >
-      <SearchIcon
-        size={16}
-        class="absolute transition-all text-muted-foreground flex-shrink-0 
+<form
+  onsubmit={handleSubmit}
+  style="--h: 6rem;"
+  class="p-2 absolute top-0 left-0 right-0 z-10"
+>
+  <!-- <div class="_bg _blur absolute inset-0 -z-10"></div> -->
+  <div class="_bg _color absolute inset-0 -z-10"></div>
+  <div
+    class="flex items-center relative bg-muted/50 backdrop-blur-md rounded-xl overflow-clip border border-input"
+  >
+    <SearchIcon
+      size={16}
+      class="absolute transition-all text-muted-foreground flex-shrink-0 
       {!isEmpty ? 'left-0 opacity-0' : 'left-3'}"
-      />
-      <Input
-        bind:ref={searchInput}
-        bind:value={searchQuery}
-        oninput={handleInput}
-        type="text"
-        placeholder="search..."
-        class="flex-1 text-base h-auto !bg-transparent border-0 transition-all p-3 outline-none font-mono placeholder:text-muted-foreground 
+    />
+    <Input
+      bind:ref={searchInput}
+      bind:value={searchQuery}
+      oninput={handleInput}
+      type="text"
+      placeholder="search..."
+      class="flex-1 text-base h-auto !bg-transparent border-0 transition-all p-3 outline-none font-mono placeholder:text-muted-foreground 
         {!isEmpty ? '' : 'pl-9'}"
-      />
-      <Button
-        variant="ghost"
-        size="icon"
-        class="text-muted-foreground absolute 
+    />
+    <Button
+      variant="ghost"
+      size="icon"
+      class="text-muted-foreground absolute 
         {isEmpty ? '-right-2 opacity-0' : 'right-1'}"
-        onclick={clearSearch}
-        disabled={isEmpty || isDebouncing || loading}
-      >
-        {#if isDebouncing || loading}
-          <LoaderIcon class="animate-spin" size={16} />
-        {:else if !isEmpty}
-          <XIcon size={16} />
-        {/if}
-      </Button>
-    </div>
-  </form>
+      onclick={clearSearch}
+      disabled={isEmpty || isDebouncing || loading}
+    >
+      {#if isDebouncing || loading}
+        <LoaderIcon class="animate-spin" size={16} />
+      {:else if !isEmpty}
+        <XIcon size={16} />
+      {/if}
+    </Button>
+  </div>
+</form>
 
-  <div class="flex-1">
-    {#if loading}
-      <div class="flex flex-col items-center justify-center flex-1 p-8 h-full">
-        <LoaderIcon class="animate-spin text-muted-foreground" />
-      </div>
-    {:else if hasSearched}
-      {#if tracks.length > 0}
-        {#each tracks as track (track.id)}
-          <TrackItem {track} />
-        {/each}
-        <div class="h-[50dvh]"></div>
+<ScrollArea class="h-dvh">
+  <div class="flex flex-col mx-auto w-full h-full border-x overflow-auto">
+    <div class="flex-1 pt-16 md:pt-15">
+      {#if loading}
+        <div class="flex flex-col items-center justify-center flex-1 p-8 h-full">
+          <LoaderIcon class="animate-spin text-muted-foreground" />
+        </div>
+      {:else if hasSearched}
+        {#if tracks.length > 0}
+          {#each tracks as track (track.id)}
+            <TrackItem {track} />
+          {/each}
+          <div class="h-[50dvh]"></div>
+        {:else}
+          <div class="h-full flex flex-col items-center justify-center p-8">
+            <p class="text-muted-foreground mb-2">No results found</p>
+            <p class="text-sm text-muted-foreground">
+              Try a different search query
+            </p>
+          </div>
+        {/if}
       {:else}
-        <div class="h-full flex flex-col items-center justify-center p-8">
-          <p class="text-muted-foreground mb-2">No results found</p>
-          <p class="text-sm text-muted-foreground">
-            Try a different search query
+        <div
+          class="flex flex-col items-center justify-center flex-1 p-8 pb-48 md:pb-36 h-full"
+        >
+          <SearchIcon size={48} class="text-muted-foreground mb-4" />
+          <p class="text-muted-foreground text-center">
+            Search by track title, artist, or album
           </p>
         </div>
       {/if}
-    {:else}
-      <div class="flex flex-col items-center justify-center flex-1 p-8 pb-48 md:pb-36 h-full">
-        <SearchIcon size={48} class="text-muted-foreground mb-4" />
-        <p class="text-muted-foreground text-center">
-          Search by track title, artist, or album
-        </p>
-      </div>
-    {/if}
+    </div>
   </div>
-</div>
-
+</ScrollArea>
 
 <style>
   ._bg {

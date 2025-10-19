@@ -4,7 +4,7 @@
   import type { CarouselAPI } from "$lib/components/ui/carousel/context";
   import ProgressBar from "./ProgressBar.svelte";
   import QueueDialog from "./QueueDialog.svelte";
-  import PlayerDetailDialog from "./PlayerDetailDialog.svelte";
+  import PlayerDetailsPanel from "./PlayerDetailsPanel.svelte";
   import TrackCarousel from "./TrackCarousel.svelte";
   import PlaybackControls from "./PlaybackControls.svelte";
   import VolumeControl from "./VolumeControl.svelte";
@@ -12,9 +12,14 @@
   import { onDestroy } from "svelte";
   import { Button } from "../ui/button";
 
+  const {
+    panelState,
+  }: {
+    panelState: ReturnType<typeof useDialogState>;
+  } = $props();
+
   let audioEl: HTMLAudioElement | null = $state(null);
   const queueDialog = useDialogState("queue");
-  const playerDetailDialog = useDialogState("player-detail");
 
   $effect(() => {
     if (audioEl && !playerStore.isLoaded) {
@@ -33,13 +38,21 @@
   }
 </script>
 
-<div class="select-none">
-  <div class="border rounded-xl overflow-clip border-input bg-muted/50 backdrop-blur-md">
+<div
+  class="select-none h-20
+  transition-all duration-300
+  {panelState.isOpen ? 'h-[calc(100dvh+5rem)]' : 'h-20'}
+  "
+>
+  <div
+    class="border rounded-xl overflow-clip border-input bg-muted/50 backdrop-blur-md transition-all duration-200
+    {panelState.isOpen ? 'opacity-0' : 'opacity-100'}"
+  >
     <div
       class=" relative flex md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center max-md:justify-between py-2 min-h-16"
     >
       <TrackCarousel
-        onTrackClick={() => playerDetailDialog.open()}
+        onTrackClick={() => panelState.open()}
         setApi={(emblaApi) => setCarouselApi(emblaApi)}
       />
 
@@ -99,9 +112,9 @@
     onOpenChange={(open) => !open && queueDialog.close()}
   />
 
-  <PlayerDetailDialog
-    open={playerDetailDialog.isOpen}
-    onOpenChange={(open) => !open && playerDetailDialog.close()}
+  <PlayerDetailsPanel
+    bind:open={panelState.isOpen}
+    onOpenChange={() => panelState.toggle()}
     onQueueOpen={() => queueDialog.open()}
   />
 </div>
