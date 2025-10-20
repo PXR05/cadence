@@ -23,7 +23,7 @@
 
 {#if progress}
   <div
-    class="border rounded-xl overflow-clip border-input bg-muted/50 backdrop-blur-md"
+    class="border rounded-xl overflow-clip border-input bg-muted/50 backdrop-blur-md mx-1.5"
   >
     <div class="flex items-center justify-between p-3 gap-2">
       <div class="flex-1 min-w-0">

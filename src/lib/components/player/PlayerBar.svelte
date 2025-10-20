@@ -41,7 +41,7 @@
 
   const translate = $derived.by(() => {
     if (panelState.isOpen && bottomBarVisible) {
-      return `calc(-100dvh + 3.625rem)`;
+      return `calc(-100dvh + 4rem)`;
     }
     if (panelState.isOpen) {
       return `-100dvh`;
@@ -51,68 +51,70 @@
 </script>
 
 <div
-  class="select-none h-20 transition-all duration-200 p-1.5
-  {bottomBarVisible ? 'mb-17' : 'mb-3'}"
+  class="select-none h-20 transition-all duration-200
+  {bottomBarVisible ? 'mb-15.5' : 'mb-1.5'}"
   style="transform: translateY({translate});"
 >
-  <div
-    class="rounded-xl overflow-clip border border-input bg-muted/50 transition-all duration-200
-    {panelState.isOpen ? 'opacity-0' : 'opacity-100 backdrop-blur-md'}"
-  >
+  <div class="px-1.5">
     <div
-      class=" relative flex md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center max-md:justify-between py-2 min-h-16"
+      class="rounded-xl overflow-clip border border-input bg-muted/50 transition-all duration-200
+    {panelState.isOpen ? 'opacity-0' : 'opacity-100 backdrop-blur-md'}"
     >
-      <TrackCarousel
-        onTrackClick={() => panelState.open()}
-        setApi={(emblaApi) => setCarouselApi(emblaApi)}
-      />
+      <div
+        class=" relative flex md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center max-md:justify-between py-2 min-h-16"
+      >
+        <TrackCarousel
+          onTrackClick={() => panelState.open()}
+          setApi={(emblaApi) => setCarouselApi(emblaApi)}
+        />
 
-      {#if playerStore.currentTrack}
-        <div class="hidden md:flex place-self-center">
-          <PlaybackControls />
-        </div>
+        {#if playerStore.currentTrack}
+          <div class="hidden md:flex place-self-center">
+            <PlaybackControls />
+          </div>
 
-        <div
-          class="hidden md:flex items-center gap-2 flex-shrink-0 self-center justify-self-end pr-3"
-        >
+          <div
+            class="hidden md:flex items-center gap-2 flex-shrink-0 self-center justify-self-end pr-3"
+          >
+            <Button
+              variant="ghost"
+              onclick={() => queueDialog.open()}
+              class="size-8 grid place-items-center"
+              aria-label="Open queue"
+            >
+              <ListMusicIcon size={18} />
+            </Button>
+            <VolumeControl />
+          </div>
+
           <Button
             variant="ghost"
-            onclick={() => queueDialog.open()}
-            class="size-8 grid place-items-center"
-            aria-label="Open queue"
+            onclick={() => playerStore.togglePlayPause()}
+            class="md:hidden size-12 grid place-items-center flex-shrink-0 mr-2 p-0"
+            aria-label={playerStore.isPlaying ? "Pause" : "Play"}
           >
-            <ListMusicIcon size={18} />
+            {#if playerStore.isPlaying}
+              <PauseIcon
+                absoluteStrokeWidth
+                strokeWidth={2}
+                fill="currentColor"
+                class="size-6"
+              />
+            {:else}
+              <PlayIcon
+                absoluteStrokeWidth
+                strokeWidth={2}
+                fill="currentColor"
+                class="size-6"
+              />
+            {/if}
           </Button>
-          <VolumeControl />
-        </div>
+        {/if}
+      </div>
 
-        <Button
-          variant="ghost"
-          onclick={() => playerStore.togglePlayPause()}
-          class="md:hidden size-12 grid place-items-center flex-shrink-0 mr-2 p-0"
-          aria-label={playerStore.isPlaying ? "Pause" : "Play"}
-        >
-          {#if playerStore.isPlaying}
-            <PauseIcon
-              absoluteStrokeWidth
-              strokeWidth={2}
-              fill="currentColor"
-              class="size-6"
-            />
-          {:else}
-            <PlayIcon
-              absoluteStrokeWidth
-              strokeWidth={2}
-              fill="currentColor"
-              class="size-6"
-            />
-          {/if}
-        </Button>
-      {/if}
-    </div>
-
-    <div class="px-2 pb-2">
-      <ProgressBar />
+      <div class="px-2 pb-2">
+        <ProgressBar />
+      </div>
     </div>
   </div>
 
