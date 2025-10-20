@@ -1,5 +1,5 @@
 import { browser } from "$app/environment";
-import { getUserPlaylists } from "$lib/api";
+import { playlistsStore } from "$lib/stores/playlists.svelte";
 import { getSpecialPlaylists } from "$lib/utils/playlist";
 
 export async function load() {
@@ -11,9 +11,11 @@ export async function load() {
     };
   }
 
+  await playlistsStore.loadAllPlaylists();
+
   return {
-    specialPlaylists: getSpecialPlaylists(),
-    userPlaylists: getUserPlaylists("user", 10),
-    youtubePlaylists: getUserPlaylists("youtube", 10),
+    specialPlaylists: await getSpecialPlaylists(),
+    userPlaylists: playlistsStore.getUserPlaylistsFiltered(10),
+    youtubePlaylists: playlistsStore.getYoutubePlaylistsFiltered(10),
   };
 }

@@ -1,6 +1,7 @@
 import { browser } from "$app/environment";
-import { getPlaylistById, fetchTracks } from "$lib/api";
 import { db } from "$lib/db/offline";
+import { playlistsStore } from "$lib/stores/playlists.svelte";
+import { tracksStore } from "$lib/stores/tracks.svelte";
 import {
   isSpecialPlaylist,
   getSpecialPlaylist,
@@ -20,13 +21,15 @@ export const load: PageLoad = async ({ params }) => {
 
   if (isSpecialPlaylist(playlistId)) {
     return {
-      playlist: loadSpecialPlaylist(playlistId),
+      playlist: await loadSpecialPlaylist(playlistId),
       playlistId,
     };
   }
 
+  const playlistDetail = await playlistsStore.loadPlaylistDetail(playlistId);
+
   return {
-    playlist: getPlaylistById(playlistId).then((res) => res.playlist),
+    playlist: playlistDetail,
     playlistId,
   };
 };
@@ -48,33 +51,19 @@ async function loadSpecialPlaylist(id: string): Promise<PlaylistDetail> {
   };
 
   if (id === SPECIAL_PLAYLIST_IDS.ALL_SONGS) {
-    let page = 1;
-    let hasMore = true;
-    const allItems: PlaylistItem[] = [];
+    await tracksStore.loadAllTracks();
+    const tracks = tracksStore.tracks.slice().sort((a, b) => {
+      const titleA = (a.metadata?.title || a.filename).toLowerCase();
+      const titleB = (b.metadata?.title || b.filename).toLowerCase();
+      return titleA.localeCompare(titleB);
+    });
 
-    while (hasMore) {
-      const result = await fetchTracks({
-        page,
-        limit: 100,
-        sortBy: "title",
-        sortOrder: "asc",
-      });
-
-      const newItems = result.tracks.map(
-        (track, index): PlaylistItem => ({
-          id: `${track.id}_${allItems.length + index}`,
-          position: allItems.length + index,
-          addedAt: now,
-          audio: track,
-        })
-      );
-
-      allItems.push(...newItems);
-      hasMore = result.hasMore;
-      page++;
-    }
-
-    playlist.items = allItems;
+    playlist.items = tracks.map((track, index) => ({
+      id: `${track.id}_${index}`,
+      position: index,
+      addedAt: now,
+      audio: track,
+    }));
   } else if (id === SPECIAL_PLAYLIST_IDS.DOWNLOADED) {
     const offlineTracks = await db.tracks.toArray();
     const tracks = offlineTracks.map(

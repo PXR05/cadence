@@ -1,68 +1,69 @@
 import { fetchTracks } from "$lib/api";
-import { createLocalStorageState } from "./localStorage.svelte";
-
-interface TracksState {
-  tracks: AudioFile[];
-  lastFetchedAt: string | null;
-  isInitialLoad: boolean;
-  isLoadingMore: boolean;
-  error: string | null;
-}
+import {
+  getTracksCache,
+  saveTracksCache,
+  clearTracksCache,
+} from "$lib/db/cache";
 
 class TracksStore {
-  private persistedState = createLocalStorageState<TracksState>(
-    "cadence.tracks_cache",
-    {
-      tracks: [],
-      lastFetchedAt: null,
-      isInitialLoad: false,
-      isLoadingMore: false,
-      error: null,
-    }
-  );
+  private _tracks = $state<AudioFile[]>([]);
+  private _lastFetchedAt = $state<string | null>(null);
+  private _isInitialLoad = $state(false);
+  private _isLoadingMore = $state(false);
+  private _error = $state<string | null>(null);
+  private _initialized = false;
 
   get tracks() {
-    return this.persistedState.value.tracks;
+    return this._tracks;
   }
 
   get lastFetchedAt() {
-    return this.persistedState.value.lastFetchedAt;
+    return this._lastFetchedAt;
   }
 
   get isInitialLoad() {
-    return this.persistedState.value.isInitialLoad;
+    return this._isInitialLoad;
   }
 
   get isLoadingMore() {
-    return this.persistedState.value.isLoadingMore;
+    return this._isLoadingMore;
   }
 
   get error() {
-    return this.persistedState.value.error;
+    return this._error;
   }
 
   private set isInitialLoad(value: boolean) {
-    this.persistedState.value = {
-      ...this.persistedState.value,
-      isInitialLoad: value,
-    };
+    this._isInitialLoad = value;
   }
 
   private set isLoadingMore(value: boolean) {
-    this.persistedState.value = {
-      ...this.persistedState.value,
-      isLoadingMore: value,
-    };
+    this._isLoadingMore = value;
   }
 
   private set error(value: string | null) {
-    this.persistedState.value = {
-      ...this.persistedState.value,
-      error: value,
-    };
+    this._error = value;
+  }
+
+  private async initializeFromCache(): Promise<void> {
+    if (this._initialized) return;
+
+    try {
+      const cache = await getTracksCache();
+      if (cache) {
+        this._tracks = cache.tracks;
+        this._lastFetchedAt = cache.lastFetchedAt;
+      }
+    } catch (err) {
+      console.error("Failed to load tracks from cache:", err);
+    } finally {
+      this._initialized = true;
+    }
   }
 
   async loadAllTracks(forceRefresh: boolean = false): Promise<void> {
+    await this.initializeFromCache();
+
     if (!forceRefresh && this.tracks.length > 0 && this.lastFetchedAt) {
       const shouldRefresh = await this.shouldRefreshTracks();
       if (!shouldRefresh) {
@@ -89,30 +90,24 @@ class TracksStore {
         allTracks.push(...result.tracks);
 
         if (currentPage === 1) {
-          this.persistedState.value = {
-            ...this.persistedState.value,
-            tracks: [...result.tracks],
-            isInitialLoad: false,
-            isLoadingMore: result.hasMore,
-          };
+          this._tracks = [...result.tracks];
+          this.isInitialLoad = false;
+          this.isLoadingMore = result.hasMore;
         } else {
-          this.persistedState.value = {
-            ...this.persistedState.value,
-            tracks: [...allTracks],
-          };
+          this._tracks = [...allTracks];
         }
 
         hasMore = result.hasMore;
         currentPage++;
       }
 
-      this.persistedState.value = {
-        tracks: allTracks,
-        lastFetchedAt: new Date().toISOString(),
-        isInitialLoad: false,
-        isLoadingMore: false,
-        error: null,
-      };
+      this._tracks = allTracks;
+      this._lastFetchedAt = new Date().toISOString();
+      this.isInitialLoad = false;
+      this.isLoadingMore = false;
+      this.error = null;
+
+      await saveTracksCache(allTracks, this._lastFetchedAt);
     } catch (err) {
       this.error = err instanceof Error ? err.message : "Failed to load tracks";
       this.isInitialLoad = false;
@@ -170,8 +165,13 @@ class TracksStore {
     return shuffled;
   }
 
-  clear(): void {
-    this.persistedState.clear();
+  async clear(): Promise<void> {
+    this._tracks = [];
+    this._lastFetchedAt = null;
+    this._error = null;
+    this._isInitialLoad = false;
+    this._isLoadingMore = false;
+    await clearTracksCache();
   }
 }
 

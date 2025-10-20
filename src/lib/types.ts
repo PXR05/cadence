@@ -47,12 +47,6 @@ interface Playlist {
   itemCount?: number;
 }
 
-interface PlaylistDetail {
-  id: string;
-  name: string;
-  userId: string;
-  coverImage?: string;
-  createdAt: Date;
-  updatedAt: Date;
+interface PlaylistDetail extends Playlist {
   items: PlaylistItem[];
 }

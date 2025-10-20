@@ -2,11 +2,11 @@
   import * as Dialog from "$lib/components/ui/dialog";
   import { Button } from "$lib/components/ui/button";
   import {
-    getUserPlaylists,
     getPlaylistById,
     addItemToPlaylist,
     removeItemFromPlaylist,
   } from "$lib/api";
+  import { playlistsStore } from "$lib/stores/playlists.svelte";
   import { LoaderIcon } from "@lucide/svelte";
   import { SvelteSet } from "svelte/reactivity";
 
@@ -35,8 +35,8 @@
   async function loadPlaylists() {
     loading = true;
     try {
-      const response = await getUserPlaylists("user");
-      playlists = response;
+      await playlistsStore.loadUserPlaylists();
+      playlists = playlistsStore.userPlaylists;
 
       const trackInPlaylists = new SvelteSet<string>();
       await Promise.all(
@@ -103,6 +103,8 @@
           }
         }),
       ]);
+
+      playlistsStore.invalidate();
 
       onSuccess?.(toRemove);
       handleOpenChange(false);

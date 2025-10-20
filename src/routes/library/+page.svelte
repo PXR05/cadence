@@ -2,7 +2,8 @@
   import { invalidateAll } from "$app/navigation";
   import { CreatePlaylistDialog, PlaylistCard } from "$lib/components";
   import { ScrollArea } from "$lib/components/ui/scroll-area";
-  import { LoaderIcon, PlusIcon, ChevronRightIcon } from "@lucide/svelte";
+  import { PlusIcon, ChevronRightIcon } from "@lucide/svelte";
+  import { playlistsStore } from "$lib/stores/playlists.svelte";
 
   let { data } = $props();
 
@@ -10,8 +11,10 @@
   const userPlaylists = $derived(data.userPlaylists);
   const specialPlaylists = $derived(data.specialPlaylists);
   const youtubePlaylists = $derived(data.youtubePlaylists);
+  const allUserPlaylists = $derived([...specialPlaylists, ...userPlaylists]);
 
   async function handlePlaylistCreated() {
+    playlistsStore.invalidate();
     await invalidateAll();
   }
 </script>
@@ -52,36 +55,23 @@
               class="text-muted-foreground"
             />
           </button>
-          {#await Promise.all( [specialPlaylists, userPlaylists] ) then [specials, users]}
-            {@const playlists = specials.concat(users)}
-            {#each playlists as playlist (playlist.id)}
-              <PlaylistCard {playlist} />
-            {/each}
-          {:catch error}
-            <div class="flex items-center justify-center h-full">
-              {error.message}
-            </div>
-          {/await}
+          {#each allUserPlaylists as playlist (playlist.id)}
+            <PlaylistCard {playlist} />
+          {/each}
         </div>
       </ScrollArea>
     </div>
 
-    {#await youtubePlaylists then playlists}
-      {#if playlists.length > 0}
-        {@render sectionHeader("YouTube", "/library/type/youtube")}
-        <ScrollArea orientation="horizontal">
-          <div class="flex flex-row gap-4 pb-2 -mx-4 px-4">
-            {#each playlists as playlist (playlist.id)}
-              <PlaylistCard {playlist} />
-            {/each}
-          </div>
-        </ScrollArea>
-      {/if}
-    {:catch error}
-      <div class="flex items-center justify-center h-full">
-        {error.message}
-      </div>
-    {/await}
+    {#if youtubePlaylists.length > 0}
+      {@render sectionHeader("YouTube", "/library/type/youtube")}
+      <ScrollArea orientation="horizontal">
+        <div class="flex flex-row gap-4 pb-2 -mx-4 px-4">
+          {#each youtubePlaylists as playlist (playlist.id)}
+            <PlaylistCard {playlist} />
+          {/each}
+        </div>
+      </ScrollArea>
+    {/if}
   </div>
 </div>
 
