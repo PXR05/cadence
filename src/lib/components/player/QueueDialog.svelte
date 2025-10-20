@@ -49,7 +49,7 @@
       </Dialog.Close>
     </div>
 
-    <ScrollArea class="h-dvh md:max-h-[90dvh]">
+    <ScrollArea class="h-dvh md:max-h-[90dvh-1rem]">
       <div class="flex-1 px-3 space-y-1 pt-15">
         {#if playerStore.trackQueue.length === 0}
           <div class="text-center py-8 text-muted-foreground">

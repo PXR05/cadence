@@ -47,10 +47,10 @@
 </script>
 
 <div
-  class="flex-1 flex items-end transition-all duration-200
+  class="flex-1 flex items-end rounded-xl border transition-all duration-200
   {isScrolled
-    ? 'flex-row bg-muted/50 rounded-xl p-2 backdrop-blur-md border border-input'
-    : 'max-md:w-full'}"
+    ? 'bg-muted/50 backdrop-blur-md border-input p-2'
+    : 'border-transparent'}"
 >
   <div
     class="border flex-shrink-0 overflow-hidden bg-muted relative grid place-items-center rounded-xl transition-all duration-200
@@ -107,10 +107,8 @@
   </div>
 
   <div
-    class="relative w-full flex sm:justify-between sm:items-end gap-2 truncate transition-all duration-200
-    {isScrolled
-      ? 'flex-row items-center justify-between h-9'
-      : 'h-40 md:h-48 max-sm:flex-col justify-end'}"
+    class="relative w-full flex justify-between sm:items-end gap-2 truncate transition-all duration-200
+    {isScrolled ? 'flex-row items-center h-9' : 'h-40 md:h-48'}"
   >
     <Button
       variant={isScrolled ? "ghost" : "outline"}
@@ -122,7 +120,10 @@
       <ArrowLeft />
     </Button>
 
-    <div class="flex flex-col truncate h-full justify-end">
+    <div
+      class="flex flex-col truncate h-full justify-end transition-all duration-200
+      {isScrolled ? '' : 'max-sm:pb-10'}"
+    >
       <h1
         class="flex items-center gap-2 font-semibold truncate transition-all duration-200 text-2xl
         {isScrolled ? 'pl-10 mb-0.5' : ''}"
@@ -143,11 +144,14 @@
       </p>
     </div>
 
-    <div class="flex gap-2 flex-shrink-0">
+    <div
+      class="flex gap-2 absolute bottom-0 right-0 transition-all duration-200
+      {isScrolled ? 'max-sm:w-[100px]' : 'max-sm:w-[calc(100dvw-11.4rem)]'}"
+    >
       <Button
         onclick={onPlay}
         disabled={playlist.items.length === 0}
-        class="border bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 px-6
+        class="w-full border bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 px-6
         {isScrolled
           ? 'text-sm'
           : 'max-sm:w-full max-md:justify-center max-md:text-sm'}"

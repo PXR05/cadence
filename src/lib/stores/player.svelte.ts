@@ -366,7 +366,7 @@ class PlayerState {
       )
       .join("");
 
-    // document.body.style.setProperty("--primary", `#${hex}`);
+    document.body.style.setProperty("--primary", `#${hex}`);
 
     this.persistedState.value = {
       ...this.persistedState.value,

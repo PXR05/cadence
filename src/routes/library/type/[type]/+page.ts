@@ -12,30 +12,46 @@ export const load: PageLoad = async ({ params }) => {
       playlists: [] as Playlist[],
       specialPlaylists: [] as Playlist[],
       type,
+      streaming: { playlists: Promise.resolve([]) },
     };
   }
 
-  await playlistsStore.loadAllPlaylists();
+  let cachedPlaylists: Playlist[] = [];
+  let streamingData: Promise<Playlist[]>;
 
   if (type === "user") {
+    cachedPlaylists = playlistsStore.userPlaylists;
+    streamingData = playlistsStore
+      .loadAllPlaylists()
+      .then(() => playlistsStore.userPlaylists);
+
     return {
-      playlists: playlistsStore.userPlaylists,
+      playlists: cachedPlaylists,
       specialPlaylists: await getSpecialPlaylists(),
       type,
+      streaming: { playlists: streamingData },
     };
   }
 
   if (type === "youtube") {
+    cachedPlaylists = playlistsStore.youtubePlaylists;
+    streamingData = playlistsStore
+      .loadAllPlaylists()
+      .then(() => playlistsStore.youtubePlaylists);
+
     return {
-      playlists: playlistsStore.youtubePlaylists,
+      playlists: cachedPlaylists,
       specialPlaylists: [] as Playlist[],
       type,
+      streaming: { playlists: streamingData },
     };
   }
 
+  const apiPlaylists = await getUserPlaylists(type);
   return {
-    playlists: await getUserPlaylists(type),
+    playlists: apiPlaylists,
     specialPlaylists: [] as Playlist[],
     type,
+    streaming: { playlists: Promise.resolve(apiPlaylists) },
   };
 };

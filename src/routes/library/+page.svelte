@@ -8,10 +8,24 @@
   let { data } = $props();
 
   let createDialogOpen = $state(false);
-  const userPlaylists = $derived(data.userPlaylists);
+  let userPlaylists = $state(data.userPlaylists);
+  let youtubePlaylists = $state(data.youtubePlaylists);
+
   const specialPlaylists = $derived(data.specialPlaylists);
-  const youtubePlaylists = $derived(data.youtubePlaylists);
   const allUserPlaylists = $derived([...specialPlaylists, ...userPlaylists]);
+
+  $effect(() => {
+    if (data.streaming?.userPlaylists) {
+      data.streaming.userPlaylists.then((playlists) => {
+        userPlaylists = playlists;
+      });
+    }
+    if (data.streaming?.youtubePlaylists) {
+      data.streaming.youtubePlaylists.then((playlists) => {
+        youtubePlaylists = playlists;
+      });
+    }
+  });
 
   async function handlePlaylistCreated() {
     playlistsStore.invalidate();

@@ -1,5 +1,5 @@
 import { browser } from "$app/environment";
-import { db } from "$lib/db/offline";
+import { db as offlineDb } from "$lib/db/offline";
 import { playlistsStore } from "$lib/stores/playlists.svelte";
 import { tracksStore } from "$lib/stores/tracks.svelte";
 import {
@@ -16,21 +16,26 @@ export const load: PageLoad = async ({ params }) => {
     return {
       playlist: null as PlaylistDetail | null,
       playlistId,
+      streaming: { playlist: Promise.resolve(null) },
     };
   }
 
   if (isSpecialPlaylist(playlistId)) {
+    const specialPlaylist = loadSpecialPlaylist(playlistId);
     return {
-      playlist: await loadSpecialPlaylist(playlistId),
+      playlist: await specialPlaylist,
       playlistId,
+      streaming: { playlist: Promise.resolve(await specialPlaylist) },
     };
   }
 
-  const playlistDetail = await playlistsStore.loadPlaylistDetail(playlistId);
+  const cachedPlaylist = playlistsStore.getPlaylistDetail(playlistId);
+  const streamingData = playlistsStore.loadPlaylistDetail(playlistId);
 
   return {
-    playlist: playlistDetail,
+    playlist: cachedPlaylist,
     playlistId,
+    streaming: { playlist: streamingData },
   };
 };
 
@@ -65,7 +70,7 @@ async function loadSpecialPlaylist(id: string): Promise<PlaylistDetail> {
       audio: track,
     }));
   } else if (id === SPECIAL_PLAYLIST_IDS.DOWNLOADED) {
-    const offlineTracks = await db.tracks.toArray();
+    const offlineTracks = await offlineDb.tracks.toArray();
     const tracks = offlineTracks.map(
       (track) =>
         ({

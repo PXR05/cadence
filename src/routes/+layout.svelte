@@ -123,7 +123,9 @@
         <NavBar orientation="vertical" size={48} />
       </div>
     {/if}
-    <div class="overflow-auto h-dvh max-w-4xl w-full mx-auto">
+    <div
+      class="overflow-auto h-dvh max-w-4xl w-full mx-auto bg-gradient-to-b from-primary/5 via-transparent to-transparent"
+    >
       {@render children?.()}
     </div>
     <BottomBar />

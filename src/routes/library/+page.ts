@@ -8,14 +8,28 @@ export async function load() {
       specialPlaylists: [] as Playlist[],
       userPlaylists: [] as Playlist[],
       youtubePlaylists: [] as Playlist[],
+      streaming: {
+        userPlaylists: Promise.resolve([]),
+        youtubePlaylists: Promise.resolve([]),
+      },
     };
   }
 
-  await playlistsStore.loadAllPlaylists();
+  const cachedUserPlaylists = playlistsStore.getUserPlaylistsFiltered(10);
+  const cachedYoutubePlaylists = playlistsStore.getYoutubePlaylistsFiltered(10);
+
+  const streamingData = playlistsStore.loadAllPlaylists().then(() => ({
+    userPlaylists: playlistsStore.getUserPlaylistsFiltered(10),
+    youtubePlaylists: playlistsStore.getYoutubePlaylistsFiltered(10),
+  }));
 
   return {
     specialPlaylists: await getSpecialPlaylists(),
-    userPlaylists: playlistsStore.getUserPlaylistsFiltered(10),
-    youtubePlaylists: playlistsStore.getYoutubePlaylistsFiltered(10),
+    userPlaylists: cachedUserPlaylists,
+    youtubePlaylists: cachedYoutubePlaylists,
+    streaming: {
+      userPlaylists: streamingData.then((d) => d.userPlaylists),
+      youtubePlaylists: streamingData.then((d) => d.youtubePlaylists),
+    },
   };
 }

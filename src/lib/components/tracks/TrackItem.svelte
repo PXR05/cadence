@@ -105,7 +105,7 @@
     {isCurrentTrack ? 'bg-muted/50' : ''}"
     onclick={handlePlay}
   >
-    <div class="border rounded-md size-16 flex-shrink-0 overflow-hidden">
+    <div class="rounded-md size-16 flex-shrink-0 overflow-hidden">
       <img
         loading="lazy"
         src={getImageUrl(track.id)}

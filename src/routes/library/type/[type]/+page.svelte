@@ -8,12 +8,20 @@
 
   let { data } = $props();
 
+  let playlists = $state(data.playlists);
   const type = $derived(data.type);
-  const playlists = $derived(data.playlists);
   const specialPlaylists = $derived(data.specialPlaylists);
   const displayPlaylists = $derived(
     type === "user" ? [...specialPlaylists, ...playlists] : playlists
   );
+
+  $effect(() => {
+    if (data.streaming?.playlists) {
+      data.streaming.playlists.then((freshPlaylists) => {
+        playlists = freshPlaylists;
+      });
+    }
+  });
 
   onMount(() => {
     navigationStore.setNavigation(

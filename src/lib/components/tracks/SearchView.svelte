@@ -96,7 +96,6 @@
   }
 
   onMount(() => {
-    searchInput?.focus();
     return () => {
       if (searchDebounce) clearTimeout(searchDebounce);
     };
@@ -152,7 +151,9 @@
   <div class="flex flex-col mx-auto w-full h-full border-x overflow-auto">
     <div class="flex-1 pt-16 md:pt-15">
       {#if loading}
-        <div class="flex flex-col items-center justify-center flex-1 p-8 h-full">
+        <div
+          class="flex flex-col items-center justify-center flex-1 p-8 h-full"
+        >
           <LoaderIcon class="animate-spin text-muted-foreground" />
         </div>
       {:else if hasSearched}

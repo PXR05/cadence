@@ -1,4 +1,6 @@
-import { db } from "$lib/db/offline";
+import { cacheDb } from "$lib/db/cache";
+import { db as offlineDB } from "$lib/db/offline";
+import { tracksStore } from "$lib/stores/tracks.svelte";
 
 export function getPlaylistDisplayName(playlist: Playlist): string {
   if (playlist.name.startsWith("artist:")) {
@@ -70,11 +72,6 @@ export function getSpecialPlaylist(playlistId: string): Playlist | undefined {
 export async function getSpecialPlaylists(): Promise<Playlist[]> {
   const now = new Date();
 
-  const [allSongsCount, downloadedCount] = await Promise.all([
-    getAllSongsCount(),
-    getDownloadedSongsCount(),
-  ]);
-
   return [
     {
       id: SPECIAL_PLAYLIST_IDS.ALL_SONGS,
@@ -82,7 +79,7 @@ export async function getSpecialPlaylists(): Promise<Playlist[]> {
       userId: "system",
       createdAt: now,
       updatedAt: now,
-      itemCount: allSongsCount,
+      itemCount: tracksStore.tracksCount,
     },
     {
       id: SPECIAL_PLAYLIST_IDS.DOWNLOADED,
@@ -90,32 +87,14 @@ export async function getSpecialPlaylists(): Promise<Playlist[]> {
       userId: "system",
       createdAt: now,
       updatedAt: now,
-      itemCount: downloadedCount,
+      itemCount: await getDownloadedSongsCount(),
     },
   ];
 }
 
-async function getAllSongsCount(): Promise<number> {
-  try {
-    const params = new URLSearchParams({
-      page: "1",
-      limit: "1",
-    });
-
-    const res = await fetch(`/api/audio?${params}`);
-    if (!res.ok) return 0;
-
-    const data = (await res.json()) as AudioListResponse;
-    return data.count;
-  } catch (error) {
-    console.error("Failed to get all songs count:", error);
-    return 0;
-  }
-}
-
 async function getDownloadedSongsCount(): Promise<number> {
   try {
-    return await db.tracks.count();
+    return await offlineDB.tracks.count();
   } catch (error) {
     console.error("Failed to get downloaded songs count:", error);
     return 0;

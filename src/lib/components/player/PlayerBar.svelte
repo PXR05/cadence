@@ -38,18 +38,22 @@
       playerStore.initializeCarousel("main", api);
     }
   }
+
+  const translate = $derived.by(() => {
+    if (panelState.isOpen && bottomBarVisible) {
+      return `calc(-100dvh + 3.625rem)`;
+    }
+    if (panelState.isOpen) {
+      return `-100dvh`;
+    }
+    return `0`;
+  });
 </script>
 
 <div
   class="select-none h-20 transition-all duration-200 p-1.5
   {bottomBarVisible ? 'mb-17' : 'mb-3'}"
-  style="translate: 
-    0 
-    calc(
-      {panelState.isOpen ? '-100dvh' : '0'} + {bottomBarVisible
-    ? '3.625rem'
-    : '0'}
-    );"
+  style="transform: translateY({translate});"
 >
   <div
     class="rounded-xl overflow-clip border border-input bg-muted/50 transition-all duration-200

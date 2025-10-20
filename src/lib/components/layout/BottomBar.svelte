@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { slide } from "svelte/transition";
   import PlayerBar from "../player/PlayerBar.svelte";
   import NavBar from "./NavBar.svelte";
   import GlobalDownloadProgress from "./GlobalDownloadProgress.svelte";
@@ -11,22 +10,18 @@
   const isTopRoute = $derived(page.url.pathname.split("/").length <= 2);
 
   const panelState = useDialogState("player-detail");
-
-  const bottomBarVisible = $derived(
-    isMobile && isTopRoute
-  );
 </script>
 
-<div
-  class="flex flex-col gap-1.5 fixed bottom-0 left-0 right-0 z-50"
->
+<div class="flex flex-col gap-1.5 fixed bottom-0 left-0 right-0 z-50">
   <div class="_bg _blur absolute inset-0 -z-10"></div>
   <div class="_bg _color absolute inset-0 -z-10"></div>
   <GlobalDownloadProgress />
-  <PlayerBar {panelState} {bottomBarVisible} />
+  <PlayerBar {panelState} bottomBarVisible={isTopRoute && isMobile} />
   <div
     class="absolute bottom-1.5 left-1.5 right-1.5 transition-all duration-200"
-    style="translate: 0 {panelState.isOpen ? '3.625rem' : '0'};"
+    style="transform: translateY({panelState.isOpen || !isTopRoute || !isMobile
+      ? '3.625rem'
+      : '0'});"
   >
     <NavBar />
   </div>

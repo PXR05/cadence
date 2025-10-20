@@ -33,6 +33,10 @@ class TracksStore {
     return this._error;
   }
 
+  get tracksCount() {
+    return this._tracks.length;
+  }
+
   private set isInitialLoad(value: boolean) {
     this._isInitialLoad = value;
   }

@@ -23,7 +23,7 @@
   let { data } = $props();
 
   const playlistId = $derived(data.playlistId);
-  const playlist = $derived(data.playlist);
+  let playlist = $state(data.playlist);
 
   let searchQuery = $state("");
   let isScrolled = $state(false);
@@ -52,6 +52,16 @@
       ? filterTracks(playlist?.items ?? [], searchQuery)
       : (playlist?.items ?? [])
   );
+
+  $effect(() => {
+    if (data.streaming?.playlist) {
+      data.streaming.playlist.then((freshPlaylist) => {
+        if (freshPlaylist) {
+          playlist = freshPlaylist;
+        }
+      });
+    }
+  });
 
   $effect(() => {
     if (playlist) {
