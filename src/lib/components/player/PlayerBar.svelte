@@ -14,8 +14,10 @@
 
   const {
     panelState,
+    bottomBarVisible = false,
   }: {
     panelState: ReturnType<typeof useDialogState>;
+    bottomBarVisible?: boolean;
   } = $props();
 
   let audioEl: HTMLAudioElement | null = $state(null);
@@ -39,13 +41,19 @@
 </script>
 
 <div
-  class="select-none h-20 transition-all duration-200 backdrop-blur-md"
-  style="transform: translateY({panelState.isOpen ? '-100dvh' : '0'});
-    view-transition-name: player;"
+  class="select-none h-20 transition-all duration-200 p-1.5
+  {bottomBarVisible ? 'mb-17' : 'mb-3'}"
+  style="translate: 
+    0 
+    calc(
+      {panelState.isOpen ? '-100dvh' : '0'} + {bottomBarVisible
+    ? '3.625rem'
+    : '0'}
+    );"
 >
   <div
     class="rounded-xl overflow-clip border border-input bg-muted/50 transition-all duration-200
-    {panelState.isOpen ? 'opacity-0' : 'opacity-100'}"
+    {panelState.isOpen ? 'opacity-0' : 'opacity-100 backdrop-blur-md'}"
   >
     <div
       class=" relative flex md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center max-md:justify-between py-2 min-h-16"

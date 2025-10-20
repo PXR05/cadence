@@ -11,25 +11,25 @@
   const isTopRoute = $derived(page.url.pathname.split("/").length <= 2);
 
   const panelState = useDialogState("player-detail");
+
+  const bottomBarVisible = $derived(
+    isMobile && isTopRoute
+  );
 </script>
 
 <div
-  class="flex flex-col gap-1.5 fixed bottom-0 left-0 right-0 z-50 transition-all duration-200
-{panelState.isOpen ? 'p-0' : 'p-1.5'}"
+  class="flex flex-col gap-1.5 fixed bottom-0 left-0 right-0 z-50"
 >
   <div class="_bg _blur absolute inset-0 -z-10"></div>
   <div class="_bg _color absolute inset-0 -z-10"></div>
   <GlobalDownloadProgress />
-  <PlayerBar {panelState} />
-  {#if isMobile && isTopRoute && !panelState.isOpen}
-    <div
-      transition:slide={{
-        duration: 200,
-      }}
-    >
-      <NavBar />
-    </div>
-  {/if}
+  <PlayerBar {panelState} {bottomBarVisible} />
+  <div
+    class="absolute bottom-1.5 left-1.5 right-1.5 transition-all duration-200"
+    style="translate: 0 {panelState.isOpen ? '3.625rem' : '0'};"
+  >
+    <NavBar />
+  </div>
 </div>
 
 <style>

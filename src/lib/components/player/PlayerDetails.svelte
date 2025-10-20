@@ -6,13 +6,15 @@
   import * as Carousel from "../ui/carousel";
   import type { CarouselAPI } from "../ui/carousel/context";
   import { Button } from "../ui/button";
+  import { fade } from "svelte/transition";
 
   interface Props {
     track: AudioFile;
+    open?: boolean;
     onQueueOpen: () => void;
   }
 
-  const { track, onQueueOpen }: Props = $props();
+  const { track, open = false, onQueueOpen }: Props = $props();
 
   const trackTitle = $derived(track?.metadata?.title ?? track?.filename ?? "");
   const trackArtist = $derived(track?.metadata?.artist ?? "Unknown Artist");
@@ -26,15 +28,21 @@
 
 <div class="flex-1 flex flex-col justify-between">
   <div class="relative flex-shrink-0 my-auto w-full z-20">
-    <img
-      loading="lazy"
-      src={playerStore.currentImageUrl}
-      alt={playerStore.currentTrack?.id ?? ""}
-      draggable="false"
-      onauxclick={() => false}
-      oncontextmenu={() => false}
-      class="h-[min(42.5dvh,90dvw)] scale-150 aspect-square object-cover absolute inset-0 m-auto pointer-events-none blur-3xl"
-    />
+    {#if open}
+      <img
+        in:fade={{
+          duration: 200,
+          delay: 200,
+        }}
+        loading="lazy"
+        src={playerStore.currentImageUrl}
+        alt={playerStore.currentTrack?.id ?? ""}
+        draggable="false"
+        onauxclick={() => false}
+        oncontextmenu={() => false}
+        class="h-[min(42.5dvh,90dvw)] scale-150 aspect-square object-cover absolute inset-0 m-auto pointer-events-none blur-3xl"
+      />
+    {/if}
     <Carousel.Root
       class="w-full z-20"
       opts={{ loop: true }}
@@ -59,7 +67,7 @@
     <div class="text-center">
       <h2
         class="text-xl font-semibold truncate"
-        style="color: color-mix(in oklab, #{playerStore.trackColor} 50%, var(--foreground));"
+        style="color: color-mix(in oklab, #{playerStore.trackColor} 30%, var(--foreground));"
       >
         {trackTitle}
       </h2>

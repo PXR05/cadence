@@ -41,7 +41,7 @@
 </script>
 
 <div
-  class="bg-background relative h-dvh flex flex-col transition-all duration-300
+  class="bg-background relative h-dvh flex flex-col transition-all duration-200
   {open ? 'opacity-100' : 'opacity-0'}"
 >
   <div class="flex justify-between items-center p-6">
@@ -73,7 +73,7 @@
   </div>
 
   {#if track}
-    <PlayerDetails {track} {onQueueOpen} />
+    <PlayerDetails {open} {track} {onQueueOpen} />
   {/if}
 </div>
 
