@@ -184,8 +184,10 @@
         onpointerdown={handleIndicatorPointerDown}
         onpointerup={handleIndicatorPointerUp}
         onpointercancel={handleIndicatorPointerUp}
-        class="absolute rounded-lg bg-primary touch-none cursor-grab active:cursor-grabbing z-10
-        {isDragging ? 'opacity-90 scale-95' : 'pointer-events-auto'}"
+        class="absolute rounded-lg bg-primary touch-none cursor-grab active:cursor-grabbing z-10 transition-all duration-100 ease-out-back
+        {isDragging
+          ? 'opacity-90 scale-y-90'
+          : 'pointer-events-auto'}"
         style={orientation === "horizontal"
           ? `
             top: 0.375rem;

@@ -97,7 +97,7 @@
       color-mix(
         in oklab,
         {playerStore.trackColor
-      ? '#' + playerStore.trackColor
+      ? playerStore.trackColor
       : 'var(--primary)'} 20%,
         transparent
       );"
@@ -109,7 +109,7 @@
         color-mix(
           in oklab,
           {playerStore.trackColor
-        ? '#' + playerStore.trackColor
+        ? playerStore.trackColor
         : 'var(--primary)'} 80%,
           var(--foreground)
         );"

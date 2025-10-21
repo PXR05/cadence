@@ -3,6 +3,7 @@ import { BASE_URL, PLAYLIST_URL } from "$lib/api";
 import type { CarouselAPI } from "$lib/components/ui/carousel/context";
 import { createLocalStorageState } from "./localStorage.svelte";
 import { getAudioUrl, revokeAudioUrl } from "$lib/utils/offline";
+import Color from "colorjs.io";
 
 export const getStreamUrl = (id: string) => `${BASE_URL}/${id}/stream`;
 export const getImageUrl = (id: string) => `${BASE_URL}/${id}/image`;
@@ -354,23 +355,26 @@ class PlayerState {
   }
 
   async loadTrackColor(track: AudioFile) {
-    const color = await average(getImageUrl(track.id), {
+    const imageColor = (await average(getImageUrl(track.id), {
       amount: 1,
-    });
+      format: "hex",
+    })) as string;
 
-    const hex = (color as number[])
-      .map((c) =>
-        Math.min(c + 60, 255)
-          .toString(16)
-          .padStart(2, "0")
-      )
-      .join("");
+    const color = new Color(imageColor).to("oklch");
 
-    document.body.style.setProperty("--primary", `#${hex}`);
+    const brighter = color.set({
+      "oklch.l": 0.7,
+      "oklch.c": 0.1,
+    }) as Color;
+
+    document.body.style.setProperty(
+      "--primary",
+      `oklch(${brighter.coords[0]} ${brighter.coords[1]} ${brighter.coords[2]})`
+    );
 
     this.persistedState.value = {
       ...this.persistedState.value,
-      trackColor: hex,
+      trackColor: brighter.toString(),
     };
   }
 }

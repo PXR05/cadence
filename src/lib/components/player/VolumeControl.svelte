@@ -37,13 +37,13 @@
   >
     <div
       class="absolute inset-0 pointer-events-none"
-      style="background-color: color-mix(in oklab, #{playerStore.trackColor} 20%, transparent);"
+      style="background-color: color-mix(in oklab, {playerStore.trackColor} 20%, transparent);"
     >
       <div
         class="h-full rounded-lg"
         style="
           width: {playerStore.volume * 100}%;
-          background-color: color-mix(in oklab, #{playerStore.trackColor} 80%, var(--foreground));"
+          background-color: color-mix(in oklab, {playerStore.trackColor} 80%, var(--foreground));"
       ></div>
     </div>
     <input

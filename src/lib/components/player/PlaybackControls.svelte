@@ -22,7 +22,7 @@
   const size = $derived(sizes[variant]);
 
   const textColor = $derived(
-    `color-mix(in oklab, #${playerStore.trackColor} 30%, var(--foreground))`
+    `color-mix(in oklab, ${playerStore.trackColor} 30%, var(--foreground))`
   );
 </script>
 

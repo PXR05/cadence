@@ -32,7 +32,7 @@
       <img
         in:fade={{
           duration: 200,
-          delay: 200,
+          delay: 300,
         }}
         loading="lazy"
         src={playerStore.currentImageUrl}
@@ -67,13 +67,13 @@
     <div class="text-center">
       <h2
         class="text-xl font-semibold truncate"
-        style="color: color-mix(in oklab, #{playerStore.trackColor} 30%, var(--foreground));"
+        style="color: color-mix(in oklab, {playerStore.trackColor} 30%, var(--foreground));"
       >
         {trackTitle}
       </h2>
       <p
         class="text-muted-foreground truncate"
-        style="color: color-mix(in oklab, #{playerStore.trackColor} 30%, var(--muted-foreground));"
+        style="color: color-mix(in oklab, {playerStore.trackColor} 30%, var(--muted-foreground));"
       >
         {trackArtist}
       </p>
@@ -88,7 +88,7 @@
 
   <div class="p-4 z-20">
     <Button
-      variant="outline"
+      variant="ghost"
       onclick={onQueueOpen}
       class="w-full py-3 px-4 transition-colors flex items-center justify-center gap-2"
     >
