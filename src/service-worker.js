@@ -12,10 +12,7 @@ const self = /** @type {ServiceWorkerGlobalScope} */ (
 
 const CACHE = `cache-${version}`;
 
-const ASSETS = [
-  ...build,
-  ...files,
-];
+const ASSETS = [...build, ...files];
 
 self.addEventListener("install", (event) => {
   async function addFilesToCache() {
@@ -75,4 +72,59 @@ self.addEventListener("fetch", (event) => {
   }
 
   event.respondWith(respond());
+});
+
+self.addEventListener("backgroundfetchsuccess", (event) => {
+  const bgFetch = event.registration;
+
+  event.waitUntil(
+    (async () => {
+      try {
+        const cache = await caches.open("offline-tracks");
+        const records = await bgFetch.matchAll();
+        const promises = [];
+
+        for (const record of records) {
+          const response = await record.responseReady;
+          promises.push(cache.put(record.request, response));
+        }
+
+        await Promise.all(promises);
+
+        await bgFetch.updateUI({ title: "Download complete!" });
+      } catch (error) {
+        console.error("Background fetch success handler error:", error);
+      }
+    })()
+  );
+});
+
+self.addEventListener("backgroundfetchfail", (event) => {
+  const bgFetch = event.registration;
+
+  event.waitUntil(
+    (async () => {
+      try {
+        await bgFetch.updateUI({ title: "Download failed" });
+      } catch (error) {
+        console.error("Background fetch fail handler error:", error);
+      }
+    })()
+  );
+});
+
+self.addEventListener("backgroundfetchabort", (event) => {
+  console.log("Background fetch aborted:", event.registration.id);
+});
+
+self.addEventListener("backgroundfetchclick", (event) => {
+  const bgFetch = event.registration;
+
+  event.waitUntil(
+    (async () => {
+      if (bgFetch.result === "success") {
+        await self.clients.openWindow("/");
+      }
+    })()
+  );
 });

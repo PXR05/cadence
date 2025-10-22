@@ -6,6 +6,7 @@ import {
   deleteOfflinePlaylist,
   deleteOfflineTrack,
 } from "$lib/db/offline";
+import zip from "jszip";
 
 type DownloadProgress = {
   playlistId?: string;
@@ -70,8 +71,6 @@ class DownloadStore {
         type: "download",
       };
 
-      const zip = await import("jszip").then((m) => new m.default());
-
       for (let i = 0; i < playlist.items.length; i++) {
         if (this._isCancelled) {
           return;
@@ -118,7 +117,149 @@ class DownloadStore {
 
   async makeOffline(
     playlist: PlaylistDetail,
-    playlistId: string,
+    playlistId: string
+  ): Promise<void> {
+    // Check if Background Fetch API is supported
+    const supportsBackgroundFetch =
+      "serviceWorker" in navigator && "BackgroundFetchManager" in globalThis;
+
+    if (supportsBackgroundFetch) {
+      try {
+        await this.makeOfflineWithBackgroundFetch(playlist, playlistId);
+      } catch (error) {
+        console.error(
+          "Background fetch failed, falling back to standard fetch:",
+          error
+        );
+        await this.makeOfflineWithStandardFetch(playlist, playlistId);
+      }
+    } else {
+      await this.makeOfflineWithStandardFetch(playlist, playlistId);
+    }
+  }
+
+  private async makeOfflineWithBackgroundFetch(
+    playlist: PlaylistDetail,
+    playlistId: string
+  ): Promise<void> {
+    try {
+      const registration = await navigator.serviceWorker.ready;
+
+      const requests = playlist.items.map(
+        (item) => `/api/audio/${item.audio.id}/stream`
+      );
+
+      const totalSize = playlist.items.reduce(
+        (sum, item) => sum + (item.audio.size || 0),
+        0
+      );
+
+      const bgFetch = await registration.backgroundFetch.fetch(
+        `offline-playlist-${playlistId}`,
+        requests,
+        {
+          title: `Downloading: ${playlist.name}`,
+          icons: [
+            {
+              sizes: "192x192",
+              src: "/icon-192x192.png",
+              type: "image/png",
+            },
+          ],
+          downloadTotal: totalSize,
+        }
+      );
+
+      this._progress = {
+        playlistId: playlist.id,
+        playlistName: playlist.name,
+        current: 0,
+        total: playlist.items.length,
+        type: "offline",
+      };
+
+      const updateProgress = async () => {
+        const downloaded = bgFetch.downloaded;
+        const total = bgFetch.downloadTotal;
+
+        if (total > 0) {
+          const percentage = (downloaded / total) * 100;
+          const tracksDownloaded = Math.floor(
+            (percentage / 100) * playlist.items.length
+          );
+
+          this._progress = {
+            playlistId: playlist.id,
+            playlistName: playlist.name,
+            current: tracksDownloaded,
+            total: playlist.items.length,
+            type: "offline",
+          };
+        }
+      };
+
+      const progressInterval = setInterval(updateProgress, 500);
+
+      await new Promise<void>((resolve, reject) => {
+        bgFetch.addEventListener("progress", updateProgress);
+
+        const checkCompletion = setInterval(async () => {
+          try {
+            const updated = await registration.backgroundFetch.get(
+              `offline-playlist-${playlistId}`
+            );
+
+            if (!updated) {
+              clearInterval(checkCompletion);
+              clearInterval(progressInterval);
+
+              const trackIds = playlist.items.map((item) => item.audio.id);
+              await savePlaylistOffline(playlistId, playlist.name, trackIds);
+
+              for (const item of playlist.items) {
+                const response = await caches.match(
+                  `/api/audio/${item.audio.id}/stream`
+                );
+                if (response) {
+                  const blob = await response.blob();
+                  await saveTrackOffline(
+                    item.audio.id,
+                    blob,
+                    {
+                      title: item.audio.metadata?.title,
+                      artist: item.audio.metadata?.artist,
+                      album: item.audio.metadata?.album,
+                      duration: item.audio.metadata?.duration,
+                    },
+                    item.audio.filename
+                  );
+                }
+              }
+
+              this._offlineStatus.set(playlistId, true);
+              resolve();
+            }
+          } catch (error) {
+            clearInterval(checkCompletion);
+            clearInterval(progressInterval);
+            reject(error);
+          }
+        }, 1000);
+      });
+    } catch (error) {
+      console.error(
+        "Failed to make playlist offline with background fetch:",
+        error
+      );
+      throw error;
+    } finally {
+      this._progress = null;
+    }
+  }
+
+  private async makeOfflineWithStandardFetch(
+    playlist: PlaylistDetail,
+    playlistId: string
   ): Promise<void> {
     this._abortController = new AbortController();
     this._isCancelled = false;
@@ -151,7 +292,7 @@ class DownloadStore {
             album: item.audio.metadata?.album,
             duration: item.audio.metadata?.duration,
           },
-          item.audio.filename,
+          item.audio.filename
         );
 
         trackIds.push(item.audio.id);
@@ -198,7 +339,7 @@ class DownloadStore {
       album?: string;
       duration?: number;
     },
-    filename: string,
+    filename: string
   ): Promise<void> {
     this._abortController = new AbortController();
     this._isCancelled = false;
@@ -246,13 +387,29 @@ class DownloadStore {
     }
   }
 
-  cancelDownload(): void {
+  async cancelDownload(): Promise<void> {
     this._isCancelled = true;
+
     if (this._abortController) {
       this._abortController.abort();
+      this._abortController = null;
     }
+
+    if (this._progress?.playlistId && "serviceWorker" in navigator) {
+      try {
+        const registration = await navigator.serviceWorker.ready;
+        const bgFetchId = `offline-playlist-${this._progress.playlistId}`;
+        const bgFetch = await registration.backgroundFetch.get(bgFetchId);
+
+        if (bgFetch) {
+          await bgFetch.abort();
+        }
+      } catch (error) {
+        console.error("Failed to cancel background fetch:", error);
+      }
+    }
+
     this._progress = null;
-    this._abortController = null;
   }
 }
 

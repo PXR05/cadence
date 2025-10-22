@@ -15,8 +15,8 @@
     showCancelDialog = true;
   }
 
-  function handleConfirmCancel() {
-    downloadStore.cancelDownload();
+  async function handleConfirmCancel() {
+    await downloadStore.cancelDownload();
     showCancelDialog = false;
   }
 </script>
