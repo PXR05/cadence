@@ -91,9 +91,26 @@ self.addEventListener("backgroundfetchsuccess", (event) => {
 
         await Promise.all(promises);
 
+        const clients = await self.clients.matchAll();
+        for (const client of clients) {
+          client.postMessage({
+            type: "BACKGROUND_FETCH_SUCCESS",
+            id: bgFetch.id,
+          });
+        }
+
         await bgFetch.updateUI({ title: "Download complete!" });
       } catch (error) {
         console.error("Background fetch success handler error:", error);
+
+        const clients = await self.clients.matchAll();
+        for (const client of clients) {
+          client.postMessage({
+            type: "BACKGROUND_FETCH_ERROR",
+            id: bgFetch.id,
+            error: error.message,
+          });
+        }
       }
     })()
   );
@@ -105,6 +122,15 @@ self.addEventListener("backgroundfetchfail", (event) => {
   event.waitUntil(
     (async () => {
       try {
+        const clients = await self.clients.matchAll();
+        for (const client of clients) {
+          client.postMessage({
+            type: "BACKGROUND_FETCH_FAIL",
+            id: bgFetch.id,
+            failureReason: bgFetch.failureReason,
+          });
+        }
+
         await bgFetch.updateUI({ title: "Download failed" });
       } catch (error) {
         console.error("Background fetch fail handler error:", error);
@@ -115,6 +141,18 @@ self.addEventListener("backgroundfetchfail", (event) => {
 
 self.addEventListener("backgroundfetchabort", (event) => {
   console.log("Background fetch aborted:", event.registration.id);
+
+  event.waitUntil(
+    (async () => {
+      const clients = await self.clients.matchAll();
+      for (const client of clients) {
+        client.postMessage({
+          type: "BACKGROUND_FETCH_ABORT",
+          id: event.registration.id,
+        });
+      }
+    })()
+  );
 });
 
 self.addEventListener("backgroundfetchclick", (event) => {

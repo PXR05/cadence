@@ -25,10 +25,99 @@ class DownloadStore {
   private _trackOfflineStatus = $state<Map<string, boolean>>(new Map());
   private _abortController: AbortController | null = null;
   private _isCancelled = false;
+  private _pendingBackgroundFetch: {
+    playlistId: string;
+    playlist: PlaylistDetail;
+    tracksToDownload: PlaylistItem[];
+  } | null = null;
 
   constructor() {
     if (typeof window !== "undefined") {
       this.restoreBackgroundFetchProgress();
+      this.setupServiceWorkerMessageListener();
+    }
+  }
+
+  private setupServiceWorkerMessageListener(): void {
+    if (!("serviceWorker" in navigator)) return;
+
+    navigator.serviceWorker.addEventListener("message", async (event) => {
+      const { type, id } = event.data;
+
+      if (type === "BACKGROUND_FETCH_SUCCESS") {
+        console.log("Background fetch completed:", id);
+        await this.handleBackgroundFetchSuccess(id);
+      } else if (type === "BACKGROUND_FETCH_FAIL") {
+        console.error("Background fetch failed:", id, event.data.failureReason);
+        this._progress = null;
+        this._pendingBackgroundFetch = null;
+        localStorage.removeItem("pendingBackgroundFetch");
+        alert("Background download failed. Please try again.");
+      } else if (type === "BACKGROUND_FETCH_ABORT") {
+        console.log("Background fetch aborted:", id);
+        this._progress = null;
+        this._pendingBackgroundFetch = null;
+        localStorage.removeItem("pendingBackgroundFetch");
+      }
+    });
+  }
+
+  private async handleBackgroundFetchSuccess(bgFetchId: string): Promise<void> {
+    try {
+      if (!this._pendingBackgroundFetch) {
+        console.warn("No pending background fetch data found");
+        return;
+      }
+
+      const { playlistId, playlist, tracksToDownload } =
+        this._pendingBackgroundFetch;
+
+      if (bgFetchId !== `offline-playlist-${playlistId}`) {
+        console.warn("Background fetch ID mismatch");
+        return;
+      }
+
+      const cache = await caches.open("offline-tracks");
+
+      for (const item of tracksToDownload) {
+        const response = await cache.match(
+          `/api/audio/${item.audio.id}/stream`
+        );
+        if (response) {
+          const blob = await response.blob();
+          await saveTrackOffline(
+            item.audio.id,
+            blob,
+            {
+              title: item.audio.metadata?.title,
+              artist: item.audio.metadata?.artist,
+              album: item.audio.metadata?.album,
+              duration: item.audio.metadata?.duration,
+            },
+            item.audio.filename,
+            item.audio.size
+          );
+        } else {
+          console.warn(`Track ${item.audio.id} not found in cache`);
+        }
+      }
+
+      const trackIds = playlist.items.map((item) => item.audio.id);
+      await savePlaylistOffline(playlistId, playlist.name, trackIds);
+
+      this._offlineStatus.set(playlistId, true);
+      this._progress = null;
+      this._pendingBackgroundFetch = null;
+
+      localStorage.removeItem("pendingBackgroundFetch");
+
+      console.log("Successfully saved playlist offline");
+    } catch (error) {
+      console.error("Failed to handle background fetch success:", error);
+      this._progress = null;
+      this._pendingBackgroundFetch = null;
+      localStorage.removeItem("pendingBackgroundFetch");
+      alert("Failed to save downloaded tracks. Please try again.");
     }
   }
 
@@ -36,6 +125,11 @@ class DownloadStore {
     if (!("serviceWorker" in navigator)) return;
 
     try {
+      const storedData = localStorage.getItem("pendingBackgroundFetch");
+      if (storedData) {
+        this._pendingBackgroundFetch = JSON.parse(storedData);
+      }
+
       const registration = await navigator.serviceWorker.ready;
       const ids = await registration.backgroundFetch.getIds();
 
@@ -47,9 +141,10 @@ class DownloadStore {
 
             this._progress = {
               playlistId,
-              playlistName: "Playlist",
+              playlistName:
+                this._pendingBackgroundFetch?.playlist.name || "Playlist",
               current: 0,
-              total: 1,
+              total: this._pendingBackgroundFetch?.playlist.items.length || 1,
               type: "offline",
             };
 
@@ -60,6 +155,7 @@ class DownloadStore {
       }
     } catch (error) {
       console.error("Failed to restore background fetch progress:", error);
+      localStorage.removeItem("pendingBackgroundFetch");
     }
   }
 
@@ -95,7 +191,6 @@ class DownloadStore {
           clearInterval(progressInterval);
           this._progress = null;
 
-          // Refresh offline status
           await this.checkOfflineStatus(playlistId);
         }
       } catch (error) {
@@ -225,7 +320,6 @@ class DownloadStore {
     try {
       const registration = await navigator.serviceWorker.ready;
 
-      // Filter out tracks that are already downloaded with correct size
       const tracksToDownload: typeof playlist.items = [];
       const alreadyDownloaded: string[] = [];
 
@@ -249,6 +343,17 @@ class DownloadStore {
         this._offlineStatus.set(playlistId, true);
         return;
       }
+
+      this._pendingBackgroundFetch = {
+        playlistId,
+        playlist,
+        tracksToDownload,
+      };
+
+      localStorage.setItem(
+        "pendingBackgroundFetch",
+        JSON.stringify(this._pendingBackgroundFetch)
+      );
 
       const requests = tracksToDownload.map(
         (item) => `/api/audio/${item.audio.id}/stream`
@@ -283,7 +388,7 @@ class DownloadStore {
         type: "offline",
       };
 
-      const updateProgress = async () => {
+      const updateProgress = () => {
         const downloaded = bgFetch.downloaded;
         const total = bgFetch.downloadTotal;
 
@@ -305,68 +410,56 @@ class DownloadStore {
 
       const progressInterval = setInterval(updateProgress, 500);
 
-      await new Promise<void>((resolve, reject) => {
-        bgFetch.addEventListener("progress", updateProgress);
+      const baseTimeout = 5 * 60 * 1000; // 5 minutes base
+      const perTrackTimeout = 30 * 1000; // 30 seconds per track
+      const sizeBasedTimeout = Math.ceil(totalSize / (1024 * 1024)) * 10 * 1000; // 10 seconds per MB
+      const dynamicTimeout = Math.max(
+        baseTimeout +
+          tracksToDownload.length * perTrackTimeout +
+          sizeBasedTimeout,
+        10 * 60 * 1000 // Minimum 10 minutes
+      );
 
-        const checkCompletion = setInterval(async () => {
-          try {
-            const updated = await registration.backgroundFetch.get(
-              `offline-playlist-${playlistId}`
-            );
+      console.log(
+        `Background fetch timeout set to ${Math.ceil(
+          dynamicTimeout / 60000
+        )} minutes for ${tracksToDownload.length} tracks (${Math.ceil(
+          totalSize / (1024 * 1024)
+        )} MB)`
+      );
 
-            if (!updated) {
-              clearInterval(checkCompletion);
-              clearInterval(progressInterval);
-
-              const trackIds = playlist.items.map((item) => item.audio.id);
-              await savePlaylistOffline(playlistId, playlist.name, trackIds);
-
-              for (const item of tracksToDownload) {
-                const response = await caches.match(
-                  `/api/audio/${item.audio.id}/stream`
-                );
-                if (response) {
-                  const blob = await response.blob();
-                  await saveTrackOffline(
-                    item.audio.id,
-                    blob,
-                    {
-                      title: item.audio.metadata?.title,
-                      artist: item.audio.metadata?.artist,
-                      album: item.audio.metadata?.album,
-                      duration: item.audio.metadata?.duration,
-                    },
-                    item.audio.filename,
-                    item.audio.size
-                  );
-                }
-              }
-
-              this._offlineStatus.set(playlistId, true);
-
-              if (alreadyDownloaded.length > 0) {
-                console.log(
-                  `Skipped ${alreadyDownloaded.length} already downloaded track(s)`
-                );
-              }
-
-              resolve();
-            }
-          } catch (error) {
-            clearInterval(checkCompletion);
+      const completionPromise = new Promise<void>((resolve, reject) => {
+        const checkInterval = setInterval(() => {
+          if (!this._progress || this._progress.playlistId !== playlistId) {
+            clearInterval(checkInterval);
             clearInterval(progressInterval);
-            reject(error);
+            resolve();
           }
-        }, 1000);
+        }, 500);
+
+        setTimeout(() => {
+          clearInterval(checkInterval);
+          clearInterval(progressInterval);
+          reject(new Error("Background fetch timeout"));
+        }, dynamicTimeout);
       });
+
+      await completionPromise;
+
+      if (alreadyDownloaded.length > 0) {
+        console.log(
+          `Skipped ${alreadyDownloaded.length} already downloaded track(s)`
+        );
+      }
     } catch (error) {
       console.error(
         "Failed to make playlist offline with background fetch:",
         error
       );
-      throw error;
-    } finally {
       this._progress = null;
+      this._pendingBackgroundFetch = null;
+      localStorage.removeItem("pendingBackgroundFetch");
+      throw error;
     }
   }
 

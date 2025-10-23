@@ -193,10 +193,10 @@
         <DownloadIcon size={16} class="mr-2" />
         Download as ZIP
       </DropdownMenu.Item>
-      {#if isOffline}
+      {#if isOffline || playlist.id === SPECIAL_PLAYLIST_IDS.DOWNLOADED}
         <DropdownMenu.Item onclick={onRemoveOffline} disabled={isDownloading}>
           <CheckCircleIcon size={16} class="mr-2" />
-          Remove Offline
+          Remove from Offline
         </DropdownMenu.Item>
       {:else}
         <DropdownMenu.Item
