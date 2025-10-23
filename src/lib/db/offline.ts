@@ -4,6 +4,7 @@ export interface OfflineTrack {
   id: string;
   audioBlob: Blob;
   mimeType: string;
+  size: number;
   metadata: {
     title?: string;
     artist?: string;
@@ -56,12 +57,14 @@ export async function saveTrackOffline(
   trackId: string,
   audioBlob: Blob,
   metadata: OfflineTrack["metadata"],
-  filename: string
+  filename: string,
+  size?: number
 ): Promise<void> {
   await db.tracks.put({
     id: trackId,
     audioBlob,
     mimeType: audioBlob.type || "audio/mpeg",
+    size: size || audioBlob.size,
     metadata,
     filename,
     downloadedAt: Date.now(),
@@ -77,6 +80,15 @@ export async function getOfflineTrack(
 export async function isTrackOffline(trackId: string): Promise<boolean> {
   const track = await db.tracks.get(trackId);
   return !!track;
+}
+
+export async function isTrackOfflineWithSize(
+  trackId: string,
+  expectedSize: number
+): Promise<boolean> {
+  const track = await db.tracks.get(trackId);
+  if (!track) return false;
+  return track.size === expectedSize;
 }
 
 export async function deleteOfflineTrack(trackId: string): Promise<void> {

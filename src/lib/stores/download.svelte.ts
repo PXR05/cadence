@@ -3,6 +3,7 @@ import {
   savePlaylistOffline,
   isPlaylistOffline as checkIsPlaylistOffline,
   isTrackOffline as checkIsTrackOffline,
+  isTrackOfflineWithSize,
   deleteOfflinePlaylist,
   deleteOfflineTrack,
 } from "$lib/db/offline";
@@ -24,6 +25,86 @@ class DownloadStore {
   private _trackOfflineStatus = $state<Map<string, boolean>>(new Map());
   private _abortController: AbortController | null = null;
   private _isCancelled = false;
+
+  constructor() {
+    if (typeof window !== "undefined") {
+      this.restoreBackgroundFetchProgress();
+    }
+  }
+
+  private async restoreBackgroundFetchProgress(): Promise<void> {
+    if (!("serviceWorker" in navigator)) return;
+
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const ids = await registration.backgroundFetch.getIds();
+
+      for (const id of ids) {
+        if (id.startsWith("offline-playlist-")) {
+          const bgFetch = await registration.backgroundFetch.get(id);
+          if (bgFetch) {
+            const playlistId = id.replace("offline-playlist-", "");
+
+            this._progress = {
+              playlistId,
+              playlistName: "Playlist",
+              current: 0,
+              total: 1,
+              type: "offline",
+            };
+
+            this.monitorBackgroundFetch(bgFetch, playlistId);
+            break;
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Failed to restore background fetch progress:", error);
+    }
+  }
+
+  private async monitorBackgroundFetch(
+    bgFetch: BackgroundFetchRegistration,
+    playlistId: string
+  ): Promise<void> {
+    const updateProgress = () => {
+      const downloaded = bgFetch.downloaded;
+      const total = bgFetch.downloadTotal;
+
+      if (total > 0 && this._progress) {
+        const percentage = Math.round((downloaded / total) * 100);
+        this._progress = {
+          ...this._progress,
+          current: percentage,
+          total: 100,
+        };
+      }
+    };
+
+    const progressInterval = setInterval(updateProgress, 500);
+
+    const checkCompletion = setInterval(async () => {
+      try {
+        const registration = await navigator.serviceWorker.ready;
+        const updated = await registration.backgroundFetch.get(
+          `offline-playlist-${playlistId}`
+        );
+
+        if (!updated) {
+          clearInterval(checkCompletion);
+          clearInterval(progressInterval);
+          this._progress = null;
+
+          // Refresh offline status
+          await this.checkOfflineStatus(playlistId);
+        }
+      } catch (error) {
+        clearInterval(checkCompletion);
+        clearInterval(progressInterval);
+        this._progress = null;
+      }
+    }, 1000);
+  }
 
   get progress(): DownloadProgress | null {
     return this._progress;
@@ -119,7 +200,6 @@ class DownloadStore {
     playlist: PlaylistDetail,
     playlistId: string
   ): Promise<void> {
-    // Check if Background Fetch API is supported
     const supportsBackgroundFetch =
       "serviceWorker" in navigator && "BackgroundFetchManager" in globalThis;
 
@@ -145,11 +225,36 @@ class DownloadStore {
     try {
       const registration = await navigator.serviceWorker.ready;
 
-      const requests = playlist.items.map(
+      // Filter out tracks that are already downloaded with correct size
+      const tracksToDownload: typeof playlist.items = [];
+      const alreadyDownloaded: string[] = [];
+
+      for (const item of playlist.items) {
+        const alreadyExists = await isTrackOfflineWithSize(
+          item.audio.id,
+          item.audio.size
+        );
+        if (alreadyExists) {
+          console.log(`Skipping already downloaded track: ${item.audio.id}`);
+          alreadyDownloaded.push(item.audio.id);
+        } else {
+          tracksToDownload.push(item);
+        }
+      }
+
+      if (tracksToDownload.length === 0) {
+        console.log("All tracks already downloaded");
+        const trackIds = playlist.items.map((item) => item.audio.id);
+        await savePlaylistOffline(playlistId, playlist.name, trackIds);
+        this._offlineStatus.set(playlistId, true);
+        return;
+      }
+
+      const requests = tracksToDownload.map(
         (item) => `/api/audio/${item.audio.id}/stream`
       );
 
-      const totalSize = playlist.items.reduce(
+      const totalSize = tracksToDownload.reduce(
         (sum, item) => sum + (item.audio.size || 0),
         0
       );
@@ -173,7 +278,7 @@ class DownloadStore {
       this._progress = {
         playlistId: playlist.id,
         playlistName: playlist.name,
-        current: 0,
+        current: alreadyDownloaded.length,
         total: playlist.items.length,
         type: "offline",
       };
@@ -185,13 +290,13 @@ class DownloadStore {
         if (total > 0) {
           const percentage = (downloaded / total) * 100;
           const tracksDownloaded = Math.floor(
-            (percentage / 100) * playlist.items.length
+            (percentage / 100) * tracksToDownload.length
           );
 
           this._progress = {
             playlistId: playlist.id,
             playlistName: playlist.name,
-            current: tracksDownloaded,
+            current: tracksDownloaded + alreadyDownloaded.length,
             total: playlist.items.length,
             type: "offline",
           };
@@ -216,7 +321,7 @@ class DownloadStore {
               const trackIds = playlist.items.map((item) => item.audio.id);
               await savePlaylistOffline(playlistId, playlist.name, trackIds);
 
-              for (const item of playlist.items) {
+              for (const item of tracksToDownload) {
                 const response = await caches.match(
                   `/api/audio/${item.audio.id}/stream`
                 );
@@ -231,12 +336,20 @@ class DownloadStore {
                       album: item.audio.metadata?.album,
                       duration: item.audio.metadata?.duration,
                     },
-                    item.audio.filename
+                    item.audio.filename,
+                    item.audio.size
                   );
                 }
               }
 
               this._offlineStatus.set(playlistId, true);
+
+              if (alreadyDownloaded.length > 0) {
+                console.log(
+                  `Skipped ${alreadyDownloaded.length} already downloaded track(s)`
+                );
+              }
+
               resolve();
             }
           } catch (error) {
@@ -274,6 +387,7 @@ class DownloadStore {
       };
 
       const trackIds: string[] = [];
+      let skippedCount = 0;
 
       for (let i = 0; i < playlist.items.length; i++) {
         if (this._isCancelled) {
@@ -281,6 +395,23 @@ class DownloadStore {
         }
 
         const item = playlist.items[i];
+
+        const alreadyExists = await isTrackOfflineWithSize(
+          item.audio.id,
+          item.audio.size
+        );
+
+        if (alreadyExists) {
+          console.log(`Skipping already downloaded track: ${item.audio.id}`);
+          trackIds.push(item.audio.id);
+          skippedCount++;
+          this._progress = {
+            ...this._progress,
+            current: i + 1,
+          };
+          continue;
+        }
+
         const blob = await this.downloadTrackBlob(item.audio.id);
 
         await saveTrackOffline(
@@ -292,7 +423,8 @@ class DownloadStore {
             album: item.audio.metadata?.album,
             duration: item.audio.metadata?.duration,
           },
-          item.audio.filename
+          item.audio.filename,
+          item.audio.size
         );
 
         trackIds.push(item.audio.id);
@@ -308,6 +440,10 @@ class DownloadStore {
 
       await savePlaylistOffline(playlistId, playlist.name, trackIds);
       this._offlineStatus.set(playlistId, true);
+
+      if (skippedCount > 0) {
+        console.log(`Skipped ${skippedCount} already downloaded track(s)`);
+      }
     } catch (error) {
       if (this._isCancelled) {
         return;
@@ -339,12 +475,22 @@ class DownloadStore {
       album?: string;
       duration?: number;
     },
-    filename: string
+    filename: string,
+    size?: number
   ): Promise<void> {
     this._abortController = new AbortController();
     this._isCancelled = false;
 
     try {
+      if (size) {
+        const alreadyExists = await isTrackOfflineWithSize(trackId, size);
+        if (alreadyExists) {
+          console.log(`Track already downloaded: ${trackId}`);
+          this._trackOfflineStatus.set(trackId, true);
+          return;
+        }
+      }
+
       this._progress = {
         trackId,
         trackName: metadata.title || filename,
@@ -355,7 +501,7 @@ class DownloadStore {
 
       const blob = await this.downloadTrackBlob(trackId);
 
-      await saveTrackOffline(trackId, blob, metadata, filename);
+      await saveTrackOffline(trackId, blob, metadata, filename, size);
 
       if (!this._isCancelled) {
         this._progress = {

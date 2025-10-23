@@ -44,7 +44,7 @@
   async function handlePlay() {
     if (fromQueue) {
       const trackIndex = playerStore.trackQueue.findIndex(
-        (t) => t.id === track.id,
+        (t) => t.id === track.id
       );
       if (trackIndex !== -1) {
         playerStore.queueIndex = trackIndex;
@@ -93,6 +93,7 @@
           duration: track.metadata?.duration,
         },
         track.filename,
+        track.size
       );
     }
     isOffline = await downloadStore.checkTrackOfflineStatus(track.id);
