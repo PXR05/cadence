@@ -8,20 +8,20 @@ export function usePlaylistOffline(getPlaylistId: () => string | undefined) {
   });
 
   const isOffline = $derived(
-    playlistId ? downloadStore.isPlaylistOffline(playlistId) : false,
+    playlistId ? downloadStore.isPlaylistOffline(playlistId) : false
   );
 
   const isDownloading = $derived(
     playlistId !== undefined &&
       downloadStore.isDownloading &&
-      downloadStore.progress?.playlistId === playlistId,
+      downloadStore.progress?.playlistId === playlistId
   );
 
   const downloadProgress = $derived(
     playlistId !== undefined &&
       downloadStore.progress?.playlistId === playlistId
       ? downloadStore.progress
-      : null,
+      : null
   );
 
   async function checkOfflineStatus() {
@@ -33,9 +33,12 @@ export function usePlaylistOffline(getPlaylistId: () => string | undefined) {
     await downloadStore.downloadPlaylist(playlist);
   }
 
-  async function makeOffline(playlist: PlaylistDetail) {
+  async function makeOffline(
+    playlist: PlaylistDetail,
+    isResume: boolean = false
+  ) {
     if (!playlistId) return;
-    await downloadStore.makeOffline(playlist, playlistId);
+    await downloadStore.makeOffline(playlist, playlistId, isResume);
   }
 
   async function removeOffline() {
