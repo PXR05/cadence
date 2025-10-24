@@ -19,9 +19,12 @@
   <PlayerBar {panelState} bottomBarVisible={isTopRoute && isMobile} />
   <div
     class="absolute bottom-1.5 left-1.5 right-1.5 transition-all duration-200"
-    style="transform: translateY({panelState.isOpen || !isTopRoute || !isMobile
+    style="
+    transform: translateY({panelState.isOpen || !isTopRoute || !isMobile
       ? '3.625rem'
-      : '0'});"
+      : '0'});
+    will-change: transform;
+    "
   >
     <NavBar />
   </div>

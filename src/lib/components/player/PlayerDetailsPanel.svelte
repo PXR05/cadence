@@ -41,7 +41,7 @@
 </script>
 
 <div
-  class="relative bg-gradient-to-t from-[color-mix(in_oklab,var(--primary)10%,var(--background))] via-background to-background h-dvh flex flex-col transition-all duration-200
+  class="relative bg-gradient-to-t from-[color-mix(in_oklab,var(--primary)10%,var(--background))] via-background to-[color-mix(in_oklab,var(--primary)10%,var(--background))] h-dvh flex flex-col transition-all duration-200
   {open ? 'opacity-100' : 'opacity-0'}"
 >
   <div class="flex justify-between items-center p-6">

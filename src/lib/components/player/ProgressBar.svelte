@@ -14,7 +14,7 @@
   const currentProgress = $derived(
     pendingSeekPosition !== null
       ? (pendingSeekPosition / playerStore.duration) * 100
-      : playerStore.progress * 100,
+      : playerStore.progress * 100
   );
 
   const displayTime = $derived(pendingSeekPosition ?? playerStore.currentTime);
@@ -92,7 +92,7 @@
   aria-valuenow={playerStore.currentTime}
 >
   <div
-    class="absolute inset-0 pointer-events-none rounded-lg"
+    class="absolute inset-0 pointer-events-none rounded-lg overflow-clip"
     style="background-color:
       color-mix(
         in oklab,
@@ -103,8 +103,9 @@
       );"
   >
     <div
-      style="width: {currentProgress}%;
-      transition: {isDragging ? 'none' : 'width 100ms linear'};
+      style="
+      transform: translateX({-100 + currentProgress}%);
+      transition: {isDragging ? 'none' : 'transform 100ms linear'};
       background-color:
         color-mix(
           in oklab,
@@ -113,7 +114,7 @@
         : 'var(--primary)'} 80%,
           var(--foreground)
         );"
-      class="h-full rounded-lg"
+      class="w-full h-full rounded-lg"
     ></div>
   </div>
   {#if showTime}

@@ -54,7 +54,10 @@
 >
   <div
     class="border flex-shrink-0 overflow-hidden bg-muted relative grid place-items-center rounded-xl transition-all duration-200
-    {isScrolled ? 'h-9 w-0 opacity-0' : 'size-40 md:size-48 mr-2'}"
+    {isScrolled ? 'size-0' : 'size-40 md:size-48'}"
+    style="will-change: transform, opacity; transform: scale({isScrolled
+      ? 0
+      : 1}); opacity: {isScrolled ? 0 : 1};"
   >
     <div class="absolute inset-0 grid place-items-center">
       {#if isSpecialPlaylist(playlist.id)}
@@ -108,7 +111,7 @@
 
   <div
     class="relative w-full flex justify-between sm:items-end gap-2 truncate transition-all duration-200
-    {isScrolled ? 'flex-row items-center h-9' : 'h-40 md:h-48'}"
+    {isScrolled ? 'flex-row items-center h-9' : 'h-40 md:h-48 ml-2'}"
   >
     <Button
       variant={isScrolled ? "ghost" : "outline"}
@@ -145,8 +148,9 @@
     </div>
 
     <div
-      class="flex gap-2 absolute bottom-0 right-0 transition-all duration-200
+      class="flex gap-2 absolute bottom-0 right-0 transition-all duration-200 origin-right
       {isScrolled ? 'max-sm:w-[100px]' : 'max-sm:w-[calc(100dvw-11.4rem)]'}"
+      style="will-change: transform;"
     >
       <Button
         onclick={onPlay}
@@ -165,7 +169,10 @@
 
 <div
   class="top-1.5 md:top-2 right-1.5 md:right-2 absolute z-10 transition-all duration-200
-  {isScrolled ? 'opacity-0 pointer-events-none' : ''}"
+  {isScrolled ? 'pointer-events-none' : ''}"
+  style="will-change: transform, opacity; transform: scale({isScrolled
+    ? 0.8
+    : 1}); opacity: {isScrolled ? 0 : 1};"
 >
   <DropdownMenu.Root>
     <DropdownMenu.Trigger>

@@ -28,7 +28,7 @@
 
 <div class="flex-1 flex flex-col justify-between">
   <div class="relative flex-shrink-0 my-auto w-full z-20">
-    {#if open}
+    <!-- {#if open}
       <img
         in:fade={{
           duration: 200,
@@ -42,7 +42,7 @@
         oncontextmenu={() => false}
         class="h-[min(42.5dvh,90dvw)] scale-150 aspect-square object-cover absolute inset-0 m-auto pointer-events-none blur-3xl"
       />
-    {/if}
+    {/if} -->
     <Carousel.Root
       class="w-full z-20"
       opts={{ loop: true }}

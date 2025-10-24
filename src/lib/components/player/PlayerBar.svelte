@@ -56,7 +56,7 @@
 
 <div
   class="select-none h-20 transition-all duration-200"
-  style="transform:  translateY({translateY});"
+  style="transform: translateY({translateY}); will-change: transform;"
 >
   <div class="px-1.5">
     <div
