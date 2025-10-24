@@ -39,25 +39,28 @@
     }
   }
 
-  const translate = $derived.by(() => {
+  const translateY = $derived.by(() => {
     if (panelState.isOpen && bottomBarVisible) {
-      return `calc(-100dvh + 4rem)`;
+      return `calc(-100dvh + 0.125rem)`;
     }
     if (panelState.isOpen) {
       return `-100dvh`;
     }
-    return `0`;
+    if (bottomBarVisible) {
+      return `-3.875rem`;
+    }
+    return `-0.375rem`;
   });
+
 </script>
 
 <div
-  class="select-none h-20 transition-all duration-200
-  {bottomBarVisible ? 'mb-15.5' : 'mb-1.5'}"
-  style="transform: translateY({translate});"
+  class="select-none h-20 transition-all duration-200"
+  style="transform:  translateY({translateY});"
 >
   <div class="px-1.5">
     <div
-      class="rounded-xl overflow-clip border border-input bg-muted/50 transition-all duration-200
+      class="rounded-xl overflow-clip border border-input bg-muted/50 transition-opacity duration-200
     {panelState.isOpen ? 'opacity-0' : 'opacity-100 backdrop-blur-md'}"
     >
       <div
