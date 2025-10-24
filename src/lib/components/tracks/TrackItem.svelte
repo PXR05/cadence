@@ -102,7 +102,7 @@
 
 <ContextMenu.Root>
   <ContextMenu.Trigger
-    class="relative flex items-center gap-4 w-full hover:bg-muted/30 p-2 border
+    class="relative flex items-center gap-4 w-full hover:bg-muted/30 p-2 border select-none
     {isCurrentTrack ? 'bg-muted/50' : ''}"
     onclick={handlePlay}
   >

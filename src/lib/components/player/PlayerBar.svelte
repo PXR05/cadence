@@ -14,10 +14,8 @@
 
   const {
     panelState,
-    bottomBarVisible = false,
   }: {
     panelState: ReturnType<typeof useDialogState>;
-    bottomBarVisible?: boolean;
   } = $props();
 
   let audioEl: HTMLAudioElement | null = $state(null);
@@ -38,30 +36,13 @@
       playerStore.initializeCarousel("main", api);
     }
   }
-
-  const translateY = $derived.by(() => {
-    if (panelState.isOpen && bottomBarVisible) {
-      return `calc(-100dvh + 0.125rem)`;
-    }
-    if (panelState.isOpen) {
-      return `-100dvh`;
-    }
-    if (bottomBarVisible) {
-      return `-3.875rem`;
-    }
-    return `-0.375rem`;
-  });
-
 </script>
 
-<div
-  class="select-none h-20 transition-all duration-200"
-  style="transform: translateY({translateY}); will-change: transform;"
->
+<div class="select-none h-[calc(100dvh+5rem)]">
   <div class="px-1.5">
     <div
-      class="rounded-xl overflow-clip border border-input bg-muted/50 transition-opacity duration-200
-    {panelState.isOpen ? 'opacity-0' : 'opacity-100 backdrop-blur-md'}"
+      class="rounded-xl overflow-clip border border-input bg-muted/50
+      {panelState.isOpen ? 'opacity-0' : 'opacity-100 backdrop-blur-md'}"
     >
       <div
         class=" relative flex md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center max-md:justify-between py-2 min-h-16"

@@ -41,7 +41,7 @@
     pagination.offset = Math.floor(scrollTop / ROW_HEIGHT);
   }
 
-  onMount(() => {
+  $effect(() => {
     if (containerRef) {
       handleResize(containerRef);
       const resizeHandler = () => handleResize(containerRef);

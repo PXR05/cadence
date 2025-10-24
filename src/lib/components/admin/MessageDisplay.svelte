@@ -42,8 +42,7 @@
 <div
   class="bg-background fixed top-4 right-4 z-50 max-w-md w-full sm:w-auto transition-all duration-300 ease-out"
   style="transform: translateX({visible ? '0' : '400px'}); 
-  opacity: {visible ? '1' : '0'}; 
-  will-change: transform;"
+  opacity: {visible ? '1' : '0'};"
 >
   <div
     class="border p-2 rounded-lg shadow-lg flex items-start justify-between gap-3 {bgClasses}"

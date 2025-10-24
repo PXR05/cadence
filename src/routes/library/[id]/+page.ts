@@ -70,7 +70,9 @@ async function loadSpecialPlaylist(id: string): Promise<PlaylistDetail> {
       audio: track,
     }));
   } else if (id === SPECIAL_PLAYLIST_IDS.DOWNLOADED) {
-    const offlineTracks = await offlineDb.tracks.toArray();
+    const offlineTracks = (await offlineDb.tracks.toArray()).toSorted(
+      (a, b) => a.downloadedAt - b.downloadedAt
+    );
     const tracks = offlineTracks.map(
       (track) =>
         ({
@@ -82,13 +84,15 @@ async function loadSpecialPlaylist(id: string): Promise<PlaylistDetail> {
             album: track.metadata.album,
             duration: track.metadata.duration,
           },
+          size: track.size,
+          uploadedAt: new Date(track.downloadedAt),
         } as AudioFile)
     );
 
     playlist.items = tracks.map((track, index) => ({
       id: `${track.id}_${index}`,
       position: index,
-      addedAt: now,
+      addedAt: track.uploadedAt,
       audio: track,
     }));
   }

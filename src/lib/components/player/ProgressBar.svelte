@@ -96,9 +96,7 @@
     style="background-color:
       color-mix(
         in oklab,
-        {playerStore.trackColor
-      ? playerStore.trackColor
-      : 'var(--primary)'} 20%,
+        {playerStore.trackColor ?? 'var(--primary)'} 20%,
         transparent
       );"
   >
@@ -109,9 +107,7 @@
       background-color:
         color-mix(
           in oklab,
-          {playerStore.trackColor
-        ? playerStore.trackColor
-        : 'var(--primary)'} 80%,
+          {playerStore.trackColor ?? 'var(--primary)'} 80%,
           var(--foreground)
         );"
       class="w-full h-full rounded-lg"

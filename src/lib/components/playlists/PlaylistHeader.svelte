@@ -55,9 +55,8 @@
   <div
     class="border flex-shrink-0 overflow-hidden bg-muted relative grid place-items-center rounded-xl transition-all duration-200
     {isScrolled ? 'size-0' : 'size-40 md:size-48'}"
-    style="will-change: transform, opacity; transform: scale({isScrolled
-      ? 0
-      : 1}); opacity: {isScrolled ? 0 : 1};"
+    style="transform: scale({isScrolled ? 0 : 1}); 
+    opacity: {isScrolled ? 0 : 1};"
   >
     <div class="absolute inset-0 grid place-items-center">
       {#if isSpecialPlaylist(playlist.id)}
@@ -150,7 +149,6 @@
     <div
       class="flex gap-2 absolute bottom-0 right-0 transition-all duration-200 origin-right
       {isScrolled ? 'max-sm:w-[100px]' : 'max-sm:w-[calc(100dvw-11.4rem)]'}"
-      style="will-change: transform;"
     >
       <Button
         onclick={onPlay}
@@ -170,9 +168,8 @@
 <div
   class="top-1.5 md:top-2 right-1.5 md:right-2 absolute z-10 transition-all duration-200
   {isScrolled ? 'pointer-events-none' : ''}"
-  style="will-change: transform, opacity; transform: scale({isScrolled
-    ? 0.8
-    : 1}); opacity: {isScrolled ? 0 : 1};"
+  style="transform: scale({isScrolled ? 0.8 : 1}); 
+  opacity: {isScrolled ? 0 : 1};"
 >
   <DropdownMenu.Root>
     <DropdownMenu.Trigger>

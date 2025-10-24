@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { getStreamUrl } from "$lib/stores/player.svelte";
+  // import { getStreamUrl } from "$lib/stores/player.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
-  import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
+  // import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import {
     ChevronDown,
-    DownloadIcon,
-    EllipsisIcon,
-    ListMusicIcon,
+    // DownloadIcon,
+    // EllipsisIcon,
+    // ListMusicIcon,
   } from "@lucide/svelte";
   import PlayerDetails from "./PlayerDetails.svelte";
   import { ManagePlaylistsDialog } from "../playlists";
@@ -24,16 +24,16 @@
 
   let managePlaylistsDialogOpen = $state(false);
 
-  function handleDownload() {
-    if (track) {
-      const downloadUrl = getStreamUrl(track.id);
-      const link = document.createElement("a");
-      link.href = downloadUrl;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  }
+  // function handleDownload() {
+  //   if (track) {
+  //     const downloadUrl = getStreamUrl(track.id);
+  //     const link = document.createElement("a");
+  //     link.href = downloadUrl;
+  //     document.body.appendChild(link);
+  //     link.click();
+  //     document.body.removeChild(link);
+  //   }
+  // }
 
   function handleClose() {
     onOpenChange(false);
@@ -41,24 +41,33 @@
 </script>
 
 <div
-  class="relative bg-gradient-to-t from-[color-mix(in_oklab,var(--primary)10%,var(--background))] via-background to-[color-mix(in_oklab,var(--primary)10%,var(--background))] h-dvh flex flex-col transition-all duration-200
+  role="dialog"
+  tabindex="0"
+  class="relative h-dvh flex flex-col cursor-grab active:cursor-grabbing touch-none transition-all duration-200
   {open ? 'opacity-100' : 'opacity-0'}"
+  style="
+    background: linear-gradient(
+      to top,
+      color-mix(in oklab, {playerStore.trackColor} 10%, var(--background)) 0%,
+      var(--background) 50%,
+      color-mix(in oklab, {playerStore.trackColor} 10%, var(--background)) 100%
+    );"
 >
   <div class="flex justify-between items-center p-6">
     <button
       onclick={handleClose}
-      class="opacity-70 transition-opacity hover:opacity-100"
+      class="opacity-70 transition-opacity hover:opacity-100 cursor-pointer"
       aria-label="Close player details"
     >
       <ChevronDown />
     </button>
-    <DropdownMenu.Root>
+    <!-- <DropdownMenu.Root>
       <DropdownMenu.Trigger
         class="opacity-70 transition-opacity hover:opacity-100"
       >
         <EllipsisIcon />
       </DropdownMenu.Trigger>
-      <DropdownMenu.Content class="z-0">
+      <DropdownMenu.Content>
         <DropdownMenu.Item onclick={() => (managePlaylistsDialogOpen = true)}>
           <ListMusicIcon size={16} class="mr-2" />
           Add to Playlist
@@ -69,7 +78,7 @@
           Download
         </DropdownMenu.Item>
       </DropdownMenu.Content>
-    </DropdownMenu.Root>
+    </DropdownMenu.Root> -->
   </div>
 
   {#if track}
