@@ -1,3 +1,5 @@
+export const ssr = false;
+
 import { browser } from "$app/environment";
 import { db as offlineDb } from "$lib/db/offline";
 import { playlistsStore } from "$lib/stores/playlists.svelte";
@@ -57,13 +59,8 @@ async function loadSpecialPlaylist(id: string): Promise<PlaylistDetail> {
 
   if (id === SPECIAL_PLAYLIST_IDS.ALL_SONGS) {
     await tracksStore.loadAllTracks();
-    const tracks = tracksStore.tracks.slice().sort((a, b) => {
-      const titleA = (a.metadata?.title || a.filename).toLowerCase();
-      const titleB = (b.metadata?.title || b.filename).toLowerCase();
-      return titleA.localeCompare(titleB);
-    });
-
-    playlist.items = tracks.map((track, index) => ({
+    
+    playlist.items = tracksStore.tracks.map((track, index) => ({
       id: `${track.id}_${index}`,
       position: index,
       addedAt: now,
