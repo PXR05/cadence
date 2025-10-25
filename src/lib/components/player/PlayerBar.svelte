@@ -41,7 +41,7 @@
 <div class="select-none h-[calc(100dvh+5rem)]">
   <div class="px-1.5">
     <div
-      class="rounded-xl overflow-clip border border-input bg-muted/50
+      class="rounded-xl overflow-clip border border-input bg-muted/50 transition-opacity duration-200
       {panelState.isOpen ? 'opacity-0' : 'opacity-100 backdrop-blur-md'}"
     >
       <div

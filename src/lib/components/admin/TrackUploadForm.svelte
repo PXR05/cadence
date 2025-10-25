@@ -1,4 +1,8 @@
 <script lang="ts">
+  import { LoaderIcon } from "@lucide/svelte";
+  import { Button } from "../ui/button";
+  import { Input } from "../ui/input";
+
   interface Props {
     loading: boolean;
     onUploadComplete: (successCount: number, totalCount: number) => void;
@@ -108,22 +112,22 @@
   }
 </script>
 
-<div class="space-y-4">
-  <div class="border p-4">
+<div class="space-y-2">
+  <div class="border p-4 rounded-xl">
     <h3 class="font-medium mb-3">Upload Audio Files</h3>
-    <input
-      type="file"
-      onchange={handleFileChange}
-      multiple
-      accept="audio/*"
-      disabled={loading || isUploading}
-      class="w-full text-sm file:mr-4 file:py-2 file:px-4 file: file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 disabled:opacity-50"
-    />
-
-    {#if isUploading}
+    {#if !isUploading}
+      <Input
+        type="file"
+        onchange={handleFileChange}
+        multiple
+        accept="audio/*"
+        disabled={loading || isUploading}
+        class="w-full"
+      />
+    {:else}
       <div class="mt-4 space-y-2">
         <div class="space-y-1">
-          <div class="flex items-center justify-between text-xs">
+          <div class="flex items-center justify-between text-sm">
             <span class="truncate flex-1 mr-2">
               Uploading {currentFileIndex}/{totalFiles}: {currentFileName}
             </span>
@@ -134,9 +138,9 @@
               )}%
             </span>
           </div>
-          <div class="w-full bg-secondary h-1.5 overflow-hidden">
+          <div class="w-full bg-secondary h-1.5 overflow-hidden rounded">
             <div
-              class="h-full bg-primary transition-all duration-300"
+              class="h-full bg-primary transition-all duration-100 rounded"
               style="width: {((currentFileIndex - 1) / totalFiles) * 100 +
                 currentFileProgress / totalFiles}%"
             ></div>
@@ -146,23 +150,25 @@
     {/if}
   </div>
 
-  <div class="border p-4">
+  <div class="border p-4 rounded-xl">
     <h3 class="font-medium mb-3">Download from YouTube</h3>
     <form onsubmit={handleYoutubeSubmit} class="flex max-md:flex-col gap-2">
-      <input
+      <Input
         type="url"
         bind:value={youtubeUrl}
         placeholder="https://youtube.com/watch?v=..."
         disabled={loading || isUploading}
-        class="flex-1 px-3 py-2 text-sm border focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+        class="flex-1 px-3 py-2 text-sm"
       />
-      <button
+      <Button
         type="submit"
         disabled={loading || isUploading || !youtubeUrl.trim()}
-        class="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
       >
+        {#if loading || isUploading}
+          <LoaderIcon class="animate-spin" />
+        {/if}
         Download
-      </button>
+      </Button>
     </form>
   </div>
 </div>

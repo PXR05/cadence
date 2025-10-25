@@ -7,7 +7,6 @@
     TokenTable,
     TokenFilter,
     CreatedTokenDisplay,
-    MessageDisplay,
     DeleteTokenDialog,
     RerollTokenDialog,
     TrackUploadForm,
@@ -26,6 +25,8 @@
     deleteTrack,
     type TokenInfo,
   } from "$lib/api";
+  import { toast } from "svelte-sonner";
+  import { Button } from "$lib/components/ui/button";
 
   let isAdmin = $state(false);
   let loading = $state(true);
@@ -38,14 +39,11 @@
   let newTokenUserId = $state("");
   let createdToken = $state<string | null>(null);
 
-  let errorMessage = $state("");
-  let successMessage = $state("");
-
   let deleteDialogOpen = $state(false);
   let rerollDialogOpen = $state(false);
   let selectedToken = $state<TokenInfo | null>(null);
 
-  let activeTab = $state<"tokens" | "tracks">("tokens");
+  let activeTab = $state<"tokens" | "tracks">("tracks");
 
   let tracksLoading = $state(false);
   let tracksInitialLoading = $state(true);
@@ -72,15 +70,12 @@
     }
   });
 
-  function clearMessages() {
-    errorMessage = "";
-    successMessage = "";
-  }
-
   function setMessage(type: "error" | "success", message: string) {
-    clearMessages();
-    if (type === "error") errorMessage = message;
-    else successMessage = message;
+    if (type === "error") {
+      toast.error(message);
+    } else {
+      toast.success(message);
+    }
   }
 
   async function loadTokens() {
@@ -97,7 +92,6 @@
 
   async function handleCreateToken() {
     tokensLoading = true;
-    clearMessages();
 
     try {
       const result = await createToken(
@@ -131,7 +125,7 @@
 
     deleteDialogOpen = false;
     tokensLoading = true;
-    clearMessages();
+
     createdToken = null;
 
     try {
@@ -151,7 +145,6 @@
 
     rerollDialogOpen = false;
     tokensLoading = true;
-    clearMessages();
 
     try {
       const result = await createToken(
@@ -199,20 +192,17 @@
     successCount: number,
     totalCount: number
   ) {
-    clearMessages();
     setMessage("success", `Uploaded ${successCount}/${totalCount} files`);
     await loadTracks(currentPage);
     tracksStore.loadAllTracks(true);
   }
 
   function handleUploadError(error: string) {
-    clearMessages();
     setMessage("error", error);
   }
 
   async function handleYoutubeUpload(url: string) {
     tracksLoading = true;
-    clearMessages();
 
     try {
       await downloadYoutube(url);
@@ -236,7 +226,6 @@
 
     deleteTrackDialogOpen = false;
     tracksLoading = true;
-    clearMessages();
 
     try {
       await deleteTrack(selectedTrack.id);
@@ -253,7 +242,7 @@
 
   function switchTab(tab: "tokens" | "tracks") {
     activeTab = tab;
-    clearMessages();
+
     createdToken = null;
   }
 </script>
@@ -270,28 +259,24 @@
   <div
     class="relative flex flex-col max-w-4xl mx-auto w-full h-full border-x overflow-y-auto"
   >
-    <div class="flex border-b sticky top-0 bg-background z-50">
-      <button
-        onclick={() => switchTab("tokens")}
-        class="flex-1 px-4 py-3 text-sm font-medium border-b-2 {activeTab ===
-        'tokens'
-          ? 'border-primary text-primary'
-          : 'border-transparent text-muted-foreground hover:text-foreground'}"
-      >
-        Tokens
-      </button>
-      <button
+    <div class="flex border-b sticky top-0 p-2 z-50 gap-2">
+      <Button
+        variant={activeTab === "tracks" ? "default" : "outline"}
         onclick={() => switchTab("tracks")}
-        class="flex-1 px-4 py-3 text-sm font-medium border-b-2 {activeTab ===
-        'tracks'
-          ? 'border-primary text-primary'
-          : 'border-transparent text-muted-foreground hover:text-foreground'}"
+        class="flex-1"
       >
         Tracks
-      </button>
+      </Button>
+      <Button
+        variant={activeTab === "tokens" ? "default" : "outline"}
+        onclick={() => switchTab("tokens")}
+        class="flex-1"
+      >
+        Tokens
+      </Button>
     </div>
 
-    <div class="relative p-4 space-y-4">
+    <div class="relative p-2 space-y-2">
       {#if activeTab === "tokens"}
         <TokenForm
           bind:name={newTokenName}
@@ -365,19 +350,3 @@
     "this track"}
   onConfirm={confirmDeleteTrack}
 />
-
-{#if errorMessage}
-  <MessageDisplay
-    type="error"
-    message={errorMessage}
-    onDismiss={clearMessages}
-  />
-{/if}
-
-{#if successMessage}
-  <MessageDisplay
-    type="success"
-    message={successMessage}
-    onDismiss={clearMessages}
-  />
-{/if}

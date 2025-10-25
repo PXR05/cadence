@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { Button } from "../ui/button";
+
   interface Props {
     currentPage: number;
     totalPages: number;
@@ -17,24 +19,24 @@
   }
 </script>
 
-<div class="flex items-center justify-between border p-3">
+<div class="flex items-center justify-between border p-3 rounded-xl">
   <div class="text-sm text-muted-foreground">
     Page {currentPage} of {totalPages}
   </div>
   <div class="flex gap-2">
-    <button
+    <Button
+      variant="outline"
       onclick={goToPrevPage}
       disabled={loading || currentPage <= 1}
-      class="px-3 py-1 text-sm border hover:bg-accent disabled:opacity-50"
     >
       Previous
-    </button>
-    <button
+    </Button>
+    <Button
+      variant="outline"
       onclick={goToNextPage}
       disabled={loading || currentPage >= totalPages}
-      class="px-3 py-1 text-sm border hover:bg-accent disabled:opacity-50"
     >
       Next
-    </button>
+    </Button>
   </div>
 </div>

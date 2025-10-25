@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button";
   import { LoaderIcon } from "@lucide/svelte";
+  import { Input } from "../ui/input";
 
   let {
     name = $bindable(""),
@@ -18,18 +19,18 @@
 </script>
 
 <div class="flex max-md:flex-col gap-2">
-  <input
+  <Input
     type="text"
     bind:value={name}
     placeholder="name"
-    class="flex-1 px-3 py-2 text-sm border bg-background"
+    class="flex-1 px-3 py-3 text-sm"
     disabled={loading}
   />
-  <input
+  <Input
     type="text"
     bind:value={userId}
     placeholder="user id"
-    class="flex-1 px-3 py-2 text-sm border bg-background"
+    class="flex-1 px-3 py-3 text-sm"
     disabled={loading}
   />
   <Button onclick={onSubmit} disabled={!isValid}>

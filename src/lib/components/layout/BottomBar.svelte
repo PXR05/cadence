@@ -27,6 +27,13 @@
     }
     return `-5.775rem`;
   });
+
+  const navTranslate = $derived.by(() => {
+    if (!isTopRoute || !isMobile) {
+      return `3.625rem`;
+    }
+    return `0`;
+  });
 </script>
 
 <div class="flex flex-col gap-1.5 fixed bottom-0 left-0 right-0 z-50">
@@ -41,7 +48,8 @@
     <GlobalDownloadProgress />
   </div>
   <div
-    class="absolute bottom-0 left-0 right-0 transition-transform duration-200"
+    class="absolute bottom-0 left-0 right-0 transition-transform duration-200
+    {panelState.isOpen ? 'z-10' : ''}"
     style="
       transform: translateY({playerTranslate}); 
       will-change: transform;"
@@ -49,13 +57,11 @@
     <PlayerBar {panelState} />
   </div>
   <div
-    class="absolute bottom-1.5 left-1.5 right-1.5 transition-all duration-200"
+    class="absolute bottom-1.5 left-1.5 right-1.5 transition-all duration-200
+    {panelState.isOpen ? 'opacity-0' : ''}"
     style="
-    transform: translateY({panelState.isOpen || !isTopRoute || !isMobile
-      ? '3.625rem'
-      : '0'});
-    will-change: transform;
-    "
+    transform: translateY({navTranslate});
+    will-change: transform;"
   >
     <NavBar />
   </div>
@@ -85,7 +91,7 @@
   ._color {
     &::before,
     &::after {
-      background-color: hsl(from var(--background) h s l / 0.8);
+      background-color: var(--background);
     }
   }
 

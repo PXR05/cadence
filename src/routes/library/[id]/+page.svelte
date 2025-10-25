@@ -209,7 +209,7 @@
   ._color {
     &::before,
     &::after {
-      background-color: hsl(from var(--background) h s l / 0.8);
+      background-color: var(--background);
     }
   }
 </style>

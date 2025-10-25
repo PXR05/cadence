@@ -2,7 +2,6 @@ export { default as TokenForm } from "./TokenForm.svelte";
 export { default as TokenTable } from "./TokenTable.svelte";
 export { default as TokenFilter } from "./TokenFilter.svelte";
 export { default as CreatedTokenDisplay } from "./CreatedTokenDisplay.svelte";
-export { default as MessageDisplay } from "./MessageDisplay.svelte";
 export { default as DeleteTokenDialog } from "./DeleteTokenDialog.svelte";
 export { default as RerollTokenDialog } from "./RerollTokenDialog.svelte";
 export { default as TrackUploadForm } from "./TrackUploadForm.svelte";

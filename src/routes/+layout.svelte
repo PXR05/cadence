@@ -11,6 +11,7 @@
   import { innerWidth } from "svelte/reactivity/window";
   import { page } from "$app/state";
   import { slide } from "svelte/transition";
+  import { Toaster } from "$lib/components/ui/sonner";
 
   let { children } = $props();
 
@@ -96,13 +97,14 @@
   const isTopRoute = $derived(page.url.pathname.split("/").length <= 2);
   const isDownloading = $derived(downloadStore.isDownloading);
 
-  const navHeight = $derived(isMobile && isTopRoute ? 3.5 : 0);
-  const playerHeight = 5.5;
-  const downloadHeight = $derived(isDownloading ? 4.5 : 0);
+  const navHeight = $derived(isMobile && isTopRoute ? 72 : 0);
+  const playerHeight = 80;
+  const downloadHeight = $derived(isDownloading ? 55 : 0);
 </script>
 
 <svelte:window onkeydown={(e) => handleKeyboardEvent(e)} />
 
+<Toaster position="top-right" />
 <ModeWatcher />
 
 {#if !authStore.isAuthenticated}
@@ -110,7 +112,7 @@
 {:else}
   <div
     class="relative bg-background min-h-dvh flex flex-col"
-    style="--h: {navHeight + playerHeight + downloadHeight + 1}rem;"
+    style="--h: {navHeight + playerHeight + downloadHeight + 32}px;"
   >
     {#if !isMobile && isTopRoute}
       <div
@@ -124,7 +126,7 @@
       </div>
     {/if}
     <div
-      class="overflow-auto h-dvh max-w-4xl w-full mx-auto bg-gradient-to-b from-primary/5 via-transparent to-transparent"
+      class="relative overflow-auto h-dvh max-w-4xl w-full mx-auto bg-gradient-to-t from-primary/5 via-transparent to-primary/5"
     >
       {@render children?.()}
     </div>

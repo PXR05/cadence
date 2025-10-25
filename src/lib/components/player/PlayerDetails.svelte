@@ -7,6 +7,7 @@
   import type { CarouselAPI } from "../ui/carousel/context";
   import { Button } from "../ui/button";
   import { fade } from "svelte/transition";
+  import { shouldLoadItem } from "$lib/utils/queue";
 
   interface Props {
     track: AudioFile;
@@ -49,14 +50,22 @@
       setApi={(emblaApi) => setDetailCarouselApi(emblaApi ?? null)}
     >
       <Carousel.Content>
-        {#each playerStore.trackQueue as queueTrack}
+        {#each playerStore.trackQueue as queueTrack, i}
           <Carousel.Item onclick={() => playerStore.togglePlayPause()}>
-            <img
-              loading="lazy"
-              src={getImageUrl(queueTrack.id)}
-              alt={queueTrack.id}
-              class="h-[min(42.5dvh,90dvw)] aspect-square object-cover mx-auto rounded-2xl"
-            />
+            {#if shouldLoadItem(i)}
+              <img
+                loading="lazy"
+                src={getImageUrl(queueTrack.id)}
+                alt={queueTrack.id}
+                class="h-[min(42.5dvh,90dvw)] aspect-square object-cover mx-auto rounded-2xl"
+              />
+            {:else}
+              <div
+                class="h-[min(42.5dvh,90dvw)] aspect-square bg-muted/50 mx-auto rounded-2xl grid place-items-center"
+              >
+                <ListMusicIcon size={48} class="text-muted-foreground" />
+              </div>
+            {/if}
           </Carousel.Item>
         {/each}
       </Carousel.Content>

@@ -2,6 +2,8 @@
   import { getImageUrl, playerStore } from "$lib/stores/player.svelte";
   import * as Carousel from "$lib/components/ui/carousel";
   import type { CarouselAPI } from "$lib/components/ui/carousel/context";
+  import { ListMusicIcon } from "@lucide/svelte";
+  import { shouldLoadItem } from "$lib/utils/queue";
 
   interface Props {
     onTrackClick?: () => void;
@@ -9,10 +11,6 @@
   }
 
   let { onTrackClick, setApi }: Props = $props();
-
-  const textColor = $derived(
-    `color-mix(in oklab, ${playerStore.trackColor} 80%, var(--foreground))`
-  );
 </script>
 
 <Carousel.Root
@@ -24,7 +22,7 @@
     <div class="text-muted-foreground pl-3">No track is playing</div>
   {:else}
     <Carousel.Content>
-      {#each playerStore.trackQueue as track}
+      {#each playerStore.trackQueue as track, i}
         {@const trackTitle = track.metadata?.title ?? track.filename ?? ""}
         {@const trackArtist = track.metadata?.artist ?? "Unknown Artist"}
         <Carousel.Item>
@@ -33,12 +31,20 @@
             class="md:pointer-events-none flex items-center flex-1 min-w-0 gap-2 text-left w-full pl-2"
           >
             <div class="rounded-md size-12 flex-shrink-0 overflow-hidden">
-              <img
-                loading="lazy"
-                src={getImageUrl(track.id)}
-                alt={track.id}
-                class="size-full object-cover"
-              />
+              {#if shouldLoadItem(i)}
+                <img
+                  loading="lazy"
+                  src={getImageUrl(track.id)}
+                  alt={track.id}
+                  class="size-full object-cover"
+                />
+              {:else}
+                <div
+                  class="size-full aspect-square bg-muted/50 grid place-items-center"
+                >
+                  <ListMusicIcon class="text-muted-foreground" />
+                </div>
+              {/if}
             </div>
             <div class="text-left flex-1 min-w-0">
               <p class="font-medium truncate">{trackTitle}</p>

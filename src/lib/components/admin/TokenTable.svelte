@@ -29,7 +29,7 @@
   }
 </script>
 
-<div class="border">
+<div class="border rounded-xl">
   {#if loading && tokens.length === 0}
     <div class="flex items-center justify-center p-8">
       <LoaderIcon class="animate-spin text-muted-foreground" size={20} />

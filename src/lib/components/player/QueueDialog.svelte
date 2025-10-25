@@ -76,8 +76,8 @@
                     class="m-auto"
                     style="color: {textColor}; 
                     filter: {isCurrentTrack
-                      ? 'brightness(1.25)'
-                      : ''} saturate(6);"
+                      ? 'brightness(1.2)'
+                      : ''} saturate(2);"
                   />
                 {:else}
                   <span class="text-sm text-muted-foreground">{index + 1}</span>
@@ -92,7 +92,7 @@
                     : 'var(--foreground)'};  
                     filter: {isCurrentTrack
                     ? 'brightness(1.2)'
-                    : ''} saturate(6);"
+                    : ''} saturate(2);"
                 >
                   {trackTitle}
                 </p>
@@ -103,7 +103,7 @@
                     : 'var(--muted-foreground)'};  
                     filter: {isCurrentTrack
                     ? 'brightness(1.2)'
-                    : ''} saturate(6);"
+                    : ''} saturate(2);"
                 >
                   {trackArtist}
                 </p>

@@ -106,13 +106,14 @@
 
 <form
   onsubmit={handleSubmit}
-  style="--h: 6rem;"
+  style="--h: 8rem;"
   class="p-2 absolute top-0 left-0 right-0 z-10"
 >
-  <!-- <div class="_bg _blur absolute inset-0 -z-10"></div> -->
+  <div class="_bg _blur absolute inset-0 -z-10"></div>
   <div class="_bg _color absolute inset-0 -z-10"></div>
+  <h2 class="text-2xl font-semibold p-2">Search</h2>
   <div
-    class="flex items-center relative bg-muted/50 backdrop-blur-md rounded-xl overflow-clip border border-input"
+    class="mt-2 flex items-center relative bg-muted/50 backdrop-blur-md rounded-xl overflow-clip border border-input"
   >
     <SearchIcon
       size={16}
@@ -132,7 +133,7 @@
     <Button
       variant="ghost"
       size="icon"
-      class="text-muted-foreground absolute right-0
+      class="text-muted-foreground absolute right-1 rounded-lg
         {isEmpty ? 'opacity-0' : ''}"
       style="transform: translateX({isEmpty ? '0.5rem' : '0rem'})"
       onclick={clearSearch}
@@ -149,7 +150,7 @@
 
 <ScrollArea class="h-dvh">
   <div class="flex flex-col mx-auto w-full h-full border-x overflow-auto">
-    <div class="flex-1 pt-16 md:pt-15">
+    <div class="flex-1 pt-32 md:pt-30">
       {#if loading}
         <div
           class="flex flex-col items-center justify-center flex-1 p-8 h-full"
@@ -208,14 +209,14 @@
   ._color {
     &::before,
     &::after {
-      background-color: hsl(from var(--background) h s l / 0.8);
+      background-color: var(--background);
     }
   }
 
-  /* ._blur {
+  ._blur {
     &::before,
     &::after {
-      backdrop-filter: blur(1rem) saturate(120%) contrast(120%) brightness(120%);
+      backdrop-filter: blur(1rem) saturate(120%) brightness(120%);
     }
-  } */
+  }
 </style>

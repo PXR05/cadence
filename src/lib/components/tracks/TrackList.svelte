@@ -2,7 +2,6 @@
   import { LoaderIcon } from "@lucide/svelte";
   import TrackItem from "./TrackItem.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
-  import { onMount } from "svelte";
   import { ScrollArea } from "../ui/scroll-area";
 
   const tracks = $derived(tracksStore.tracks);
@@ -75,8 +74,8 @@
         ROW_HEIGHT}px; position: relative; width: 100%;"
     >
       <div
-        style="position: absolute; top: {range.start *
-          ROW_HEIGHT}px; left: 0; right: 0;"
+        style="position: absolute; top: 0; left: 0; right: 0; transform: translateY({range.start *
+          ROW_HEIGHT}px);"
       >
         {#each tracks.slice(range.start, range.end) as track (track.id)}
           <TrackItem {track} />

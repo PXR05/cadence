@@ -371,7 +371,7 @@ class PlayerState {
       "--primary",
       `oklch(${brighter.coords[0]} ${brighter.coords[1]} ${brighter.coords[2]})`
     );
-
+    
     this.persistedState.value = {
       ...this.persistedState.value,
       trackColor: brighter.toString(),
