@@ -18,17 +18,17 @@
   }
 
   const textColor = $derived(
-    `color-mix(in oklab, ${playerStore.trackColor} 80%, var(--foreground))`
+    `color-mix(in oklab, ${playerStore.trackColor} 80%, var(--foreground))`,
   );
 </script>
 
 <Dialog.Root bind:open {onOpenChange}>
   <Dialog.Content
     showCloseButton={false}
-    class="md:max-w-2xl h-dvh md:h-[90dvh] sm:max-w-dvw max-w-dvw flex flex-col z-60 p-0 max-md:border-0 rounded-none md:rounded-2xl bg-muted/50 backdrop-blur-xl"
+    class="md:max-w-2xl h-dvh md:h-[90dvh] sm:max-w-dvw max-w-dvw flex flex-col z-60 p-0 max-md:border-0 rounded-none md:rounded-2xl bg-background"
   >
     <div
-      class="absolute top-1.5 left-1.5 right-1.5 z-10 backdrop-blur-md rounded-xl border border-input px-2 py-3 flex justify-between items-start"
+      class="absolute top-1.5 left-1.5 right-1.5 z-10 rounded-xl bg-muted border border-input px-2 py-3 flex justify-between items-start"
     >
       <Dialog.Close
         class="opacity-70 transition-opacity hover:opacity-100 my-auto size-6 grid place-items-center"
@@ -65,7 +65,7 @@
             <Button
               variant="ghost"
               onclick={() => handleTrackClick(index)}
-              class="h-auto !transition-none w-full flex items-center gap-3 p-2 text-left group 
+              class="h-auto !transition-none w-full flex items-center gap-3 p-2 text-left group
               {isCurrentTrack ? 'bg-muted/70' : ''}"
             >
               <div class="w-8 text-center flex-shrink-0">
@@ -74,7 +74,7 @@
                     size={16}
                     fill="currentColor"
                     class="m-auto"
-                    style="color: {textColor}; 
+                    style="color: {textColor};
                     filter: {isCurrentTrack
                       ? 'brightness(1.2)'
                       : ''} saturate(2);"
@@ -89,7 +89,7 @@
                   class="font-medium truncate text-sm"
                   style="color: {isCurrentTrack
                     ? textColor
-                    : 'var(--foreground)'};  
+                    : 'var(--foreground)'};
                     filter: {isCurrentTrack
                     ? 'brightness(1.2)'
                     : ''} saturate(2);"
@@ -100,7 +100,7 @@
                   class="text-xs truncate"
                   style="color: {isCurrentTrack
                     ? textColor
-                    : 'var(--muted-foreground)'};  
+                    : 'var(--muted-foreground)'};
                     filter: {isCurrentTrack
                     ? 'brightness(1.2)'
                     : ''} saturate(2);"

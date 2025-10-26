@@ -37,7 +37,7 @@
 </script>
 
 <div class="flex flex-col gap-1.5 fixed bottom-0 left-0 right-0 z-50">
-  <div class="_bg _blur absolute inset-0 -z-10"></div>
+  <!-- <div class="_bg _blur absolute inset-0 -z-10"></div> -->
   <div class="_bg _color absolute inset-0 -z-10"></div>
   <div
     class="absolute bottom-0 left-0 right-0 transition-all duration-200"
