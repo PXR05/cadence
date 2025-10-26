@@ -41,8 +41,9 @@
 <div class="select-none h-[calc(100dvh+5rem)]">
   <div class="px-1.5">
     <div
-      class="rounded-xl overflow-clip border border-input bg-muted/50 transition-opacity duration-200
+      class="rounded-xl overflow-clip border border-input bg-muted/50
       {panelState.isOpen ? 'opacity-0' : 'opacity-100 backdrop-blur-md'}"
+      style="transition: opacity 200ms cubic-bezier(0.83, 0, 0.17, 1);"
     >
       <div
         class=" relative flex md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center max-md:justify-between py-2 min-h-16"

@@ -207,18 +207,18 @@
   ::view-transition-group(*),
   ::view-transition-new(*),
   ::view-transition-old(*) {
-    animation-duration: 0.2s !important;
+    animation-duration: none;
   }
 }
 
 ::view-transition-group(*),
 ::view-transition-new(*),
 ::view-transition-old(*) {
-  animation-duration: 0.2s !important;
+  animation-duration: 0.2s;
 }
 
 ::view-transition-group(root),
 ::view-transition-new(root),
 ::view-transition-old(root) {
-  animation-duration: 0s !important;
+  animation-duration: 0.1s;
 }

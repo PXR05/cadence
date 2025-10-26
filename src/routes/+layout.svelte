@@ -81,15 +81,14 @@
     }
   }
 
-  onNavigate(() => {
-    return new Promise(async (resolve) => {
-      if (document.startViewTransition) {
-        document.startViewTransition(async () => {
-          resolve();
-        });
-      } else {
+  onNavigate((navigation) => {
+    if (!document.startViewTransition) return;
+
+    return new Promise((resolve) => {
+      document.startViewTransition(async () => {
         resolve();
-      }
+        await navigation.complete;
+      });
     });
   });
 

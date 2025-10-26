@@ -25,34 +25,33 @@
       {#each playerStore.trackQueue as track, i}
         {@const trackTitle = track.metadata?.title ?? track.filename ?? ""}
         {@const trackArtist = track.metadata?.artist ?? "Unknown Artist"}
-        <Carousel.Item>
-          <button
-            onclick={onTrackClick}
+        <Carousel.Item onclick={onTrackClick}>
+          <div
             class="md:pointer-events-none flex items-center flex-1 min-w-0 gap-2 text-left w-full pl-2"
           >
-            <div class="rounded-md size-12 flex-shrink-0 overflow-hidden">
-              {#if shouldLoadItem(i)}
-                <img
-                  loading="lazy"
-                  src={getImageUrl(track.id)}
-                  alt={track.id}
-                  class="size-full object-cover"
-                />
-              {:else}
-                <div
-                  class="size-full aspect-square bg-muted/50 grid place-items-center"
-                >
-                  <ListMusicIcon class="text-muted-foreground" />
-                </div>
-              {/if}
-            </div>
+            {#if shouldLoadItem(i)}
+              <img
+                loading="lazy"
+                src={getImageUrl(track.id)}
+                alt={track.id}
+                class="rounded-md size-12 flex-shrink-0 object-cover"
+              />
+            {:else}
+              <div
+                class="rounded-md size-12 flex-shrink-0 bg-muted/50 grid place-items-center"
+              >
+                <ListMusicIcon class="text-muted-foreground" />
+              </div>
+            {/if}
             <div class="text-left flex-1 min-w-0">
-              <p class="font-medium truncate">{trackTitle}</p>
+              <p class="font-medium truncate">
+                {trackTitle}
+              </p>
               <p class="text-sm truncate text-muted-foreground">
                 {trackArtist}
               </p>
             </div>
-          </button>
+          </div>
         </Carousel.Item>
       {/each}
     </Carousel.Content>

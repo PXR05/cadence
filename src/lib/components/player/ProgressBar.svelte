@@ -1,6 +1,7 @@
 <script lang="ts">
   import { playerStore } from "$lib/stores/player.svelte";
   import { formatTime } from "$lib/utils/format";
+    import { fade } from "svelte/transition";
 
   const { height = 6, showTime } = $props<{
     height?: number;
@@ -14,7 +15,7 @@
   const currentProgress = $derived(
     pendingSeekPosition !== null
       ? (pendingSeekPosition / playerStore.duration) * 100
-      : playerStore.progress * 100
+      : playerStore.progress * 100,
   );
 
   const displayTime = $derived(pendingSeekPosition ?? playerStore.currentTime);

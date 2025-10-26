@@ -29,7 +29,7 @@
   });
 
   const navTranslate = $derived.by(() => {
-    if (!isTopRoute || !isMobile) {
+    if (panelState.isOpen || !isTopRoute || !isMobile) {
       return `3.625rem`;
     }
     return `0`;
@@ -42,23 +42,21 @@
   <div
     class="absolute bottom-0 left-0 right-0 transition-all duration-200"
     style="
-      transform: translateY({downloadTranslate}); 
+      transform: translateY({downloadTranslate});
       will-change: transform;"
   >
     <GlobalDownloadProgress />
   </div>
   <div
-    class="absolute bottom-0 left-0 right-0 transition-transform duration-200
-    {panelState.isOpen ? 'z-10' : ''}"
+    class="absolute bottom-0 left-0 right-0 transition-transform duration-300"
     style="
-      transform: translateY({playerTranslate}); 
+      transform: translateY({playerTranslate});
       will-change: transform;"
   >
     <PlayerBar {panelState} />
   </div>
   <div
-    class="absolute bottom-1.5 left-1.5 right-1.5 transition-all duration-200
-    {panelState.isOpen ? 'opacity-0' : ''}"
+    class="absolute bottom-1.5 left-1.5 right-1.5 transition-all duration-200"
     style="
     transform: translateY({navTranslate});
     will-change: transform;"

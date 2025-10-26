@@ -57,7 +57,7 @@
                 loading="lazy"
                 src={getImageUrl(queueTrack.id)}
                 alt={queueTrack.id}
-                class="h-[min(42.5dvh,90dvw)] aspect-square object-cover mx-auto rounded-2xl"
+                class="size-[min(42.5dvh,90dvw)] object-cover mx-auto rounded-2xl"
               />
             {:else}
               <div
