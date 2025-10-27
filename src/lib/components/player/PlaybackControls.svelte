@@ -43,7 +43,7 @@
   >
     <ShuffleIcon
       absoluteStrokeWidth
-      strokeWidth={2.5}
+      strokeWidth={2}
       class="size-{size.icon - 1}"
     />
   </Button>
