@@ -14,7 +14,10 @@ interface PersistedPlayerState {
   currentTrack: AudioFile | null;
   trackColor: string;
   trackQueue: AudioFile[];
+  shuffledIndices?: number[];
   queueIndex: number;
+  isShuffled: boolean;
+  isRepeated: boolean;
   isMuted: boolean;
   volume: number;
   currentTime: number;
@@ -37,10 +40,12 @@ class PlayerState {
       trackColor: "",
       trackQueue: [],
       queueIndex: 0,
+      isShuffled: false,
+      isRepeated: false,
       isMuted: false,
       volume: 1,
       currentTime: 0,
-    }
+    },
   );
 
   get currentTrack() {
@@ -74,6 +79,26 @@ class PlayerState {
     this.persistedState.value = {
       ...this.persistedState.value,
       queueIndex: value,
+    };
+  }
+
+  get isShuffled() {
+    return this.persistedState.value.isShuffled;
+  }
+  set isShuffled(value: boolean) {
+    this.persistedState.value = {
+      ...this.persistedState.value,
+      isShuffled: value,
+    };
+  }
+
+  get isRepeated() {
+    return this.persistedState.value.isRepeated;
+  }
+  set isRepeated(value: boolean) {
+    this.persistedState.value = {
+      ...this.persistedState.value,
+      isRepeated: value,
     };
   }
 
@@ -223,30 +248,46 @@ class PlayerState {
       navigator.mediaSession.setActionHandler("play", () => this.play());
       navigator.mediaSession.setActionHandler("pause", () => this.pause());
       navigator.mediaSession.setActionHandler("seekto", (e) =>
-        this.seek(e.seekTime ?? 0)
+        this.seek(e.seekTime ?? 0),
       );
       navigator.mediaSession.setActionHandler("previoustrack", () =>
-        this.playPrevious()
+        this.playPrevious(),
       );
       navigator.mediaSession.setActionHandler("nexttrack", () =>
-        this.playNext()
+        this.playNext(),
       );
     }
 
     await this.loadTrackColor(track);
   }
 
-  async play(track?: AudioFile) {
+  async play(opts?: { track?: AudioFile; index?: number }) {
+    const { track, index } = opts || {};
     if (this.playerRef) {
+      let newTrack: AudioFile | undefined = undefined;
+      let newIndex: number | undefined = undefined;
+
       if (track && this.currentTrack?.id !== track.id) {
-        this.currentTrack = track;
-        const trackIndex = this.trackQueue.findIndex((t) => t.id === track.id);
-        this.queueIndex = trackIndex;
-        this.syncCarouselToTrack(trackIndex);
-        this.currentTime = 0;
-        await this.updateMetadata(track);
+        newTrack = track;
+        newIndex = this.trackQueue.findIndex((t) => t.id === track.id);
+      } else if (
+        index !== undefined &&
+        this.currentTrack?.id !== this.trackQueue[index].id
+      ) {
+        newTrack = this.trackQueue[index];
+        newIndex = index;
       }
+      
+      if ((track !== undefined || index !== undefined) && newIndex !== undefined && newTrack !== undefined) {
+        this.currentTrack = newTrack;
+        this.queueIndex = newIndex;
+        this.currentTime = 0;
+        this.syncCarouselToTrack(newIndex);
+        await this.updateMetadata(newTrack);
+      }
+
       this.isPlaying = true;
+
       try {
         await this.playerRef.play();
       } catch (error) {
@@ -272,23 +313,31 @@ class PlayerState {
   }
 
   playNext() {
+    if (this.isRepeated) {
+      this.seek(0);
+      return;
+    }
     if (this.queueIndex < this.trackQueue.length - 1) {
       this.queueIndex++;
-      this.play(this.trackQueue[this.queueIndex]);
+      this.play({ index: this.queueIndex });
     } else if (this.trackQueue.length > 0) {
       this.queueIndex = 0;
-      this.play(this.trackQueue[0]);
+      this.play({ index: 0 });
     } else {
       this.pause();
     }
   }
 
   playPrevious() {
+    if (this.isRepeated) {
+      this.seek(0);
+      return;
+    }
     if (this.queueIndex > 0) {
       this.queueIndex--;
-      this.play(this.trackQueue[this.queueIndex]);
+      this.play({ index: this.queueIndex });
     } else if (this.trackQueue[0]) {
-      this.play(this.trackQueue[this.trackQueue.length - 1]);
+      this.play({ index: this.trackQueue.length - 1 });
     }
   }
 
@@ -296,7 +345,7 @@ class PlayerState {
     if (this.trackQueue[index]) {
       this.queueIndex = index;
       this.syncCarouselToTrack(index);
-      this.play(this.trackQueue[index]);
+      this.play({ index });
     }
   }
 
@@ -311,7 +360,7 @@ class PlayerState {
     this.trackQueue = tracks;
     this.queueIndex = startIndex;
     if (tracks[startIndex]) {
-      this.play(tracks[startIndex]);
+      this.play({ index: startIndex });
     }
   }
 
@@ -330,7 +379,7 @@ class PlayerState {
         this.queueIndex = this.trackQueue.length - 1;
       }
       if (this.trackQueue[this.queueIndex]) {
-        this.play(this.trackQueue[this.queueIndex]);
+        this.play({ index: this.queueIndex });
       } else {
         this.pause();
         this.currentTrack = null;
@@ -346,6 +395,11 @@ class PlayerState {
   clearQueue() {
     this.trackQueue = [];
     this.queueIndex = -1;
+  }
+
+  shuffleQueue() {
+    // 1. create array of shuffled indices
+    // 2. set isShuffled to true
   }
 
   syncCarouselToTrack(index: number, jump: boolean = false) {
@@ -369,9 +423,9 @@ class PlayerState {
 
     document.body.style.setProperty(
       "--primary",
-      `oklch(${brighter.coords[0]} ${brighter.coords[1]} ${brighter.coords[2]})`
+      `oklch(${brighter.coords[0]} ${brighter.coords[1]} ${brighter.coords[2]})`,
     );
-    
+
     this.persistedState.value = {
       ...this.persistedState.value,
       trackColor: brighter.toString(),

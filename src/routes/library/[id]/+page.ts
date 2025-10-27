@@ -1,3 +1,4 @@
+
 export const ssr = false;
 
 import { browser } from "$app/environment";

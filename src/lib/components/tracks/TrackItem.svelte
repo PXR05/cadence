@@ -17,6 +17,7 @@
   import { onMount } from "svelte";
 
   interface Props {
+    index: number;
     track: AudioFile;
     playlist?: PlaylistItem[];
     fromQueue?: boolean;
@@ -24,6 +25,7 @@
   }
 
   let {
+    index,
     track,
     playlist,
     fromQueue = false,
@@ -43,20 +45,13 @@
 
   async function handlePlay() {
     if (fromQueue) {
-      const trackIndex = playerStore.trackQueue.findIndex(
-        (t) => t.id === track.id
-      );
-      if (trackIndex !== -1) {
-        playerStore.queueIndex = trackIndex;
-        playerStore.play(track);
-        return;
-      }
+      playerStore.queueIndex = index;
+      playerStore.play({ index });
     }
 
     if (playlist) {
       const tracks = playlist.map((item) => item.audio);
-      const trackIndex = tracks.findIndex((t) => t.id === track.id);
-      playerStore.setQueue(tracks, trackIndex);
+      playerStore.setQueue(tracks, index);
     } else {
       const shuffledTracks = tracksStore.getShuffledTracks(track);
       playerStore.setQueue(shuffledTracks, 0);

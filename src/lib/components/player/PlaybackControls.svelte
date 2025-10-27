@@ -3,6 +3,8 @@
   import {
     PauseIcon,
     PlayIcon,
+    RepeatIcon,
+    ShuffleIcon,
     SkipBackIcon,
     SkipForwardIcon,
   } from "@lucide/svelte";
@@ -22,7 +24,7 @@
   const size = $derived(sizes[variant]);
 
   const textColor = $derived(
-    `color-mix(in oklab, ${playerStore.trackColor} 30%, var(--foreground))`
+    `color-mix(in oklab, ${playerStore.trackColor} 30%, var(--foreground))`,
   );
 </script>
 
@@ -31,6 +33,21 @@
     ? 'justify-center'
     : ''} gap-{variant === 'large' ? '4' : '2'}"
 >
+  <Button
+    variant="ghost"
+    onclick={() => playerStore.shuffleQueue()}
+    class="size-{size.button} grid place-items-center mx-auto
+    {playerStore.isShuffled ? '' : 'opacity-50'}"
+    style="color: {textColor};"
+    aria-label="Shuffle tracks"
+  >
+    <ShuffleIcon
+      absoluteStrokeWidth
+      strokeWidth={2.5}
+      class="size-{size.icon - 1}"
+    />
+  </Button>
+
   <Button
     variant="ghost"
     onclick={() => playerStore.playPrevious()}
@@ -82,6 +99,21 @@
       strokeWidth={2}
       fill="currentColor"
       class="size-{size.icon}"
+    />
+  </Button>
+
+  <Button
+    variant="ghost"
+    onclick={() => (playerStore.isRepeated = !playerStore.isRepeated)}
+    class="size-{size.button} grid place-items-center mx-auto
+    {playerStore.isRepeated ? '' : 'opacity-50'}"
+    style="color: {textColor};"
+    aria-label="Repeat track"
+  >
+    <RepeatIcon
+      absoluteStrokeWidth
+      strokeWidth={2.5}
+      class="size-{size.icon - 1}"
     />
   </Button>
 </div>

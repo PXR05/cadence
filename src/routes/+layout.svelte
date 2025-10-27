@@ -81,16 +81,16 @@
     }
   }
 
-  onNavigate((navigation) => {
-    if (!document.startViewTransition) return;
+  // onNavigate((navigation) => {
+  //   if (!document.startViewTransition) return;
 
-    return new Promise((resolve) => {
-      document.startViewTransition(async () => {
-        resolve();
-        await navigation.complete;
-      });
-    });
-  });
+  //   return new Promise((resolve) => {
+  //     document.startViewTransition(async () => {
+  //       resolve();
+  //       await navigation.complete;
+  //     });
+  //   });
+  // });
 
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
   const isTopRoute = $derived(page.url.pathname.split("/").length <= 2);

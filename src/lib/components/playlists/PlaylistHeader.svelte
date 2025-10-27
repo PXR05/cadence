@@ -9,11 +9,11 @@
     UserIcon,
     DownloadIcon,
     CloudDownloadIcon,
-    CheckCircleIcon,
     CloudCheckIcon,
     PencilIcon,
     LibraryIcon,
     ArrowLeft,
+    CloudOffIcon,
   } from "@lucide/svelte";
   import { isSpecialPlaylist, SPECIAL_PLAYLIST_IDS } from "$lib/utils/playlist";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
@@ -199,7 +199,7 @@
       </DropdownMenu.Item>
       {#if isOffline || playlist.id === SPECIAL_PLAYLIST_IDS.DOWNLOADED}
         <DropdownMenu.Item onclick={onRemoveOffline} disabled={isDownloading}>
-          <CheckCircleIcon size={16} class="mr-2" />
+          <CloudOffIcon size={16} class="mr-2" />
           Remove from Offline
         </DropdownMenu.Item>
       {:else}

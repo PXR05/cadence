@@ -77,8 +77,8 @@
         style="position: absolute; top: 0; left: 0; right: 0; transform: translateY({range.start *
           ROW_HEIGHT}px);"
       >
-        {#each tracks.slice(range.start, range.end) as track (track.id)}
-          <TrackItem {track} />
+        {#each tracks.slice(range.start, range.end) as track, i (track.id)}
+          <TrackItem index={i} {track} />
         {/each}
       </div>
     </div>

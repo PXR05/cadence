@@ -119,8 +119,9 @@
             </div>
           </button>
         {/if}
-        {#each items.slice(range.start, range.end) as item (item.id)}
+        {#each items.slice(range.start, range.end) as item, i (item.id)}
           <TrackItem
+            index={i}
             playlist={items}
             track={item.audio}
             fromQueue={false}
