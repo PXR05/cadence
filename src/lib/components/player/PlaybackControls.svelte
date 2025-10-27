@@ -43,8 +43,8 @@
   >
     <ShuffleIcon
       absoluteStrokeWidth
-      strokeWidth={2}
-      class="size-{size.icon - 1}"
+      strokeWidth={2.5}
+      class="size-{size.icon}"
     />
   </Button>
 
@@ -113,7 +113,7 @@
     <RepeatIcon
       absoluteStrokeWidth
       strokeWidth={2.5}
-      class="size-{size.icon - 1}"
+      class="size-{size.icon}"
     />
   </Button>
 </div>
