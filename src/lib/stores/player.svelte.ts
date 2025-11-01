@@ -10,6 +10,26 @@ export const getImageUrl = (id: string) => `${BASE_URL}/${id}/image`;
 export const getPlaylistImageUrl = (id: string) =>
   `${PLAYLIST_URL}/${id}/image`;
 
+export type FilterType =
+  | "lowshelf"
+  | "peaking"
+  | "highshelf"
+  | "lowpass"
+  | "highpass"
+  | "notch"
+  | "allpass"
+  | "bandpass";
+
+export interface EqualizerBand {
+  id: number;
+  type: FilterType;
+  frequency: number;
+  gain: number;
+  Q: number;
+  enabled: boolean;
+  prevGain?: number;
+}
+
 interface PersistedPlayerState {
   currentTrack: AudioFile | null;
   trackColor: string;
@@ -21,10 +41,17 @@ interface PersistedPlayerState {
   isMuted: boolean;
   volume: number;
   currentTime: number;
+  equalizerBands: EqualizerBand[];
+  equalizerEnabled: boolean;
 }
 
 class PlayerState {
+  audioContext: AudioContext | null = $state(null);
   playerRef: HTMLAudioElement | null = $state(null);
+  sourceNode: MediaElementAudioSourceNode | null = $state(null);
+  gainNode: GainNode | null = $state(null);
+  analyzerNode: AnalyserNode | null = $state(null);
+  equalizerNodes: BiquadFilterNode[] = $state([]);
   isPlaying: boolean = $state(false);
   duration: number = $state(0);
   private carousels = new Map<
@@ -45,6 +72,49 @@ class PlayerState {
       isMuted: false,
       volume: 1,
       currentTime: 0,
+      equalizerBands: [
+        {
+          id: 0,
+          type: "lowshelf",
+          frequency: 100,
+          gain: 0,
+          Q: 1,
+          enabled: true,
+        },
+        {
+          id: 1,
+          type: "peaking",
+          frequency: 400,
+          gain: 0,
+          Q: 1,
+          enabled: true,
+        },
+        {
+          id: 2,
+          type: "peaking",
+          frequency: 1000,
+          gain: 0,
+          Q: 1,
+          enabled: true,
+        },
+        {
+          id: 3,
+          type: "peaking",
+          frequency: 3000,
+          gain: 0,
+          Q: 1,
+          enabled: true,
+        },
+        {
+          id: 4,
+          type: "highshelf",
+          frequency: 8000,
+          gain: 0,
+          Q: 1,
+          enabled: true,
+        },
+      ],
+      equalizerEnabled: true,
     },
   );
 
@@ -117,6 +187,9 @@ class PlayerState {
   }
   set volume(value: number) {
     this.persistedState.value = { ...this.persistedState.value, volume: value };
+    if (this.gainNode) {
+      this.gainNode.gain.value = value;
+    }
   }
 
   get currentTime() {
@@ -153,15 +226,66 @@ class PlayerState {
     return this.trackQueue.length;
   }
 
+  get equalizerBands() {
+    return this.persistedState.value.equalizerBands;
+  }
+
+  get equalizerEnabled() {
+    return this.persistedState.value.equalizerEnabled;
+  }
+  set equalizerEnabled(value: boolean) {
+    this.persistedState.value = {
+      ...this.persistedState.value,
+      equalizerEnabled: value,
+    };
+  }
+
   initialize(player: HTMLAudioElement) {
     this.playerRef = player;
+
+    this.audioContext = new AudioContext();
+
+    this.sourceNode = this.audioContext.createMediaElementSource(player);
+    this.gainNode = this.audioContext.createGain();
+    this.analyzerNode = this.audioContext.createAnalyser();
+
+    this.analyzerNode.fftSize = 2048;
+    this.analyzerNode.smoothingTimeConstant = 0.8;
+
+    this.equalizerNodes = this.equalizerBands.map((band) => {
+      const filter = this.audioContext!.createBiquadFilter();
+      filter.type = band.type;
+      filter.frequency.value = band.frequency;
+      filter.gain.value = band.gain;
+      filter.Q.value = band.Q;
+      return filter;
+    });
+
+    this.sourceNode.connect(this.gainNode);
+
+    if (this.equalizerEnabled && this.equalizerNodes.length > 0) {
+      this.gainNode.connect(this.equalizerNodes[0]);
+
+      for (let i = 0; i < this.equalizerNodes.length - 1; i++) {
+        this.equalizerNodes[i].connect(this.equalizerNodes[i + 1]);
+      }
+
+      this.equalizerNodes[this.equalizerNodes.length - 1].connect(
+        this.analyzerNode,
+      );
+    } else {
+      this.gainNode.connect(this.analyzerNode);
+    }
+
+    this.analyzerNode.connect(this.audioContext.destination);
+
+    this.gainNode.gain.value = this.volume;
 
     if (this.isMuted) {
       this.playerRef.muted = true;
     }
-    this.playerRef.volume = this.volume;
 
-    if (this.playerRef && this.currentTrack) {
+    if (this.currentTrack) {
       this.updateMetadata(this.currentTrack);
     }
 
@@ -188,6 +312,123 @@ class PlayerState {
     if (this.currentBlobUrl) {
       revokeAudioUrl(this.currentBlobUrl);
       this.currentBlobUrl = null;
+    }
+
+    if (this.sourceNode) {
+      this.sourceNode.disconnect();
+      this.sourceNode = null;
+    }
+    if (this.gainNode) {
+      this.gainNode.disconnect();
+      this.gainNode = null;
+    }
+    if (this.equalizerNodes.length > 0) {
+      this.equalizerNodes.forEach((node) => node.disconnect());
+      this.equalizerNodes = [];
+    }
+    if (this.analyzerNode) {
+      this.analyzerNode.disconnect();
+      this.analyzerNode = null;
+    }
+    if (this.audioContext) {
+      this.audioContext.close();
+      this.audioContext = null;
+    }
+  }
+
+  getFrequencyData(): Uint8Array | null {
+    if (!this.analyzerNode) return null;
+    const bufferLength = this.analyzerNode.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    this.analyzerNode.getByteFrequencyData(dataArray);
+    return dataArray;
+  }
+
+  getTimeDomainData(): Uint8Array | null {
+    if (!this.analyzerNode) return null;
+    const bufferLength = this.analyzerNode.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    this.analyzerNode.getByteTimeDomainData(dataArray);
+    return dataArray;
+  }
+
+  setAnalyzerFFTSize(
+    size: 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 4096 | 8192 | 16384 | 32768,
+  ) {
+    if (this.analyzerNode) {
+      this.analyzerNode.fftSize = size;
+    }
+  }
+
+  setAnalyzerSmoothing(value: number) {
+    if (this.analyzerNode) {
+      this.analyzerNode.smoothingTimeConstant = Math.max(0, Math.min(1, value));
+    }
+  }
+
+  updateEqualizerBand(id: number, updates: Partial<EqualizerBand>) {
+    const bands = [...this.equalizerBands];
+    const bandIndex = bands.findIndex((b) => b.id === id);
+
+    if (bandIndex === -1) return;
+
+    bands[bandIndex] = { ...bands[bandIndex], ...updates };
+
+    this.persistedState.value = {
+      ...this.persistedState.value,
+      equalizerBands: bands,
+    };
+
+    const node = this.equalizerNodes[bandIndex];
+    if (node) {
+      if (updates.type !== undefined) node.type = updates.type;
+      if (updates.frequency !== undefined)
+        node.frequency.value = updates.frequency;
+      if (updates.gain !== undefined) node.gain.value = updates.gain;
+      if (updates.Q !== undefined) node.Q.value = updates.Q;
+      console.log(node);
+    }
+  }
+
+  toggleEqualizer() {
+    this.equalizerEnabled = !this.equalizerEnabled;
+    this.reconnectAudioGraph();
+  }
+
+  resetEqualizer() {
+    const resetBands = this.equalizerBands.map((band) => ({
+      ...band,
+      gain: 0,
+    }));
+
+    this.persistedState.value = {
+      ...this.persistedState.value,
+      equalizerBands: resetBands,
+    };
+
+    this.equalizerNodes.forEach((node) => {
+      node.gain.value = 0;
+    });
+  }
+
+  private reconnectAudioGraph() {
+    if (!this.gainNode || !this.analyzerNode) return;
+
+    this.gainNode.disconnect();
+    this.equalizerNodes.forEach((node) => node.disconnect());
+
+    if (this.equalizerEnabled && this.equalizerNodes.length > 0) {
+      this.gainNode.connect(this.equalizerNodes[0]);
+
+      for (let i = 0; i < this.equalizerNodes.length - 1; i++) {
+        this.equalizerNodes[i].connect(this.equalizerNodes[i + 1]);
+      }
+
+      this.equalizerNodes[this.equalizerNodes.length - 1].connect(
+        this.analyzerNode,
+      );
+    } else {
+      this.gainNode.connect(this.analyzerNode);
     }
   }
 
@@ -264,6 +505,10 @@ class PlayerState {
   async play(opts?: { track?: AudioFile; index?: number }) {
     const { track, index } = opts || {};
     if (this.playerRef) {
+      if (this.audioContext?.state === "suspended") {
+        await this.audioContext.resume();
+      }
+
       let newTrack: AudioFile | undefined = undefined;
       let newIndex: number | undefined = undefined;
 
@@ -277,8 +522,12 @@ class PlayerState {
         newTrack = this.trackQueue[index];
         newIndex = index;
       }
-      
-      if ((track !== undefined || index !== undefined) && newIndex !== undefined && newTrack !== undefined) {
+
+      if (
+        (track !== undefined || index !== undefined) &&
+        newIndex !== undefined &&
+        newTrack !== undefined
+      ) {
         this.currentTrack = newTrack;
         this.queueIndex = newIndex;
         this.currentTime = 0;

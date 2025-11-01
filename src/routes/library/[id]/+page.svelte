@@ -15,7 +15,7 @@
     AddTracksDialog,
     EditPlaylistDialog,
     PlaylistHeader,
-    VirtualizedPlaylistTracks,
+    PlaylistTrackList,
   } from "$lib/components";
   import PlaylistSearch from "$lib/components/playlists/PlaylistSearch.svelte";
   import { innerWidth } from "svelte/reactivity/window";
@@ -147,7 +147,7 @@
       <PlaylistSearch bind:searchQuery />
     </div>
 
-    <VirtualizedPlaylistTracks
+    <PlaylistTrackList
       items={filteredTracks}
       {hasAddButton}
       onAddTracks={() => addTracksDialog.open()}

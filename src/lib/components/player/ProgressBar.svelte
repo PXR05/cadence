@@ -1,12 +1,14 @@
 <script lang="ts">
   import { playerStore } from "$lib/stores/player.svelte";
   import { formatTime } from "$lib/utils/format";
-    import { fade } from "svelte/transition";
 
-  const { height = 6, showTime } = $props<{
+  const {
+    height = 6,
+    showTime,
+  }: {
     height?: number;
     showTime?: boolean;
-  }>();
+  } = $props();
 
   let progressBar: HTMLDivElement | null = $state(null);
   let isDragging = $state(false);
@@ -113,6 +115,16 @@
         );"
       class="w-full h-full rounded-lg"
     ></div>
+    <div
+      style="transform: translateX(calc({currentProgress}% - {height}px));
+      transition: {isDragging ? 'none' : 'transform 100ms linear'};"
+      class="w-full h-full absolute inset-0"
+    >
+      <div
+        style="width: {height * 2}px; height: {height}px;"
+        class="rounded-full dark:bg-white bg-black group-hover:opacity-100 opacity-0"
+      ></div>
+    </div>
   </div>
   {#if showTime}
     <div

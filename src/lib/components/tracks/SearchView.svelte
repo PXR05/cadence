@@ -209,7 +209,11 @@
   ._color {
     &::before,
     &::after {
-      background-color: var(--background);
+      background-color: color-mix(
+        in oklab,
+        var(--background) 50%,
+        transparent
+      );
     }
   }
 

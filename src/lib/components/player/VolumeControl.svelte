@@ -5,9 +5,9 @@
 
   function handleVolumeChange(e: Event) {
     const target = e.target as HTMLInputElement;
-    playerStore.volume = parseFloat(target.value);
+    playerStore.volume = parseFloat(target.value) / 100;
     if (playerStore.volume > 0) playerStore.isMuted = false;
-    playerStore.playerRef!.volume = playerStore.volume;
+    playerStore.gainNode!.gain.value = playerStore.volume;
   }
 
   function toggleMute() {
@@ -45,13 +45,21 @@
           width: {playerStore.volume * 100}%;
           background-color: color-mix(in oklab, {playerStore.trackColor} 80%, var(--foreground));"
       ></div>
+      <div
+        style="transform: translateX(calc({playerStore.volume * 100}% - 6px));"
+        class="w-full h-full absolute inset-0"
+      >
+        <div
+          class="rounded-full dark:bg-white bg-black group-hover:opacity-100 opacity-0 w-3 h-1.5"
+        ></div>
+      </div>
     </div>
     <input
       type="range"
       min="0"
-      max="1"
+      max="100"
       step="0.01"
-      value={playerStore.volume}
+      value={playerStore.volume * 100}
       oninput={handleVolumeChange}
       class="relative w-full h-full opacity-0 cursor-pointer z-10"
       aria-label="Volume"

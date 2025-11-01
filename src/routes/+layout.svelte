@@ -97,8 +97,6 @@
   const isDownloading = $derived(downloadStore.isDownloading);
 
   const navHeight = $derived(isMobile && isTopRoute ? 72 : 0);
-  const playerHeight = 80;
-  const downloadHeight = $derived(isDownloading ? 55 : 0);
 </script>
 
 <svelte:window onkeydown={(e) => handleKeyboardEvent(e)} />
@@ -111,7 +109,7 @@
 {:else}
   <div
     class="relative bg-background min-h-dvh flex flex-col"
-    style="--h: {navHeight + playerHeight + downloadHeight + 32}px;"
+    style="--h: {navHeight}px;"
   >
     {#if !isMobile && isTopRoute}
       <div
@@ -125,7 +123,7 @@
       </div>
     {/if}
     <div
-      class="relative overflow-auto h-dvh max-w-4xl w-full mx-auto bg-gradient-to-t from-primary/5 via-transparent to-primary/5"
+      class="relative overflow-auto h-dvh w-full mx-auto bg-gradient-to-t from-primary/5 via-transparent to-primary/5"
     >
       {@render children?.()}
     </div>

@@ -257,7 +257,7 @@
   </div>
 {:else}
   <div
-    class="relative flex flex-col max-w-4xl mx-auto w-full h-full border-x overflow-y-auto"
+    class="relative flex flex-col mx-auto w-full h-full border-x overflow-y-auto"
   >
     <div class="flex border-b sticky top-0 p-2 z-50 gap-2">
       <Button

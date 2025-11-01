@@ -96,7 +96,6 @@
           </Button>
         {/if}
       </div>
-
       <div class="px-2 pb-2">
         <ProgressBar />
       </div>
