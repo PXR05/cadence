@@ -1,20 +1,18 @@
 <script lang="ts">
-  import { getImageUrl } from "$lib/stores/player.svelte";
-  import { playerStore } from "$lib/stores/player.svelte";
+  import { getImageUrl, playerStore } from "$lib/stores/player.svelte";
+  import { shouldLoadItem } from "$lib/utils/queue";
   import { ListMusicIcon } from "@lucide/svelte";
-  import { ProgressBar, PlaybackControls } from ".";
+  import { PlaybackControls, ProgressBar } from ".";
+  import { Button } from "../ui/button";
   import * as Carousel from "../ui/carousel";
   import type { CarouselAPI } from "../ui/carousel/context";
-  import { Button } from "../ui/button";
-  import { shouldLoadItem } from "$lib/utils/queue";
 
   interface Props {
     track: AudioFile;
-    open?: boolean;
     onQueueOpen: () => void;
   }
 
-  const { track, open = false, onQueueOpen }: Props = $props();
+  const { track, onQueueOpen }: Props = $props();
 
   const trackTitle = $derived(track?.metadata?.title ?? track?.filename ?? "");
   const trackArtist = $derived(track?.metadata?.artist ?? "Unknown Artist");
@@ -28,7 +26,7 @@
 
 <div class="flex-1 flex flex-col justify-between">
   <div class="relative flex-shrink-0 my-auto w-full z-20">
-    <img
+    <!-- <img
       loading="lazy"
       src={playerStore.currentImageUrl}
       alt={playerStore.currentTrack?.id ?? ""}
@@ -36,7 +34,7 @@
       onauxclick={() => false}
       oncontextmenu={() => false}
       class="h-[min(42.5dvh,90dvw)] scale-150 aspect-square object-cover absolute inset-0 m-auto pointer-events-none blur-3xl"
-    />
+    /> -->
     <Carousel.Root
       class="w-full z-20"
       opts={{ loop: true }}

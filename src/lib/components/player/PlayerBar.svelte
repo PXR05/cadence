@@ -1,18 +1,18 @@
 <script lang="ts">
-  import { playerStore } from "$lib/stores/player.svelte";
-  import { useDialogState } from "$lib/hooks/useDialogState.svelte";
+  import { page } from "$app/state";
   import type { CarouselAPI } from "$lib/components/ui/carousel/context";
-  import ProgressBar from "./ProgressBar.svelte";
-  import QueueDialog from "./QueueDialog.svelte";
-  import PlayerDetailsPanel from "./PlayerDetailsPanel.svelte";
-  import TrackCarousel from "./TrackCarousel.svelte";
-  import PlaybackControls from "./PlaybackControls.svelte";
-  import VolumeControl from "./VolumeControl.svelte";
+  import { useDialogState } from "$lib/hooks/useDialogState.svelte";
+  import { playerStore } from "$lib/stores/player.svelte";
   import { ListMusicIcon, PauseIcon, PlayIcon } from "@lucide/svelte";
   import { onDestroy, onMount } from "svelte";
-  import { Button } from "../ui/button";
-  import { page } from "$app/state";
   import { innerWidth } from "svelte/reactivity/window";
+  import { Button } from "../ui/button";
+  import PlaybackControls from "./PlaybackControls.svelte";
+  import PlayerDetailsPanel from "./PlayerDetailsPanel.svelte";
+  import ProgressBar from "./ProgressBar.svelte";
+  import QueueDialog from "./QueueDialog.svelte";
+  import TrackCarousel from "./TrackCarousel.svelte";
+  import VolumeControl from "./VolumeControl.svelte";
 
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
   const isTopRoute = $derived(page.url.pathname.split("/").length <= 2);
@@ -26,7 +26,10 @@
   let isDragging = $state(false);
   let startY = $state(0);
   let currentY = $state(0);
+  let lastMoveY = $state(0);
+  let lastMoveTime = $state(0);
   let dragTranslate = $state<number | null>(null);
+  let transitionDuration = $state(300);
 
   const closedPosition = $derived.by(() => {
     if (isTopRoute && isMobile) {
@@ -62,6 +65,12 @@
     }
     return panelState.isOpen ? 1 : 0;
   });
+
+  const opacityTransition = $derived(
+    isDragging
+      ? "none"
+      : `opacity ${transitionDuration}ms cubic-bezier(0.83, 0, 0.17, 1)`,
+  );
 
   let audioEl: HTMLAudioElement | null = $state(null);
   const queueDialog = useDialogState("queue");
@@ -113,6 +122,8 @@
     isDragging = true;
     startY = clientY;
     currentY = clientY;
+    lastMoveY = clientY;
+    lastMoveTime = Date.now();
 
     if (panelState.isOpen) {
       dragTranslate = 0;
@@ -132,7 +143,9 @@
     }
 
     dragTranslate = Math.max(0, Math.min(closedPosition, newTranslate));
+    lastMoveY = currentY;
     currentY = clientY;
+    lastMoveTime = Date.now();
   }
 
   function handleDragEnd() {
@@ -140,14 +153,29 @@
 
     const deltaY = currentY - startY;
     const threshold = closedPosition * 0.5;
-    const velocity = Math.abs(deltaY);
+
+    const timeDelta = Date.now() - lastMoveTime;
+    const moveDelta = currentY - lastMoveY;
+    const velocityPxPerMs = timeDelta > 0 ? Math.abs(moveDelta / timeDelta) : 0;
 
     let shouldOpen = false;
 
-    if (velocity > 50) {
-      shouldOpen = deltaY < 0;
+
+    if (velocityPxPerMs > 0.3) {
+      shouldOpen = moveDelta < 0;
     } else {
       shouldOpen = dragTranslate < threshold;
+    }
+
+    const remainingDistance = shouldOpen
+      ? dragTranslate
+      : closedPosition - dragTranslate;
+
+    if (velocityPxPerMs > 0.1) {
+      const calculatedDuration = remainingDistance / velocityPxPerMs;
+      transitionDuration = Math.min(400, Math.max(150, calculatedDuration));
+    } else {
+      transitionDuration = 300;
     }
 
     if (shouldOpen) {
@@ -210,17 +238,16 @@
 <div
   class="absolute bottom-0 left-0 right-0 {isDragging
     ? ''
-    : 'transition-transform duration-300'}"
+    : 'transition-transform'}"
   style="
     transform: translateY({playerTranslate});
+    transition-duration: {isDragging ? '0ms' : `${transitionDuration}ms`};
     will-change: transform;"
 >
   <div class="select-none h-[calc(100dvh+5rem)]">
     <div
       class="mx-1.5 rounded-xl overflow-clip border border-input bg-muted/50 backdrop-blur-md"
-      style="opacity: {playerBarOpacity}; transition: {isDragging
-        ? 'none'
-        : 'opacity 200ms cubic-bezier(0.83, 0, 0.17, 1)'};"
+      style="opacity: {playerBarOpacity}; transition: {opacityTransition};"
       role="button"
       tabindex="0"
       ontouchstart={handleTouchStart}
@@ -297,12 +324,9 @@
     />
 
     <div
-      style="opacity: {detailsPanelOpacity}; transition: {isDragging
-        ? 'none'
-        : 'opacity 200ms cubic-bezier(0.83, 0, 0.17, 1)'};"
+      style="opacity: {detailsPanelOpacity}; transition: {opacityTransition};"
     >
       <PlayerDetailsPanel
-        bind:open={panelState.isOpen}
         onOpenChange={() => panelState.toggle()}
         onQueueOpen={() => queueDialog.open()}
         onTouchStart={handleTouchStart}

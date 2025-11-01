@@ -12,7 +12,6 @@
   import { ManagePlaylistsDialog } from "../playlists";
 
   interface Props {
-    open: boolean;
     onOpenChange: (open: boolean) => void;
     onQueueOpen: () => void;
     onTouchStart?: (e: TouchEvent) => void;
@@ -22,7 +21,6 @@
   }
 
   let {
-    open = $bindable(),
     onOpenChange,
     onQueueOpen,
     onTouchStart,
@@ -104,7 +102,7 @@
   </div>
 
   {#if track}
-    <PlayerDetails {open} {track} {onQueueOpen} />
+    <PlayerDetails {track} {onQueueOpen} />
   {/if}
 </div>
 

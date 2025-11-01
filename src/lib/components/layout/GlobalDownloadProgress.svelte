@@ -37,7 +37,7 @@
         </div>
         <div class="w-full bg-muted border overflow-hidden h-1.5 rounded-sm">
           <div
-            class="h-full bg-primary transition-all duration-300"
+            class="h-full bg-primary transition-all duration-200"
             style="width: {percentage}%"
           ></div>
         </div>
