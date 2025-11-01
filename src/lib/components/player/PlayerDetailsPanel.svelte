@@ -61,14 +61,22 @@
       var(--background) 50%,
       color-mix(in oklab, {playerStore.trackColor} 10%, var(--background)) 100%
     );
+    touch-action: none;
+    overscroll-behavior: none;
     "
-  ontouchstart={onTouchStart}
+  ontouchstart={(e) => {
+    // Prevent pull-to-refresh immediately
+    if (e.cancelable) {
+      e.preventDefault();
+    }
+    onTouchStart?.(e);
+  }}
   ontouchmove={(e) => {
-    onTouchMove?.(e);
     // Prevent pull-to-refresh when interacting with panel
     if (e.cancelable) {
       e.preventDefault();
     }
+    onTouchMove?.(e);
   }}
   ontouchend={onTouchEnd}
   onmousedown={onMouseDown}

@@ -151,7 +151,6 @@
   function handleDragEnd() {
     if (!isDragging || dragTranslate === null) return;
 
-
     const timeDelta = Date.now() - lastMoveTime;
     const moveDelta = currentY - lastMoveY;
     const velocityPxPerMs = timeDelta > 0 ? Math.abs(moveDelta / timeDelta) : 0;
@@ -161,7 +160,6 @@
     if (velocityPxPerMs > 0.3) {
       shouldOpen = moveDelta < 0;
     } else {
-
       const threshold = closedPosition * 0.3;
 
       if (panelState.isOpen) {
@@ -193,6 +191,9 @@
   }
 
   function handleTouchStart(e: TouchEvent) {
+    if (panelState.isOpen && e.cancelable) {
+      e.preventDefault();
+    }
     handleDragStart(e.touches[0].clientY, e);
   }
 
@@ -247,7 +248,9 @@
     transform: translateY({playerTranslate});
     transition-duration: {isDragging ? '0ms' : `${transitionDuration}ms`};
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    will-change: transform;"
+    will-change: transform;
+    touch-action: {panelState.isOpen ? 'none' : 'auto'};
+    overscroll-behavior: none;"
 >
   <div class="select-none h-[calc(100dvh+5rem)]">
     <div
@@ -329,7 +332,7 @@
     />
 
     <div
-      style="opacity: {detailsPanelOpacity}; transition: {opacityTransition};"
+      style="opacity: {detailsPanelOpacity}; transition: {opacityTransition}; touch-action: none; overscroll-behavior: none;"
     >
       <PlayerDetailsPanel
         onOpenChange={() => panelState.toggle()}
