@@ -6,7 +6,6 @@
   import * as Carousel from "../ui/carousel";
   import type { CarouselAPI } from "../ui/carousel/context";
   import { Button } from "../ui/button";
-  import { fade } from "svelte/transition";
   import { shouldLoadItem } from "$lib/utils/queue";
 
   interface Props {
@@ -29,21 +28,15 @@
 
 <div class="flex-1 flex flex-col justify-between">
   <div class="relative flex-shrink-0 my-auto w-full z-20">
-    {#if open}
-      <img
-        transition:fade={{
-          duration: 200,
-          delay: 300,
-        }}
-        loading="lazy"
-        src={playerStore.currentImageUrl}
-        alt={playerStore.currentTrack?.id ?? ""}
-        draggable="false"
-        onauxclick={() => false}
-        oncontextmenu={() => false}
-        class="h-[min(42.5dvh,90dvw)] scale-150 aspect-square object-cover absolute inset-0 m-auto pointer-events-none blur-3xl"
-      />
-    {/if}
+    <img
+      loading="lazy"
+      src={playerStore.currentImageUrl}
+      alt={playerStore.currentTrack?.id ?? ""}
+      draggable="false"
+      onauxclick={() => false}
+      oncontextmenu={() => false}
+      class="h-[min(42.5dvh,90dvw)] scale-150 aspect-square object-cover absolute inset-0 m-auto pointer-events-none blur-3xl"
+    />
     <Carousel.Root
       class="w-full z-20"
       opts={{ loop: true }}

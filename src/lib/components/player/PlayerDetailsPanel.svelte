@@ -15,9 +15,21 @@
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onQueueOpen: () => void;
+    onTouchStart?: (e: TouchEvent) => void;
+    onTouchMove?: (e: TouchEvent) => void;
+    onTouchEnd?: (e: TouchEvent) => void;
+    onMouseDown?: (e: MouseEvent) => void;
   }
 
-  let { open = $bindable(), onOpenChange, onQueueOpen }: Props = $props();
+  let {
+    open = $bindable(),
+    onOpenChange,
+    onQueueOpen,
+    onTouchStart,
+    onTouchMove,
+    onTouchEnd,
+    onMouseDown,
+  }: Props = $props();
 
   const track = $derived(playerStore.currentTrack);
   const title = $derived(track?.metadata?.title ?? track?.filename ?? "");
@@ -43,7 +55,7 @@
 <div
   role="dialog"
   tabindex="0"
-  class="relative h-dvh flex flex-col cursor-grab active:cursor-grabbing touch-none"
+  class="relative h-dvh flex flex-col cursor-grab active:cursor-grabbing"
   style="
     background: linear-gradient(
       to top,
@@ -52,6 +64,10 @@
       color-mix(in oklab, {playerStore.trackColor} 10%, var(--background)) 100%
     );
     "
+  ontouchstart={onTouchStart}
+  ontouchmove={onTouchMove}
+  ontouchend={onTouchEnd}
+  onmousedown={onMouseDown}
 >
   <div class="flex justify-between items-center p-6">
     <button
