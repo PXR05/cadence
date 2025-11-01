@@ -69,7 +69,7 @@
   const opacityTransition = $derived(
     isDragging
       ? "none"
-      : `opacity ${transitionDuration}ms cubic-bezier(0.83, 0, 0.17, 1)`,
+      : `opacity ${transitionDuration}ms cubic-bezier(0.4, 0, 0.2, 1)`,
   );
 
   let audioEl: HTMLAudioElement | null = $state(null);
@@ -151,8 +151,6 @@
   function handleDragEnd() {
     if (!isDragging || dragTranslate === null) return;
 
-    const deltaY = currentY - startY;
-    const threshold = closedPosition * 0.5;
 
     const timeDelta = Date.now() - lastMoveTime;
     const moveDelta = currentY - lastMoveY;
@@ -160,11 +158,17 @@
 
     let shouldOpen = false;
 
-
     if (velocityPxPerMs > 0.3) {
       shouldOpen = moveDelta < 0;
     } else {
-      shouldOpen = dragTranslate < threshold;
+
+      const threshold = closedPosition * 0.3;
+
+      if (panelState.isOpen) {
+        shouldOpen = dragTranslate < threshold;
+      } else {
+        shouldOpen = dragTranslate < closedPosition - threshold;
+      }
     }
 
     const remainingDistance = shouldOpen
@@ -173,7 +177,7 @@
 
     if (velocityPxPerMs > 0.1) {
       const calculatedDuration = remainingDistance / velocityPxPerMs;
-      transitionDuration = Math.min(400, Math.max(150, calculatedDuration));
+      transitionDuration = Math.min(350, Math.max(200, calculatedDuration));
     } else {
       transitionDuration = 300;
     }
@@ -242,6 +246,7 @@
   style="
     transform: translateY({playerTranslate});
     transition-duration: {isDragging ? '0ms' : `${transitionDuration}ms`};
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     will-change: transform;"
 >
   <div class="select-none h-[calc(100dvh+5rem)]">
