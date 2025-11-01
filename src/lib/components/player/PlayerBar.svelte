@@ -160,7 +160,7 @@
     if (velocityPxPerMs > 0.3) {
       shouldOpen = moveDelta < 0;
     } else {
-      const threshold = closedPosition * 0.3;
+      const threshold = closedPosition * 0.2;
 
       if (panelState.isOpen) {
         shouldOpen = dragTranslate < threshold;
