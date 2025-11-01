@@ -11,12 +11,27 @@
   import { ListMusicIcon, PauseIcon, PlayIcon } from "@lucide/svelte";
   import { onDestroy } from "svelte";
   import { Button } from "../ui/button";
+  import { page } from "$app/state";
+  import { innerWidth } from "svelte/reactivity/window";
+
+  const isMobile = $derived((innerWidth.current ?? 0) <= 768);
+  const isTopRoute = $derived(page.url.pathname.split("/").length <= 2);
 
   const {
     panelState,
   }: {
     panelState: ReturnType<typeof useDialogState>;
   } = $props();
+
+  const playerTranslate = $derived.by(() => {
+    if (panelState.isOpen) {
+      return `0`;
+    }
+    if (isTopRoute && isMobile) {
+      return `calc(100dvh - 3.875rem)`;
+    }
+    return `calc(100dvh - 0.375rem)`;
+  });
 
   let audioEl: HTMLAudioElement | null = $state(null);
   const queueDialog = useDialogState("queue");
@@ -38,11 +53,16 @@
   }
 </script>
 
-<div class="select-none h-[calc(100dvh+5rem)]">
-  <div class="px-1.5">
+<div
+  class="absolute bottom-0 left-0 right-0 transition-transform duration-300"
+  style="
+    transform: translateY({playerTranslate});
+    will-change: transform;"
+>
+  <div class="select-none h-[calc(100dvh+5rem)]">
     <div
-      class="rounded-xl overflow-clip border border-input bg-muted/50
-      {panelState.isOpen ? 'opacity-0' : 'opacity-100 backdrop-blur-md'}"
+      class="mx-1.5 rounded-xl overflow-clip border border-input bg-muted/50
+        {panelState.isOpen ? 'opacity-0' : 'opacity-100 backdrop-blur-md'}"
       style="transition: opacity 200ms cubic-bezier(0.83, 0, 0.17, 1);"
     >
       <div
@@ -100,18 +120,23 @@
         <ProgressBar />
       </div>
     </div>
+
+    <audio bind:this={audioEl}></audio>
+
+    <QueueDialog
+      open={queueDialog.isOpen}
+      onOpenChange={(open) => !open && queueDialog.close()}
+    />
+
+    <div
+      class={panelState.isOpen ? "" : "opacity-0"}
+      style="transition: opacity 200ms cubic-bezier(0.83, 0, 0.17, 1);"
+    >
+      <PlayerDetailsPanel
+        bind:open={panelState.isOpen}
+        onOpenChange={() => panelState.toggle()}
+        onQueueOpen={() => queueDialog.open()}
+      />
+    </div>
   </div>
-
-  <audio bind:this={audioEl}></audio>
-
-  <QueueDialog
-    open={queueDialog.isOpen}
-    onOpenChange={(open) => !open && queueDialog.close()}
-  />
-
-  <PlayerDetailsPanel
-    bind:open={panelState.isOpen}
-    onOpenChange={() => panelState.toggle()}
-    onQueueOpen={() => queueDialog.open()}
-  />
 </div>

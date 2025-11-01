@@ -33,7 +33,7 @@
       <img
         transition:fade={{
           duration: 200,
-          delay: 250,
+          delay: 300,
         }}
         loading="lazy"
         src={playerStore.currentImageUrl}

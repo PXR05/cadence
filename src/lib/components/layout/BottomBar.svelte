@@ -11,16 +11,6 @@
 
   const panelState = useDialogState("player-detail");
 
-  const playerTranslate = $derived.by(() => {
-    if (panelState.isOpen) {
-      return `0`;
-    }
-    if (isTopRoute && isMobile) {
-      return `calc(100dvh - 3.875rem)`;
-    }
-    return `calc(100dvh - 0.375rem)`;
-  });
-
   const downloadTranslate = $derived.by(() => {
     if (isTopRoute && isMobile) {
       return `-9.3rem`;
@@ -47,14 +37,7 @@
   >
     <GlobalDownloadProgress />
   </div>
-  <div
-    class="absolute bottom-0 left-0 right-0 transition-transform duration-300"
-    style="
-      transform: translateY({playerTranslate});
-      will-change: transform;"
-  >
-    <PlayerBar {panelState} />
-  </div>
+  <PlayerBar {panelState} />
   <div
     class="absolute bottom-1.5 left-1.5 right-1.5 transition-all duration-200"
     style="

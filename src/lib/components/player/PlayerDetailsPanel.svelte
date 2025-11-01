@@ -43,8 +43,7 @@
 <div
   role="dialog"
   tabindex="0"
-  class="relative h-dvh flex flex-col cursor-grab active:cursor-grabbing touch-none
-  {open ? 'opacity-100' : 'opacity-0'}"
+  class="relative h-dvh flex flex-col cursor-grab active:cursor-grabbing touch-none"
   style="
     background: linear-gradient(
       to top,
@@ -52,7 +51,6 @@
       var(--background) 50%,
       color-mix(in oklab, {playerStore.trackColor} 10%, var(--background)) 100%
     );
-    transition: opacity 200ms cubic-bezier(0.83, 0, 0.17, 1);
     "
 >
   <div class="flex justify-between items-center p-6">

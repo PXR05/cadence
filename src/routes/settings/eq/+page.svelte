@@ -48,7 +48,8 @@
 
   const WIDTH = $derived.by(() => {
     const windowWidth = innerWidth.current ?? 0;
-    return windowWidth < 768 ? windowWidth - 16 : 880;
+    // return windowWidth < 768 ? windowWidth - 16 : 880;
+    return windowWidth - 16;
   });
   const HEIGHT = $derived(400);
   const PADDING = { top: 40, right: 40, bottom: 40, left: 50 };

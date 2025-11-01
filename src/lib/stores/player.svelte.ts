@@ -386,7 +386,6 @@ class PlayerState {
         node.frequency.value = updates.frequency;
       if (updates.gain !== undefined) node.gain.value = updates.gain;
       if (updates.Q !== undefined) node.Q.value = updates.Q;
-      console.log(node);
     }
   }
 
