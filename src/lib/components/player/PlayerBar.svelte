@@ -121,11 +121,15 @@
     }
   }
 
-  function handleDragMove(clientY: number) {
+  function handleDragMove(clientY: number, event?: TouchEvent | MouseEvent) {
     if (!isDragging || dragTranslate === null) return;
 
     const deltaY = clientY - startY;
     const newTranslate = (panelState.isOpen ? 0 : closedPosition) + deltaY;
+
+    if (event && "touches" in event && panelState.isOpen) {
+      event.preventDefault();
+    }
 
     dragTranslate = Math.max(0, Math.min(closedPosition, newTranslate));
     currentY = clientY;
@@ -162,8 +166,7 @@
 
   function handleTouchMove(e: TouchEvent) {
     if (isDragging) {
-      e.preventDefault();
-      handleDragMove(e.touches[0].clientY);
+      handleDragMove(e.touches[0].clientY, e);
     }
   }
 
@@ -176,7 +179,7 @@
   }
 
   function handleMouseMove(e: MouseEvent) {
-    handleDragMove(e.clientY);
+    handleDragMove(e.clientY, e);
   }
 
   function handleMouseUp() {
@@ -221,7 +224,12 @@
       role="button"
       tabindex="0"
       ontouchstart={handleTouchStart}
-      ontouchmove={handleTouchMove}
+      ontouchmove={(e) => {
+        handleTouchMove(e);
+        if (panelState.isOpen && isDragging) {
+          e.preventDefault();
+        }
+      }}
       ontouchend={handleTouchEnd}
       onmousedown={handleMouseDown}
     >

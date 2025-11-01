@@ -65,7 +65,13 @@
     );
     "
   ontouchstart={onTouchStart}
-  ontouchmove={onTouchMove}
+  ontouchmove={(e) => {
+    onTouchMove?.(e);
+    // Prevent pull-to-refresh when interacting with panel
+    if (e.cancelable) {
+      e.preventDefault();
+    }
+  }}
   ontouchend={onTouchEnd}
   onmousedown={onMouseDown}
 >
