@@ -41,7 +41,7 @@
       setApi={(emblaApi) => setDetailCarouselApi(emblaApi ?? null)}
     >
       <Carousel.Content>
-        {#each playerStore.trackQueue as queueTrack, i}
+          {#each playerStore.trackQueue as queueTrack, i}
           <Carousel.Item onclick={() => playerStore.togglePlayPause()}>
             {#if shouldLoadItem(i)}
               <img

@@ -3,11 +3,13 @@
   import TrackItem from "./TrackItem.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { VirtualScroll } from "../ui/virtual-scroll";
+  import { playerStore } from "$lib/stores/player.svelte";
 
   const tracks = $derived(tracksStore.tracks);
   const isInitialLoad = $derived(tracksStore.isInitialLoad);
   const isLoadingMore = $derived(tracksStore.isLoadingMore);
   const error = $derived(tracksStore.error);
+  const currentId = $derived(playerStore.currentTrack?.id);
 
   const ROW_HEIGHT = 81;
 </script>
@@ -27,7 +29,11 @@
 {:else}
   <VirtualScroll items={tracks} rowHeight={ROW_HEIGHT} class="border h-dvh">
     {#snippet children({ item: track, visibleIndex })}
-      <TrackItem index={visibleIndex} {track} />
+      <TrackItem
+        index={visibleIndex}
+        isCurrentTrack={track.id === currentId}
+        {track}
+      />
     {/snippet}
   </VirtualScroll>
 

@@ -19,6 +19,7 @@
   interface Props {
     index: number;
     track: AudioFile;
+    isCurrentTrack: boolean;
     playlist?: PlaylistItem[];
     fromQueue?: boolean;
     onRemovedFromPlaylist?: (trackId: string, playlistIds: string[]) => void;
@@ -27,12 +28,12 @@
   let {
     index,
     track,
+    isCurrentTrack,
     playlist,
     fromQueue = false,
     onRemovedFromPlaylist,
   }: Props = $props();
 
-  const isCurrentTrack = $derived(playerStore.currentTrack?.id === track.id);
   const title = $derived(track.metadata?.title ?? track.filename);
   const artist = $derived(track.metadata?.artist ?? "Unknown");
 

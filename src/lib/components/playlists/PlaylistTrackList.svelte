@@ -3,6 +3,7 @@
   import { PlusIcon } from "@lucide/svelte";
   import { innerWidth } from "svelte/reactivity/window";
   import { VirtualScroll } from "../ui/virtual-scroll";
+    import { playerStore } from "$lib/stores/player.svelte";
 
   interface Props {
     items: PlaylistItem[];
@@ -30,6 +31,8 @@
   const topOffset = $derived(isMobile ? 227 + 6 : 255 + 6);
 
   let virtualScrollRef: VirtualScroll<PlaylistItem> | null = $state(null);
+  
+  const currentId = $derived(playerStore.currentTrack?.id);
 
   $effect(() => {
     items;
@@ -70,6 +73,7 @@
       <TrackItem
         index={visibleIndex}
         playlist={items}
+        isCurrentTrack={item.id === currentId}
         track={item.audio}
         fromQueue={false}
         onRemovedFromPlaylist={onTrackRemovedFromPlaylist}

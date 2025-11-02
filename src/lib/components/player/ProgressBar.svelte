@@ -71,6 +71,8 @@
       updateSeek(e.touches[0].clientX);
     }
   }
+
+  const primaryColor = $derived(playerStore.trackColor ?? "var(--primary)");
 </script>
 
 <svelte:window
@@ -92,14 +94,14 @@
   aria-label="Seek slider"
   aria-valuemin={0}
   aria-valuemax={playerStore.duration}
-  aria-valuenow={playerStore.currentTime}
+  aria-valuenow={displayTime}
 >
   <div
     class="absolute inset-0 pointer-events-none rounded-lg overflow-clip"
     style="background-color:
       color-mix(
         in oklab,
-        {playerStore.trackColor ?? 'var(--primary)'} 20%,
+        {primaryColor} 20%,
         transparent
       );"
   >
@@ -110,7 +112,7 @@
       background-color:
         color-mix(
           in oklab,
-          {playerStore.trackColor ?? 'var(--primary)'} 80%,
+          {primaryColor} 80%,
           var(--foreground)
         );"
       class="w-full h-full rounded-lg"

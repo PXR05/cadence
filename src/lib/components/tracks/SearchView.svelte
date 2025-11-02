@@ -8,6 +8,7 @@
   import { Input } from "../ui/input";
   import { Button } from "../ui/button";
   import { ScrollArea } from "../ui/scroll-area";
+    import { playerStore } from "$lib/stores/player.svelte";
 
   const LIMIT = 10;
   const DEBOUNCE_MS = 300;
@@ -102,6 +103,7 @@
   });
 
   const isEmpty = $derived(searchQuery.trim().length === 0);
+  const currentId = $derived(playerStore.currentTrack?.id);
 </script>
 
 <form
@@ -160,7 +162,7 @@
       {:else if hasSearched}
         {#if tracks.length > 0}
           {#each tracks as track, i (track.id)}
-            <TrackItem index={i} {track} />
+            <TrackItem index={i} isCurrentTrack={track.id === currentId} {track} />
           {/each}
           <div class="h-[50dvh]"></div>
         {:else}
