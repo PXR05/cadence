@@ -18,6 +18,7 @@ interface AudioFile {
   uploadedAt: Date;
   metadata?: AudioMetadata | undefined;
   imageFile?: string | undefined;
+  color?: string | undefined;
 }
 
 interface AudioListResponse {

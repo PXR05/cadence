@@ -35,7 +35,7 @@
 >
   <Button
     variant="ghost"
-    onclick={() => playerStore.shuffleQueue()}
+    onclick={() => playerStore.isShuffled = !playerStore.isShuffled}
     class="size-{size.button} grid place-items-center mx-auto
     {playerStore.isShuffled ? '' : 'opacity-50'}"
     style="color: {textColor};"

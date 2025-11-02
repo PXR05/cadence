@@ -1,9 +1,12 @@
 import { average } from "color.js";
 import { BASE_URL, PLAYLIST_URL } from "$lib/api";
 import type { CarouselAPI } from "$lib/components/ui/carousel/context";
-import { createLocalStorageState } from "./localStorage.svelte";
+import {
+  createNestedLocalStorageState,
+} from "./localStorage.svelte";
 import { getAudioUrl, revokeAudioUrl } from "$lib/utils/offline";
 import Color from "colorjs.io";
+import { updateTrackColor } from "$lib/db/cache";
 
 export const getStreamUrl = (id: string) => `${BASE_URL}/${id}/stream`;
 export const getImageUrl = (id: string) => `${BASE_URL}/${id}/image`;
@@ -59,8 +62,9 @@ class PlayerState {
     { api: CarouselAPI; handler: () => void }
   >();
   private currentBlobUrl: string | null = null;
+  private cachedShuffledQueue: AudioFile[] | null = null;
 
-  private persistedState = createLocalStorageState<PersistedPlayerState>(
+  private persistedState = createNestedLocalStorageState<PersistedPlayerState>(
     "cadence.player_state",
     {
       currentTrack: null,
@@ -119,87 +123,93 @@ class PlayerState {
   );
 
   get currentTrack() {
-    return this.persistedState.value.currentTrack;
+    return this.persistedState.currentTrack;
   }
   set currentTrack(value: AudioFile | null) {
-    this.persistedState.value = {
-      ...this.persistedState.value,
-      currentTrack: value,
-    };
+    this.persistedState.currentTrack = value;
   }
 
   get trackColor() {
-    return this.persistedState.value.trackColor;
+    return this.persistedState.trackColor;
   }
 
   get trackQueue() {
-    return this.persistedState.value.trackQueue;
+    if (this.isShuffled && this.shuffledIndices) {
+      if (!this.cachedShuffledQueue) {
+        this.cachedShuffledQueue = this.shuffledIndices.map(
+          (i) => this.persistedState.trackQueue[i],
+        );
+      }
+      return this.cachedShuffledQueue;
+    }
+    return this.persistedState.trackQueue;
   }
   set trackQueue(value: AudioFile[]) {
-    this.persistedState.value = {
-      ...this.persistedState.value,
-      trackQueue: value,
-    };
+    this.cachedShuffledQueue = null;
+    this.persistedState.trackQueue = value;
   }
 
   get queueIndex() {
-    return this.persistedState.value.queueIndex;
+    return this.persistedState.queueIndex;
   }
   set queueIndex(value: number) {
-    this.persistedState.value = {
-      ...this.persistedState.value,
-      queueIndex: value,
-    };
+    this.persistedState.queueIndex = value;
+  }
+
+  get shuffledIndices() {
+    return this.persistedState.shuffledIndices;
+  }
+  set shuffledIndices(value: number[] | undefined) {
+    this.cachedShuffledQueue = null;
+    this.persistedState.shuffledIndices = value;
   }
 
   get isShuffled() {
-    return this.persistedState.value.isShuffled;
+    return this.persistedState.isShuffled;
   }
   set isShuffled(value: boolean) {
-    this.persistedState.value = {
-      ...this.persistedState.value,
-      isShuffled: value,
-    };
+    this.cachedShuffledQueue = null;
+    this.persistedState.isShuffled = value;
+    if (!value && this.shuffledIndices) {
+      this.queueIndex = this.shuffledIndices[this.queueIndex];
+      this.syncCarouselToTrack(this.queueIndex);
+      this.shuffledIndices = undefined;
+    } else if (value) {
+      this.shuffledIndices = this.shuffleQueue();
+      this.queueIndex = this.shuffledIndices?.indexOf(this.queueIndex) ?? 0;
+      this.syncCarouselToTrack(this.queueIndex);
+    }
   }
 
   get isRepeated() {
-    return this.persistedState.value.isRepeated;
+    return this.persistedState.isRepeated;
   }
   set isRepeated(value: boolean) {
-    this.persistedState.value = {
-      ...this.persistedState.value,
-      isRepeated: value,
-    };
+    this.persistedState.isRepeated = value;
   }
 
   get isMuted() {
-    return this.persistedState.value.isMuted;
+    return this.persistedState.isMuted;
   }
   set isMuted(value: boolean) {
-    this.persistedState.value = {
-      ...this.persistedState.value,
-      isMuted: value,
-    };
+    this.persistedState.isMuted = value;
   }
 
   get volume() {
-    return this.persistedState.value.volume;
+    return this.persistedState.volume;
   }
   set volume(value: number) {
-    this.persistedState.value = { ...this.persistedState.value, volume: value };
+    this.persistedState.volume = value;
     if (this.gainNode) {
       this.gainNode.gain.value = value;
     }
   }
 
   get currentTime() {
-    return this.persistedState.value.currentTime;
+    return this.persistedState.currentTime;
   }
   set currentTime(value: number) {
-    this.persistedState.value = {
-      ...this.persistedState.value,
-      currentTime: value,
-    };
+    this.persistedState.currentTime = value;
   }
 
   get progress() {
@@ -227,17 +237,14 @@ class PlayerState {
   }
 
   get equalizerBands() {
-    return this.persistedState.value.equalizerBands;
+    return this.persistedState.equalizerBands;
   }
 
   get equalizerEnabled() {
-    return this.persistedState.value.equalizerEnabled;
+    return this.persistedState.equalizerEnabled;
   }
   set equalizerEnabled(value: boolean) {
-    this.persistedState.value = {
-      ...this.persistedState.value,
-      equalizerEnabled: value,
-    };
+    this.persistedState.equalizerEnabled = value;
   }
 
   initialize(player: HTMLAudioElement) {
@@ -374,10 +381,7 @@ class PlayerState {
 
     bands[bandIndex] = { ...bands[bandIndex], ...updates };
 
-    this.persistedState.value = {
-      ...this.persistedState.value,
-      equalizerBands: bands,
-    };
+    this.persistedState.equalizerBands = bands;
 
     const node = this.equalizerNodes[bandIndex];
     if (node) {
@@ -400,10 +404,7 @@ class PlayerState {
       gain: 0,
     }));
 
-    this.persistedState.value = {
-      ...this.persistedState.value,
-      equalizerBands: resetBands,
-    };
+    this.persistedState.equalizerBands = resetBands;
 
     this.equalizerNodes.forEach((node) => {
       node.gain.value = 0;
@@ -613,14 +614,17 @@ class PlayerState {
   }
 
   addToQueue(track: AudioFile) {
+    this.cachedShuffledQueue = null;
     this.trackQueue.push(track);
   }
 
   addNextInQueue(track: AudioFile) {
+    this.cachedShuffledQueue = null;
     this.trackQueue.splice(this.queueIndex + 1, 0, track);
   }
 
   removeFromQueue(index: number) {
+    this.cachedShuffledQueue = null;
     if (index === this.queueIndex) {
       this.trackQueue.splice(index, 1);
       if (this.queueIndex >= this.trackQueue.length) {
@@ -646,8 +650,16 @@ class PlayerState {
   }
 
   shuffleQueue() {
-    // 1. create array of shuffled indices
-    // 2. set isShuffled to true
+    const trackLength = this.trackQueue.length;
+    if (trackLength <= 1) return;
+
+    const indices = Array.from({ length: trackLength }, (_, i) => i);
+    for (let i = trackLength - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [indices[i], indices[j]] = [indices[j], indices[i]];
+    }
+
+    return indices;
   }
 
   syncCarouselToTrack(index: number, jump: boolean = false) {
@@ -657,6 +669,17 @@ class PlayerState {
   }
 
   async loadTrackColor(track: AudioFile) {
+    if (track.color) {
+      const color = new Color(track.color);
+      document.body.style.setProperty(
+        "--primary",
+        `oklch(${color.coords[0]} ${color.coords[1]} ${color.coords[2]})`,
+      );
+
+      this.persistedState.trackColor = track.color;
+      return;
+    }
+
     const imageColor = (await average(getImageUrl(track.id), {
       amount: 1,
       format: "hex",
@@ -673,11 +696,11 @@ class PlayerState {
       "--primary",
       `oklch(${brighter.coords[0]} ${brighter.coords[1]} ${brighter.coords[2]})`,
     );
+    const brighterString = brighter.toString({ format: "hex" });
 
-    this.persistedState.value = {
-      ...this.persistedState.value,
-      trackColor: brighter.toString(),
-    };
+    this.persistedState.trackColor = brighterString;
+
+    await updateTrackColor(track.id, brighterString);
   }
 }
 

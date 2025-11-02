@@ -7,6 +7,7 @@ export interface CachedTrack {
   uploadedAt: Date;
   metadata?: AudioMetadata;
   imageFile?: string;
+  color?: string;
   cachedAt: number;
 }
 
@@ -68,7 +69,7 @@ export const cacheDb = new CacheDatabase();
 
 export async function saveTracksCache(
   tracks: AudioFile[],
-  lastFetchedAt: string | null
+  lastFetchedAt: string | null,
 ): Promise<void> {
   const cachedTracks: CachedTrack[] = tracks.map((track) => ({
     ...track,
@@ -86,7 +87,7 @@ export async function saveTracksCache(
         tracks: cachedTracks,
         lastFetchedAt,
       });
-    }
+    },
   );
 }
 
@@ -104,6 +105,7 @@ export async function getTracksCache(): Promise<{
     uploadedAt: track.uploadedAt,
     metadata: track.metadata,
     imageFile: track.imageFile,
+    color: track.color,
   }));
 
   return {
@@ -115,7 +117,7 @@ export async function getTracksCache(): Promise<{
 export async function savePlaylistsCache(
   userPlaylists: Playlist[],
   youtubePlaylists: Playlist[],
-  lastFetchedAt: string | null
+  lastFetchedAt: string | null,
 ): Promise<void> {
   const cachedUserPlaylists: CachedPlaylist[] = userPlaylists.map((p) => ({
     ...p,
@@ -126,7 +128,7 @@ export async function savePlaylistsCache(
     (p) => ({
       ...p,
       cachedAt: Date.now(),
-    })
+    }),
   );
 
   await cacheDb.transaction(
@@ -144,7 +146,7 @@ export async function savePlaylistsCache(
         youtubePlaylists: cachedYoutubePlaylists,
         lastFetchedAt,
       });
-    }
+    },
   );
 }
 
@@ -184,7 +186,7 @@ export async function getPlaylistsCache(): Promise<{
 }
 
 export async function savePlaylistDetail(
-  playlistDetail: PlaylistDetail
+  playlistDetail: PlaylistDetail,
 ): Promise<void> {
   await cacheDb.playlistDetails.put({
     ...playlistDetail,
@@ -193,7 +195,7 @@ export async function savePlaylistDetail(
 }
 
 export async function getPlaylistDetail(
-  id: string
+  id: string,
 ): Promise<PlaylistDetail | undefined> {
   const cached = await cacheDb.playlistDetails.get(id);
   if (!cached) return undefined;
@@ -220,7 +222,7 @@ export async function clearTracksCache(): Promise<void> {
     async () => {
       await cacheDb.tracks.clear();
       await cacheDb.tracksCache.clear();
-    }
+    },
   );
 }
 
@@ -232,7 +234,7 @@ export async function clearPlaylistsCache(): Promise<void> {
       await cacheDb.playlists.clear();
       await cacheDb.playlistDetails.clear();
       await cacheDb.playlistsCache.clear();
-    }
+    },
   );
 }
 
@@ -252,6 +254,30 @@ export async function clearAllCache(): Promise<void> {
       await cacheDb.playlistDetails.clear();
       await cacheDb.tracksCache.clear();
       await cacheDb.playlistsCache.clear();
-    }
+    },
   );
+}
+
+export async function updateTrackColor(
+  trackId: string,
+  color: string,
+): Promise<void> {
+  const track = await cacheDb.tracks.get(trackId);
+  if (track) {
+    await cacheDb.tracks.put({
+      ...track,
+      color,
+    });
+  }
+
+  const cache = await cacheDb.tracksCache.get("main");
+  if (cache) {
+    const updatedTracks = cache.tracks.map((t) =>
+      t.id === trackId ? { ...t, color } : t,
+    );
+    await cacheDb.tracksCache.put({
+      ...cache,
+      tracks: updatedTracks,
+    });
+  }
 }
