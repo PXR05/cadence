@@ -6,6 +6,7 @@
   import { ListMusicIcon, PauseIcon, PlayIcon } from "@lucide/svelte";
   import { onDestroy, onMount } from "svelte";
   import { innerWidth } from "svelte/reactivity/window";
+  import { Spring } from "svelte/motion";
   import { Button } from "../ui/button";
   import PlaybackControls from "./PlaybackControls.svelte";
   import PlayerDetailsPanel from "./PlayerDetailsPanel.svelte";
@@ -28,8 +29,13 @@
   let currentY = $state(0);
   let lastMoveY = $state(0);
   let lastMoveTime = $state(0);
-  let dragTranslate = $state<number | null>(null);
-  let transitionDuration = $state(300);
+  let containerEl: HTMLDivElement | null = $state(null);
+
+  const translateSpring = new Spring(0, {
+    stiffness: 0.5,
+    damping: 0.9,
+    precision: 1,
+  });
 
   const closedPosition = $derived.by(() => {
     if (isTopRoute && isMobile) {
@@ -38,39 +44,27 @@
     return window.innerHeight - 6; // 0.375rem = 6px
   });
 
-  const playerTranslate = $derived.by(() => {
-    if (isDragging && dragTranslate !== null) {
-      return `${Math.max(0, dragTranslate)}px`;
+  $effect(() => {
+    if (!isDragging) {
+      if (panelState.isOpen) {
+        translateSpring.target = 0;
+      } else {
+        translateSpring.target = closedPosition;
+      }
     }
-
-    if (panelState.isOpen) {
-      return `0`;
-    }
-    if (isTopRoute && isMobile) {
-      return `calc(100dvh - 3.875rem)`;
-    }
-    return `calc(100dvh - 0.375rem)`;
   });
 
+  const playerTranslate = $derived(`${translateSpring.current}px`);
+
   const playerBarOpacity = $derived.by(() => {
-    if (isDragging && dragTranslate !== null) {
-      return Math.min(1, dragTranslate / closedPosition);
-    }
-    return panelState.isOpen ? 0 : 1;
+    const currentPos = translateSpring.current;
+    return Math.min(1, currentPos / closedPosition);
   });
 
   const detailsPanelOpacity = $derived.by(() => {
-    if (isDragging && dragTranslate !== null) {
-      return Math.max(0, 1 - dragTranslate / closedPosition);
-    }
-    return panelState.isOpen ? 1 : 0;
+    const currentPos = translateSpring.current;
+    return Math.max(0, 1 - currentPos / closedPosition);
   });
-
-  const opacityTransition = $derived(
-    isDragging
-      ? "none"
-      : `opacity ${transitionDuration}ms cubic-bezier(0.4, 0, 0.2, 1)`,
-  );
 
   let audioEl: HTMLAudioElement | null = $state(null);
   const queueDialog = useDialogState("queue");
@@ -125,60 +119,67 @@
     lastMoveY = clientY;
     lastMoveTime = Date.now();
 
-    if (panelState.isOpen) {
-      dragTranslate = 0;
-    } else {
-      dragTranslate = closedPosition;
-    }
+    translateSpring.set(translateSpring.current, { instant: true });
   }
 
   function handleDragMove(clientY: number, event?: TouchEvent | MouseEvent) {
-    if (!isDragging || dragTranslate === null) return;
+    if (!isDragging) return;
 
     const deltaY = clientY - startY;
-    const newTranslate = (panelState.isOpen ? 0 : closedPosition) + deltaY;
+    const startPosition = panelState.isOpen ? 0 : closedPosition;
+    const newTranslate = startPosition + deltaY;
 
     if (event && "touches" in event && panelState.isOpen) {
       event.preventDefault();
     }
 
-    dragTranslate = Math.max(0, Math.min(closedPosition, newTranslate));
+    const clampedTranslate = Math.max(
+      0,
+      Math.min(closedPosition, newTranslate),
+    );
+
+    translateSpring.set(clampedTranslate, { instant: true });
+
     lastMoveY = currentY;
     currentY = clientY;
     lastMoveTime = Date.now();
   }
 
   function handleDragEnd() {
-    if (!isDragging || dragTranslate === null) return;
+    if (!isDragging) return;
 
     const timeDelta = Date.now() - lastMoveTime;
     const moveDelta = currentY - lastMoveY;
-    const velocityPxPerMs = timeDelta > 0 ? Math.abs(moveDelta / timeDelta) : 0;
+    const velocityPxPerMs = timeDelta > 0 ? moveDelta / timeDelta : 0;
 
     let shouldOpen = false;
 
-    if (velocityPxPerMs > 0.3) {
+    if (Math.abs(velocityPxPerMs) > 0.3) {
       shouldOpen = moveDelta < 0;
     } else {
       const threshold = closedPosition * 0.2;
+      const currentPos = translateSpring.current;
 
       if (panelState.isOpen) {
-        shouldOpen = dragTranslate < threshold;
+        shouldOpen = currentPos < threshold;
       } else {
-        shouldOpen = dragTranslate < closedPosition - threshold;
+        shouldOpen = currentPos < closedPosition - threshold;
       }
     }
 
-    const remainingDistance = shouldOpen
-      ? dragTranslate
-      : closedPosition - dragTranslate;
+    const targetPosition = shouldOpen ? 0 : closedPosition;
+    const remainingDistance = Math.abs(
+      targetPosition - translateSpring.current,
+    );
 
-    if (velocityPxPerMs > 0.1) {
-      const calculatedDuration = remainingDistance / velocityPxPerMs;
-      transitionDuration = Math.min(350, Math.max(200, calculatedDuration));
-    } else {
-      transitionDuration = 300;
+    let momentumDuration = 0;
+    if (Math.abs(velocityPxPerMs) > 0.1) {
+      momentumDuration = Math.min(200, Math.abs(velocityPxPerMs) * 400);
     }
+
+    translateSpring.set(targetPosition, {
+      preserveMomentum: momentumDuration,
+    });
 
     if (shouldOpen) {
       panelState.open();
@@ -187,7 +188,6 @@
     }
 
     isDragging = false;
-    dragTranslate = null;
   }
 
   function handleTouchStart(e: TouchEvent) {
@@ -241,13 +241,10 @@
 </script>
 
 <div
-  class="absolute bottom-0 left-0 right-0 {isDragging
-    ? ''
-    : 'transition-transform'}"
+  bind:this={containerEl}
+  class="absolute bottom-0 left-0 right-0"
   style="
     transform: translateY({playerTranslate});
-    transition-duration: {isDragging ? '0ms' : `${transitionDuration}ms`};
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     will-change: transform;
     touch-action: {panelState.isOpen ? 'none' : 'auto'};
     overscroll-behavior: none;"
@@ -255,7 +252,7 @@
   <div class="select-none h-[calc(100dvh+5rem)]">
     <div
       class="mx-1.5 rounded-xl overflow-clip border border-input bg-muted/50 backdrop-blur-md"
-      style="opacity: {playerBarOpacity}; transition: {opacityTransition};"
+      style="opacity: {playerBarOpacity};"
       role="button"
       tabindex="0"
       ontouchstart={handleTouchStart}
@@ -332,7 +329,7 @@
     />
 
     <div
-      style="opacity: {detailsPanelOpacity}; transition: {opacityTransition}; touch-action: none; overscroll-behavior: none;"
+      style="opacity: {detailsPanelOpacity}; touch-action: none; overscroll-behavior: none;"
     >
       <PlayerDetailsPanel
         onOpenChange={() => panelState.toggle()}
