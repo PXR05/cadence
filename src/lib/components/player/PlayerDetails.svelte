@@ -24,7 +24,7 @@
   }
 </script>
 
-<div class="flex-1 flex flex-col justify-between">
+<div class="flex-1 flex flex-col justify-between gap-8">
   <div class="relative flex-shrink-0 my-auto w-full z-20">
     <!-- <img
       loading="lazy"
@@ -48,11 +48,11 @@
                 loading="lazy"
                 src={getImageUrl(queueTrack.id)}
                 alt={queueTrack.id}
-                class="size-[min(42.5dvh,90dvw)] object-cover mx-auto rounded-2xl"
+                class="size-[min(40dvh,90dvw)] object-cover mx-auto rounded-2xl"
               />
             {:else}
               <div
-                class="h-[min(42.5dvh,90dvw)] aspect-square bg-muted/50 mx-auto rounded-2xl grid place-items-center"
+                class="h-[min(40dvh,90dvw)] aspect-square bg-muted/50 mx-auto rounded-2xl grid place-items-center"
               >
                 <ListMusicIcon size={48} class="text-muted-foreground" />
               </div>

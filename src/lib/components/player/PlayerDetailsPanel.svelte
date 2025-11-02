@@ -10,6 +10,8 @@
   } from "@lucide/svelte";
   import PlayerDetails from "./PlayerDetails.svelte";
   import { ManagePlaylistsDialog } from "../playlists";
+  import { onMount } from "svelte";
+  import { Button } from "../ui/button";
 
   interface Props {
     onOpenChange: (open: boolean) => void;
@@ -33,6 +35,7 @@
   const title = $derived(track?.metadata?.title ?? track?.filename ?? "");
 
   let managePlaylistsDialogOpen = $state(false);
+  let panelElement: HTMLDivElement | null = $state(null);
 
   // function handleDownload() {
   //   if (track) {
@@ -48,9 +51,34 @@
   function handleClose() {
     onOpenChange(false);
   }
+
+  onMount(() => {
+    if (panelElement) {
+      const handleTouchStart = (e: TouchEvent) => {
+        onTouchStart?.(e);
+      };
+
+      const handleTouchMove = (e: TouchEvent) => {
+        onTouchMove?.(e);
+      };
+
+      panelElement.addEventListener("touchstart", handleTouchStart, {
+        passive: false,
+      });
+      panelElement.addEventListener("touchmove", handleTouchMove, {
+        passive: false,
+      });
+
+      return () => {
+        panelElement?.removeEventListener("touchstart", handleTouchStart);
+        panelElement?.removeEventListener("touchmove", handleTouchMove);
+      };
+    }
+  });
 </script>
 
 <div
+  bind:this={panelElement}
   role="dialog"
   tabindex="0"
   class="relative h-dvh flex flex-col cursor-grab active:cursor-grabbing"
@@ -64,31 +92,19 @@
     touch-action: none;
     overscroll-behavior: none;
     "
-  ontouchstart={(e) => {
-    // Prevent pull-to-refresh immediately
-    if (e.cancelable) {
-      e.preventDefault();
-    }
-    onTouchStart?.(e);
-  }}
-  ontouchmove={(e) => {
-    // Prevent pull-to-refresh when interacting with panel
-    if (e.cancelable) {
-      e.preventDefault();
-    }
-    onTouchMove?.(e);
-  }}
   ontouchend={onTouchEnd}
   onmousedown={onMouseDown}
 >
   <div class="flex justify-between items-center p-6">
-    <button
+    <Button
+      size="icon"
+      variant="ghost"
       onclick={handleClose}
       class="opacity-70 transition-opacity hover:opacity-100 cursor-pointer"
       aria-label="Close player details"
     >
-      <ChevronDown />
-    </button>
+      <ChevronDown class="size-6" />
+    </Button>
     <!-- <DropdownMenu.Root>
       <DropdownMenu.Trigger
         class="opacity-70 transition-opacity hover:opacity-100"

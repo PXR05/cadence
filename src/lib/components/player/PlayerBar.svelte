@@ -29,12 +29,10 @@
   let currentY = $state(0);
   let lastMoveY = $state(0);
   let lastMoveTime = $state(0);
-  let containerEl: HTMLDivElement | null = $state(null);
 
   const translateSpring = new Spring(0, {
-    stiffness: 0.5,
-    damping: 0.9,
-    precision: 1,
+    stiffness: 0.4,
+    damping: 1,
   });
 
   const closedPosition = $derived.by(() => {
@@ -129,7 +127,7 @@
     const startPosition = panelState.isOpen ? 0 : closedPosition;
     const newTranslate = startPosition + deltaY;
 
-    if (event && "touches" in event && panelState.isOpen) {
+    if (event && "touches" in event && event.cancelable) {
       event.preventDefault();
     }
 
@@ -157,7 +155,7 @@
     if (Math.abs(velocityPxPerMs) > 0.3) {
       shouldOpen = moveDelta < 0;
     } else {
-      const threshold = closedPosition * 0.2;
+      const threshold = closedPosition * 0.1;
       const currentPos = translateSpring.current;
 
       if (panelState.isOpen) {
@@ -168,9 +166,6 @@
     }
 
     const targetPosition = shouldOpen ? 0 : closedPosition;
-    const remainingDistance = Math.abs(
-      targetPosition - translateSpring.current,
-    );
 
     let momentumDuration = 0;
     if (Math.abs(velocityPxPerMs) > 0.1) {
@@ -191,9 +186,6 @@
   }
 
   function handleTouchStart(e: TouchEvent) {
-    if (panelState.isOpen && e.cancelable) {
-      e.preventDefault();
-    }
     handleDragStart(e.touches[0].clientY, e);
   }
 
@@ -202,6 +194,8 @@
       handleDragMove(e.touches[0].clientY, e);
     }
   }
+
+  let playerBarElement: HTMLDivElement | null = $state(null);
 
   function handleTouchEnd() {
     handleDragEnd();
@@ -223,6 +217,30 @@
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", handleMouseUp);
 
+    if (playerBarElement) {
+      const touchStartHandler = (e: TouchEvent) => {
+        handleTouchStart(e);
+      };
+
+      const touchMoveHandler = (e: TouchEvent) => {
+        handleTouchMove(e);
+      };
+
+      playerBarElement.addEventListener("touchstart", touchStartHandler, {
+        passive: false,
+      });
+      playerBarElement.addEventListener("touchmove", touchMoveHandler, {
+        passive: false,
+      });
+
+      return () => {
+        window.removeEventListener("mousemove", handleMouseMove);
+        window.removeEventListener("mouseup", handleMouseUp);
+        playerBarElement?.removeEventListener("touchstart", touchStartHandler);
+        playerBarElement?.removeEventListener("touchmove", touchMoveHandler);
+      };
+    }
+
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
@@ -241,7 +259,6 @@
 </script>
 
 <div
-  bind:this={containerEl}
   class="absolute bottom-0 left-0 right-0"
   style="
     transform: translateY({playerTranslate});
@@ -251,17 +268,11 @@
 >
   <div class="select-none h-[calc(100dvh+5rem)]">
     <div
+      bind:this={playerBarElement}
       class="mx-1.5 rounded-xl overflow-clip border border-input bg-muted/50 backdrop-blur-md"
       style="opacity: {playerBarOpacity};"
       role="button"
       tabindex="0"
-      ontouchstart={handleTouchStart}
-      ontouchmove={(e) => {
-        handleTouchMove(e);
-        if (panelState.isOpen && isDragging) {
-          e.preventDefault();
-        }
-      }}
       ontouchend={handleTouchEnd}
       onmousedown={handleMouseDown}
     >
