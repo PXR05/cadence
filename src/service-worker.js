@@ -4,7 +4,7 @@
 /// <reference types="@sveltejs/kit" />
 /// <reference types="../.svelte-kit/ambient.d.ts" />
 
-import { build, files, version } from "$service-worker";
+import { build, files, prerendered, version } from "$service-worker";
 
 const self = /** @type {ServiceWorkerGlobalScope} */ (
   /** @type {unknown} */ (globalThis.self)
@@ -12,7 +12,7 @@ const self = /** @type {ServiceWorkerGlobalScope} */ (
 
 const CACHE = `cache-${version}`;
 
-const ASSETS = [...build, ...files];
+const ASSETS = [...build, ...files, ...prerendered];
 
 self.addEventListener("install", (event) => {
   async function addFilesToCache() {
