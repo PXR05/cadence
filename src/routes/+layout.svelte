@@ -1,12 +1,11 @@
 <script lang="ts">
   import "../app.css";
   import { ModeWatcher } from "mode-watcher";
-  import { AuthDialog, BottomBar, NavBar } from "$lib/components";
+  import { AuthDialog, BottomBar, NavBar, SplashScreen } from "$lib/components";
   import { playerStore } from "$lib/stores/player.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { authStore } from "$lib/stores/auth.svelte";
-  import { downloadStore } from "$lib/stores/download.svelte";
-  import { goto, onNavigate } from "$app/navigation";
+  import { goto } from "$app/navigation";
   import { onMount } from "svelte";
   import { innerWidth } from "svelte/reactivity/window";
   import { page } from "$app/state";
@@ -14,6 +13,8 @@
   import { Toaster } from "$lib/components/ui/sonner";
 
   let { children } = $props();
+
+  let showSplash = $state(true);
 
   onMount(async () => {
     if (authStore.token) {
@@ -84,20 +85,8 @@
     }
   }
 
-  // onNavigate((navigation) => {
-  //   if (!document.startViewTransition) return;
-
-  //   return new Promise((resolve) => {
-  //     document.startViewTransition(async () => {
-  //       resolve();
-  //       await navigation.complete;
-  //     });
-  //   });
-  // });
-
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
   const isTopRoute = $derived(page.url.pathname.split("/").length <= 2);
-  const isDownloading = $derived(downloadStore.isDownloading);
 
   const navHeight = $derived(isMobile && isTopRoute ? 72 : 0);
 </script>
@@ -107,9 +96,13 @@
 <Toaster position="top-right" />
 <ModeWatcher />
 
-{#if !authStore.isAuthenticated}
+{#if showSplash}
+  <SplashScreen onComplete={() => (showSplash = false)} />
+{:else if !authStore.isAuthenticated}
   <AuthDialog onAuthenticated={loadInitialData} />
-{:else}
+{/if}
+
+{#if authStore.isAuthenticated}
   <div
     class="relative bg-background min-h-dvh flex flex-col"
     style="--h: {navHeight}px;"

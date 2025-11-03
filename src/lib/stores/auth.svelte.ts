@@ -10,6 +10,39 @@ interface User {
   lastLoginAt?: string;
 }
 
+interface JWTPayload {
+  userId: string;
+  username: string;
+  role: "admin" | "user";
+  iat?: number;
+  exp?: number;
+}
+
+function decodeJWT(token: string): JWTPayload | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) {
+      return null;
+    }
+
+    const payload = parts[1];
+    const decoded = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
+    return JSON.parse(decoded) as JWTPayload;
+  } catch (error) {
+    console.error("Failed to decode JWT:", error);
+    return null;
+  }
+}
+
+function isTokenExpired(token: string): boolean {
+  const payload = decodeJWT(token);
+  if (!payload || !payload.exp) {
+    return true;
+  }
+
+  return payload.exp * 1000 < Date.now();
+}
+
 interface LoginResponse {
   message: string;
   user: User;
@@ -29,10 +62,14 @@ interface GetCurrentUserResponse {
 class AuthStore {
   private tokenStore = createLocalStorageState<string | null>(
     "cadence.token",
-    null
+    null,
   );
 
   user = $state<User | null>(null);
+
+  constructor() {
+    this.restoreUserFromToken();
+  }
 
   get token(): string | null {
     return this.tokenStore.value;
@@ -115,13 +152,42 @@ class AuthStore {
       return data.data;
     } catch (error) {
       console.error("Failed to get current user:", error);
-      return null;
+
+      this.restoreUserFromToken();
+      return this.user;
     }
+  }
+
+  private restoreUserFromToken(): void {
+    const token = this.token;
+    if (!token) {
+      this.user = null;
+      return;
+    }
+
+    if (isTokenExpired(token)) {
+      console.warn("Token is expired, clearing auth state");
+      this.logout();
+      return;
+    }
+
+    const payload = decodeJWT(token);
+    if (!payload) {
+      console.error("Failed to decode token");
+      this.logout();
+      return;
+    }
+
+    this.user = {
+      id: payload.userId,
+      username: payload.username,
+      role: payload.role,
+    };
   }
 
   async changePassword(
     currentPassword: string,
-    newPassword: string
+    newPassword: string,
   ): Promise<void> {
     try {
       const response = await fetch(`${AUTH_URL}/change-password`, {
