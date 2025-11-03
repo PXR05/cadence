@@ -135,6 +135,11 @@ class AuthStore {
     if (!this.token) {
       return null;
     }
+    
+    if ("onLine" in navigator && !navigator.onLine) {
+      this.restoreUserFromToken();
+      return this.user;
+    }
 
     try {
       const response = await fetch(`${AUTH_URL}/me`);

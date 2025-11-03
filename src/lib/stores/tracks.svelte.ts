@@ -69,6 +69,10 @@ class TracksStore {
     await this.initializeFromCache();
 
     if (!forceRefresh && this.tracks.length > 0 && this.lastFetchedAt) {
+      if ("onLine" in navigator && !navigator.onLine) {
+        return;
+      }
+      
       const shouldRefresh = await this.shouldRefreshTracks();
       if (!shouldRefresh) {
         return;
