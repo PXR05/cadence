@@ -1,6 +1,5 @@
 import "dotenv/config";
 import { error, json } from "@sveltejs/kit";
-import type { RequestHandler } from "./$types";
 
 if (!process.env.API_URL) throw new Error("API_URL is not set.");
 
@@ -9,19 +8,22 @@ const BACKEND_URL = process.env.API_URL ?? "";
 async function proxyRequest(
   method: string,
   path: string,
-  authHash: string,
+  authHash: string | undefined,
   url: URL,
   body?: any
 ): Promise<Response> {
-  const backendUrl = new URL(`/token/${path}`, BACKEND_URL);
+  const backendUrl = new URL(`/auth/${path}`, BACKEND_URL);
   url.searchParams.forEach((value, key) => {
     backendUrl.searchParams.append(key, value);
   });
 
   const headers: HeadersInit = {
-    Authorization: `Bearer ${authHash}`,
     "Content-Type": "application/json",
   };
+
+  if (authHash) {
+    headers.Authorization = `Bearer ${authHash}`;
+  }
 
   try {
     const response = await fetch(backendUrl.toString(), {
@@ -41,7 +43,7 @@ async function proxyRequest(
     const data = await response.json();
     return json(data);
   } catch (err) {
-    console.error("Token proxy error:", err);
+    console.error("Auth proxy error:", err);
     if (err && typeof err === "object" && "status" in err) {
       throw err;
     }
@@ -49,41 +51,32 @@ async function proxyRequest(
   }
 }
 
-export const GET: RequestHandler = async ({ params, url, cookies }) => {
+export const GET = async ({ params, url, cookies }) => {
   const { path } = params;
   const authHash = cookies.get("cadence.token");
-
-  if (!authHash) {
-    throw error(401, "Unauthorized: No authentication provided");
-  }
 
   return proxyRequest("GET", path, authHash, url);
 };
 
-export const POST: RequestHandler = async ({
-  params,
-  url,
-  cookies,
-  request,
-}) => {
+export const POST = async ({ params, url, cookies, request }) => {
   const { path } = params;
   const authHash = cookies.get("cadence.token");
-
-  if (!authHash) {
-    throw error(401, "Unauthorized: No authentication provided");
-  }
 
   const body = await request.json().catch(() => ({}));
   return proxyRequest("POST", path, authHash, url, body);
 };
 
-export const DELETE: RequestHandler = async ({ params, url, cookies }) => {
+export const PATCH = async ({ params, url, cookies, request }) => {
   const { path } = params;
   const authHash = cookies.get("cadence.token");
 
-  if (!authHash) {
-    throw error(401, "Unauthorized: No authentication provided");
-  }
+  const body = await request.json().catch(() => ({}));
+  return proxyRequest("PATCH", path, authHash, url, body);
+};
+
+export const DELETE = async ({ params, url, cookies }) => {
+  const { path } = params;
+  const authHash = cookies.get("cadence.token");
 
   return proxyRequest("DELETE", path, authHash, url);
 };

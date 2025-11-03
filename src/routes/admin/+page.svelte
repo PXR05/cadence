@@ -1,67 +1,74 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
-  import { LoaderIcon } from "@lucide/svelte";
   import {
-    TokenForm,
-    TokenTable,
-    TokenFilter,
-    CreatedTokenDisplay,
-    DeleteTokenDialog,
-    RerollTokenDialog,
-    TrackUploadForm,
+    LoaderIcon,
+    LogOutIcon,
+    UserPlusIcon,
+    MusicIcon,
+  } from "@lucide/svelte";
+  import {
+    UserTable,
+    DeleteUserDialog,
+    CreateUserDialog,
+    ChangePasswordDialog,
+    ResetPasswordDialog,
+    AddTrackDialog,
     TrackTable,
     DeleteTrackDialog,
     TrackPagination,
   } from "$lib/components/admin";
   import { tracksStore } from "$lib/stores/tracks.svelte";
+  import { authStore } from "$lib/stores/auth.svelte";
   import {
-    checkToken,
-    listTokens,
-    createToken,
-    deleteToken,
+    getCurrentUser,
+    listUsers,
+    deleteUser,
+    createUser,
+    resetUserPassword,
     fetchTracks,
     downloadYoutube,
     deleteTrack,
-    type TokenInfo,
+    type User,
   } from "$lib/api";
   import { toast } from "svelte-sonner";
   import { Button } from "$lib/components/ui/button";
 
   let isAdmin = $state(false);
   let loading = $state(true);
-  let tokensLoading = $state(false);
+  let usersLoading = $state(false);
+  let usersInitialLoading = $state(true);
 
-  let tokens: TokenInfo[] = $state([]);
-  let filterUserId = $state("");
-
-  let newTokenName = $state("");
-  let newTokenUserId = $state("");
-  let createdToken = $state<string | null>(null);
+  let users: User[] = $state([]);
+  let usersCurrentPage = $state(1);
+  let usersTotalPages = $state(1);
 
   let deleteDialogOpen = $state(false);
-  let rerollDialogOpen = $state(false);
-  let selectedToken = $state<TokenInfo | null>(null);
+  let createUserDialogOpen = $state(false);
+  let changePasswordDialogOpen = $state(false);
+  let resetPasswordDialogOpen = $state(false);
+  let addTrackDialogOpen = $state(false);
+  let selectedUser = $state<User | null>(null);
 
-  let activeTab = $state<"tokens" | "tracks">("tracks");
+  let activeTab = $state<"users" | "tracks">("tracks");
 
   let tracksLoading = $state(false);
   let tracksInitialLoading = $state(true);
   let tracks: AudioFile[] = $state([]);
-  let currentPage = $state(1);
-  let totalPages = $state(1);
+  let tracksCurrentPage = $state(1);
+  let tracksTotalPages = $state(1);
   let deleteTrackDialogOpen = $state(false);
   let selectedTrack = $state<AudioFile | null>(null);
 
   onMount(async () => {
     try {
-      const result = await checkToken();
-      isAdmin = result.data.isAdmin;
+      const result = await getCurrentUser();
+      isAdmin = result.data.role === "admin";
       if (!isAdmin) {
         goto("/");
         return;
       }
-      await loadTokens();
+      await loadUsers();
       await loadTracks();
     } catch {
       goto("/");
@@ -78,99 +85,118 @@
     }
   }
 
-  async function loadTokens() {
-    tokensLoading = true;
+  async function loadUsers(page: number = 1) {
+    usersLoading = true;
     try {
-      const result = await listTokens(filterUserId || undefined);
-      tokens = result.data;
+      const result = await listUsers({ page, limit: 10 });
+      users = result.data;
+      usersCurrentPage = result.currentPage ?? 1;
+      usersTotalPages = result.totalPages ?? 1;
     } catch {
-      setMessage("error", "Failed to load tokens");
+      setMessage("error", "Failed to load users");
     } finally {
-      tokensLoading = false;
+      usersLoading = false;
+      usersInitialLoading = false;
     }
   }
 
-  async function handleCreateToken() {
-    tokensLoading = true;
-
-    try {
-      const result = await createToken(
-        newTokenName.trim(),
-        newTokenUserId.trim()
-      );
-      createdToken = result.data.token;
-      newTokenName = "";
-      newTokenUserId = "";
-      await loadTokens();
-      setMessage("success", "Token created");
-    } catch {
-      setMessage("error", "Failed to create token");
-    } finally {
-      tokensLoading = false;
-    }
-  }
-
-  function openDeleteDialog(token: TokenInfo) {
-    selectedToken = token;
+  function openDeleteDialog(user: User) {
+    selectedUser = user;
     deleteDialogOpen = true;
   }
 
-  function openRerollDialog(token: TokenInfo) {
-    selectedToken = token;
-    rerollDialogOpen = true;
+  function openChangePasswordDialog(user: User) {
+    selectedUser = user;
+    changePasswordDialogOpen = true;
+  }
+
+  function openResetPasswordDialog(user: User) {
+    selectedUser = user;
+    resetPasswordDialogOpen = true;
   }
 
   async function confirmDelete() {
-    if (!selectedToken) return;
+    if (!selectedUser) return;
 
     deleteDialogOpen = false;
-    tokensLoading = true;
-
-    createdToken = null;
+    usersLoading = true;
 
     try {
-      await deleteToken(selectedToken.id);
-      await loadTokens();
-      setMessage("success", "Token deleted");
+      await deleteUser(selectedUser.id);
+      await loadUsers(usersCurrentPage);
+      setMessage("success", "User deleted");
     } catch {
-      setMessage("error", "Failed to delete token");
+      setMessage("error", "Failed to delete user");
     } finally {
-      tokensLoading = false;
-      selectedToken = null;
+      usersLoading = false;
+      selectedUser = null;
     }
   }
 
-  async function confirmReroll() {
-    if (!selectedToken) return;
-
-    rerollDialogOpen = false;
-    tokensLoading = true;
-
+  async function handleCreateUser(username: string, password: string) {
+    usersLoading = true;
     try {
-      const result = await createToken(
-        selectedToken.name,
-        selectedToken.userId
-      );
-      createdToken = result.data.token;
-      await loadTokens();
-      setMessage("success", "Token rerolled");
-    } catch {
-      setMessage("error", "Failed to reroll token");
+      await createUser(username, password);
+      await loadUsers(usersCurrentPage);
+      setMessage("success", "User created successfully");
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to create user";
+      setMessage("error", errorMessage);
+      throw err;
     } finally {
-      tokensLoading = false;
-      selectedToken = null;
+      usersLoading = false;
     }
   }
 
-  function clearFilter() {
-    filterUserId = "";
-    loadTokens();
+  async function handleChangePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string
+  ) {
+    usersLoading = true;
+    try {
+      await authStore.changePassword(currentPassword, newPassword);
+      setMessage("success", "Password changed successfully");
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to change password";
+      setMessage("error", errorMessage);
+      throw err;
+    } finally {
+      usersLoading = false;
+    }
   }
 
-  function copyToken() {
-    if (!createdToken) return;
-    navigator.clipboard.writeText(createdToken);
-    setMessage("success", "Copied to clipboard");
+  async function handleResetPassword(userId: string, newPassword: string) {
+    usersLoading = true;
+    try {
+      await resetUserPassword(userId, newPassword);
+      setMessage("success", "Password reset successfully");
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to reset password";
+      setMessage("error", errorMessage);
+      throw err;
+    } finally {
+      usersLoading = false;
+    }
+  }
+
+  function handlePasswordChangeSuccess() {
+    setMessage("success", "Password changed successfully");
+  }
+
+  function handlePasswordChangeError(error: string) {
+    setMessage("error", error);
+  }
+
+  function openCreateUserDialog() {
+    createUserDialogOpen = true;
+  }
+
+  function openAddTrackDialog() {
+    addTrackDialogOpen = true;
   }
 
   async function loadTracks(page: number = 1) {
@@ -178,8 +204,8 @@
     try {
       const result = await fetchTracks({ page, limit: 10 });
       tracks = result.tracks;
-      currentPage = result.currentPage;
-      totalPages = result.totalPages ?? 1;
+      tracksCurrentPage = result.currentPage;
+      tracksTotalPages = result.totalPages ?? 1;
     } catch {
       setMessage("error", "Failed to load tracks");
     } finally {
@@ -193,7 +219,7 @@
     totalCount: number
   ) {
     setMessage("success", `Uploaded ${successCount}/${totalCount} files`);
-    await loadTracks(currentPage);
+    await loadTracks(tracksCurrentPage);
     tracksStore.loadAllTracks(true);
   }
 
@@ -207,7 +233,7 @@
     try {
       await downloadYoutube(url);
       setMessage("success", "Downloaded from YouTube");
-      await loadTracks(currentPage);
+      await loadTracks(tracksCurrentPage);
       tracksStore.loadAllTracks(true);
     } catch {
       setMessage("error", "Failed to download from YouTube");
@@ -229,7 +255,7 @@
 
     try {
       await deleteTrack(selectedTrack.id);
-      await loadTracks(currentPage);
+      await loadTracks(tracksCurrentPage);
       tracksStore.loadAllTracks(true);
       setMessage("success", "Track deleted");
     } catch {
@@ -240,10 +266,13 @@
     }
   }
 
-  function switchTab(tab: "tokens" | "tracks") {
+  function switchTab(tab: "users" | "tracks") {
     activeTab = tab;
+  }
 
-    createdToken = null;
+  function handleLogout() {
+    authStore.logout();
+    goto("/");
   }
 </script>
 
@@ -259,7 +288,7 @@
   <div
     class="relative flex flex-col mx-auto w-full h-full border-x overflow-y-auto"
   >
-    <div class="flex border-b sticky top-0 p-2 z-50 gap-2">
+    <div class="flex border-b sticky top-0 p-2 z-50 gap-2 bg-background">
       <Button
         variant={activeTab === "tracks" ? "default" : "outline"}
         onclick={() => switchTab("tracks")}
@@ -268,48 +297,57 @@
         Tracks
       </Button>
       <Button
-        variant={activeTab === "tokens" ? "default" : "outline"}
-        onclick={() => switchTab("tokens")}
+        variant={activeTab === "users" ? "default" : "outline"}
+        onclick={() => switchTab("users")}
         class="flex-1"
       >
-        Tokens
+        Users
+      </Button>
+      <Button
+        variant="outline"
+        size="icon"
+        onclick={handleLogout}
+        title="Logout"
+      >
+        <LogOutIcon size={18} />
       </Button>
     </div>
 
     <div class="relative p-2 space-y-2">
-      {#if activeTab === "tokens"}
-        <TokenForm
-          bind:name={newTokenName}
-          bind:userId={newTokenUserId}
-          loading={tokensLoading}
-          onSubmit={handleCreateToken}
-        />
+      {#if activeTab === "users"}
+        <div class="flex justify-between items-center gap-2 w-full">
+          <h2 class="text-2xl font-semibold p-2">Users</h2>
+          <Button onclick={openCreateUserDialog} class="gap-2">
+            <UserPlusIcon size={18} />
+            Create User
+          </Button>
+        </div>
 
-        {#if createdToken}
-          <CreatedTokenDisplay token={createdToken} onCopy={copyToken} />
-        {/if}
-
-        <TokenFilter
-          bind:value={filterUserId}
-          loading={tokensLoading}
-          onChange={loadTokens}
-          onClear={clearFilter}
-        />
-
-        <TokenTable
-          {tokens}
-          loading={tokensLoading}
-          {filterUserId}
-          onReroll={openRerollDialog}
+        <UserTable
+          {users}
+          loading={usersLoading}
+          initialLoading={usersInitialLoading}
           onDelete={openDeleteDialog}
+          onResetPassword={openResetPasswordDialog}
+          onChangePassword={openChangePasswordDialog}
         />
+
+        {#if usersTotalPages > 1}
+          <TrackPagination
+            currentPage={usersCurrentPage}
+            totalPages={usersTotalPages}
+            loading={usersLoading}
+            onPageChange={loadUsers}
+          />
+        {/if}
       {:else}
-        <TrackUploadForm
-          loading={tracksLoading}
-          onUploadComplete={handleUploadComplete}
-          onUploadError={handleUploadError}
-          onYoutubeUpload={handleYoutubeUpload}
-        />
+        <div class="flex justify-between items-center gap-2 w-full">
+          <h2 class="text-2xl font-semibold p-2">Tracks</h2>
+          <Button onclick={openAddTrackDialog} class="gap-2">
+            <MusicIcon size={18} />
+            Add Track
+          </Button>
+        </div>
 
         <TrackTable
           {tracks}
@@ -318,10 +356,10 @@
           onDelete={openDeleteTrackDialog}
         />
 
-        {#if totalPages > 1}
+        {#if tracksTotalPages > 1}
           <TrackPagination
-            {currentPage}
-            {totalPages}
+            currentPage={tracksCurrentPage}
+            totalPages={tracksTotalPages}
             loading={tracksLoading}
             onPageChange={loadTracks}
           />
@@ -331,16 +369,38 @@
   </div>
 {/if}
 
-<DeleteTokenDialog
+<DeleteUserDialog
   bind:open={deleteDialogOpen}
-  tokenName={selectedToken?.name ?? ""}
+  username={selectedUser?.username ?? ""}
   onConfirm={confirmDelete}
 />
 
-<RerollTokenDialog
-  bind:open={rerollDialogOpen}
-  tokenName={selectedToken?.name ?? ""}
-  onConfirm={confirmReroll}
+<CreateUserDialog
+  bind:open={createUserDialogOpen}
+  onCreateUser={handleCreateUser}
+  loading={usersLoading}
+/>
+
+<ChangePasswordDialog
+  bind:open={changePasswordDialogOpen}
+  username={selectedUser?.username ?? ""}
+  userId={selectedUser?.id ?? ""}
+  onConfirm={handleChangePassword}
+/>
+
+<ResetPasswordDialog
+  bind:open={resetPasswordDialogOpen}
+  username={selectedUser?.username ?? ""}
+  userId={selectedUser?.id ?? ""}
+  onConfirm={handleResetPassword}
+/>
+
+<AddTrackDialog
+  bind:open={addTrackDialogOpen}
+  loading={tracksLoading}
+  onUploadComplete={handleUploadComplete}
+  onUploadError={handleUploadError}
+  onYoutubeUpload={handleYoutubeUpload}
 />
 
 <DeleteTrackDialog

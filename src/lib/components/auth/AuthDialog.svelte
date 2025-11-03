@@ -1,11 +1,11 @@
 <script lang="ts">
   import { authStore } from "$lib/stores/auth.svelte";
-  import { checkToken } from "$lib/api";
   import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
   } from "$lib/components/ui/dialog";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "../ui/input";
@@ -14,15 +14,21 @@
     onAuthenticated: () => void;
   }>();
 
-  let token = $state("");
+  let username = $state("");
+  let password = $state("");
   let isProcessing = $state(false);
   let error = $state("");
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
 
-    if (!token.trim()) {
-      error = "Token is required";
+    if (!username.trim()) {
+      error = "Username is required";
+      return;
+    }
+
+    if (!password.trim()) {
+      error = "Password is required";
       return;
     }
 
@@ -30,18 +36,11 @@
     error = "";
 
     try {
-      if (typeof document !== "undefined") {
-        document.cookie = `cadence.token=${token}; path=/; max-age=31536000; SameSite=Strict`;
-      }
-
-      await checkToken();
-      await authStore.setToken(token);
+      await authStore.login(username, password);
       onAuthenticated();
     } catch (err) {
-      if (typeof document !== "undefined") {
-        document.cookie = "cadence.token=; path=/; max-age=0";
-      }
-      error = "Invalid token. Please check and try again.";
+      error =
+        err instanceof Error ? err.message : "Invalid username or password";
       console.error(err);
     } finally {
       isProcessing = false;
@@ -56,28 +55,43 @@
     onEscapeKeydown={(e) => e.preventDefault()}
   >
     <DialogHeader>
-      <DialogTitle>Authentication Required</DialogTitle>
+      <DialogTitle>Sign In</DialogTitle>
+      <DialogDescription>Enter your credentials to continue</DialogDescription>
     </DialogHeader>
 
     <form onsubmit={handleSubmit} class="space-y-4">
       <div class="space-y-2">
-        <label for="password" class="text-sm font-medium">Token</label>
+        <label for="username" class="text-sm font-medium">Username</label>
         <Input
-          id="token"
-          type="password"
-          bind:value={token}
+          id="username"
+          type="text"
+          bind:value={username}
           disabled={isProcessing}
           class="w-full px-3 py-2"
-          placeholder="Enter your token"
-          autocomplete="current-password"
+          placeholder="Enter your username"
+          autocomplete="username"
         />
-        {#if error}
-          <p class="text-sm text-red-500">{error}</p>
-        {/if}
       </div>
 
+      <div class="space-y-2">
+        <label for="password" class="text-sm font-medium">Password</label>
+        <Input
+          id="password"
+          type="password"
+          bind:value={password}
+          disabled={isProcessing}
+          class="w-full px-3 py-2"
+          placeholder="Enter your password"
+          autocomplete="current-password"
+        />
+      </div>
+
+      {#if error}
+        <p class="text-sm text-red-500">{error}</p>
+      {/if}
+
       <Button type="submit" disabled={isProcessing} class="w-full">
-        {isProcessing ? "Processing..." : "Continue"}
+        {isProcessing ? "Processing..." : "Sign In"}
       </Button>
     </form>
   </DialogContent>

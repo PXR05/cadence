@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from "$app/state";
   import { goto } from "$app/navigation";
-  import { checkToken } from "$lib/api";
+  import { authStore } from "$lib/stores/auth.svelte";
   import {
     HouseIcon,
     ListMusicIcon,
@@ -43,8 +43,10 @@
 
   onMount(async () => {
     try {
-      const result = await checkToken();
-      isAdmin = result.data.isAdmin;
+      if (authStore.token) {
+        await authStore.getCurrentUser();
+        isAdmin = authStore.isAdmin;
+      }
     } catch (error) {
       isAdmin = false;
     }
@@ -185,9 +187,7 @@
         onpointerup={handleIndicatorPointerUp}
         onpointercancel={handleIndicatorPointerUp}
         class="absolute rounded-lg bg-primary touch-none cursor-grab active:cursor-grabbing z-10 transition-all duration-100 ease-out-back
-        {isDragging
-          ? 'opacity-90 scale-y-90'
-          : 'pointer-events-auto'}"
+        {isDragging ? 'opacity-90 scale-y-90' : 'pointer-events-auto'}"
         style={orientation === "horizontal"
           ? `
             top: 0.375rem;

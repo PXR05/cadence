@@ -1,5 +1,5 @@
 export const BASE_URL = "/api/audio";
-export const TOKEN_URL = "/api/token";
+export const AUTH_URL = "/api/auth";
 export const PLAYLIST_URL = "/api/playlist";
 
 export type SortBy = "filename" | "size" | "uploadedAt" | "title";
@@ -174,71 +174,99 @@ export async function fetchRandomTracks(
   };
 }
 
-export interface TokenInfo {
+export interface User {
   id: string;
-  name: string;
-  userId: string;
-  createdAt: string;
-  lastUsedAt?: string;
+  username: string;
+  role: "admin" | "user";
+  createdAt?: string;
+  lastLoginAt?: string;
 }
 
-export interface CreateTokenResponse {
+export interface GetCurrentUserResponse {
+  data: User;
+}
+
+export interface ListUsersOptions {
+  page?: number;
+  limit?: number;
+}
+
+export interface ListUsersResponse {
+  data: User[];
+  hasMore?: boolean;
+  currentPage?: number;
+  totalPages?: number;
+}
+
+export interface CreateUserResponse {
   message: string;
-  data: {
-    id: string;
-    name: string;
-    userId: string;
-    token: string;
-    createdAt: string;
-  };
+  user: User;
 }
 
-export interface CheckTokenResponse {
-  data: {
-    isAdmin: boolean;
-    tokenInfo?: TokenInfo;
-  };
+export interface ResetPasswordResponse {
+  message: string;
 }
 
-export interface ListTokensResponse {
-  data: TokenInfo[];
+export async function getCurrentUser(): Promise<GetCurrentUserResponse> {
+  const res = await fetch(`${AUTH_URL}/me`);
+  if (!res.ok) throw new Error(`Failed to get current user: ${res.statusText}`);
+  return (await res.json()) as GetCurrentUserResponse;
 }
 
-export async function checkToken(): Promise<CheckTokenResponse> {
-  const res = await fetch(`${TOKEN_URL}/check`);
-  if (!res.ok) throw new Error(`Failed to check token: ${res.statusText}`);
-  return (await res.json()) as CheckTokenResponse;
+export async function listUsers(
+  options: ListUsersOptions = {}
+): Promise<ListUsersResponse> {
+  const { page = 1, limit = 10 } = options;
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  const res = await fetch(`${AUTH_URL}/users?${params}`);
+  if (!res.ok) throw new Error(`Failed to list users: ${res.statusText}`);
+  return (await res.json()) as ListUsersResponse;
 }
 
-export async function createToken(
-  name: string,
-  userId: string
-): Promise<CreateTokenResponse> {
-  const res = await fetch(`${TOKEN_URL}/`, {
+export async function createUser(
+  username: string,
+  password: string
+): Promise<CreateUserResponse> {
+  const res = await fetch(`${AUTH_URL}/register`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ name, userId }),
+    body: JSON.stringify({ username, password }),
   });
-  if (!res.ok) throw new Error(`Failed to create token: ${res.statusText}`);
-  return (await res.json()) as CreateTokenResponse;
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || "Failed to create user");
+  }
+  return (await res.json()) as CreateUserResponse;
 }
 
-export async function listTokens(userId?: string): Promise<ListTokensResponse> {
-  const url = userId
-    ? `${TOKEN_URL}/?userId=${encodeURIComponent(userId)}`
-    : `${TOKEN_URL}/`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to list tokens: ${res.statusText}`);
-  return (await res.json()) as ListTokensResponse;
+export async function resetUserPassword(
+  userId: string,
+  newPassword: string
+): Promise<ResetPasswordResponse> {
+  const res = await fetch(`${AUTH_URL}/users/${userId}/password`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ newPassword }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || "Failed to reset password");
+  }
+  return (await res.json()) as ResetPasswordResponse;
 }
 
-export async function deleteToken(id: string): Promise<{ message: string }> {
-  const res = await fetch(`${TOKEN_URL}/${id}`, {
+export async function deleteUser(id: string): Promise<{ message: string }> {
+  const res = await fetch(`${AUTH_URL}/users/${id}`, {
     method: "DELETE",
   });
-  if (!res.ok) throw new Error(`Failed to delete token: ${res.statusText}`);
+  if (!res.ok) throw new Error(`Failed to delete user: ${res.statusText}`);
   return (await res.json()) as { message: string };
 }
 

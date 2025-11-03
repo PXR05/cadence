@@ -15,9 +15,12 @@
 
   let { children } = $props();
 
-  onMount(() => {
-    if (authStore.isAuthenticated) {
-      loadInitialData();
+  onMount(async () => {
+    if (authStore.token) {
+      await authStore.getCurrentUser();
+      if (authStore.isAuthenticated) {
+        loadInitialData();
+      }
     }
   });
 

@@ -1,10 +1,10 @@
-export { default as TokenForm } from "./TokenForm.svelte";
-export { default as TokenTable } from "./TokenTable.svelte";
-export { default as TokenFilter } from "./TokenFilter.svelte";
-export { default as CreatedTokenDisplay } from "./CreatedTokenDisplay.svelte";
-export { default as DeleteTokenDialog } from "./DeleteTokenDialog.svelte";
-export { default as RerollTokenDialog } from "./RerollTokenDialog.svelte";
+export { default as UserTable } from "./UserTable.svelte";
+export { default as DeleteUserDialog } from "./DeleteUserDialog.svelte";
+export { default as CreateUserDialog } from "./CreateUserDialog.svelte";
+export { default as ChangePasswordDialog } from "./ChangePasswordDialog.svelte";
+export { default as ResetPasswordDialog } from "./ResetPasswordDialog.svelte";
 export { default as TrackUploadForm } from "./TrackUploadForm.svelte";
+export { default as AddTrackDialog } from "./AddTrackDialog.svelte";
 export { default as TrackTable } from "./TrackTable.svelte";
 export { default as DeleteTrackDialog } from "./DeleteTrackDialog.svelte";
 export { default as TrackPagination } from "./TrackPagination.svelte";

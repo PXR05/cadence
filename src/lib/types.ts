@@ -51,3 +51,11 @@ interface Playlist {
 interface PlaylistDetail extends Playlist {
   items: PlaylistItem[];
 }
+
+interface User {
+  id: string;
+  username: string;
+  role: "admin" | "user";
+  createdAt?: string;
+  lastLoginAt?: string;
+}
