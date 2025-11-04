@@ -281,3 +281,48 @@ export async function updateTrackColor(
     });
   }
 }
+
+export async function searchCachedTracks(
+  query: string,
+  limit: number = 20,
+): Promise<AudioFile[]> {
+  const cache = await cacheDb.tracksCache.get("main");
+  if (!cache) return [];
+
+  const normalizedQuery = query.toLowerCase().trim();
+  if (!normalizedQuery) return [];
+
+  const results = cache.tracks.filter((track) => {
+    if (track.filename.toLowerCase().includes(normalizedQuery)) {
+      return true;
+    }
+
+    if (track.metadata) {
+      const { title, artist, album } = track.metadata;
+
+      if (title && title.toLowerCase().includes(normalizedQuery)) {
+        return true;
+      }
+
+      if (artist && artist.toLowerCase().includes(normalizedQuery)) {
+        return true;
+      }
+
+      if (album && album.toLowerCase().includes(normalizedQuery)) {
+        return true;
+      }
+    }
+
+    return false;
+  });
+
+  return results.slice(0, limit).map((track) => ({
+    id: track.id,
+    filename: track.filename,
+    size: track.size,
+    uploadedAt: track.uploadedAt,
+    metadata: track.metadata,
+    imageFile: track.imageFile,
+    color: track.color,
+  }));
+}

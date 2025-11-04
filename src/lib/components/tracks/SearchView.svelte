@@ -5,10 +5,11 @@
   import { LoaderIcon, SearchIcon, XIcon } from "@lucide/svelte";
   import TrackItem from "./TrackItem.svelte";
   import { searchTracks } from "$lib/api";
+  import { searchCachedTracks } from "$lib/db/cache";
   import { Input } from "../ui/input";
   import { Button } from "../ui/button";
   import { ScrollArea } from "../ui/scroll-area";
-    import { playerStore } from "$lib/stores/player.svelte";
+  import { playerStore } from "$lib/stores/player.svelte";
 
   const LIMIT = 10;
   const DEBOUNCE_MS = 300;
@@ -21,6 +22,7 @@
   let hasSearched = $state(false);
   let searchDebounce: number | null = null;
   let initialized = $state(false);
+  let isOffline = $state(false);
 
   $effect(() => {
     const urlQuery = page.url.searchParams.get("q") || "";
@@ -56,8 +58,22 @@
       });
 
       tracks = result.tracks;
+      isOffline = false;
     } catch (error) {
       console.error("Error searching tracks:", error);
+
+      try {
+        const cachedResults = await searchCachedTracks(
+          searchQuery.trim(),
+          LIMIT,
+        );
+        tracks = cachedResults;
+        isOffline = true;
+      } catch (cacheError) {
+        console.error("Error searching cached tracks:", cacheError);
+        tracks = [];
+        isOffline = false;
+      }
     } finally {
       loading = false;
     }
@@ -93,6 +109,7 @@
     tracks = [];
     hasSearched = false;
     isDebouncing = false;
+    isOffline = false;
     updateURL("");
   }
 
@@ -119,7 +136,7 @@
   >
     <SearchIcon
       size={16}
-      class="absolute transition-all text-muted-foreground flex-shrink-0 
+      class="absolute transition-all text-muted-foreground flex-shrink-0
       {!isEmpty ? 'opacity-0' : ''}"
       style="transform: translateX({!isEmpty ? '0' : '0.75rem'})"
     />
@@ -129,7 +146,7 @@
       oninput={handleInput}
       type="text"
       placeholder="search..."
-      class="flex-1 text-base h-auto !bg-transparent border-0 transition-all p-3 outline-none font-mono placeholder:text-muted-foreground 
+      class="flex-1 text-base h-auto !bg-transparent border-0 transition-all p-3 outline-none font-mono placeholder:text-muted-foreground
         {!isEmpty ? '' : 'pl-9'}"
     />
     <Button
@@ -162,7 +179,11 @@
       {:else if hasSearched}
         {#if tracks.length > 0}
           {#each tracks as track, i (track.id)}
-            <TrackItem index={i} isCurrentTrack={track.id === currentId} {track} />
+            <TrackItem
+              index={i}
+              isCurrentTrack={track.id === currentId}
+              {track}
+            />
           {/each}
           <div class="h-[50dvh]"></div>
         {:else}
@@ -211,11 +232,7 @@
   ._color {
     &::before,
     &::after {
-      background-color: color-mix(
-        in oklab,
-        var(--background) 50%,
-        transparent
-      );
+      background-color: color-mix(in oklab, var(--background) 50%, transparent);
     }
   }
 
