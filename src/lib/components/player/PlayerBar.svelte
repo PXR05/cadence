@@ -31,7 +31,7 @@
   let lastMoveTime = $state(0);
 
   const translateSpring = new Spring(0, {
-    stiffness: 0.4,
+    stiffness: 0.3,
     damping: 1,
   });
 
@@ -263,7 +263,6 @@
   style="
     transform: translateY({playerTranslate});
     will-change: transform;
-    touch-action: {panelState.isOpen ? 'none' : 'auto'};
     overscroll-behavior: none;"
 >
   <div class="select-none h-[calc(100dvh+5rem)]">
