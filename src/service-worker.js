@@ -41,10 +41,26 @@ self.addEventListener("fetch", (event) => {
     const cache = await caches.open(CACHE);
 
     if (ASSETS.includes(url.pathname)) {
-      const response = await cache.match(url.pathname);
+      const cachedResponse = await cache.match(url.pathname);
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+    }
 
-      if (response) {
-        return response;
+    const isSameOrigin = url.origin === self.location.origin;
+
+    if (isSameOrigin) {
+      const cachedResponse = await cache.match(event.request);
+      if (cachedResponse) {
+        fetch(event.request)
+          .then((response) => {
+            if (response && response.status === 200) {
+              cache.put(event.request, response.clone());
+            }
+          })
+          .catch(() => {
+          });
+        return cachedResponse;
       }
     }
 
@@ -55,16 +71,16 @@ self.addEventListener("fetch", (event) => {
         throw new Error("invalid response from fetch");
       }
 
-      if (response.status === 200) {
+      if (response.status === 200 && isSameOrigin) {
         cache.put(event.request, response.clone());
       }
 
       return response;
     } catch (err) {
-      const response = await cache.match(event.request);
+      const cachedResponse = await cache.match(event.request);
 
-      if (response) {
-        return response;
+      if (cachedResponse) {
+        return cachedResponse;
       }
 
       throw err;
