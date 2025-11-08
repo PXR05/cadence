@@ -47,7 +47,7 @@ export function createLocalStorageState<T>(key: string, initialValue: T) {
 
 export function createNestedLocalStorageState<T extends Record<string, any>>(
   key: string,
-  initialValue: T,
+  initialValue: T
 ) {
   const isBrowser =
     typeof window !== "undefined" && typeof localStorage !== "undefined";

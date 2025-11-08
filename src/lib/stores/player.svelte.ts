@@ -1,12 +1,11 @@
 import { average } from "color.js";
 import { BASE_URL, PLAYLIST_URL } from "$lib/api";
 import type { CarouselAPI } from "$lib/components/ui/carousel/context";
-import {
-  createNestedLocalStorageState,
-} from "./localStorage.svelte";
+import { createNestedLocalStorageState } from "./localStorage.svelte";
 import { getAudioUrl, revokeAudioUrl } from "$lib/utils/offline";
 import Color from "colorjs.io";
 import { updateTrackColor } from "$lib/db/cache";
+import { AudioEngine } from "./audioEngine";
 
 export const getStreamUrl = (id: string) => `${BASE_URL}/${id}/stream`;
 export const getImageUrl = (id: string) => `${BASE_URL}/${id}/image`;
@@ -46,15 +45,13 @@ interface PersistedPlayerState {
   currentTime: number;
   equalizerBands: EqualizerBand[];
   equalizerEnabled: boolean;
+  reverbEnabled: boolean;
+  reverbPreset: string;
 }
 
 class PlayerState {
-  audioContext: AudioContext | null = $state(null);
+  audioEngine = new AudioEngine();
   playerRef: HTMLAudioElement | null = $state(null);
-  sourceNode: MediaElementAudioSourceNode | null = $state(null);
-  gainNode: GainNode | null = $state(null);
-  analyzerNode: AnalyserNode | null = $state(null);
-  equalizerNodes: BiquadFilterNode[] = $state([]);
   isPlaying: boolean = $state(false);
   duration: number = $state(0);
   private carousels = new Map<
@@ -119,7 +116,9 @@ class PlayerState {
         },
       ],
       equalizerEnabled: true,
-    },
+      reverbEnabled: false,
+      reverbPreset: "Small Hall 1",
+    }
   );
 
   get currentTrack() {
@@ -137,7 +136,7 @@ class PlayerState {
     if (this.isShuffled && this.shuffledIndices) {
       if (!this.cachedShuffledQueue) {
         this.cachedShuffledQueue = this.shuffledIndices.map(
-          (i) => this.persistedState.trackQueue[i],
+          (i) => this.persistedState.trackQueue[i]
         );
       }
       return this.cachedShuffledQueue;
@@ -200,9 +199,7 @@ class PlayerState {
   }
   set volume(value: number) {
     this.persistedState.volume = value;
-    if (this.gainNode) {
-      this.gainNode.gain.value = value;
-    }
+    this.audioEngine.setVolume(value);
   }
 
   get currentTime() {
@@ -240,6 +237,14 @@ class PlayerState {
     return this.persistedState.equalizerBands;
   }
 
+  get equalizerNodes() {
+    return this.audioEngine.equalizerNodes;
+  }
+
+  get audioContext() {
+    return this.audioEngine.audioContext;
+  }
+
   get equalizerEnabled() {
     return this.persistedState.equalizerEnabled;
   }
@@ -247,46 +252,31 @@ class PlayerState {
     this.persistedState.equalizerEnabled = value;
   }
 
+  get reverbEnabled() {
+    return this.persistedState.reverbEnabled;
+  }
+  set reverbEnabled(value: boolean) {
+    this.persistedState.reverbEnabled = value;
+  }
+
+  get reverbPreset() {
+    return this.persistedState.reverbPreset;
+  }
+  set reverbPreset(value: string) {
+    this.persistedState.reverbPreset = value;
+  }
+
   initialize(player: HTMLAudioElement) {
     this.playerRef = player;
 
-    this.audioContext = new AudioContext();
-
-    this.sourceNode = this.audioContext.createMediaElementSource(player);
-    this.gainNode = this.audioContext.createGain();
-    this.analyzerNode = this.audioContext.createAnalyser();
-
-    this.analyzerNode.fftSize = 2048;
-    this.analyzerNode.smoothingTimeConstant = 0.8;
-
-    this.equalizerNodes = this.equalizerBands.map((band) => {
-      const filter = this.audioContext!.createBiquadFilter();
-      filter.type = band.type;
-      filter.frequency.value = band.frequency;
-      filter.gain.value = band.gain;
-      filter.Q.value = band.Q;
-      return filter;
-    });
-
-    this.sourceNode.connect(this.gainNode);
-
-    if (this.equalizerEnabled && this.equalizerNodes.length > 0) {
-      this.gainNode.connect(this.equalizerNodes[0]);
-
-      for (let i = 0; i < this.equalizerNodes.length - 1; i++) {
-        this.equalizerNodes[i].connect(this.equalizerNodes[i + 1]);
-      }
-
-      this.equalizerNodes[this.equalizerNodes.length - 1].connect(
-        this.analyzerNode,
-      );
-    } else {
-      this.gainNode.connect(this.analyzerNode);
-    }
-
-    this.analyzerNode.connect(this.audioContext.destination);
-
-    this.gainNode.gain.value = this.volume;
+    this.audioEngine.initialize(
+      player,
+      this.equalizerBands,
+      this.equalizerEnabled,
+      this.reverbEnabled,
+      this.reverbPreset,
+      this.volume
+    );
 
     if (this.isMuted) {
       this.playerRef.muted = true;
@@ -321,56 +311,25 @@ class PlayerState {
       this.currentBlobUrl = null;
     }
 
-    if (this.sourceNode) {
-      this.sourceNode.disconnect();
-      this.sourceNode = null;
-    }
-    if (this.gainNode) {
-      this.gainNode.disconnect();
-      this.gainNode = null;
-    }
-    if (this.equalizerNodes.length > 0) {
-      this.equalizerNodes.forEach((node) => node.disconnect());
-      this.equalizerNodes = [];
-    }
-    if (this.analyzerNode) {
-      this.analyzerNode.disconnect();
-      this.analyzerNode = null;
-    }
-    if (this.audioContext) {
-      this.audioContext.close();
-      this.audioContext = null;
-    }
+    this.audioEngine.cleanup();
   }
 
   getFrequencyData(): Uint8Array | null {
-    if (!this.analyzerNode) return null;
-    const bufferLength = this.analyzerNode.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    this.analyzerNode.getByteFrequencyData(dataArray);
-    return dataArray;
+    return this.audioEngine.getFrequencyData();
   }
 
   getTimeDomainData(): Uint8Array | null {
-    if (!this.analyzerNode) return null;
-    const bufferLength = this.analyzerNode.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    this.analyzerNode.getByteTimeDomainData(dataArray);
-    return dataArray;
+    return this.audioEngine.getTimeDomainData();
   }
 
   setAnalyzerFFTSize(
-    size: 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 4096 | 8192 | 16384 | 32768,
+    size: 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 4096 | 8192 | 16384 | 32768
   ) {
-    if (this.analyzerNode) {
-      this.analyzerNode.fftSize = size;
-    }
+    this.audioEngine.setAnalyzerFFTSize(size);
   }
 
   setAnalyzerSmoothing(value: number) {
-    if (this.analyzerNode) {
-      this.analyzerNode.smoothingTimeConstant = Math.max(0, Math.min(1, value));
-    }
+    this.audioEngine.setAnalyzerSmoothing(value);
   }
 
   updateEqualizerBand(id: number, updates: Partial<EqualizerBand>) {
@@ -383,19 +342,12 @@ class PlayerState {
 
     this.persistedState.equalizerBands = bands;
 
-    const node = this.equalizerNodes[bandIndex];
-    if (node) {
-      if (updates.type !== undefined) node.type = updates.type;
-      if (updates.frequency !== undefined)
-        node.frequency.value = updates.frequency;
-      if (updates.gain !== undefined) node.gain.value = updates.gain;
-      if (updates.Q !== undefined) node.Q.value = updates.Q;
-    }
+    this.audioEngine.updateEqualizerBand(id, updates, bands);
   }
 
   toggleEqualizer() {
     this.equalizerEnabled = !this.equalizerEnabled;
-    this.reconnectAudioGraph();
+    this.audioEngine.toggleEqualizer(this.equalizerEnabled);
   }
 
   resetEqualizer() {
@@ -406,30 +358,17 @@ class PlayerState {
 
     this.persistedState.equalizerBands = resetBands;
 
-    this.equalizerNodes.forEach((node) => {
-      node.gain.value = 0;
-    });
+    this.audioEngine.resetEqualizer();
   }
 
-  private reconnectAudioGraph() {
-    if (!this.gainNode || !this.analyzerNode) return;
+  toggleReverb() {
+    this.reverbEnabled = !this.reverbEnabled;
+    this.audioEngine.toggleReverb(this.reverbEnabled);
+  }
 
-    this.gainNode.disconnect();
-    this.equalizerNodes.forEach((node) => node.disconnect());
-
-    if (this.equalizerEnabled && this.equalizerNodes.length > 0) {
-      this.gainNode.connect(this.equalizerNodes[0]);
-
-      for (let i = 0; i < this.equalizerNodes.length - 1; i++) {
-        this.equalizerNodes[i].connect(this.equalizerNodes[i + 1]);
-      }
-
-      this.equalizerNodes[this.equalizerNodes.length - 1].connect(
-        this.analyzerNode,
-      );
-    } else {
-      this.gainNode.connect(this.analyzerNode);
-    }
+  async setReverbPreset(preset: string) {
+    this.reverbPreset = preset;
+    await this.audioEngine.setReverbPreset(preset);
   }
 
   initializeCarousel(id: string, api: CarouselAPI) {
@@ -489,13 +428,13 @@ class PlayerState {
       navigator.mediaSession.setActionHandler("play", () => this.play());
       navigator.mediaSession.setActionHandler("pause", () => this.pause());
       navigator.mediaSession.setActionHandler("seekto", (e) =>
-        this.seek(e.seekTime ?? 0),
+        this.seek(e.seekTime ?? 0)
       );
       navigator.mediaSession.setActionHandler("previoustrack", () =>
-        this.playPrevious(),
+        this.playPrevious()
       );
       navigator.mediaSession.setActionHandler("nexttrack", () =>
-        this.playNext(),
+        this.playNext()
       );
     }
 
@@ -505,9 +444,7 @@ class PlayerState {
   async play(opts?: { track?: AudioFile; index?: number }) {
     const { track, index } = opts || {};
     if (this.playerRef) {
-      if (this.audioContext?.state === "suspended") {
-        await this.audioContext.resume();
-      }
+      await this.audioEngine.resumeContext();
 
       let newTrack: AudioFile | undefined = undefined;
       let newIndex: number | undefined = undefined;
@@ -673,7 +610,7 @@ class PlayerState {
       const color = new Color(track.color);
       document.body.style.setProperty(
         "--primary",
-        `oklch(${color.coords[0]} ${color.coords[1]} ${color.coords[2]})`,
+        `oklch(${color.coords[0]} ${color.coords[1]} ${color.coords[2]})`
       );
 
       this.persistedState.trackColor = track.color;
@@ -694,7 +631,7 @@ class PlayerState {
 
     document.body.style.setProperty(
       "--primary",
-      `oklch(${brighter.coords[0]} ${brighter.coords[1]} ${brighter.coords[2]})`,
+      `oklch(${brighter.coords[0]} ${brighter.coords[1]} ${brighter.coords[2]})`
     );
     const brighterString = brighter.toString({ format: "hex" });
 

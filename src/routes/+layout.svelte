@@ -119,7 +119,7 @@
       </div>
     {/if}
     <div
-      class="relative overflow-auto h-dvh w-full mx-auto bg-gradient-to-t from-primary/5 via-transparent to-primary/5"
+      class="relative overflow-auto h-dvh w-full mx-auto bg-gradient-to-t from-primary/5 via-transparent to-transparent"
     >
       {@render children?.()}
     </div>

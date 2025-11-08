@@ -47,7 +47,7 @@
   <div class="_bg _color absolute inset-0 -z-10"></div>
   <div class="flex items-center justify-between gap-2">
     <h2 class="text-2xl font-semibold p-2">Playlists</h2>
-    <Button href="/settings/eq" variant="outline" size="icon" class="size-11">
+    <Button href="/settings/audio" variant="outline" size="icon" class="size-11">
       <AudioWaveformIcon />
     </Button>
   </div>
