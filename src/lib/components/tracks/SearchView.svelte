@@ -4,18 +4,22 @@
   import { goto } from "$app/navigation";
   import { LoaderIcon, SearchIcon, XIcon } from "@lucide/svelte";
   import TrackItem from "./TrackItem.svelte";
+  import YouTubeTrackItem from "./YouTubeTrackItem.svelte";
   import { searchTracks } from "$lib/api";
   import { searchCachedTracks } from "$lib/db/cache";
   import { Input } from "../ui/input";
   import { Button } from "../ui/button";
   import { ScrollArea } from "../ui/scroll-area";
   import { playerStore } from "$lib/stores/player.svelte";
+  import { youtubeDownloadStore } from "$lib/stores/youtubeDownload.svelte";
+  import { searchYoutube } from "$lib/remote/youtube.remote";
 
   const LIMIT = 10;
   const DEBOUNCE_MS = 300;
 
   let searchQuery = $state("");
   let tracks = $state<AudioFile[]>([]);
+  let youtubeResults = $state<YouTubeSearchResult[]>([]);
   let loading = $state(false);
   let isDebouncing = $state(false);
   let searchInput: HTMLInputElement | null = $state(null);
@@ -50,30 +54,52 @@
     hasSearched = true;
     updateURL(searchQuery);
 
-    try {
-      const result = await searchTracks({
+    const searchPromises = [
+      searchTracks({
         q: searchQuery.trim(),
         page: 1,
         limit: LIMIT,
-      });
+      }).catch((error) => {
+        console.error("Error searching tracks:", error);
+        return searchCachedTracks(searchQuery.trim(), LIMIT)
+          .then((cachedResults) => {
+            isOffline = true;
+            return { tracks: cachedResults, hasMore: false, currentPage: 1 };
+          })
+          .catch((cacheError) => {
+            console.error("Error searching cached tracks:", cacheError);
+            return { tracks: [], hasMore: false, currentPage: 1 };
+          });
+      }),
+      searchYoutube(searchQuery.trim()),
+    ];
 
-      tracks = result.tracks;
-      isOffline = false;
-    } catch (error) {
-      console.error("Error searching tracks:", error);
+    try {
+      const results = await Promise.all(searchPromises);
+      const localResult = results[0] as {
+        tracks: AudioFile[];
+        hasMore: boolean;
+        currentPage: number;
+      };
+      const youtubeResult = results[1] as YouTubeSearchResult[];
 
-      try {
-        const cachedResults = await searchCachedTracks(
-          searchQuery.trim(),
-          LIMIT,
-        );
-        tracks = cachedResults;
-        isOffline = true;
-      } catch (cacheError) {
-        console.error("Error searching cached tracks:", cacheError);
-        tracks = [];
+      tracks = localResult.tracks;
+      if (localResult.tracks.length > 0) {
         isOffline = false;
       }
+
+      const existingYoutubeIds = new Set(
+        tracks.map((track) => track.youtubeId).filter(Boolean)
+      );
+
+      youtubeResults = youtubeResult.filter(
+        (result: YouTubeSearchResult) => !existingYoutubeIds.has(result.videoId)
+      );
+    } catch (error) {
+      console.error("Error performing search:", error);
+      tracks = [];
+      youtubeResults = [];
+      isOffline = false;
     } finally {
       loading = false;
     }
@@ -107,10 +133,18 @@
   function clearSearch() {
     searchQuery = "";
     tracks = [];
+    youtubeResults = [];
     hasSearched = false;
     isDebouncing = false;
     isOffline = false;
     updateURL("");
+  }
+
+  async function handleYoutubeTrackDownload(videoId: string) {
+    const result = youtubeResults.find((r) => r.videoId === videoId);
+    if (!result) return;
+
+    await youtubeDownloadStore.addToQueue(result);
   }
 
   onMount(() => {
@@ -172,22 +206,46 @@
     <div class="flex-1 pt-32 md:pt-30">
       {#if loading}
         <div
-          class="flex flex-col items-center justify-center flex-1 p-8 h-full"
+          class="flex flex-col items-center justify-center flex-1 p-8 pb-48 md:pb-36 h-full"
         >
           <LoaderIcon class="animate-spin text-muted-foreground" />
         </div>
       {:else if hasSearched}
-        {#if tracks.length > 0}
-          {#each tracks as track, i (track.id)}
-            <TrackItem
-              index={i}
-              isCurrentTrack={track.id === currentId}
-              {track}
-            />
-          {/each}
+        {#if tracks.length > 0 || youtubeResults.length > 0}
+          {#if tracks.length > 0}
+            <div class="px-4 py-2 text-sm font-semibold text-muted-foreground">
+              Local Results
+            </div>
+            {#each tracks as track, i (track.id)}
+              <TrackItem
+                index={i}
+                isCurrentTrack={track.id === currentId}
+                {track}
+              />
+            {/each}
+          {/if}
+
+          {#if youtubeResults.length > 0}
+            <div
+              class="px-4 py-2 text-sm font-semibold text-muted-foreground {tracks.length >
+              0
+                ? 'mt-4'
+                : ''}"
+            >
+              YouTube Results
+            </div>
+            {#each youtubeResults as result (result.videoId)}
+              <YouTubeTrackItem
+                {result}
+                isInQueue={youtubeDownloadStore.isInQueue(result.videoId)}
+                onDownload={handleYoutubeTrackDownload}
+              />
+            {/each}
+          {/if}
+
           <div class="h-[50dvh]"></div>
         {:else}
-          <div class="h-full flex flex-col items-center justify-center p-8">
+          <div class="h-full flex flex-col items-center justify-center p-8 pb-48 md:pb-36">
             <p class="text-muted-foreground mb-2">No results found</p>
             <p class="text-sm text-muted-foreground">
               Try a different search query
@@ -200,7 +258,7 @@
         >
           <SearchIcon size={48} class="text-muted-foreground mb-4" />
           <p class="text-muted-foreground text-center">
-            Search by track title, artist, or album
+            Search by title, artist, or album
           </p>
         </div>
       {/if}

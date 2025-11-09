@@ -1,7 +1,8 @@
 <script lang="ts">
   import PlayerBar from "../player/PlayerBar.svelte";
   import NavBar from "./NavBar.svelte";
-  import GlobalDownloadProgress from "./GlobalDownloadProgress.svelte";
+  import OfflineDownloadProgress from "./OfflineDownloadProgress.svelte";
+  import YoutubeDownloadProgress from "./youtubeDownloadProgress.svelte";
   import { innerWidth } from "svelte/reactivity/window";
   import { page } from "$app/state";
   import { useDialogState } from "$lib/hooks";
@@ -30,12 +31,13 @@
   <!-- <div class="_bg _blur absolute inset-0 -z-10"></div> -->
   <div class="_bg _color absolute inset-0 -z-10"></div>
   <div
-    class="absolute bottom-0 left-0 right-0 transition-all duration-200"
+    class="absolute bottom-0 left-0 right-0 transition-all duration-200 space-y-1.5"
     style="
       transform: translateY({downloadTranslate});
       will-change: transform;"
   >
-    <GlobalDownloadProgress />
+    <YoutubeDownloadProgress />
+    <OfflineDownloadProgress />
   </div>
   <PlayerBar {panelState} />
   <div

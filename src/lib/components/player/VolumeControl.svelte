@@ -7,7 +7,7 @@
     const target = e.target as HTMLInputElement;
     playerStore.volume = parseFloat(target.value) / 100;
     if (playerStore.volume > 0) playerStore.isMuted = false;
-    playerStore.gainNode!.gain.value = playerStore.volume;
+    playerStore.audioEngine.setVolume(playerStore.volume);
   }
 
   function toggleMute() {

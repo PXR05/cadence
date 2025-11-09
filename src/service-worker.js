@@ -48,8 +48,11 @@ self.addEventListener("fetch", (event) => {
     }
 
     const isSameOrigin = url.origin === self.location.origin;
+    const isImageApiRequest =
+      isSameOrigin &&
+      /\/api\/.*\/(image|thumbnail|artwork|cover|art)/.test(url.pathname);
 
-    if (isSameOrigin) {
+    if (isImageApiRequest) {
       const cachedResponse = await cache.match(event.request);
       if (cachedResponse) {
         fetch(event.request)
@@ -58,8 +61,7 @@ self.addEventListener("fetch", (event) => {
               cache.put(event.request, response.clone());
             }
           })
-          .catch(() => {
-          });
+          .catch(() => {});
         return cachedResponse;
       }
     }
@@ -71,16 +73,18 @@ self.addEventListener("fetch", (event) => {
         throw new Error("invalid response from fetch");
       }
 
-      if (response.status === 200 && isSameOrigin) {
+      if (response.status === 200 && isImageApiRequest) {
         cache.put(event.request, response.clone());
       }
 
       return response;
     } catch (err) {
-      const cachedResponse = await cache.match(event.request);
+      if (isImageApiRequest) {
+        const cachedResponse = await cache.match(event.request);
 
-      if (cachedResponse) {
-        return cachedResponse;
+        if (cachedResponse) {
+          return cachedResponse;
+        }
       }
 
       throw err;

@@ -19,6 +19,7 @@ interface AudioFile {
   metadata?: AudioMetadata | undefined;
   imageFile?: string | undefined;
   color?: string | undefined;
+  youtubeId?: string | undefined;
 }
 
 interface AudioListResponse {
@@ -58,4 +59,11 @@ interface User {
   role: "admin" | "user";
   createdAt?: string;
   lastLoginAt?: string;
+}
+
+interface YouTubeSearchResult {
+  videoId: string;
+  title: string;
+  artist: string;
+  thumbnail: string;
 }

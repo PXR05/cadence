@@ -23,8 +23,8 @@
     Error loading tracks: {error}
   </div>
 {:else if tracks.length === 0}
-  <div class="mx-auto w-full p-4 text-muted-foreground text-center">
-    No audio files found.
+  <div class="mx-auto w-full p-16 text-muted-foreground text-center">
+    No songs added yet. Go search for some songs and add them to your library.
   </div>
 {:else}
   <VirtualScroll items={tracks} rowHeight={ROW_HEIGHT} class="border h-dvh">

@@ -6,6 +6,19 @@ export type SortBy = "filename" | "size" | "uploadedAt" | "title";
 export type SortOrder = "asc" | "desc";
 export type SuggestionType = "title" | "artist" | "album";
 
+export interface YouTubeProgressEvent {
+  type: "progress" | "complete" | "error" | "info";
+  message: string;
+  data?: {
+    percent?: number;
+    speed?: string;
+    eta?: string;
+    downloaded?: string;
+    totalSize?: string;
+  };
+  result?: YoutubeDownloadResponse;
+}
+
 export interface FetchTracksOptions {
   page?: number;
   limit?: number;
@@ -346,6 +359,38 @@ export async function downloadYoutube(
     throw new Error(`Failed to download from YouTube: ${res.statusText}`);
 
   return (await res.json()) as YoutubeDownloadResponse;
+}
+
+export async function downloadYoutubeWithProgress(
+  url: string,
+  onProgress: (event: YouTubeProgressEvent) => void
+): Promise<void> {
+  const params = new URLSearchParams({ url });
+  const eventSource = new EventSource(`${BASE_URL}/youtube/progress?${params}`);
+
+  return new Promise((resolve, reject) => {
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data) as YouTubeProgressEvent;
+        onProgress(data);
+
+        if (data.type === "complete") {
+          eventSource.close();
+          resolve();
+        } else if (data.type === "error") {
+          eventSource.close();
+          reject(new Error(data.message));
+        }
+      } catch (error) {
+        console.error("Error parsing SSE data:", error);
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      eventSource.close();
+      reject(new Error("Connection to server lost"));
+    };
+  });
 }
 
 export async function deleteTrack(id: string): Promise<DeleteTrackResponse> {
