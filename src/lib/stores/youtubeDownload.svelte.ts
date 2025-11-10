@@ -12,8 +12,10 @@ interface DownloadProgress {
 }
 
 interface QueueItem {
+  type: "video" | "url";
   videoId: string;
-  result: YouTubeSearchResult;
+  result?: YouTubeSearchResult;
+  url?: string;
 }
 
 interface PersistentState {
@@ -90,16 +92,18 @@ class YouTubeDownloadStore {
 
   private async checkForPendingDownloads() {
     if (this._currentDownload && !this._isProcessing) {
-      console.log(
-        "Resuming YouTube download:",
-        this._currentDownload.result.title
-      );
+      const title =
+        this._currentDownload.type === "video"
+          ? this._currentDownload.result?.title
+          : this._currentDownload.url;
+      console.log("Resuming YouTube download:", title);
       await this.processQueue();
     }
   }
 
   async addToQueue(result: YouTubeSearchResult) {
     const queueItem: QueueItem = {
+      type: "video",
       videoId: result.videoId,
       result,
     };
@@ -120,6 +124,41 @@ class YouTubeDownloadStore {
     if (!this._isProcessing) {
       await this.processQueue();
     }
+  }
+
+  async addUrlToQueue(url: string) {
+    const isPlaylist = url.includes("list=") || url.includes("/playlist");
+    const videoIdMatch = url.match(/[?&]v=([^&]+)/);
+    const videoId = isPlaylist
+      ? `playlist_${Date.now()}`
+      : videoIdMatch?.[1] || `url_${Date.now()}`;
+
+    const queueItem: QueueItem = {
+      type: "url",
+      videoId,
+      url,
+    };
+
+    if (this._queue.some((item) => item.url === url)) {
+      console.log("URL already in queue:", url);
+      return;
+    }
+
+    if (this._currentDownload?.url === url) {
+      console.log("URL is already downloading:", url);
+      return;
+    }
+
+    this._queue.push(queueItem);
+    this.saveToStorage();
+
+    if (!this._isProcessing) {
+      await this.processQueue();
+    }
+  }
+
+  async downloadFromUrl(url: string): Promise<void> {
+    await this.addUrlToQueue(url);
   }
 
   private async processQueue() {
@@ -148,36 +187,87 @@ class YouTubeDownloadStore {
   }
 
   private async downloadTrack(queueItem: QueueItem) {
-    const { videoId, result } = queueItem;
+    const { type, videoId, result, url } = queueItem;
+
+    const isUrl = type === "url";
+    const isPlaylist =
+      isUrl && (url?.includes("list=") || url?.includes("/playlist"));
+    const downloadUrl = isUrl
+      ? url!
+      : `https://www.youtube.com/watch?v=${videoId}`;
+    const initialTitle = isUrl
+      ? isPlaylist
+        ? "YouTube Playlist"
+        : "YouTube Video"
+      : result!.title;
 
     this._progress = {
       videoId,
-      title: result.title,
+      title: initialTitle,
       percent: 0,
       message: "Starting download...",
     };
     this.saveToStorage();
 
-    try {
-      const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
+    let playlistTotal = 0;
+    let playlistCurrent = 0;
 
+    try {
       await downloadYoutubeWithProgress(
-        youtubeUrl,
+        downloadUrl,
         (event: YouTubeProgressEvent) => {
           if (event.type === "progress" && event.data?.percent !== undefined) {
+            let overallPercent = event.data.percent;
+
+            if (playlistTotal > 0) {
+              const playlistProgress =
+                ((playlistCurrent - 1) / playlistTotal) * 100;
+              const currentVideoProgress = event.data.percent / playlistTotal;
+              overallPercent = playlistProgress + currentVideoProgress;
+            }
+
             this._progress = {
               videoId,
-              title: result.title,
-              percent: event.data.percent,
+              title: this._progress?.title || initialTitle,
+              percent: overallPercent,
               message: event.message,
             };
             this.saveToStorage();
           } else if (event.type === "info") {
+            const infoMessage = event.message;
+            let title = this._progress?.title || initialTitle;
+            let percent = this._progress?.percent || 0;
+
+            if (infoMessage.includes("videos in playlist:")) {
+              const match = infoMessage.match(
+                /Found (\d+) videos in playlist:\s+(.+)/i
+              );
+              if (match) {
+                playlistTotal = parseInt(match[1], 10);
+                title = match[2];
+                percent = 0;
+              }
+            } else if (infoMessage.match(/\[\d+\/\d+\]/)) {
+              const progressMatch = infoMessage.match(/\[(\d+)\/(\d+)\]/);
+              if (progressMatch) {
+                playlistCurrent = parseInt(progressMatch[1], 10);
+                playlistTotal = parseInt(progressMatch[2], 10);
+                percent = ((playlistCurrent - 1) / playlistTotal) * 100;
+              }
+
+              const titleMatch = infoMessage.match(
+                /\[\d+\/\d+\]\s+Downloading:\s+(.+)/
+              );
+              if (titleMatch) {
+                title = titleMatch[1];
+              }
+            }
+
             this._progress = {
               videoId,
-              title: result.title,
-              percent: this._progress?.percent || 0,
-              message: event.message,
+              title,
+              percent,
+              message: infoMessage,
             };
             this.saveToStorage();
           }
@@ -188,7 +278,7 @@ class YouTubeDownloadStore {
       this._progress = null;
       this.saveToStorage();
 
-      setTimeout(async () => {
+      setTimeout(() => {
         if (this._completedVideoId === videoId) {
           this._completedVideoId = null;
         }

@@ -20,6 +20,7 @@
   } from "$lib/components/admin";
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { authStore } from "$lib/stores/auth.svelte";
+  import { youtubeDownloadStore } from "$lib/stores/youtubeDownload.svelte";
   import {
     getCurrentUser,
     listUsers,
@@ -27,7 +28,6 @@
     createUser,
     resetUserPassword,
     fetchTracks,
-    downloadYoutube,
     deleteTrack,
     type User,
   } from "$lib/api";
@@ -183,14 +183,6 @@
     }
   }
 
-  function handlePasswordChangeSuccess() {
-    setMessage("success", "Password changed successfully");
-  }
-
-  function handlePasswordChangeError(error: string) {
-    setMessage("error", error);
-  }
-
   function openCreateUserDialog() {
     createUserDialogOpen = true;
   }
@@ -228,17 +220,17 @@
   }
 
   async function handleYoutubeUpload(url: string) {
-    tracksLoading = true;
-
     try {
-      await downloadYoutube(url);
+      await youtubeDownloadStore.downloadFromUrl(url);
       setMessage("success", "Downloaded from YouTube");
       await loadTracks(tracksCurrentPage);
       tracksStore.loadAllTracks(true);
-    } catch {
-      setMessage("error", "Failed to download from YouTube");
-    } finally {
-      tracksLoading = false;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to download from YouTube";
+      setMessage("error", errorMessage);
     }
   }
 

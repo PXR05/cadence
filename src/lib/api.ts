@@ -344,29 +344,12 @@ export async function uploadFiles(
   return (await res.json()) as UploadResponse | MultiUploadResponse;
 }
 
-export async function downloadYoutube(
-  url: string
-): Promise<YoutubeDownloadResponse> {
-  const res = await fetch(`${BASE_URL}/youtube`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ url }),
-  });
-
-  if (!res.ok)
-    throw new Error(`Failed to download from YouTube: ${res.statusText}`);
-
-  return (await res.json()) as YoutubeDownloadResponse;
-}
-
 export async function downloadYoutubeWithProgress(
   url: string,
   onProgress: (event: YouTubeProgressEvent) => void
 ): Promise<void> {
   const params = new URLSearchParams({ url });
-  const eventSource = new EventSource(`${BASE_URL}/youtube/progress?${params}`);
+  const eventSource = new EventSource(`${BASE_URL}/youtube?${params}`);
 
   return new Promise((resolve, reject) => {
     eventSource.onmessage = (event) => {

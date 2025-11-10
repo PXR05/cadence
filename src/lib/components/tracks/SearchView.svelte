@@ -59,17 +59,16 @@
         q: searchQuery.trim(),
         page: 1,
         limit: LIMIT,
-      }).catch((error) => {
+      }).catch(async (error) => {
         console.error("Error searching tracks:", error);
-        return searchCachedTracks(searchQuery.trim(), LIMIT)
-          .then((cachedResults) => {
-            isOffline = true;
-            return { tracks: cachedResults, hasMore: false, currentPage: 1 };
-          })
-          .catch((cacheError) => {
-            console.error("Error searching cached tracks:", cacheError);
-            return { tracks: [], hasMore: false, currentPage: 1 };
-          });
+        try {
+              const cachedResults = await searchCachedTracks(searchQuery.trim(), LIMIT);
+              isOffline = true;
+              return { tracks: cachedResults, hasMore: false, currentPage: 1 };
+          } catch (cacheError) {
+              console.error("Error searching cached tracks:", cacheError);
+              return { tracks: [], hasMore: false, currentPage: 1 };
+          }
       }),
       searchYoutube(searchQuery.trim()),
     ];
