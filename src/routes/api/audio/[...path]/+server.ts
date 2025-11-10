@@ -89,7 +89,7 @@ export const GET: RequestHandler = async ({
       headers: responseHeaders,
     });
   } catch (err) {
-    console.error("Proxy error:", err);
+    console.error("Proxy error:", url, err);
     throw error(500, "Failed to fetch from backend");
   }
 };
@@ -145,7 +145,7 @@ export const POST: RequestHandler = async ({
     const data = await response.json();
     return json(data);
   } catch (err) {
-    console.error("Proxy error:", err);
+    console.error("Proxy error:", url, err);
     if (err && typeof err === "object" && "status" in err) {
       throw err;
     }
@@ -184,7 +184,7 @@ export const DELETE: RequestHandler = async ({ params, url, cookies }) => {
     const data = await response.json();
     return json(data);
   } catch (err) {
-    console.error("Proxy error:", err);
+    console.error("Proxy error:", url, err);
     if (err && typeof err === "object" && "status" in err) {
       throw err;
     }

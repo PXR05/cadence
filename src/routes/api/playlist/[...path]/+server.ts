@@ -40,7 +40,7 @@ async function proxyRequest(
     const data = await response.json();
     return json(data);
   } catch (err) {
-    console.error("Playlist proxy error:", backendUrl, err);
+    console.error("Playlist proxy error:", url, backendUrl, err);
     if (err && typeof err === "object" && "status" in err) {
       throw err;
     }

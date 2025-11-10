@@ -18,12 +18,12 @@ export async function load() {
     };
   }
 
-  const cachedUserPlaylists = playlistsStore.getUserPlaylistsFiltered(10);
-  const cachedYoutubePlaylists = playlistsStore.getYoutubePlaylistsFiltered(10);
+  const cachedUserPlaylists = playlistsStore.getUserPlaylistsFiltered();
+  const cachedYoutubePlaylists = playlistsStore.getYoutubePlaylistsFiltered();
 
   const streamingData = playlistsStore.loadAllPlaylists().then(() => ({
-    userPlaylists: playlistsStore.getUserPlaylistsFiltered(10),
-    youtubePlaylists: playlistsStore.getYoutubePlaylistsFiltered(10),
+    userPlaylists: playlistsStore.getUserPlaylistsFiltered(),
+    youtubePlaylists: playlistsStore.getYoutubePlaylistsFiltered(),
   }));
 
   return {
