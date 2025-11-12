@@ -82,7 +82,7 @@
   async function handlePlaylistResync() {
     try {
       await youtubeDownloadStore.downloadFromUrl(
-        `https://music.youtube.com/playlist?list=${playlistId}`,
+        `https://music.youtube.com/playlist?list=${playlistId.replace("youtube_", "")}`,
       );
       toast.success("Resynced from YouTube");
     } catch (error) {
