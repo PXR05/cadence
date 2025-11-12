@@ -1,49 +1,98 @@
 <script lang="ts">
-  import { getPlaylistImageUrl } from "$lib/stores/player.svelte";
-  import { isArtistPlaylist, isAlbumPlaylist } from "$lib/utils/playlist";
+  import { goto, invalidateAll } from "$app/navigation";
+  import { playerStore, getPlaylistImageUrl } from "$lib/stores/player.svelte";
+  import { navigationStore } from "$lib/stores/navigation.svelte";
+  import { playlistsStore } from "$lib/stores/playlists.svelte";
+  import { useDialogState, usePlaylistOffline } from "$lib/hooks";
+  import {
+    getPlaylistDisplayName,
+    isArtistPlaylist,
+    isAlbumPlaylist,
+    isSpecialPlaylist,
+    SPECIAL_PLAYLIST_IDS,
+    isYoutubePlaylist,
+  } from "$lib/utils/playlist";
   import {
     PlayIcon,
     EllipsisIcon,
     MusicIcon,
     Disc3Icon,
     UserIcon,
-    DownloadIcon,
     CloudDownloadIcon,
     CloudCheckIcon,
     PencilIcon,
     LibraryIcon,
     ArrowLeft,
     CloudOffIcon,
+    YoutubeIcon,
+    RefreshCwIcon,
   } from "@lucide/svelte";
-  import { isSpecialPlaylist, SPECIAL_PLAYLIST_IDS } from "$lib/utils/playlist";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import { Button } from "../ui/button";
+  import EditPlaylistDialog from "./EditPlaylistDialog.svelte";
+  import { youtubeDownloadStore } from "$lib/stores/youtubeDownload.svelte";
+  import { toast } from "svelte-sonner";
 
   interface Props {
     playlist: PlaylistDetail;
     isScrolled: boolean;
-    isOffline: boolean;
-    isDownloading: boolean;
-    isNonModifiable: boolean;
-    onPlay: () => void;
-    onEdit: () => void;
-    onDownload: () => void;
-    onMakeOffline: () => void;
-    onRemoveOffline: () => void;
   }
 
-  let {
-    playlist,
-    isScrolled,
-    isOffline,
-    isDownloading,
-    isNonModifiable,
-    onPlay,
-    onEdit,
-    onDownload,
-    onMakeOffline,
-    onRemoveOffline,
-  }: Props = $props();
+  let { playlist, isScrolled }: Props = $props();
+
+  const playlistId = $derived(playlist.id);
+  const editDialog = useDialogState("edit-playlist");
+  const offline = usePlaylistOffline(() => playlistId);
+
+  const isNonModifiable = $derived(
+    isSpecialPlaylist(playlist.id) ||
+      isArtistPlaylist(playlist.id) ||
+      isAlbumPlaylist(playlist.id),
+  );
+
+  $effect(() => {
+    offline.checkOfflineStatus();
+  });
+
+  function handlePlay() {
+    if (playlist.items.length === 0) return;
+    const tracks = playlist.items.map((item) => item.audio);
+    playerStore.setQueue(tracks, 0);
+  }
+
+  async function handlePlaylistUpdated(updated: {
+    name: string;
+    coverImage?: string;
+  }) {
+    navigationStore.setNavigation(
+      [{ label: "Library", path: "/library" }],
+      getPlaylistDisplayName({ name: updated.name } as Playlist),
+    );
+    await playlistsStore.invalidatePlaylistDetail(playlistId);
+    playlistsStore.invalidate();
+    invalidateAll();
+  }
+
+  async function handlePlaylistDeleted() {
+    await playlistsStore.invalidatePlaylistDetail(playlistId);
+    playlistsStore.invalidate();
+    goto("/library", { replaceState: true });
+  }
+
+  async function handlePlaylistResync() {
+    try {
+      await youtubeDownloadStore.downloadFromUrl(
+        `https://music.youtube.com/playlist?list=${playlistId}`,
+      );
+      toast.success("Resynced from YouTube");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to download from YouTube";
+      toast.error(errorMessage);
+    }
+  }
 </script>
 
 <div
@@ -55,7 +104,7 @@
   <div
     class="border flex-shrink-0 overflow-hidden bg-muted relative grid place-items-center rounded-xl transition-all duration-200
     {isScrolled ? 'size-0' : 'size-40 md:size-48'}"
-    style="transform: scale({isScrolled ? 0 : 1}); 
+    style="transform: scale({isScrolled ? 0 : 1});
     opacity: {isScrolled ? 0 : 1};"
   >
     <div class="absolute inset-0 grid place-items-center">
@@ -85,6 +134,13 @@
       {:else if isAlbumPlaylist(playlist.id)}
         <Disc3Icon
           size={64}
+          absoluteStrokeWidth
+          strokeWidth={2}
+          class="text-muted-foreground"
+        />
+      {:else if isYoutubePlaylist(playlist.id)}
+        <YoutubeIcon
+          size={48}
           absoluteStrokeWidth
           strokeWidth={2}
           class="text-muted-foreground"
@@ -131,7 +187,7 @@
         {isScrolled ? 'pl-10 mb-0.5' : ''}"
       >
         {playlist.name}
-        {#if isOffline}
+        {#if offline.isOffline}
           <CloudCheckIcon
             size={isScrolled ? 16 : 20}
             class="flex-shrink-0 text-primary"
@@ -151,7 +207,7 @@
       {isScrolled ? 'max-sm:w-[100px]' : 'max-sm:w-[calc(100dvw-11.4rem)]'}"
     >
       <Button
-        onclick={onPlay}
+        onclick={handlePlay}
         disabled={playlist.items.length === 0}
         class="w-full border bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 px-6
         {isScrolled
@@ -168,7 +224,7 @@
 <div
   class="top-1.5 md:top-2 right-1.5 md:right-2 absolute z-10 transition-all duration-200
   {isScrolled ? 'pointer-events-none' : ''}"
-  style="transform: scale({isScrolled ? 0.8 : 1}); 
+  style="transform: scale({isScrolled ? 0.8 : 1});
   opacity: {isScrolled ? 0 : 1};"
 >
   <DropdownMenu.Root>
@@ -184,33 +240,61 @@
     </DropdownMenu.Trigger>
     <DropdownMenu.Content align="end">
       {#if !isNonModifiable}
-        <DropdownMenu.Item onclick={onEdit}>
+        <DropdownMenu.Item
+          disabled={isNonModifiable}
+          onclick={() => editDialog.open()}
+        >
           <PencilIcon size={16} class="mr-2" />
           Edit Playlist
         </DropdownMenu.Item>
         <DropdownMenu.Separator />
       {/if}
-      <DropdownMenu.Item
-        onclick={onDownload}
-        disabled={isDownloading || playlist.items.length === 0}
+
+      <!-- <DropdownMenu.Item
+        onclick={() => offline.downloadPlaylist(playlist)}
+        disabled={offline.isDownloading || playlist.items.length === 0}
       >
         <DownloadIcon size={16} class="mr-2" />
         Download as ZIP
-      </DropdownMenu.Item>
-      {#if isOffline || playlist.id === SPECIAL_PLAYLIST_IDS.DOWNLOADED}
-        <DropdownMenu.Item onclick={onRemoveOffline} disabled={isDownloading}>
+      </DropdownMenu.Item> -->
+
+      {#if isYoutubePlaylist(playlist.id)}
+        <DropdownMenu.Item
+          onclick={() => handlePlaylistResync()}
+          disabled={playlist.items.length === 0}
+        >
+          <RefreshCwIcon size={16} class="mr-2" />
+          Resync Playlist
+        </DropdownMenu.Item>
+      {/if}
+
+      {#if offline.isOffline || playlist.id === SPECIAL_PLAYLIST_IDS.DOWNLOADED}
+        <DropdownMenu.Item
+          onclick={() => offline.removeOffline()}
+          disabled={offline.isDownloading}
+        >
           <CloudOffIcon size={16} class="mr-2" />
-          Remove from Offline
+          Remove Offline
         </DropdownMenu.Item>
       {:else}
         <DropdownMenu.Item
-          onclick={onMakeOffline}
-          disabled={isDownloading || playlist.items.length === 0}
+          onclick={() => offline.makeOffline(playlist)}
+          disabled={offline.isDownloading || playlist.items.length === 0}
         >
           <CloudDownloadIcon size={16} class="mr-2" />
-          Make Available Offline
+          Make Offline
         </DropdownMenu.Item>
       {/if}
     </DropdownMenu.Content>
   </DropdownMenu.Root>
 </div>
+
+{#if !isNonModifiable}
+  <EditPlaylistDialog
+    open={editDialog.isOpen}
+    onOpenChange={(open) => !open && editDialog.close()}
+    {playlist}
+    onUpdated={handlePlaylistUpdated}
+    onDeleted={handlePlaylistDeleted}
+  />
+{/if}

@@ -1,10 +1,9 @@
 <script lang="ts">
-  import { goto, invalidateAll } from "$app/navigation";
+  import { invalidateAll } from "$app/navigation";
   import { SvelteSet } from "svelte/reactivity";
-  import { playerStore } from "$lib/stores/player.svelte";
   import { navigationStore } from "$lib/stores/navigation.svelte";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
-  import { useDialogState, usePlaylistOffline } from "$lib/hooks";
+  import { useDialogState } from "$lib/hooks";
   import {
     getPlaylistDisplayName,
     isArtistPlaylist,
@@ -13,7 +12,6 @@
   } from "$lib/utils/playlist";
   import {
     AddTracksDialog,
-    EditPlaylistDialog,
     PlaylistHeader,
     PlaylistTrackList,
   } from "$lib/components";
@@ -29,28 +27,26 @@
   let isScrolled = $state(false);
 
   const addTracksDialog = useDialogState("add-tracks");
-  const editDialog = useDialogState("edit-playlist");
-  const offline = usePlaylistOffline(() => playlistId);
 
   const existingTrackIds = $derived(
-    new SvelteSet(playlist?.items.map((item) => item.audio.id) ?? [])
+    new SvelteSet(playlist?.items.map((item) => item.audio.id) ?? []),
   );
 
   const isNonModifiable = $derived(
     playlist &&
       (isSpecialPlaylist(playlist.id) ||
         isArtistPlaylist(playlist.id) ||
-        isAlbumPlaylist(playlist.id))
+        isAlbumPlaylist(playlist.id)),
   );
 
   const hasAddButton = $derived(
-    !searchQuery.trim() && playlist && !isNonModifiable
+    !searchQuery.trim() && playlist && !isNonModifiable,
   );
 
   const filteredTracks = $derived(
     searchQuery.trim()
       ? filterTracks(playlist?.items ?? [], searchQuery)
-      : (playlist?.items ?? [])
+      : (playlist?.items ?? []),
   );
 
   $effect(() => {
@@ -66,7 +62,6 @@
   $effect(() => {
     if (playlist) {
       updateNavigation(playlist.name);
-      offline.checkOfflineStatus();
     }
   });
 
@@ -85,35 +80,13 @@
   function updateNavigation(playlistName: string) {
     navigationStore.setNavigation(
       [{ label: "Library", path: "/library" }],
-      getPlaylistDisplayName({ name: playlistName } as Playlist)
+      getPlaylistDisplayName({ name: playlistName } as Playlist),
     );
-  }
-
-  function handlePlay() {
-    if (!playlist || playlist.items.length === 0) return;
-    const tracks = playlist.items.map((item) => item.audio);
-    playerStore.setQueue(tracks, 0);
-  }
-
-  async function handlePlaylistUpdated(updated: {
-    name: string;
-    coverImage?: string;
-  }) {
-    updateNavigation(updated.name);
-    await playlistsStore.invalidatePlaylistDetail(playlistId);
-    playlistsStore.invalidate();
-    invalidateAll();
   }
 
   async function handleTrackRemovedFromPlaylist() {
     await playlistsStore.invalidatePlaylistDetail(playlistId);
     await invalidateAll();
-  }
-
-  async function handlePlaylistDeleted() {
-    await playlistsStore.invalidatePlaylistDetail(playlistId);
-    playlistsStore.invalidate();
-    goto("/library", { replaceState: true });
   }
 
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
@@ -131,18 +104,7 @@
     >
       <div class="_bg _blur absolute inset-0 -z-10"></div>
       <div class="_bg _color absolute inset-0 -z-10"></div>
-      <PlaylistHeader
-        {playlist}
-        {isScrolled}
-        isOffline={offline.isOffline}
-        isDownloading={offline.isDownloading}
-        isNonModifiable={!!isNonModifiable}
-        onPlay={handlePlay}
-        onEdit={() => editDialog.open()}
-        onDownload={() => playlist && offline.downloadPlaylist(playlist)}
-        onMakeOffline={() => playlist && offline.makeOffline(playlist)}
-        onRemoveOffline={() => offline.removeOffline()}
-      />
+      <PlaylistHeader {playlist} {isScrolled} />
 
       <PlaylistSearch bind:searchQuery />
     </div>
@@ -175,14 +137,6 @@
     {playlistId}
     {existingTrackIds}
     onTracksAdded={() => invalidateAll()}
-  />
-
-  <EditPlaylistDialog
-    open={editDialog.isOpen}
-    onOpenChange={(open) => !open && editDialog.close()}
-    {playlist}
-    onUpdated={handlePlaylistUpdated}
-    onDeleted={handlePlaylistDeleted}
   />
 {/if}
 

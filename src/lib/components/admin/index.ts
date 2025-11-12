@@ -8,3 +8,5 @@ export { default as AddTrackDialog } from "./AddTrackDialog.svelte";
 export { default as TrackTable } from "./TrackTable.svelte";
 export { default as DeleteTrackDialog } from "./DeleteTrackDialog.svelte";
 export { default as TrackPagination } from "./TrackPagination.svelte";
+export { default as UserManagement } from "./UserManagement.svelte";
+export { default as TrackManagement } from "./TrackManagement.svelte";
