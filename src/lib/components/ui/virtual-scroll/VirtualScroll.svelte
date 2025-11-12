@@ -20,7 +20,7 @@
     onVisibleRangeChange?: (start: number, end: number) => void;
     onScrollDirectionChange?: (direction: "up" | "down" | null) => void;
     emptyState?: Snippet;
-    children: Snippet<[{ item: T; index: number; visibleIndex: number }]>;
+    children: Snippet<[{ item: T; index: number; visibleIndex: number; actualIndex: number }]>;
   }
 
   let {
@@ -237,6 +237,7 @@
               item,
               index: range.start + i,
               visibleIndex: i,
+              actualIndex: range.start + i,
             })}
           </div>
         {/each}

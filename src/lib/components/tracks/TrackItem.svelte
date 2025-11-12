@@ -20,7 +20,7 @@
     index: number;
     track: AudioFile;
     isCurrentTrack: boolean;
-    playlist?: PlaylistItem[];
+    playlist?: PlaylistDetail;
     fromQueue?: boolean;
     onRemovedFromPlaylist?: (trackId: string, playlistIds: string[]) => void;
   }
@@ -51,8 +51,10 @@
     }
 
     if (playlist) {
-      const tracks = playlist.map((item) => item.audio);
-      playerStore.setQueue(tracks, index);
+      const tracks = playlist.items.map((item) => item.audio);
+      const actualIndex =
+        playlist.items.findIndex((item) => item.audio.id === track.id) ?? index;
+      playerStore.setQueue(tracks, actualIndex);
     } else {
       const shuffledTracks = tracksStore.getShuffledTracks(track);
       playerStore.setQueue(shuffledTracks, 0);
@@ -89,7 +91,7 @@
           duration: track.metadata?.duration,
         },
         track.filename,
-        track.size
+        track.size,
       );
     }
     isOffline = await downloadStore.checkTrackOfflineStatus(track.id);

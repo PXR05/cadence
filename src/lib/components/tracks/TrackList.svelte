@@ -19,7 +19,7 @@
     <LoaderIcon class="animate-spin text-muted-foreground" />
   </div>
 {:else if error}
-  <div class="mx-auto w-full p-4 text-destructive text-center">
+  <div class="mx-auto w-full p-16 text-destructive text-center">
     Error loading tracks: {error}
   </div>
 {:else if tracks.length === 0}

@@ -3,9 +3,10 @@
   import { PlusIcon } from "@lucide/svelte";
   import { innerWidth } from "svelte/reactivity/window";
   import { VirtualScroll } from "../ui/virtual-scroll";
-    import { playerStore } from "$lib/stores/player.svelte";
+  import { playerStore } from "$lib/stores/player.svelte";
 
   interface Props {
+    playlist: PlaylistDetail;
     items: PlaylistItem[];
     hasAddButton?: boolean | null;
     onAddTracks?: () => void;
@@ -17,6 +18,7 @@
   }
 
   let {
+    playlist,
     items,
     hasAddButton = false,
     onAddTracks,
@@ -31,7 +33,7 @@
   const topOffset = $derived(isMobile ? 227 + 6 : 255 + 6);
 
   let virtualScrollRef: VirtualScroll<PlaylistItem> | null = $state(null);
-  
+
   const currentId = $derived(playerStore.currentTrack?.id);
 
   $effect(() => {
@@ -51,7 +53,7 @@
     {topOffset}
     {onScroll}
   >
-    {#snippet children({ item, visibleIndex })}
+    {#snippet children({ item, visibleIndex, actualIndex })}
       {#if showAddButton && onAddTracks && visibleIndex === 0}
         <button
           onclick={onAddTracks}
@@ -71,14 +73,16 @@
         </button>
       {/if}
       <TrackItem
-        index={visibleIndex}
-        playlist={items}
+        index={actualIndex}
+        {playlist}
         isCurrentTrack={item.id === currentId}
         track={item.audio}
         fromQueue={false}
         onRemovedFromPlaylist={onTrackRemovedFromPlaylist}
       />
+      {#if actualIndex === items.length - 1}
+        <div class="h-[50dvh]"></div>
+      {/if}
     {/snippet}
   </VirtualScroll>
-  <div class="h-[50dvh]"></div>
 {/if}

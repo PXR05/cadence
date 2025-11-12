@@ -47,7 +47,12 @@
   <div class="_bg _color absolute inset-0 -z-10"></div>
   <div class="flex items-center justify-between gap-2">
     <h2 class="text-2xl font-semibold p-2">Playlists</h2>
-    <Button href="/settings/audio" variant="outline" size="icon" class="size-11">
+    <Button
+      href="/settings/audio"
+      variant="outline"
+      size="icon"
+      class="size-11"
+    >
       <AudioWaveformIcon />
     </Button>
   </div>
@@ -55,6 +60,9 @@
 
 <ScrollArea class="h-dvh md:border-x">
   <div class="p-2 pt-16 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+    {#each allUserPlaylists as playlist}
+      <PlaylistCard {playlist} size="large" />
+    {/each}
     <button
       onclick={() => (createDialogOpen = true)}
       class="rounded-lg aspect-square w-full flex-shrink-0 border hover:bg-muted/50 transition-colors grid place-items-center"
@@ -66,9 +74,6 @@
         class="text-muted-foreground"
       />
     </button>
-    {#each allUserPlaylists as playlist}
-      <PlaylistCard {playlist} size="large" />
-    {/each}
   </div>
 </ScrollArea>
 
@@ -102,11 +107,7 @@
   ._color {
     &::before,
     &::after {
-      background-color: color-mix(
-        in oklab,
-        var(--background) 50%,
-        transparent
-      );
+      background-color: color-mix(in oklab, var(--background) 50%, transparent);
     }
   }
 

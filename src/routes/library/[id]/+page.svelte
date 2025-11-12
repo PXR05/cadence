@@ -148,8 +148,9 @@
     </div>
 
     <PlaylistTrackList
-      items={filteredTracks}
+      {playlist}
       {hasAddButton}
+      items={filteredTracks}
       onAddTracks={() => addTracksDialog.open()}
       onTrackRemovedFromPlaylist={handleTrackRemovedFromPlaylist}
       onScroll={(scrollTop) => {

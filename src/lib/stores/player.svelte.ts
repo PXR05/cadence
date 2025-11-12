@@ -38,6 +38,7 @@ interface PersistedPlayerState {
   trackQueue: AudioFile[];
   shuffledIndices?: number[];
   queueIndex: number;
+  currentPlaylist: PlaylistDetail | null;
   isShuffled: boolean;
   isRepeated: boolean;
   isMuted: boolean;
@@ -68,6 +69,7 @@ class PlayerState {
       trackColor: "",
       trackQueue: [],
       queueIndex: 0,
+      currentPlaylist: null,
       isShuffled: false,
       isRepeated: false,
       isMuted: false,
@@ -161,6 +163,13 @@ class PlayerState {
   set shuffledIndices(value: number[] | undefined) {
     this.cachedShuffledQueue = null;
     this.persistedState.shuffledIndices = value;
+  }
+  
+  get currentPlaylist() {
+    return this.persistedState.currentPlaylist;
+  }
+  set currentPlaylist(value: PlaylistDetail | null) {
+    this.persistedState.currentPlaylist = value;
   }
 
   get isShuffled() {
@@ -543,6 +552,7 @@ class PlayerState {
   }
 
   setQueue(tracks: AudioFile[], startIndex: number = 0) {
+    this.isShuffled = false;
     this.trackQueue = tracks;
     this.queueIndex = startIndex;
     if (tracks[startIndex]) {
