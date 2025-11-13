@@ -1,4 +1,7 @@
-import { getUserPlaylists, getPlaylistById } from "$lib/api";
+import {
+  getUserPlaylists,
+  getPlaylistById,
+} from "$lib/remote";
 import {
   getPlaylistsCache,
   savePlaylistsCache,
@@ -7,6 +10,7 @@ import {
   deletePlaylistDetail,
   clearPlaylistsCache,
 } from "$lib/db/cache";
+import type { Playlist, PlaylistDetail } from "$lib/schemas";
 
 class PlaylistsStore {
   private _userPlaylists = $state<Playlist[]>([]);
@@ -81,8 +85,8 @@ class PlaylistsStore {
 
     try {
       const [userPlaylists, youtubePlaylists] = await Promise.all([
-        getUserPlaylists("user"),
-        getUserPlaylists("youtube"),
+        getUserPlaylists({ type: "user" }),
+        getUserPlaylists({ type: "youtube" }),
       ]);
 
       this._userPlaylists = userPlaylists;
@@ -114,7 +118,7 @@ class PlaylistsStore {
     this.error = null;
 
     try {
-      const userPlaylists = await getUserPlaylists("user");
+      const userPlaylists = await getUserPlaylists({ type: "user" });
 
       this._userPlaylists = userPlaylists;
       this._lastFetchedAt = new Date().toISOString();
@@ -142,7 +146,7 @@ class PlaylistsStore {
     this.error = null;
 
     try {
-      const youtubePlaylists = await getUserPlaylists("youtube");
+      const youtubePlaylists = await getUserPlaylists({ type: "youtube" });
 
       this._youtubePlaylists = youtubePlaylists;
       this._lastFetchedAt = new Date().toISOString();
@@ -163,8 +167,8 @@ class PlaylistsStore {
   private async shouldRefreshPlaylists(): Promise<boolean> {
     try {
       const [latestUserPlaylists, latestYoutubePlaylists] = await Promise.all([
-        getUserPlaylists("user", 1),
-        getUserPlaylists("youtube", 1),
+        getUserPlaylists({ type: "user", limit: 1 }),
+        getUserPlaylists({ type: "youtube", limit: 1 }),
       ]);
 
       const currentUserCount = this.userPlaylists.length;

@@ -1,9 +1,10 @@
-import { fetchTracks } from "$lib/api";
+import { fetchTracks } from "$lib/remote";
 import {
   getTracksCache,
   saveTracksCache,
   clearTracksCache,
 } from "$lib/db/cache";
+import type { AudioFile } from "$lib/schemas";
 
 class TracksStore {
   private _tracks = $state<AudioFile[]>([]);
@@ -72,7 +73,7 @@ class TracksStore {
       if ("onLine" in navigator && !navigator.onLine) {
         return;
       }
-      
+
       const shouldRefresh = await this.shouldRefreshTracks();
       if (!shouldRefresh) {
         return;

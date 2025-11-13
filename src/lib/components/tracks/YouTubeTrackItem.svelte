@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { YouTubeSearchResult } from "$lib/schemas";
   import { CheckIcon, ClockIcon } from "@lucide/svelte";
 
   interface Props {

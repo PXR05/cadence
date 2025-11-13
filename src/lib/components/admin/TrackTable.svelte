@@ -3,6 +3,7 @@
   import { LoaderIcon, Trash2Icon } from "@lucide/svelte";
   import { TableCell, TableHead, TableRow } from "$lib/components/ui/table";
   import { Button } from "../ui/button";
+  import type { AudioFile } from "$lib/schemas";
 
   interface Props {
     tracks: AudioFile[];

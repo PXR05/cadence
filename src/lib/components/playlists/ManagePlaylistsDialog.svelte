@@ -5,10 +5,11 @@
     getPlaylistById,
     addItemToPlaylist,
     removeItemFromPlaylist,
-  } from "$lib/api";
+  } from "$lib/remote";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
   import { LoaderIcon } from "@lucide/svelte";
   import { SvelteSet } from "svelte/reactivity";
+  import type { Playlist } from "$lib/schemas";
 
   interface Props {
     open: boolean;
@@ -92,14 +93,16 @@
       }
 
       await Promise.all([
-        ...toAdd.map((playlistId) => addItemToPlaylist(playlistId, trackId)),
+        ...toAdd.map((playlistId) =>
+          addItemToPlaylist({ playlistId, audioId: trackId })
+        ),
         ...toRemove.map(async (playlistId) => {
           const details = await getPlaylistById(playlistId);
           const item = details.playlist.items.find(
             (i) => i.audio.id === trackId
           );
           if (item) {
-            return removeItemFromPlaylist(playlistId, item.id);
+            return removeItemFromPlaylist({ playlistId, itemId: item.id });
           }
         }),
       ]);

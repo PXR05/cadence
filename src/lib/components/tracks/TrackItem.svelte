@@ -15,6 +15,7 @@
     CloudOffIcon,
   } from "@lucide/svelte";
   import { onMount } from "svelte";
+  import type { AudioFile, PlaylistDetail } from "$lib/schemas";
 
   interface Props {
     index: number;

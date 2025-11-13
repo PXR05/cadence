@@ -1,7 +1,8 @@
+import type { YouTubeSearchResult } from "$lib/schemas";
 import {
   downloadYoutubeWithProgress,
   type YouTubeProgressEvent,
-} from "$lib/api";
+} from "$lib/utils/youtube";
 import { tracksStore } from "./tracks.svelte";
 
 interface DownloadProgress {

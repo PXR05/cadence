@@ -5,7 +5,7 @@
   import { LoaderIcon, SearchIcon, XIcon } from "@lucide/svelte";
   import TrackItem from "./TrackItem.svelte";
   import YouTubeTrackItem from "./YouTubeTrackItem.svelte";
-  import { searchTracks } from "$lib/api";
+  import { searchTracks } from "$lib/remote";
   import { searchCachedTracks } from "$lib/db/cache";
   import { Input } from "../ui/input";
   import { Button } from "../ui/button";
@@ -13,6 +13,7 @@
   import { playerStore } from "$lib/stores/player.svelte";
   import { youtubeDownloadStore } from "$lib/stores/youtubeDownload.svelte";
   import { searchYoutube } from "$lib/remote/youtube.remote";
+  import type { AudioFile, YouTubeSearchResult } from "$lib/schemas";
 
   const LIMIT = 10;
   const DEBOUNCE_MS = 300;
@@ -54,36 +55,21 @@
     hasSearched = true;
     updateURL(searchQuery);
 
-    const searchPromises = [
-      searchTracks({
-        q: searchQuery.trim(),
-        page: 1,
-        limit: LIMIT,
-      }).catch(async (error) => {
-        console.error("Error searching tracks:", error);
-        try {
-              const cachedResults = await searchCachedTracks(searchQuery.trim(), LIMIT);
-              isOffline = true;
-              return { tracks: cachedResults, hasMore: false, currentPage: 1 };
-          } catch (cacheError) {
-              console.error("Error searching cached tracks:", cacheError);
-              return { tracks: [], hasMore: false, currentPage: 1 };
-          }
-      }),
-      searchYoutube(searchQuery.trim()),
-    ];
-
     try {
-      const results = await Promise.all(searchPromises);
-      const localResult = results[0] as {
-        tracks: AudioFile[];
-        hasMore: boolean;
-        currentPage: number;
-      };
-      const youtubeResult = results[1] as YouTubeSearchResult[];
+      const results = await Promise.all([
+        searchTracks({
+          q: searchQuery.trim(),
+          page: 1,
+          limit: LIMIT,
+        }),
+        searchYoutube(searchQuery.trim()),
+      ]);
+
+      const localResult = results[0];
+      const youtubeResult = results[1];
 
       tracks = localResult.tracks;
-      if (localResult.tracks.length > 0) {
+      if (tracks.length > 0) {
         isOffline = false;
       }
 
@@ -244,7 +230,9 @@
 
           <div class="h-[50dvh]"></div>
         {:else}
-          <div class="h-full flex flex-col items-center justify-center p-8 pb-48 md:pb-36">
+          <div
+            class="h-full flex flex-col items-center justify-center p-8 pb-48 md:pb-36"
+          >
             <p class="text-muted-foreground mb-2">No results found</p>
             <p class="text-sm text-muted-foreground">
               Try a different search query

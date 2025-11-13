@@ -1,16 +1,14 @@
 import { average } from "color.js";
-import { BASE_URL, PLAYLIST_URL } from "$lib/api";
+import { getStreamUrl, getImageUrl, getPlaylistImageUrl } from "$lib/constants";
 import type { CarouselAPI } from "$lib/components/ui/carousel/context";
 import { createNestedLocalStorageState } from "./localStorage.svelte";
 import { getAudioUrl, revokeAudioUrl } from "$lib/utils/offline";
 import Color from "colorjs.io";
 import { updateTrackColor } from "$lib/db/cache";
 import { AudioEngine } from "./audioEngine";
+import type { AudioFile, PlaylistDetail } from "$lib/schemas";
 
-export const getStreamUrl = (id: string) => `${BASE_URL}/${id}/stream`;
-export const getImageUrl = (id: string) => `${BASE_URL}/${id}/image`;
-export const getPlaylistImageUrl = (id: string) =>
-  `${PLAYLIST_URL}/${id}/image`;
+export { getStreamUrl, getImageUrl, getPlaylistImageUrl };
 
 export type FilterType =
   | "lowshelf"
@@ -164,7 +162,7 @@ class PlayerState {
     this.cachedShuffledQueue = null;
     this.persistedState.shuffledIndices = value;
   }
-  
+
   get currentPlaylist() {
     return this.persistedState.currentPlaylist;
   }

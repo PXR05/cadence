@@ -7,8 +7,7 @@
     deleteUser,
     createUser,
     resetUserPassword,
-    type User,
-  } from "$lib/api";
+  } from "$lib/remote";
   import { authStore } from "$lib/stores/auth.svelte";
   import UserTable from "./UserTable.svelte";
   import DeleteUserDialog from "./DeleteUserDialog.svelte";
@@ -16,6 +15,7 @@
   import ChangePasswordDialog from "./ChangePasswordDialog.svelte";
   import ResetPasswordDialog from "./ResetPasswordDialog.svelte";
   import TrackPagination from "./TrackPagination.svelte";
+  import type { User } from "$lib/schemas";
 
   let usersLoading = $state(false);
   let usersInitialLoading = $state(true);
@@ -89,7 +89,7 @@
   async function handleCreateUser(username: string, password: string) {
     usersLoading = true;
     try {
-      await createUser(username, password);
+      await createUser({ username, password });
       await loadUsers(usersCurrentPage);
       setMessage("success", "User created successfully");
     } catch (err) {
@@ -105,7 +105,7 @@
   async function handleChangePassword(
     userId: string,
     currentPassword: string,
-    newPassword: string,
+    newPassword: string
   ) {
     usersLoading = true;
     try {
@@ -124,7 +124,7 @@
   async function handleResetPassword(userId: string, newPassword: string) {
     usersLoading = true;
     try {
-      await resetUserPassword(userId, newPassword);
+      await resetUserPassword({ userId, newPassword });
       setMessage("success", "Password reset successfully");
     } catch (err) {
       const errorMessage =

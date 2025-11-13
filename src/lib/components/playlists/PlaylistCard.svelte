@@ -15,6 +15,7 @@
     YoutubeIcon,
   } from "@lucide/svelte";
   import { SPECIAL_PLAYLIST_IDS } from "$lib/utils/playlist";
+  import type { Playlist } from "$lib/schemas";
 
   interface Props {
     playlist: Playlist;

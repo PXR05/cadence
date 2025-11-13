@@ -3,7 +3,7 @@
   import { Button } from "$lib/components/ui/button";
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { getImageUrl } from "$lib/stores/player.svelte";
-  import { addItemToPlaylist } from "$lib/api";
+  import { addItemToPlaylist } from "$lib/remote";
   import { SearchIcon, LoaderIcon } from "@lucide/svelte";
   import { SvelteSet } from "svelte/reactivity";
 
@@ -61,7 +61,7 @@
     try {
       await Promise.all(
         Array.from(selectedTracks).map((trackId) =>
-          addItemToPlaylist(playlistId, trackId)
+          addItemToPlaylist({ playlistId, audioId: trackId })
         )
       );
       resetDialog();

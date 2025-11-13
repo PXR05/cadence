@@ -7,6 +7,7 @@ import {
   deleteOfflinePlaylist,
   deleteOfflineTrack,
 } from "$lib/db/offline";
+import type { PlaylistDetail } from "$lib/schemas";
 import zip from "jszip";
 
 type DownloadProgress = {

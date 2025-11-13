@@ -4,7 +4,7 @@
   import { LoaderIcon, LogOutIcon } from "@lucide/svelte";
   import { UserManagement, TrackManagement } from "$lib/components/admin";
   import { authStore } from "$lib/stores/auth.svelte";
-  import { getCurrentUser } from "$lib/api";
+  import { getCurrentUser } from "$lib/remote";
   import { Button } from "$lib/components/ui/button";
 
   let isAdmin = $state(false);
@@ -26,9 +26,8 @@
       await trackManagement?.loadTracks();
     } catch {
       goto("/");
-    } finally {
-      loading = false;
     }
+    loading = false;
   });
 
   function switchTab(tab: "users" | "tracks") {
@@ -46,44 +45,39 @@
 </svelte:head>
 
 {#if loading}
-  <div class="flex items-center justify-center h-full">
+  <div class="absolute inset-0 m-auto flex items-center justify-center h-full">
     <LoaderIcon class="animate-spin text-muted-foreground" size={24} />
   </div>
-{:else}
-  <div
-    class="relative flex flex-col mx-auto w-full h-full border-x overflow-y-auto"
-  >
-    <div class="flex border-b sticky top-0 p-2 z-50 gap-2 bg-background">
-      <Button
-        variant={activeTab === "tracks" ? "default" : "outline"}
-        onclick={() => switchTab("tracks")}
-        class="flex-1"
-      >
-        Tracks
-      </Button>
-      <Button
-        variant={activeTab === "users" ? "default" : "outline"}
-        onclick={() => switchTab("users")}
-        class="flex-1"
-      >
-        Users
-      </Button>
-      <Button
-        variant="outline"
-        size="icon"
-        onclick={handleLogout}
-        title="Logout"
-      >
-        <LogOutIcon size={18} />
-      </Button>
-    </div>
-
-    <div class="relative p-2 space-y-2">
-      {#if activeTab === "users"}
-        <UserManagement bind:this={userManagement} />
-      {:else}
-        <TrackManagement bind:this={trackManagement} />
-      {/if}
-    </div>
-  </div>
 {/if}
+<div
+  class="relative flex flex-col mx-auto w-full h-full border-x overflow-y-auto
+  {loading ? 'opacity-0 scale-0' : ''}"
+>
+  <div class="flex border-b sticky top-0 p-2 z-50 gap-2 bg-background">
+    <Button
+      variant={activeTab === "tracks" ? "default" : "outline"}
+      onclick={() => switchTab("tracks")}
+      class="flex-1"
+    >
+      Tracks
+    </Button>
+    <Button
+      variant={activeTab === "users" ? "default" : "outline"}
+      onclick={() => switchTab("users")}
+      class="flex-1"
+    >
+      Users
+    </Button>
+    <Button variant="outline" size="icon" onclick={handleLogout} title="Logout">
+      <LogOutIcon size={18} />
+    </Button>
+  </div>
+
+  <div class="relative p-2 space-y-2">
+    {#if activeTab === "users"}
+      <UserManagement bind:this={userManagement} />
+    {:else}
+      <TrackManagement bind:this={trackManagement} />
+    {/if}
+  </div>
+</div>

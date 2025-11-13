@@ -1,5 +1,6 @@
 import { cacheDb } from "$lib/db/cache";
 import { db as offlineDB } from "$lib/db/offline";
+import type { Playlist } from "$lib/schemas";
 import { tracksStore } from "$lib/stores/tracks.svelte";
 
 export function getPlaylistDisplayName(playlist: Playlist): string {

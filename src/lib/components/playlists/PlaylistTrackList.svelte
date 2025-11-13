@@ -4,6 +4,7 @@
   import { innerWidth } from "svelte/reactivity/window";
   import { VirtualScroll } from "../ui/virtual-scroll";
   import { playerStore } from "$lib/stores/player.svelte";
+  import type { PlaylistDetail, PlaylistItem } from "$lib/schemas";
 
   interface Props {
     playlist: PlaylistDetail;

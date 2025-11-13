@@ -1,6 +1,9 @@
 import "dotenv/config";
 import { query } from "$app/server";
 import * as v from "valibot";
+import {
+  type YouTubeSearchResult,
+} from "$lib/schemas/youtube";
 
 const schema = v.object({
   id: v.object({
@@ -44,10 +47,12 @@ export const searchYoutube = query(v.string(), async (query) => {
   const data = await response.json();
   const validatedData = v.parse(v.array(schema), data.items);
 
-  return validatedData.map((item: any) => ({
+  const results: YouTubeSearchResult[] = validatedData.map((item: any) => ({
     videoId: item.id.videoId,
     title: item.snippet.title,
     artist: item.snippet.channelTitle,
     thumbnail: item.snippet.thumbnails.medium.url,
   }));
+
+  return results;
 });

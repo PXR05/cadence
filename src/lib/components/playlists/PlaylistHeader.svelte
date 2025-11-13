@@ -32,6 +32,7 @@
   import EditPlaylistDialog from "./EditPlaylistDialog.svelte";
   import { youtubeDownloadStore } from "$lib/stores/youtubeDownload.svelte";
   import { toast } from "svelte-sonner";
+  import type { Playlist, PlaylistDetail } from "$lib/schemas";
 
   interface Props {
     playlist: PlaylistDetail;

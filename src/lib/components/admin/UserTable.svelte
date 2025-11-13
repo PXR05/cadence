@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { User } from "$lib/api";
   import { Button } from "$lib/components/ui/button";
   import { TableCell, TableHead, TableRow } from "$lib/components/ui/table";
+  import type { User } from "$lib/schemas";
   import {
     Trash2Icon,
     LoaderIcon,

@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as Dialog from "$lib/components/ui/dialog";
   import { Button } from "$lib/components/ui/button";
-  import { createPlaylist } from "$lib/api";
+  import { createPlaylist } from "$lib/remote";
 
   interface Props {
     open: boolean;
@@ -22,7 +22,7 @@
     error = "";
 
     try {
-      await createPlaylist(playlistName.trim());
+      await createPlaylist({ name: playlistName.trim() });
       resetDialog();
       onOpenChange(false);
       onCreated?.();

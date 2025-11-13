@@ -2,13 +2,14 @@
   import { toast } from "svelte-sonner";
   import { MusicIcon } from "@lucide/svelte";
   import { Button } from "$lib/components/ui/button";
-  import { fetchTracks, deleteTrack } from "$lib/api";
+  import { fetchTracks, deleteTrack } from "$lib/remote";
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { youtubeDownloadStore } from "$lib/stores/youtubeDownload.svelte";
   import TrackTable from "./TrackTable.svelte";
   import DeleteTrackDialog from "./DeleteTrackDialog.svelte";
   import AddTrackDialog from "./AddTrackDialog.svelte";
   import TrackPagination from "./TrackPagination.svelte";
+  import type { AudioFile } from "$lib/schemas";
 
   let tracksLoading = $state(false);
   let tracksInitialLoading = $state(true);
@@ -72,7 +73,7 @@
 
   async function handleUploadComplete(
     successCount: number,
-    totalCount: number,
+    totalCount: number
   ) {
     setMessage("success", `Uploaded ${successCount}/${totalCount} files`);
     await loadTracks(tracksCurrentPage);

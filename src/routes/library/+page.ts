@@ -2,6 +2,7 @@ export const prerender = true;
 export const ssr = false;
 
 import { browser } from "$app/environment";
+import type { Playlist } from "$lib/schemas";
 import { playlistsStore } from "$lib/stores/playlists.svelte";
 import { getSpecialPlaylists } from "$lib/utils/playlist";
 

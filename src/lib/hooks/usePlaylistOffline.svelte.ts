@@ -1,3 +1,4 @@
+import type { PlaylistDetail } from "$lib/schemas";
 import { downloadStore } from "$lib/stores/download.svelte";
 
 export function usePlaylistOffline(getPlaylistId: () => string | undefined) {

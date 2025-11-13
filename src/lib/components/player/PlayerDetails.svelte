@@ -6,6 +6,7 @@
   import { Button } from "../ui/button";
   import * as Carousel from "../ui/carousel";
   import type { CarouselAPI } from "../ui/carousel/context";
+  import type { AudioFile } from "$lib/schemas";
 
   interface Props {
     track: AudioFile;

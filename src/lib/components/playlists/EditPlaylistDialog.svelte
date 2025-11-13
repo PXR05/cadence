@@ -1,9 +1,13 @@
 <script lang="ts">
-  import { updatePlaylist, deletePlaylist } from "$lib/api";
+  import {
+    updatePlaylist,
+    deletePlaylist,
+  } from "$lib/remote";
   import { Button } from "$lib/components/ui/button";
   import * as Dialog from "$lib/components/ui/dialog";
   import * as AlertDialog from "$lib/components/ui/alert-dialog";
   import { LoaderIcon, TrashIcon, ImageIcon } from "@lucide/svelte";
+  import type { PlaylistDetail } from "$lib/schemas";
 
   interface Props {
     open: boolean;
@@ -53,11 +57,11 @@
 
     editLoading = true;
     try {
-      const response = await updatePlaylist(
-        playlist.id,
-        editName.trim(),
-        editCoverImageFile || undefined
-      );
+      const response = await updatePlaylist({
+        id: playlist.id,
+        name: editName.trim(),
+        coverImage: editCoverImageFile || undefined,
+      });
 
       onUpdated({
         name: response.playlist.name,

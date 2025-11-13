@@ -17,6 +17,7 @@
   } from "$lib/components";
   import PlaylistSearch from "$lib/components/playlists/PlaylistSearch.svelte";
   import { innerWidth } from "svelte/reactivity/window";
+  import type { PlaylistItem, Playlist } from "$lib/schemas";
 
   let { data } = $props();
 
