@@ -45,7 +45,7 @@
 <div style="--h: 4rem;" class="p-2 absolute top-0 left-0 right-0 z-30">
   <div class="_bg _blur absolute inset-0 -z-10"></div>
   <div class="_bg _color absolute inset-0 -z-10"></div>
-  <div class="flex items-center justify-between gap-2">
+  <div class="flex items-start justify-between gap-2">
     <h2 class="text-2xl font-semibold p-2">Playlists</h2>
     <Button
       href="/settings/audio"
@@ -59,7 +59,9 @@
 </div>
 
 <ScrollArea class="h-dvh md:border-x">
-  <div class="p-2 pt-16 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+  <div
+    class="p-2 pt-16 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
+  >
     {#each allUserPlaylists as playlist}
       <PlaylistCard {playlist} size="large" />
     {/each}

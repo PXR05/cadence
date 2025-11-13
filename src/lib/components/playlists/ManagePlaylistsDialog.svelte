@@ -1,15 +1,17 @@
 <script lang="ts">
   import * as Dialog from "$lib/components/ui/dialog";
   import { Button } from "$lib/components/ui/button";
+  import { VirtualScroll } from "$lib/components/ui/virtual-scroll";
   import {
     getPlaylistById,
     addItemToPlaylist,
     removeItemFromPlaylist,
   } from "$lib/remote";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
-  import { LoaderIcon } from "@lucide/svelte";
+  import { LoaderIcon, ChevronDown } from "@lucide/svelte";
   import { SvelteSet } from "svelte/reactivity";
   import type { Playlist } from "$lib/schemas";
+  import { invalidateAll } from "$app/navigation";
 
   interface Props {
     open: boolean;
@@ -26,6 +28,7 @@
   let originalPlaylistsWithTrack = $state(new SvelteSet<string>());
   let loading = $state(true);
   let saving = $state(false);
+  let virtualScroll: any = $state(null);
 
   $effect(() => {
     if (open) {
@@ -37,7 +40,9 @@
     loading = true;
     try {
       await playlistsStore.loadUserPlaylists();
-      playlists = playlistsStore.userPlaylists;
+      playlists = playlistsStore.userPlaylists.concat(
+        playlistsStore.youtubePlaylists
+      );
 
       const trackInPlaylists = new SvelteSet<string>();
       await Promise.all(
@@ -107,9 +112,17 @@
         }),
       ]);
 
-      playlistsStore.invalidate();
+      await Promise.all([
+        ...toAdd.map(async (playlistId) => {
+          await playlistsStore.invalidatePlaylistDetail(playlistId);
+        }),
+        ...toRemove.map(async (playlistId) => {
+          await playlistsStore.invalidatePlaylistDetail(playlistId);
+        }),
+      ]);
 
-      onSuccess?.(toRemove);
+      await invalidateAll();
+
       handleOpenChange(false);
     } catch (error) {
       console.error("Failed to update playlists:", error);
@@ -126,62 +139,112 @@
     JSON.stringify([...playlistsWithTrack].sort()) !==
       JSON.stringify([...originalPlaylistsWithTrack].sort())
   );
+  const ROW_HEIGHT = 56;
 </script>
 
 <Dialog.Root {open} onOpenChange={handleOpenChange}>
-  <Dialog.Content class="sm:max-w-md p-4">
-    <Dialog.Header class="text-left truncate">
-      <Dialog.Title>Add to Playlists</Dialog.Title>
-      <Dialog.Description class="truncate">
-        {trackTitle}
-      </Dialog.Description>
-    </Dialog.Header>
+  <Dialog.Content
+    showCloseButton={false}
+    class="md:max-w-2xl h-dvh md:h-[90dvh] overflow-clip max-w-dvw flex flex-col z-60 p-0 max-md:border-0 rounded-none md:rounded-2xl bg-muted/80 dark:bg-muted/50 backdrop-blur-xl"
+  >
+    <div
+      class="absolute top-1.5 left-1.5 right-1.5 z-10 rounded-xl bg-muted/50 backdrop-blur-md border border-input/15 px-2 py-3 flex justify-between items-start"
+    >
+      <Dialog.Close
+        class="opacity-70 transition-opacity hover:opacity-100 my-auto size-8 grid place-items-center"
+      >
+        <ChevronDown />
+      </Dialog.Close>
 
-    <div class="space-y-4 truncate">
-      {#if loading}
-        <div class="flex items-center justify-center p-8">
-          <LoaderIcon class="animate-spin text-muted-foreground" size={24} />
-        </div>
-      {:else if playlists.length === 0}
-        <p class="text-center text-muted-foreground text-sm p-8">
-          No playlists found. Create a playlist first.
-        </p>
-      {:else}
-        <div class="border max-h-64 overflow-y-auto">
-          {#each playlists as playlist (playlist.id)}
-            {@const isSelected = playlistsWithTrack.has(playlist.id)}
-            <button
-              onclick={() => togglePlaylist(playlist.id)}
-              class="w-full flex items-center gap-3 p-3 border-b hover:bg-muted/30 transition-colors text-left truncate"
-              class:bg-muted={isSelected}
-              disabled={saving}
-            >
-              <div class="size-4 border flex-shrink-0 grid place-items-center">
-                {#if isSelected}
-                  <div class="size-2 bg-primary"></div>
-                {/if}
-              </div>
-              <div class="flex-1 min-w-0 truncate">
-                <p class="text-sm font-medium truncate">{playlist.name}</p>
-                <p class="text-xs text-muted-foreground">
-                  {playlist.itemCount ?? 0} tracks
-                </p>
-              </div>
-            </button>
-          {/each}
-        </div>
-      {/if}
+      <Dialog.Header>
+        <Dialog.Title class="text-center">Add to Playlists</Dialog.Title>
+        <Dialog.Description class="truncate text-center">
+          {trackTitle}
+        </Dialog.Description>
+      </Dialog.Header>
+
+      <Dialog.Close class="opacity-0 pointer-events-none">
+        <ChevronDown />
+      </Dialog.Close>
     </div>
 
-    <div class="flex gap-2 justify-end">
+    {#if loading}
+      <div
+        class="flex items-center justify-center flex-1 text-muted-foreground"
+      >
+        <LoaderIcon class="animate-spin" size={24} />
+      </div>
+    {:else if playlists.length === 0}
+      <div class="flex items-center justify-center flex-1 p-8">
+        <p class="text-center text-muted-foreground text-sm">
+          No playlists found. Create a playlist first.
+        </p>
+      </div>
+    {:else}
+      <VirtualScroll
+        bind:this={virtualScroll}
+        items={playlists}
+        rowHeight={ROW_HEIGHT}
+        class="h-dvh md:max-h-[90dvh-1rem]"
+        topOffset={82}
+        leftPadding={8}
+        rightPadding={8}
+        itemGap={4}
+        getItemKey={(playlist) => playlist.id}
+      >
+        {#snippet emptyState()}
+          <div class="text-center py-8 text-muted-foreground pt-15.5">
+            No playlists available
+          </div>
+        {/snippet}
+
+        {#snippet children({ item: playlist, actualIndex })}
+          {@const isSelected = playlistsWithTrack.has(playlist.id)}
+
+          <Button
+            variant="ghost"
+            onclick={() => togglePlaylist(playlist.id)}
+            disabled={saving}
+            class="h-auto !transition-none w-full flex items-center gap-3 p-2 text-left group
+              {isSelected ? 'bg-muted/70' : ''} {actualIndex ===
+            playlists.length - 1
+              ? 'mb-20'
+              : ''}"
+          >
+            <div
+              class="size-4 border-2 border-muted-foreground flex-shrink-0 grid place-items-center rounded-sm"
+            >
+              {#if isSelected}
+                <div class="size-2 bg-primary rounded-sm"></div>
+              {/if}
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="font-medium truncate text-sm">{playlist.name}</p>
+              <p class="text-xs text-muted-foreground truncate">
+                {playlist.itemCount ?? 0} tracks
+              </p>
+            </div>
+          </Button>
+        {/snippet}
+      </VirtualScroll>
+    {/if}
+
+    <div
+      class="absolute bottom-1.5 left-1.5 right-1.5 z-10 rounded-xl bg-muted/50 backdrop-blur-md border border-input/15 p-1.5 flex gap-1.5"
+    >
       <Button
         variant="outline"
         onclick={() => handleOpenChange(false)}
         disabled={saving}
+        class="dark:bg-muted h-11 flex-1"
       >
         Cancel
       </Button>
-      <Button onclick={handleSave} disabled={!hasChanges || saving}>
+      <Button
+        onclick={handleSave}
+        disabled={!hasChanges || saving}
+        class="h-11 flex-1"
+      >
         {#if saving}
           <LoaderIcon class="animate-spin" size={14} />
           Saving...

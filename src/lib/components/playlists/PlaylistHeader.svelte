@@ -48,7 +48,7 @@
   const isNonModifiable = $derived(
     isSpecialPlaylist(playlist.id) ||
       isArtistPlaylist(playlist.id) ||
-      isAlbumPlaylist(playlist.id),
+      isAlbumPlaylist(playlist.id)
   );
 
   $effect(() => {
@@ -67,7 +67,7 @@
   }) {
     navigationStore.setNavigation(
       [{ label: "Library", path: "/library" }],
-      getPlaylistDisplayName({ name: updated.name } as Playlist),
+      getPlaylistDisplayName({ name: updated.name } as Playlist)
     );
     await playlistsStore.invalidatePlaylistDetail(playlistId);
     playlistsStore.invalidate();
@@ -83,7 +83,7 @@
   async function handlePlaylistResync() {
     try {
       await youtubeDownloadStore.downloadFromUrl(
-        `https://music.youtube.com/playlist?list=${playlistId.replace("youtube_", "")}`,
+        `https://music.youtube.com/playlist?list=${playlistId.replace("youtube_", "")}`
       );
       toast.success("Resynced from YouTube");
     } catch (error) {
@@ -99,12 +99,12 @@
 <div
   class="flex-1 flex items-end rounded-xl border transition-all duration-200
   {isScrolled
-    ? 'bg-muted/50 backdrop-blur-md border-input p-2'
+    ? 'bg-muted-foreground/10 dark:bg-muted/50 backdrop-blur-md border-input/15 p-2'
     : 'border-transparent'}"
 >
   <div
     class="border flex-shrink-0 overflow-hidden bg-muted relative grid place-items-center rounded-xl transition-all duration-200
-    {isScrolled ? 'size-0' : 'size-40 md:size-48'}"
+    {isScrolled ? 'size-0' : 'size-40 md:size-64'}"
     style="transform: scale({isScrolled ? 0 : 1});
     opacity: {isScrolled ? 0 : 1};"
   >
@@ -167,7 +167,7 @@
 
   <div
     class="relative w-full flex justify-between sm:items-end gap-2 truncate transition-all duration-200
-    {isScrolled ? 'flex-row items-center h-9' : 'h-40 md:h-48 ml-2'}"
+    {isScrolled ? 'flex-row items-center h-9' : 'h-40 md:h-64 ml-2'}"
   >
     <Button
       variant={isScrolled ? "ghost" : "outline"}

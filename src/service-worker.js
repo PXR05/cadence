@@ -33,63 +33,16 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(deleteOldCaches());
 });
 
-self.addEventListener("fetch", (event) => {
+self.addEventListener("fetch", async (event) => {
   if (event.request.method !== "GET") return;
 
-  async function respond() {
-    const url = new URL(event.request.url);
-    const cache = await caches.open(CACHE);
+  const url = new URL(event.request.url);
+  const cache = await caches.open(CACHE);
 
-    if (ASSETS.includes(url.pathname)) {
-      const cachedResponse = await cache.match(url.pathname);
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-    }
-
-    const isSameOrigin = url.origin === self.location.origin;
-    const isImageApiRequest =
-      isSameOrigin &&
-      /\/api\/.*\/(image|thumbnail|artwork|cover|art)/.test(url.pathname);
-
-    if (isImageApiRequest) {
-      const cachedResponse = await cache.match(event.request);
-      if (cachedResponse) {
-        fetch(event.request)
-          .then((response) => {
-            if (response && response.status === 200) {
-              cache.put(event.request, response.clone());
-            }
-          })
-          .catch(() => {});
-        return cachedResponse;
-      }
-    }
-
-    try {
-      const response = await fetch(event.request);
-
-      if (!(response instanceof Response)) {
-        throw new Error("invalid response from fetch");
-      }
-
-      if (response.status === 200 && isImageApiRequest) {
-        cache.put(event.request, response.clone());
-      }
-
-      return response;
-    } catch (err) {
-      if (isImageApiRequest) {
-        const cachedResponse = await cache.match(event.request);
-
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-      }
-
-      throw err;
+  if (ASSETS.includes(url.pathname)) {
+    const cachedResponse = await cache.match(url.pathname);
+    if (cachedResponse) {
+      event.respondWith(cachedResponse);
     }
   }
-
-  event.respondWith(respond());
 });

@@ -133,7 +133,7 @@
 
     const clampedTranslate = Math.max(
       0,
-      Math.min(closedPosition, newTranslate),
+      Math.min(closedPosition, newTranslate)
     );
 
     translateSpring.set(clampedTranslate, { instant: true });
@@ -268,7 +268,7 @@
   <div class="select-none h-[calc(100dvh+5rem)]">
     <div
       bind:this={playerBarElement}
-      class="mx-1.5 rounded-xl overflow-clip border border-input bg-muted/50 backdrop-blur-md"
+      class="mx-1.5 rounded-xl overflow-clip border border-input/15 bg-muted-foreground/10 dark:bg-muted/50 backdrop-blur-md"
       style="opacity: {playerBarOpacity};"
       role="button"
       tabindex="0"

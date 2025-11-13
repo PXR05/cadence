@@ -13,7 +13,7 @@
 </script>
 
 <div
-  class="flex items-center relative bg-muted/50 backdrop-blur-md rounded-xl overflow-clip border border-input"
+  class="flex items-center relative bg-muted-foreground/10 dark:bg-muted/50 backdrop-blur-md rounded-xl overflow-clip border border-input/15"
 >
   <SearchIcon
     size={16}

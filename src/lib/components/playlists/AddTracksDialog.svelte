@@ -1,31 +1,30 @@
 <script lang="ts">
   import * as Dialog from "$lib/components/ui/dialog";
   import { Button } from "$lib/components/ui/button";
+  import { Input } from "$lib/components/ui/input";
+  import { VirtualScroll } from "$lib/components/ui/virtual-scroll";
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { getImageUrl } from "$lib/stores/player.svelte";
   import { addItemToPlaylist } from "$lib/remote";
-  import { SearchIcon, LoaderIcon } from "@lucide/svelte";
+  import { SearchIcon, LoaderIcon, XIcon, ChevronDown } from "@lucide/svelte";
   import { SvelteSet } from "svelte/reactivity";
+  import { playlistsStore } from "$lib/stores/playlists.svelte";
+  import { invalidateAll } from "$app/navigation";
 
   interface Props {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     playlistId: string;
     existingTrackIds: Set<string>;
-    onTracksAdded?: () => void;
   }
 
-  let {
-    open,
-    onOpenChange,
-    playlistId,
-    existingTrackIds,
-    onTracksAdded,
-  }: Props = $props();
+  let { open, onOpenChange, playlistId, existingTrackIds }: Props = $props();
 
   let selectedTracks = $state(new SvelteSet<string>());
   let searchQuery = $state("");
   let loading = $state(false);
+  let virtualScroll: any = $state(null);
+  let searchInput: HTMLInputElement | null = $state(null);
 
   const tracks = $derived(tracksStore.tracks);
   const availableTracks = $derived(
@@ -64,9 +63,12 @@
           addItemToPlaylist({ playlistId, audioId: trackId })
         )
       );
+
+      await playlistsStore.invalidatePlaylistDetail(playlistId);
+      await invalidateAll();
+
       resetDialog();
       onOpenChange(false);
-      onTracksAdded?.();
     } catch (error) {
       console.error("Failed to add tracks:", error);
     } finally {
@@ -87,94 +89,151 @@
   }
 
   const isValid = $derived(selectedTracks.size > 0 && !loading);
+  const isEmpty = $derived(searchQuery.trim().length === 0);
+  const ROW_HEIGHT = 68;
+
+  function clearSearch() {
+    searchQuery = "";
+  }
 </script>
 
 <Dialog.Root {open} onOpenChange={handleOpenChange}>
   <Dialog.Content
-    class="md:max-w-2xl h-dvh md:max-h-[90dvh] sm:max-w-dvw max-w-dvw flex flex-col p-0"
+    showCloseButton={false}
+    style="--h: 10rem;"
+    class="md:max-w-2xl h-dvh md:h-[90dvh] overflow-clip max-w-dvw flex flex-col z-60 p-0 max-md:border-0 rounded-none md:rounded-2xl bg-muted/80 dark:bg-muted/50 backdrop-blur-xl"
   >
-    <Dialog.Header class="p-6 pb-4 text-left">
-      <Dialog.Title>Add Tracks</Dialog.Title>
-    </Dialog.Header>
+    <div class="_bg _color absolute inset-0 z-10 pointer-events-none"></div>
+    <div
+      class="absolute top-1.5 left-1.5 right-1.5 z-10 rounded-xl bg-muted/50 backdrop-blur-md border border-input/15 flex flex-col"
+    >
+      <div class="px-2 py-3 flex justify-between items-center">
+        <Dialog.Close
+          class="opacity-70 transition-opacity hover:opacity-100 my-auto size-8 grid place-items-center"
+        >
+          <ChevronDown />
+        </Dialog.Close>
 
-    <div class="flex-1 overflow-y-auto px-4 space-y-4">
-      <div class="relative">
+        <Dialog.Header>
+          <Dialog.Title class="text-center">Add to Tracks</Dialog.Title>
+        </Dialog.Header>
+
+        <Dialog.Close class="opacity-0 pointer-events-none">
+          <ChevronDown />
+        </Dialog.Close>
+      </div>
+      <div class="flex items-center p-1.5">
         <SearchIcon
           size={16}
-          class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+          class="absolute transition-all text-muted-foreground flex-shrink-0
+          {!isEmpty ? 'opacity-0' : ''}"
+          style="transform: translateX({!isEmpty ? '0' : '0.75rem'})"
         />
-        <input
-          type="text"
+        <Input
+          bind:ref={searchInput}
           bind:value={searchQuery}
-          placeholder="Search tracks..."
-          class="w-full pl-9 pr-3 py-2 text-sm border bg-background"
+          type="text"
+          placeholder="search..."
+          class="flex-1 text-base h-auto transition-all px-3 py-4 outline-none 
+          backdrop-blur-md !bg-muted-foreground/10 rounded-xl border border-input/15
+            {!isEmpty ? '' : 'pl-9'}"
           disabled={loading}
         />
-      </div>
-
-      {#if selectedTracks.size > 0}
-        <p class="text-sm text-muted-foreground">
-          {selectedTracks.size} track{selectedTracks.size !== 1 ? "s" : ""} selected
-        </p>
-      {/if}
-
-      <div
-        class="border overflow-y-auto
-        {selectedTracks.size === 0
-          ? 'h-[calc(100dvh-12.5rem)] md:h-[calc(90dvh-12.5rem)]'
-          : 'h-[calc(100dvh-15rem)] md:h-[calc(90dvh-15rem)]'}"
-      >
-        {#if filteredTracks.length === 0}
-          <div class="p-8 text-center text-muted-foreground text-sm">
-            {#if availableTracks.length === 0}
-              All tracks are already in this playlist
-            {:else}
-              No tracks found
-            {/if}
-          </div>
-        {:else}
-          {#each filteredTracks as track (track.id)}
-            {@const isSelected = selectedTracks.has(track.id)}
-            {@const title = track.metadata?.title || track.filename}
-            {@const artist = track.metadata?.artist || "Unknown"}
-            <button
-              onclick={() => toggleTrack(track.id)}
-              class="w-full flex items-center gap-3 p-3 border-b hover:bg-muted/30 text-left"
-              class:bg-muted={isSelected}
-              disabled={loading}
-            >
-              <div class="size-4 border flex-shrink-0 grid place-items-center">
-                {#if isSelected}
-                  <div class="size-2 bg-primary"></div>
-                {/if}
-              </div>
-              <div class="size-12 border flex-shrink-0 overflow-hidden">
-                <img
-                  loading="lazy"
-                  src={getImageUrl(track.id)}
-                  alt={track.id}
-                  class="size-full object-cover"
-                />
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium truncate">{title}</p>
-                <p class="text-xs text-muted-foreground truncate">{artist}</p>
-              </div>
-            </button>
-          {/each}
-        {/if}
+        <Button
+          variant="ghost"
+          size="icon"
+          class="text-muted-foreground absolute right-1 rounded-lg
+            {isEmpty ? 'opacity-0' : ''}"
+          style="transform: translateX({isEmpty ? '0.5rem' : '0rem'})"
+          onclick={clearSearch}
+          disabled={isEmpty || loading}
+        >
+          {#if !isEmpty}
+            <XIcon size={16} />
+          {/if}
+        </Button>
       </div>
     </div>
 
-    <div class="p-4 pt-0 flex gap-2 justify-end">
+    <VirtualScroll
+      bind:this={virtualScroll}
+      items={filteredTracks}
+      rowHeight={ROW_HEIGHT}
+      class="h-dvh md:max-h-[90dvh-1rem]"
+      topOffset={68}
+      leftPadding={8}
+      rightPadding={8}
+      itemGap={4}
+      getItemKey={(track) => track.id}
+    >
+      {#snippet emptyState()}
+        <div class="text-center py-8 text-muted-foreground pt-15.5">
+          {#if availableTracks.length === 0}
+            All tracks are already in this playlist
+          {:else if searchQuery.trim()}
+            No tracks found
+          {:else}
+            No tracks available
+          {/if}
+        </div>
+      {/snippet}
+
+      {#snippet children({ item: track, actualIndex })}
+        {@const isSelected = selectedTracks.has(track.id)}
+        {@const title = track.metadata?.title || track.filename}
+        {@const artist = track.metadata?.artist || "Unknown"}
+
+        <Button
+          variant="ghost"
+          onclick={() => toggleTrack(track.id)}
+          disabled={loading}
+          class="h-auto !transition-none w-full flex items-center gap-3 p-2 text-left group
+            {isSelected ? 'bg-muted/70' : ''} 
+            {actualIndex === filteredTracks.length - 1 ? 'mb-20' : ''}"
+        >
+          <div
+            class="size-4 border-2 border-muted-foreground flex-shrink-0 grid place-items-center rounded-sm"
+          >
+            {#if isSelected}
+              <div class="size-2 bg-primary rounded-sm"></div>
+            {/if}
+          </div>
+
+          <div
+            class="size-12 border flex-shrink-0 overflow-hidden rounded-md bg-muted"
+          >
+            <img
+              loading="lazy"
+              src={getImageUrl(track.id)}
+              alt={title}
+              class="size-full object-cover"
+            />
+          </div>
+
+          <div class="flex-1 min-w-0">
+            <p class="font-medium truncate text-sm">
+              {title}
+            </p>
+            <p class="text-xs truncate text-muted-foreground">
+              {artist}
+            </p>
+          </div>
+        </Button>
+      {/snippet}
+    </VirtualScroll>
+
+    <div
+      class="absolute bottom-1.5 left-1.5 right-1.5 z-10 rounded-xl bg-muted/50 backdrop-blur-md border border-input/15 p-1.5 flex gap-1.5"
+    >
       <Button
         variant="outline"
         onclick={() => handleOpenChange(false)}
         disabled={loading}
+        class="dark:bg-muted h-11 flex-1 "
       >
         Cancel
       </Button>
-      <Button onclick={handleAdd} disabled={!isValid}>
+      <Button onclick={handleAdd} disabled={!isValid} class="h-11 flex-1">
         {#if loading}
           <LoaderIcon class="animate-spin" size={14} />
           Adding...
@@ -185,3 +244,39 @@
     </div>
   </Dialog.Content>
 </Dialog.Root>
+
+<style>
+  ._bg {
+    &::before,
+    &::after {
+      pointer-events: none;
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: -1;
+      mask: linear-gradient(to top, transparent, black);
+    }
+    &::before {
+      height: var(--h);
+    }
+    &::after {
+      height: calc(var(--h) - 1rem);
+    }
+  }
+
+  ._color {
+    &::before,
+    &::after {
+      background-color: var(--background);
+    }
+  }
+
+  /* ._blur {
+    &::before,
+    &::after {
+      backdrop-filter: blur(1rem) saturate(120%) contrast(120%) brightness(120%);
+    }
+  } */
+</style>

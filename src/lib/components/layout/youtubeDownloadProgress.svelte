@@ -22,7 +22,7 @@
 
 {#if progress}
   <div
-    class="border rounded-xl overflow-clip border-input bg-muted/50 backdrop-blur-md mx-1.5"
+    class="border rounded-xl overflow-clip border-input/15 bg-muted-foreground/10 dark:bg-muted/50 backdrop-blur-md mx-1.5"
   >
     <div class="flex items-center justify-between p-3 gap-2">
       <div class="flex-1 min-w-0">
@@ -71,7 +71,8 @@
       <AlertDialog.Description>
         Are you sure you want to cancel this download?
         {#if queueCount > 0}
-          There {queueCount === 1 ? 'is' : 'are'} {queueCount} more {queueCount === 1 ? 'video' : 'videos'} in the queue.
+          There {queueCount === 1 ? "is" : "are"}
+          {queueCount} more {queueCount === 1 ? "video" : "videos"} in the queue.
         {/if}
       </AlertDialog.Description>
     </AlertDialog.Header>
@@ -83,4 +84,3 @@
     </AlertDialog.Footer>
   </AlertDialog.Content>
 </AlertDialog.Root>
-

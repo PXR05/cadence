@@ -151,7 +151,7 @@
   <div class="_bg _color absolute inset-0 -z-10"></div>
   <h2 class="text-2xl font-semibold p-2">Search</h2>
   <div
-    class="mt-2 flex items-center relative bg-muted/50 backdrop-blur-md rounded-xl overflow-clip border border-input"
+    class="mt-2 flex items-center relative bg-muted-foreground/10 dark:bg-muted/50 backdrop-blur-md rounded-xl overflow-clip border border-input/15"
   >
     <SearchIcon
       size={16}

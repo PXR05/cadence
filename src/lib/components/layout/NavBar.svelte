@@ -177,7 +177,7 @@
   <nav
     bind:this={navElement}
     onpointermove={handlePointerMove}
-    class="overflow-clip mx-auto flex rounded-xl border border-input bg-muted/50 backdrop-blur-md relative p-1.5 gap-1.5 select-none
+    class="overflow-clip mx-auto flex rounded-xl border border-input/15 bg-muted-foreground/10 dark:bg-muted/50 backdrop-blur-md relative p-1.5 gap-1.5 select-none
       {orientation === 'horizontal' ? 'flex-row w-full' : 'flex-col h-full'}"
   >
     {#if activeTabIndex >= 0}
@@ -187,7 +187,9 @@
         onpointerup={handleIndicatorPointerUp}
         onpointercancel={handleIndicatorPointerUp}
         class="absolute rounded-lg bg-primary touch-none cursor-grab active:cursor-grabbing z-10 transition-all duration-100 ease-out-back
-        {isDragging ? 'opacity-90 scale-y-90' : 'pointer-events-auto'}"
+        {isDragging
+          ? 'opacity-90 max-md:scale-y-90 md:scale-x-90'
+          : 'pointer-events-auto'}"
         style={orientation === "horizontal"
           ? `
             top: 0.375rem;

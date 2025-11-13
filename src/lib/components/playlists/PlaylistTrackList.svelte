@@ -11,10 +11,6 @@
     items: PlaylistItem[];
     hasAddButton?: boolean | null;
     onAddTracks?: () => void;
-    onTrackRemovedFromPlaylist?: (
-      trackId: string,
-      removedFromPlaylists: string[],
-    ) => void;
     onScroll?: (scrollTop: number) => void;
   }
 
@@ -23,7 +19,6 @@
     items,
     hasAddButton = false,
     onAddTracks,
-    onTrackRemovedFromPlaylist,
     onScroll,
   }: Props = $props();
 
@@ -31,7 +26,7 @@
 
   const ROW_HEIGHT = 81;
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
-  const topOffset = $derived(isMobile ? 227 + 6 : 255 + 6);
+  const topOffset = $derived(isMobile ? 227 + 6 : 255 + 64 + 6);
 
   let virtualScrollRef: VirtualScroll<PlaylistItem> | null = $state(null);
 
@@ -79,7 +74,6 @@
         isCurrentTrack={item.id === currentId}
         track={item.audio}
         fromQueue={false}
-        onRemovedFromPlaylist={onTrackRemovedFromPlaylist}
       />
       {#if actualIndex === items.length - 1}
         <div class="h-[50dvh]"></div>

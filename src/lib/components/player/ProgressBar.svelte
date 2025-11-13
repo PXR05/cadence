@@ -97,7 +97,7 @@
   aria-valuenow={displayTime}
 >
   <div
-    class="absolute inset-0 pointer-events-none rounded-lg overflow-clip"
+    class="absolute inset-0 pointer-events-none rounded-full overflow-clip"
     style="background-color:
       color-mix(
         in oklab,
@@ -115,7 +115,7 @@
           {primaryColor} 80%,
           var(--foreground)
         );"
-      class="w-full h-full rounded-lg"
+      class="w-full h-full rounded-full"
     ></div>
     <div
       style="transform: translateX(calc({currentProgress}% - {height}px));

@@ -17,25 +17,25 @@
   let { variant = "compact" }: Props = $props();
 
   const sizes = {
-    compact: { button: 8, primary: 10, icon: 4, primaryIcon: 6 },
-    large: { button: 12, primary: 16, icon: 6, primaryIcon: 8 },
+    compact: { button: 8, primary: 10, icon: 4, subIcon: 4, primaryIcon: 6 },
+    large: { button: 12, primary: 16, icon: 6, subIcon: 5, primaryIcon: 8 },
   };
 
   const size = $derived(sizes[variant]);
 
   const textColor = $derived(
-    `color-mix(in oklab, ${playerStore.trackColor} 30%, var(--foreground))`,
+    `color-mix(in oklab, ${playerStore.trackColor} 30%, var(--foreground))`
   );
 </script>
 
 <div
   class="flex items-center {variant === 'large'
     ? 'justify-center'
-    : ''} gap-{variant === 'large' ? '4' : '2'}"
+    : ''} gap-4"
 >
   <Button
     variant="ghost"
-    onclick={() => playerStore.isShuffled = !playerStore.isShuffled}
+    onclick={() => (playerStore.isShuffled = !playerStore.isShuffled)}
     class="size-{size.button} grid place-items-center mx-auto
     {playerStore.isShuffled ? '' : 'opacity-50'}"
     style="color: {textColor};"
@@ -43,8 +43,8 @@
   >
     <ShuffleIcon
       absoluteStrokeWidth
-      strokeWidth={2.5}
-      class="size-{size.icon}"
+      strokeWidth={2}
+      class="size-{size.subIcon}"
     />
   </Button>
 
@@ -112,8 +112,8 @@
   >
     <RepeatIcon
       absoluteStrokeWidth
-      strokeWidth={2.5}
-      class="size-{size.icon}"
+      strokeWidth={2}
+      class="size-{size.subIcon}"
     />
   </Button>
 </div>

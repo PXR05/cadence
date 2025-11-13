@@ -85,11 +85,6 @@
     );
   }
 
-  async function handleTrackRemovedFromPlaylist() {
-    await playlistsStore.invalidatePlaylistDetail(playlistId);
-    await invalidateAll();
-  }
-
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
 </script>
 
@@ -115,11 +110,10 @@
       {hasAddButton}
       items={filteredTracks}
       onAddTracks={() => addTracksDialog.open()}
-      onTrackRemovedFromPlaylist={handleTrackRemovedFromPlaylist}
       onScroll={(scrollTop) => {
         if (isScrolled && scrollTop < 154) {
           isScrolled = false;
-        } else if (!isScrolled && scrollTop > (isMobile ? 245 : 273)) {
+        } else if (!isScrolled && scrollTop > (isMobile ? 245 : 273 + 64)) {
           isScrolled = true;
         }
       }}
@@ -137,7 +131,6 @@
     onOpenChange={(open) => !open && addTracksDialog.close()}
     {playlistId}
     {existingTrackIds}
-    onTracksAdded={() => invalidateAll()}
   />
 {/if}
 

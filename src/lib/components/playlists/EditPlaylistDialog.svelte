@@ -1,13 +1,12 @@
 <script lang="ts">
-  import {
-    updatePlaylist,
-    deletePlaylist,
-  } from "$lib/remote";
+  import { updatePlaylist, deletePlaylist } from "$lib/remote";
   import { Button } from "$lib/components/ui/button";
   import * as Dialog from "$lib/components/ui/dialog";
   import * as AlertDialog from "$lib/components/ui/alert-dialog";
   import { LoaderIcon, TrashIcon, ImageIcon } from "@lucide/svelte";
   import type { PlaylistDetail } from "$lib/schemas";
+  import { Input } from "../ui/input";
+  import { getPlaylistImageUrl } from "$lib/constants";
 
   interface Props {
     open: boolean;
@@ -30,7 +29,7 @@
     if (open) {
       editName = playlist.name;
       editCoverImageFile = null;
-      editCoverImagePreview = playlist.coverImage || null;
+      editCoverImagePreview = getPlaylistImageUrl(playlist.id) || null;
     }
   });
 
@@ -101,7 +100,7 @@
         <label for="playlist-name" class="text-sm font-medium">
           Playlist Name
         </label>
-        <input
+        <Input
           id="playlist-name"
           type="text"
           bind:value={editName}
@@ -114,19 +113,23 @@
       <div class="space-y-2">
         <div class="text-sm font-medium">Cover Image</div>
         {#if editCoverImagePreview}
-          <div class="relative w-full aspect-square border overflow-hidden">
+          <div
+            class="relative w-full aspect-square border rounded-lg overflow-hidden"
+          >
             <img
               src={editCoverImagePreview}
               alt="Cover preview"
               class="w-full h-full object-cover"
             />
-            <button
+            <Button
+              variant="destructive"
+              size="icon"
               onclick={handleRemoveCoverImage}
-              class="absolute top-2 right-2 p-2 bg-destructive text-destructive-foreground hover:bg-destructive/90 border"
+              class="absolute top-2 right-2 "
               disabled={editLoading}
             >
               <TrashIcon size={16} />
-            </button>
+            </Button>
           </div>
         {:else}
           <label

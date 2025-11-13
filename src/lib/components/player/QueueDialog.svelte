@@ -20,7 +20,7 @@
   }
 
   const textColor = $derived(
-    `color-mix(in oklab, ${playerStore.trackColor} 80%, var(--foreground))`,
+    `color-mix(in oklab, ${playerStore.trackColor} 80%, var(--foreground))`
   );
 
   const ROW_HEIGHT = 65;
@@ -37,13 +37,13 @@
 <Dialog.Root bind:open {onOpenChange}>
   <Dialog.Content
     showCloseButton={false}
-    class="md:max-w-2xl h-dvh md:h-[90dvh] overflow-clip sm:max-w-dvw max-w-dvw flex flex-col z-60 p-0 max-md:border-0 rounded-none md:rounded-2xl bg-muted/50 backdrop-blur-md"
+    class="md:max-w-2xl h-dvh md:h-[90dvh] overflow-clip sm:max-w-dvw max-w-dvw flex flex-col z-60 p-0 max-md:border-0 rounded-none md:rounded-2xl bg-muted/80 dark:bg-muted/50 backdrop-blur-xl"
   >
     <div
-      class="absolute top-1.5 left-1.5 right-1.5 z-10 rounded-xl bg-muted border border-input px-2 py-3 flex justify-between items-start"
+      class="absolute top-1.5 left-1.5 right-1.5 z-10 rounded-xl bg-muted border border-input/15 px-4 py-4 flex justify-between items-start"
     >
       <Dialog.Close
-        class="opacity-70 transition-opacity hover:opacity-100 my-auto size-6 grid place-items-center"
+        class="opacity-70 transition-opacity hover:opacity-100 my-auto size-6 grid place-items-center text-muted-foreground"
       >
         <ChevronDown />
       </Dialog.Close>
@@ -96,10 +96,7 @@
                 size={16}
                 fill="currentColor"
                 class="m-auto"
-                style="color: {textColor};
-                  filter: {isCurrentTrack
-                  ? 'brightness(1.2)'
-                  : ''} saturate(2);"
+                style="color: {textColor};"
               />
             {:else}
               <span class="text-sm text-muted-foreground">{index + 1}</span>
@@ -109,10 +106,7 @@
           <div class="flex-1 min-w-0">
             <p
               class="font-medium truncate text-sm"
-              style="color: {isCurrentTrack ? textColor : 'var(--foreground)'};
-                  filter: {isCurrentTrack
-                ? 'brightness(1.2)'
-                : ''} saturate(2);"
+              style="color: {isCurrentTrack ? textColor : 'var(--foreground)'};"
             >
               {trackTitle}
             </p>
@@ -120,10 +114,7 @@
               class="text-xs truncate"
               style="color: {isCurrentTrack
                 ? textColor
-                : 'var(--muted-foreground)'};
-                  filter: {isCurrentTrack
-                ? 'brightness(1.2)'
-                : ''} saturate(2);"
+                : 'var(--muted-foreground)'};"
             >
               {trackArtist}
             </p>

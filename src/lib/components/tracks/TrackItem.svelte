@@ -23,7 +23,6 @@
     isCurrentTrack: boolean;
     playlist?: PlaylistDetail;
     fromQueue?: boolean;
-    onRemovedFromPlaylist?: (trackId: string, playlistIds: string[]) => void;
   }
 
   let {
@@ -32,7 +31,6 @@
     isCurrentTrack,
     playlist,
     fromQueue = false,
-    onRemovedFromPlaylist,
   }: Props = $props();
 
   const title = $derived(track.metadata?.title ?? track.filename);
@@ -171,6 +169,4 @@
   onOpenChange={(open) => (managePlaylistsDialogOpen = open)}
   trackId={track.id}
   trackTitle={title}
-  onSuccess={(removedFromPlaylists) =>
-    onRemovedFromPlaylist?.(track.id, removedFromPlaylists)}
 />

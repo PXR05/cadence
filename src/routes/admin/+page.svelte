@@ -50,25 +50,31 @@
   </div>
 {/if}
 <div
-  class="relative flex flex-col mx-auto w-full h-full border-x overflow-y-auto
+  class="relative flex flex-col mx-auto w-full h-full border-x overflow-y-auto transition-opacity
   {loading ? 'opacity-0 scale-0' : ''}"
 >
   <div class="flex border-b sticky top-0 p-2 z-50 gap-2 bg-background">
     <Button
       variant={activeTab === "tracks" ? "default" : "outline"}
       onclick={() => switchTab("tracks")}
-      class="flex-1"
+      class="flex-1 h-11"
     >
       Tracks
     </Button>
     <Button
       variant={activeTab === "users" ? "default" : "outline"}
       onclick={() => switchTab("users")}
-      class="flex-1"
+      class="flex-1 h-11"
     >
       Users
     </Button>
-    <Button variant="outline" size="icon" onclick={handleLogout} title="Logout">
+    <Button
+      variant="outline"
+      size="icon"
+      onclick={handleLogout}
+      title="Logout"
+      class="size-11"
+    >
       <LogOutIcon size={18} />
     </Button>
   </div>
