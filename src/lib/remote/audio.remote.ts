@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { query, command, getRequestEvent } from "$app/server";
 import * as v from "valibot";
 import { error } from "@sveltejs/kit";

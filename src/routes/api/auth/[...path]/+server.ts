@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { error, json } from "@sveltejs/kit";
 
 if (!process.env.API_URL) throw new Error("API_URL is not set.");
