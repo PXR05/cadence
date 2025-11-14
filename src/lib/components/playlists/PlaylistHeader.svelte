@@ -26,6 +26,7 @@
     CloudOffIcon,
     YoutubeIcon,
     RefreshCwIcon,
+    DownloadIcon,
   } from "@lucide/svelte";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import { Button } from "../ui/button";
@@ -251,13 +252,13 @@
         <DropdownMenu.Separator />
       {/if}
 
-      <!-- <DropdownMenu.Item
+      <DropdownMenu.Item
         onclick={() => offline.downloadPlaylist(playlist)}
         disabled={offline.isDownloading || playlist.items.length === 0}
       >
         <DownloadIcon size={16} class="mr-2" />
         Download as ZIP
-      </DropdownMenu.Item> -->
+      </DropdownMenu.Item>
 
       {#if isYoutubePlaylist(playlist.id)}
         <DropdownMenu.Item

@@ -1,17 +1,20 @@
 <script lang="ts">
-  // import { getStreamUrl } from "$lib/stores/player.svelte";
+  import { getStreamUrl } from "$lib/stores/player.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
-  // import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
+  import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import {
     ChevronDown,
-    // DownloadIcon,
-    // EllipsisIcon,
-    // ListMusicIcon,
+    CloudDownloadIcon,
+    CloudOffIcon,
+    DownloadIcon,
+    EllipsisIcon,
+    ListMusicIcon,
   } from "@lucide/svelte";
   import PlayerDetails from "./PlayerDetails.svelte";
-  // import { ManagePlaylistsDialog } from "../playlists";
+  import { ManagePlaylistsDialog } from "../playlists";
   import { onMount } from "svelte";
   import { Button } from "../ui/button";
+  import { downloadStore } from "$lib/stores/download.svelte";
 
   interface Props {
     onOpenChange: (open: boolean) => void;
@@ -36,17 +39,40 @@
 
   let managePlaylistsDialogOpen = $state(false);
   let panelElement: HTMLDivElement | null = $state(null);
+  let dropdownOpen = $state(false);
 
-  // function handleDownload() {
-  //   if (track) {
-  //     const downloadUrl = getStreamUrl(track.id);
-  //     const link = document.createElement("a");
-  //     link.href = downloadUrl;
-  //     document.body.appendChild(link);
-  //     link.click();
-  //     document.body.removeChild(link);
-  //   }
-  // }
+  function handleDownload() {
+    if (track) {
+      const downloadUrl = getStreamUrl(track.id);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  }
+
+  let isOffline = $state(false);
+
+  async function handleToggleOffline() {
+    if (!track) return;
+    if (isOffline) {
+      await downloadStore.removeTrackOffline(track.id);
+    } else {
+      await downloadStore.makeTrackOffline(
+        track.id,
+        {
+          title: track.metadata?.title,
+          artist: track.metadata?.artist,
+          album: track.metadata?.album,
+          duration: track.metadata?.duration,
+        },
+        track.filename,
+        track.size
+      );
+    }
+    isOffline = await downloadStore.checkTrackOfflineStatus(track.id);
+  }
 
   function handleClose() {
     onOpenChange(false);
@@ -55,11 +81,15 @@
   onMount(() => {
     if (panelElement) {
       const handleTouchStart = (e: TouchEvent) => {
-        onTouchStart?.(e);
+        if (!dropdownOpen) {
+          onTouchStart?.(e);
+        }
       };
 
       const handleTouchMove = (e: TouchEvent) => {
-        onTouchMove?.(e);
+        if (!dropdownOpen) {
+          onTouchMove?.(e);
+        }
       };
 
       panelElement.addEventListener("touchstart", handleTouchStart, {
@@ -81,7 +111,7 @@
   bind:this={panelElement}
   role="dialog"
   tabindex="0"
-  class="relative h-dvh flex flex-col cursor-grab active:cursor-grabbing"
+  class="relative h-dvh flex flex-col"
   style="
     background: linear-gradient(
       to top,
@@ -89,11 +119,12 @@
       var(--background) 50%,
       color-mix(in oklab, {playerStore.trackColor} 10%, var(--background)) 100%
     );
-    touch-action: none;
+    touch-action: {dropdownOpen ? 'auto' : 'none'};
     overscroll-behavior: none;
+    pointer-events: {dropdownOpen ? 'auto' : 'auto'};
     "
-  ontouchend={onTouchEnd}
-  onmousedown={onMouseDown}
+  ontouchend={(e) => !dropdownOpen && onTouchEnd?.(e)}
+  onmousedown={(e) => !dropdownOpen && onMouseDown?.(e)}
 >
   <div class="flex justify-between items-center p-6">
     <Button
@@ -105,11 +136,19 @@
     >
       <ChevronDown class="size-6" />
     </Button>
-    <!-- <DropdownMenu.Root>
-      <DropdownMenu.Trigger
-        class="opacity-70 transition-opacity hover:opacity-100"
-      >
-        <EllipsisIcon />
+    <DropdownMenu.Root bind:open={dropdownOpen}>
+      <DropdownMenu.Trigger>
+        {#snippet child({ props })}
+          <Button
+            {...props}
+            size="icon"
+            variant="ghost"
+            class="opacity-70 transition-opacity hover:opacity-100 cursor-pointer"
+            aria-label="Menu options"
+          >
+            <EllipsisIcon class="size-6" />
+          </Button>
+        {/snippet}
       </DropdownMenu.Trigger>
       <DropdownMenu.Content>
         <DropdownMenu.Item onclick={() => (managePlaylistsDialogOpen = true)}>
@@ -121,8 +160,17 @@
           <DownloadIcon size={16} class="mr-2" />
           Download
         </DropdownMenu.Item>
+        <DropdownMenu.Item onclick={handleToggleOffline}>
+          {#if isOffline}
+            <CloudOffIcon size={16} class="mr-2" />
+            Remove from Offline
+          {:else}
+            <CloudDownloadIcon size={16} class="mr-2" />
+            Make Available Offline
+          {/if}
+        </DropdownMenu.Item>
       </DropdownMenu.Content>
-    </DropdownMenu.Root> -->
+    </DropdownMenu.Root>
   </div>
 
   {#if track}
@@ -130,11 +178,11 @@
   {/if}
 </div>
 
-<!-- {#if track}
+{#if track}
   <ManagePlaylistsDialog
     open={managePlaylistsDialogOpen}
     onOpenChange={(open) => (managePlaylistsDialogOpen = open)}
     trackId={track.id}
     trackTitle={title}
   />
-{/if} -->
+{/if}

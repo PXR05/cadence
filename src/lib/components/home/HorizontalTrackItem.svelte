@@ -28,7 +28,7 @@
   });
 </script>
 
-<button onclick={handlePlay} class="flex flex-col gap-2 w-40 md:w-48 group">
+<button onclick={handlePlay} class="flex flex-col gap-2 w-40 md:w-48">
   <div
     class="aspect-square rounded-md overflow-hidden border bg-muted relative"
   >
@@ -36,7 +36,7 @@
       loading="lazy"
       src={getImageUrl(track.id)}
       alt={title}
-      class="size-full object-cover transition-transform group-hover:scale-105"
+      class="size-full object-cover transition-transform"
     />
   </div>
   <div class="flex flex-col text-left flex-1 min-w-0">

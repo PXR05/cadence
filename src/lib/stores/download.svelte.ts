@@ -196,7 +196,10 @@ class DownloadStore {
         totalTracks: playlist.items.length,
         startedAt: Date.now(),
       };
-      localStorage.setItem("cadence.pending_download", JSON.stringify(pendingDownload));
+      localStorage.setItem(
+        "cadence.pending_download",
+        JSON.stringify(pendingDownload)
+      );
 
       this._progress = {
         playlistId: playlist.id,

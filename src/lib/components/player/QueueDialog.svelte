@@ -27,9 +27,7 @@
 
   $effect(() => {
     if (open && virtualScroll && playerStore.queueIndex >= 0) {
-      setTimeout(() => {
-        virtualScroll?.scrollToIndex(playerStore.queueIndex, false);
-      }, 100);
+      virtualScroll?.scrollToIndex(playerStore.queueIndex, false);
     }
   });
 </script>
@@ -37,13 +35,13 @@
 <Dialog.Root bind:open {onOpenChange}>
   <Dialog.Content
     showCloseButton={false}
-    class="md:max-w-2xl h-dvh md:h-[90dvh] overflow-clip sm:max-w-dvw max-w-dvw flex flex-col z-60 p-0 max-md:border-0 rounded-none md:rounded-2xl bg-muted/80 dark:bg-muted/50 backdrop-blur-xl"
+    class="md:max-w-2xl h-dvh md:h-[90dvh] overflow-clip max-w-dvw flex flex-col z-60 p-0 max-md:border-0 rounded-none md:rounded-2xl bg-background"
   >
     <div
-      class="absolute top-1.5 left-1.5 right-1.5 z-10 rounded-xl bg-muted border border-input/15 px-4 py-4 flex justify-between items-start"
+      class="absolute top-1.5 left-1.5 right-1.5 z-10 rounded-xl bg-muted border border-input/15 p-2 flex justify-between items-center"
     >
       <Dialog.Close
-        class="opacity-70 transition-opacity hover:opacity-100 my-auto size-6 grid place-items-center text-muted-foreground"
+        class="opacity-70 transition-opacity hover:opacity-100 my-auto size-8 grid place-items-center"
       >
         <ChevronDown />
       </Dialog.Close>
@@ -65,8 +63,8 @@
       bind:this={virtualScroll}
       items={playerStore.trackQueue}
       rowHeight={ROW_HEIGHT}
-      class="h-dvh md:max-h-[90dvh-1rem]"
-      topOffset={62}
+      class="mt-14 h-[calc(100dvh-3.5rem)] md:h-[calc(90dvh-3.5rem)]"
+      topOffset={4}
       leftPadding={8}
       rightPadding={8}
       itemGap={4}
