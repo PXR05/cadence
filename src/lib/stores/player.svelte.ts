@@ -7,6 +7,7 @@ import Color from "colorjs.io";
 import { updateTrackColor } from "$lib/db/cache";
 import { AudioEngine } from "./audioEngine";
 import type { AudioFile, PlaylistDetail } from "$lib/schemas";
+import { historyStore } from "./history.svelte";
 
 export { getStreamUrl, getImageUrl, getPlaylistImageUrl };
 
@@ -477,6 +478,8 @@ class PlayerState {
         this.currentTime = 0;
         this.syncCarouselToTrack(newIndex);
         await this.updateMetadata(newTrack);
+
+        await historyStore.addToHistory(newTrack.id, this.currentPlaylist?.id);
       }
 
       this.isPlaying = true;

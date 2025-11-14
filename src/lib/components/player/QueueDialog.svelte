@@ -23,7 +23,7 @@
     `color-mix(in oklab, ${playerStore.trackColor} 80%, var(--foreground))`
   );
 
-  const ROW_HEIGHT = 65;
+  const ROW_HEIGHT = 52;
 
   $effect(() => {
     if (open && virtualScroll && playerStore.queueIndex >= 0) {

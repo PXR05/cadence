@@ -55,7 +55,7 @@
     start: Math.max(0, pagination.offset - overscan),
     end: Math.min(
       items.length,
-      pagination.offset + pagination.pageSize + overscan,
+      pagination.offset + pagination.pageSize + overscan
     ),
   });
 
@@ -242,6 +242,9 @@
               actualIndex: range.start + i,
             })}
           </div>
+          {#if range.start + i === items.length - 1}
+            <div class="h-72"></div>
+          {/if}
         {/each}
       </div>
     </div>

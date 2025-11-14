@@ -24,7 +24,7 @@
 
   const showAddButton = $derived(hasAddButton ?? false);
 
-  const ROW_HEIGHT = 81;
+  const ROW_HEIGHT = 80;
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
   const topOffset = $derived(isMobile ? 227 + 6 : 255 + 64 + 6);
 
@@ -53,7 +53,7 @@
       {#if showAddButton && onAddTracks && visibleIndex === 0}
         <button
           onclick={onAddTracks}
-          class="w-full flex items-center gap-4 p-2 border-b hover:bg-muted/50 transition-colors"
+          class="w-full flex items-center gap-4 p-2 hover:bg-muted/50 transition-colors"
         >
           <div
             class="size-16 border flex-shrink-0 bg-muted grid place-items-center rounded-md"
@@ -75,9 +75,6 @@
         track={item.audio}
         fromQueue={false}
       />
-      {#if actualIndex === items.length - 1}
-        <div class="h-[50dvh]"></div>
-      {/if}
     {/snippet}
   </VirtualScroll>
 {/if}

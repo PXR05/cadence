@@ -43,7 +43,7 @@ class DownloadStore {
 
   private async checkForPendingDownloads(): Promise<void> {
     try {
-      const pendingData = localStorage.getItem("pendingDownload");
+      const pendingData = localStorage.getItem("cadence.pending_download");
       if (!pendingData) return;
 
       const pending: PendingDownload = JSON.parse(pendingData);
@@ -51,14 +51,14 @@ class DownloadStore {
       const isComplete = await checkIsPlaylistOffline(pending.playlistId);
 
       if (isComplete) {
-        localStorage.removeItem("pendingDownload");
+        localStorage.removeItem("cadence.pending_download");
         return;
       }
 
       const hoursSinceStart =
         (Date.now() - pending.startedAt) / (1000 * 60 * 60);
       if (hoursSinceStart > 24) {
-        localStorage.removeItem("pendingDownload");
+        localStorage.removeItem("cadence.pending_download");
         return;
       }
 
@@ -69,7 +69,7 @@ class DownloadStore {
       await this.resumePendingDownload(pending);
     } catch (error) {
       console.error("Failed to check for pending downloads:", error);
-      localStorage.removeItem("pendingDownload");
+      localStorage.removeItem("cadence.pending_download");
     }
   }
 
@@ -78,7 +78,7 @@ class DownloadStore {
       const response = await fetch(`/api/playlist/${pending.playlistId}`);
       if (!response.ok) {
         console.error("Failed to fetch playlist for resume");
-        localStorage.removeItem("pendingDownload");
+        localStorage.removeItem("cadence.pending_download");
         return;
       }
 
@@ -196,7 +196,7 @@ class DownloadStore {
         totalTracks: playlist.items.length,
         startedAt: Date.now(),
       };
-      localStorage.setItem("pendingDownload", JSON.stringify(pendingDownload));
+      localStorage.setItem("cadence.pending_download", JSON.stringify(pendingDownload));
 
       this._progress = {
         playlistId: playlist.id,
@@ -272,7 +272,7 @@ class DownloadStore {
       await savePlaylistOffline(playlistId, playlist.name, trackIds);
       this._offlineStatus.set(playlistId, true);
 
-      localStorage.removeItem("pendingDownload");
+      localStorage.removeItem("cadence.pending_download");
 
       if (isResume && resumedFrom > 0) {
         console.log(`Download resumed from track ${resumedFrom}`);

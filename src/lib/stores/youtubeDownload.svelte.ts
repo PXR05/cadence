@@ -65,7 +65,7 @@ class YouTubeDownloadStore {
 
   private loadFromStorage() {
     try {
-      const stored = localStorage.getItem("youtubeDownloadState");
+      const stored = localStorage.getItem("cadence.youtube_download");
       if (stored) {
         const state: PersistentState = JSON.parse(stored);
         this._currentDownload = state.currentDownload;
@@ -74,7 +74,7 @@ class YouTubeDownloadStore {
       }
     } catch (error) {
       console.error("Failed to load YouTube download state:", error);
-      localStorage.removeItem("youtubeDownloadState");
+      localStorage.removeItem("cadence.youtube_download");
     }
   }
 
@@ -85,7 +85,7 @@ class YouTubeDownloadStore {
         queue: this._queue,
         progress: this._progress,
       };
-      localStorage.setItem("youtubeDownloadState", JSON.stringify(state));
+      localStorage.setItem("cadence.youtube_download", JSON.stringify(state));
     } catch (error) {
       console.error("Failed to save YouTube download state:", error);
     }
