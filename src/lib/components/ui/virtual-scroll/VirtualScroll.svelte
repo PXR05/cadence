@@ -20,7 +20,9 @@
     onVisibleRangeChange?: (start: number, end: number) => void;
     onScrollDirectionChange?: (direction: "up" | "down" | null) => void;
     emptyState?: Snippet;
-    children: Snippet<[{ item: T; index: number; visibleIndex: number; actualIndex: number }]>;
+    children: Snippet<
+      [{ item: T; index: number; visibleIndex: number; actualIndex: number }]
+    >;
   }
 
   let {
@@ -210,7 +212,7 @@
       style="
         position: relative;
         width: 100%;
-        height: {items.length * rowHeight}px;
+        height: {items.length * rowHeight + topOffset}px;
         padding-top: {topOffset}px;
         padding-left: {leftPadding}px;
         padding-right: {rightPadding}px;"

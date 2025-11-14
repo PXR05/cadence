@@ -93,7 +93,7 @@
   </div>
   <div class="absolute bottom-0 w-full z-10 p-1">
     <div
-      class="py-1 px-2 bg-muted/80 dark:bg-muted/50 backdrop-blur-md border border-input/15/20 rounded-md"
+      class="py-1 px-2 bg-muted/80 dark:bg-muted/50 backdrop-blur-md border border-input/15 rounded-md"
     >
       <p class="text-sm font-medium truncate leading-tight">
         {displayName}

@@ -16,6 +16,7 @@
   } from "@lucide/svelte";
   import { onMount } from "svelte";
   import type { AudioFile, PlaylistDetail } from "$lib/schemas";
+  import { useDialogState } from "$lib/hooks";
 
   interface Props {
     index: number;
@@ -36,7 +37,8 @@
   const title = $derived(track.metadata?.title ?? track.filename);
   const artist = $derived(track.metadata?.artist ?? "Unknown");
 
-  let managePlaylistsDialogOpen = $state(false);
+  const managePlaylistDialog = useDialogState("manage-playlist-" + track.id);
+
   let isOffline = $state(false);
 
   onMount(async () => {
@@ -143,7 +145,7 @@
       Add to Queue
     </ContextMenu.Item>
     <ContextMenu.Separator />
-    <ContextMenu.Item onclick={() => (managePlaylistsDialogOpen = true)}>
+    <ContextMenu.Item onclick={() => managePlaylistDialog.open()}>
       <ListMusicIcon size={16} class="mr-2" />
       Add to Playlist
     </ContextMenu.Item>
@@ -165,8 +167,8 @@
 </ContextMenu.Root>
 
 <ManagePlaylistsDialog
-  open={managePlaylistsDialogOpen}
-  onOpenChange={(open) => (managePlaylistsDialogOpen = open)}
+  open={managePlaylistDialog.isOpen}
+  onOpenChange={(open) => !open && managePlaylistDialog.close()}
   trackId={track.id}
   trackTitle={title}
 />

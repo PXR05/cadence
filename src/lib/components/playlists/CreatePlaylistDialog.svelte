@@ -2,6 +2,7 @@
   import * as Dialog from "$lib/components/ui/dialog";
   import { Button } from "$lib/components/ui/button";
   import { createPlaylist } from "$lib/remote";
+  import { Input } from "../ui/input";
 
   interface Props {
     open: boolean;
@@ -60,12 +61,12 @@
         <label for="playlist-name" class="text-sm font-medium block mb-2">
           Playlist Name
         </label>
-        <input
+        <Input
           id="playlist-name"
           type="text"
           bind:value={playlistName}
           placeholder="My Playlist"
-          class="w-full px-3 py-2 text-sm border bg-background"
+          class="w-full px-3 py-2 text-sm"
           disabled={loading}
         />
       </div>

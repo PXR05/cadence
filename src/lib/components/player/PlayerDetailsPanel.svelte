@@ -9,7 +9,7 @@
     // ListMusicIcon,
   } from "@lucide/svelte";
   import PlayerDetails from "./PlayerDetails.svelte";
-  import { ManagePlaylistsDialog } from "../playlists";
+  // import { ManagePlaylistsDialog } from "../playlists";
   import { onMount } from "svelte";
   import { Button } from "../ui/button";
 
@@ -130,11 +130,11 @@
   {/if}
 </div>
 
-{#if track}
+<!-- {#if track}
   <ManagePlaylistsDialog
     open={managePlaylistsDialogOpen}
     onOpenChange={(open) => (managePlaylistsDialogOpen = open)}
     trackId={track.id}
     trackTitle={title}
   />
-{/if}
+{/if} -->

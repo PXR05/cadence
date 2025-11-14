@@ -23,12 +23,11 @@
   let selectedTracks = $state(new SvelteSet<string>());
   let searchQuery = $state("");
   let loading = $state(false);
-  let virtualScroll: any = $state(null);
   let searchInput: HTMLInputElement | null = $state(null);
 
   const tracks = $derived(tracksStore.tracks);
   const availableTracks = $derived(
-    tracks.filter((track) => !existingTrackIds.has(track.id))
+    tracks.filter((track) => !existingTrackIds.has(track.id)),
   );
   const filteredTracks = $derived(
     searchQuery.trim()
@@ -41,7 +40,7 @@
             artist.toLowerCase().includes(query)
           );
         })
-      : availableTracks
+      : availableTracks,
   );
 
   function toggleTrack(trackId: string) {
@@ -60,8 +59,8 @@
     try {
       await Promise.all(
         Array.from(selectedTracks).map((trackId) =>
-          addItemToPlaylist({ playlistId, audioId: trackId })
-        )
+          addItemToPlaylist({ playlistId, audioId: trackId }),
+        ),
       );
 
       await playlistsStore.invalidatePlaylistDetail(playlistId);
@@ -100,12 +99,10 @@
 <Dialog.Root {open} onOpenChange={handleOpenChange}>
   <Dialog.Content
     showCloseButton={false}
-    style="--h: 10rem;"
-    class="md:max-w-2xl h-dvh md:h-[90dvh] overflow-clip max-w-dvw flex flex-col z-60 p-0 max-md:border-0 rounded-none md:rounded-2xl bg-muted/80 dark:bg-muted/50 backdrop-blur-xl"
+    class="md:max-w-2xl h-dvh md:h-[90dvh] overflow-clip max-w-dvw flex flex-col z-60 p-0 max-md:border-0 rounded-none md:rounded-2xl bg-background"
   >
-    <div class="_bg _color absolute inset-0 z-10 pointer-events-none"></div>
     <div
-      class="absolute top-1.5 left-1.5 right-1.5 z-10 rounded-xl bg-muted/50 backdrop-blur-md border border-input/15 flex flex-col"
+      class="absolute top-1.5 left-1.5 right-1.5 z-10 rounded-xl bg-muted border border-input/15 flex flex-col"
     >
       <div class="px-2 py-3 flex justify-between items-center">
         <Dialog.Close
@@ -134,8 +131,7 @@
           bind:value={searchQuery}
           type="text"
           placeholder="search..."
-          class="flex-1 text-base h-auto transition-all px-3 py-4 outline-none 
-          backdrop-blur-md !bg-muted-foreground/10 rounded-xl border border-input/15
+          class="flex-1 text-base h-auto transition-all px-3 py-3 outline-none !bg-background rounded-lg border border-input/15
             {!isEmpty ? '' : 'pl-9'}"
           disabled={loading}
         />
@@ -156,11 +152,10 @@
     </div>
 
     <VirtualScroll
-      bind:this={virtualScroll}
       items={filteredTracks}
       rowHeight={ROW_HEIGHT}
-      class="h-dvh md:max-h-[90dvh-1rem]"
-      topOffset={68}
+      class="mt-30 h-[calc(100dvh-8rem)] md:h-[calc(90dvh-8rem)]"
+      topOffset={8}
       leftPadding={8}
       rightPadding={8}
       itemGap={4}
@@ -188,7 +183,7 @@
           onclick={() => toggleTrack(track.id)}
           disabled={loading}
           class="h-auto !transition-none w-full flex items-center gap-3 p-2 text-left group
-            {isSelected ? 'bg-muted/70' : ''} 
+            {isSelected ? 'bg-muted/70' : ''}
             {actualIndex === filteredTracks.length - 1 ? 'mb-20' : ''}"
         >
           <div
@@ -223,13 +218,13 @@
     </VirtualScroll>
 
     <div
-      class="absolute bottom-1.5 left-1.5 right-1.5 z-10 rounded-xl bg-muted/50 backdrop-blur-md border border-input/15 p-1.5 flex gap-1.5"
+      class="absolute bottom-1.5 left-1.5 right-1.5 z-10 rounded-xl bg-muted border border-input/15 p-1.5 flex gap-1.5"
     >
       <Button
         variant="outline"
         onclick={() => handleOpenChange(false)}
         disabled={loading}
-        class="dark:bg-muted h-11 flex-1 "
+        class="dark:bg-background h-11 flex-1 "
       >
         Cancel
       </Button>
@@ -244,39 +239,3 @@
     </div>
   </Dialog.Content>
 </Dialog.Root>
-
-<style>
-  ._bg {
-    &::before,
-    &::after {
-      pointer-events: none;
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: -1;
-      mask: linear-gradient(to top, transparent, black);
-    }
-    &::before {
-      height: var(--h);
-    }
-    &::after {
-      height: calc(var(--h) - 1rem);
-    }
-  }
-
-  ._color {
-    &::before,
-    &::after {
-      background-color: var(--background);
-    }
-  }
-
-  /* ._blur {
-    &::before,
-    &::after {
-      backdrop-filter: blur(1rem) saturate(120%) contrast(120%) brightness(120%);
-    }
-  } */
-</style>

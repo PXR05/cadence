@@ -18,17 +18,15 @@
     onOpenChange: (open: boolean) => void;
     trackId: string;
     trackTitle: string;
-    onSuccess?: (removedFromPlaylists: string[]) => void;
   }
 
-  let { open, onOpenChange, trackId, trackTitle, onSuccess }: Props = $props();
+  let { open, onOpenChange, trackId, trackTitle }: Props = $props();
 
   let playlists = $state<Playlist[]>([]);
   let playlistsWithTrack = $state(new SvelteSet<string>());
   let originalPlaylistsWithTrack = $state(new SvelteSet<string>());
   let loading = $state(true);
   let saving = $state(false);
-  let virtualScroll: any = $state(null);
 
   $effect(() => {
     if (open) {
@@ -41,7 +39,7 @@
     try {
       await playlistsStore.loadUserPlaylists();
       playlists = playlistsStore.userPlaylists.concat(
-        playlistsStore.youtubePlaylists
+        playlistsStore.youtubePlaylists,
       );
 
       const trackInPlaylists = new SvelteSet<string>();
@@ -50,7 +48,7 @@
           try {
             const details = await getPlaylistById(playlist.id);
             const hasTrack = details.playlist.items.some(
-              (item) => item.audio.id === trackId
+              (item) => item.audio.id === trackId,
             );
             if (hasTrack) {
               trackInPlaylists.add(playlist.id);
@@ -58,7 +56,7 @@
           } catch (error) {
             console.error(`Failed to check playlist ${playlist.id}:`, error);
           }
-        })
+        }),
       );
 
       playlistsWithTrack = trackInPlaylists;
@@ -99,12 +97,12 @@
 
       await Promise.all([
         ...toAdd.map((playlistId) =>
-          addItemToPlaylist({ playlistId, audioId: trackId })
+          addItemToPlaylist({ playlistId, audioId: trackId }),
         ),
         ...toRemove.map(async (playlistId) => {
           const details = await getPlaylistById(playlistId);
           const item = details.playlist.items.find(
-            (i) => i.audio.id === trackId
+            (i) => i.audio.id === trackId,
           );
           if (item) {
             return removeItemFromPlaylist({ playlistId, itemId: item.id });
@@ -134,21 +132,16 @@
   function handleOpenChange(isOpen: boolean) {
     onOpenChange(isOpen);
   }
-
-  const hasChanges = $derived(
-    JSON.stringify([...playlistsWithTrack].sort()) !==
-      JSON.stringify([...originalPlaylistsWithTrack].sort())
-  );
-  const ROW_HEIGHT = 56;
+  const ROW_HEIGHT = 52;
 </script>
 
 <Dialog.Root {open} onOpenChange={handleOpenChange}>
   <Dialog.Content
     showCloseButton={false}
-    class="md:max-w-2xl h-dvh md:h-[90dvh] overflow-clip max-w-dvw flex flex-col z-60 p-0 max-md:border-0 rounded-none md:rounded-2xl bg-muted/80 dark:bg-muted/50 backdrop-blur-xl"
+    class="md:max-w-2xl h-dvh md:h-[90dvh] overflow-clip max-w-dvw flex flex-col z-60 p-0 max-md:border-0 rounded-none md:rounded-2xl bg-background"
   >
     <div
-      class="absolute top-1.5 left-1.5 right-1.5 z-10 rounded-xl bg-muted/50 backdrop-blur-md border border-input/15 px-2 py-3 flex justify-between items-start"
+      class="absolute top-1.5 left-1.5 right-1.5 z-10 rounded-xl bg-muted border border-input/15 px-2 py-3 flex justify-between items-start"
     >
       <Dialog.Close
         class="opacity-70 transition-opacity hover:opacity-100 my-auto size-8 grid place-items-center"
@@ -182,10 +175,9 @@
       </div>
     {:else}
       <VirtualScroll
-        bind:this={virtualScroll}
         items={playlists}
         rowHeight={ROW_HEIGHT}
-        class="h-dvh md:max-h-[90dvh-1rem]"
+        class="h-dvh md:h-[calc(90dvh-1rem)]"
         topOffset={82}
         leftPadding={8}
         rightPadding={8}
@@ -230,19 +222,19 @@
     {/if}
 
     <div
-      class="absolute bottom-1.5 left-1.5 right-1.5 z-10 rounded-xl bg-muted/50 backdrop-blur-md border border-input/15 p-1.5 flex gap-1.5"
+      class="absolute bottom-1.5 left-1.5 right-1.5 z-10 rounded-xl bg-muted border border-input/15 p-1.5 flex gap-1.5"
     >
       <Button
         variant="outline"
         onclick={() => handleOpenChange(false)}
         disabled={saving}
-        class="dark:bg-muted h-11 flex-1"
+        class="dark:bg-background h-11 flex-1"
       >
         Cancel
       </Button>
       <Button
         onclick={handleSave}
-        disabled={!hasChanges || saving}
+        disabled={saving}
         class="h-11 flex-1"
       >
         {#if saving}

@@ -28,12 +28,15 @@
   </div>
 {:else}
   <VirtualScroll items={tracks} rowHeight={ROW_HEIGHT} class="border h-dvh">
-    {#snippet children({ item: track, visibleIndex })}
+    {#snippet children({ item: track, visibleIndex, actualIndex })}
       <TrackItem
         index={visibleIndex}
         isCurrentTrack={track.id === currentId}
         {track}
       />
+      {#if actualIndex === tracks.length - 1}
+        <div class="h-72"></div>
+      {/if}
     {/snippet}
   </VirtualScroll>
 
@@ -43,7 +46,5 @@
     >
       <LoaderIcon class="animate-spin text-muted-foreground" size={16} />
     </div>
-  {:else}
-    <div class="h-[50dvh]"></div>
   {/if}
 {/if}
