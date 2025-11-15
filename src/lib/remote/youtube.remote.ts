@@ -1,6 +1,7 @@
 import { query } from "$app/server";
 import * as v from "valibot";
 import { type YouTubeSearchResult } from "$lib/schemas/youtube";
+import { YOUTUBE_API_KEY } from "$env/static/private";
 
 const schema = v.object({
   id: v.object({
@@ -18,7 +19,7 @@ const schema = v.object({
 });
 
 export const searchYoutube = query(v.string(), async (query) => {
-  const apiKey = process.env.YOUTUBE_API_KEY;
+  const apiKey = YOUTUBE_API_KEY
 
   if (!apiKey) {
     throw new Error("YOUTUBE_API_KEY is not set");

@@ -7,7 +7,7 @@
   import { youtubeDownloadStore } from "$lib/stores/youtubeDownload.svelte";
   import TrackTable from "./TrackTable.svelte";
   import DeleteTrackDialog from "./DeleteTrackDialog.svelte";
-  import AddTrackDialog from "./AddTrackDialog.svelte";
+  import UploadTrackDialog from "./UploadTrackDialog.svelte";
   import TrackPagination from "./TrackPagination.svelte";
   import type { AudioFile } from "$lib/schemas";
 
@@ -17,7 +17,7 @@
   let tracksCurrentPage = $state(1);
   let tracksTotalPages = $state(1);
   let deleteTrackDialogOpen = $state(false);
-  let addTrackDialogOpen = $state(false);
+  let uploadTrackDialogOpen = $state(false);
   let selectedTrack = $state<AudioFile | null>(null);
 
   function setMessage(type: "error" | "success", message: string) {
@@ -44,7 +44,7 @@
   }
 
   function openAddTrackDialog() {
-    addTrackDialogOpen = true;
+    uploadTrackDialogOpen = true;
   }
 
   function openDeleteTrackDialog(track: AudioFile) {
@@ -73,7 +73,7 @@
 
   async function handleUploadComplete(
     successCount: number,
-    totalCount: number
+    totalCount: number,
   ) {
     setMessage("success", `Uploaded ${successCount}/${totalCount} files`);
     await loadTracks(tracksCurrentPage);
@@ -124,8 +124,8 @@
   />
 {/if}
 
-<AddTrackDialog
-  bind:open={addTrackDialogOpen}
+<UploadTrackDialog
+  bind:open={uploadTrackDialogOpen}
   loading={tracksLoading}
   onUploadComplete={handleUploadComplete}
   onUploadError={handleUploadError}

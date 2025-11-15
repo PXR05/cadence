@@ -1,9 +1,6 @@
 import { error, json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
-
-if (!process.env.API_URL) throw new Error("API_URL is not set.");
-
-const BACKEND_URL = process.env.API_URL ?? "";
+import { API_URL as BACKEND_URL } from "$env/static/private";
 
 async function proxyRequest(
   method: string,

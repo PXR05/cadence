@@ -16,10 +16,7 @@ import {
   RemoveItemFromPlaylistSchema,
   ReorderPlaylistItemSchema,
 } from "$lib/schemas/playlist";
-
-if (!process.env.API_URL) throw new Error("API_URL is not set.");
-
-const BACKEND_URL = process.env.API_URL ?? "";
+import { API_URL as BACKEND_URL } from "$env/static/private";
 
 function getAuthToken(): string {
   const { cookies } = getRequestEvent();
