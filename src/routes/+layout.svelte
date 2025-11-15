@@ -26,17 +26,6 @@
     }
   });
 
-  onNavigate((navigation) => {
-    if (!document.startViewTransition) return;
-
-    return new Promise((resolve) => {
-      document.startViewTransition(async () => {
-        resolve();
-        await navigation.complete;
-      });
-    });
-  });
-
   function loadInitialData() {
     tracksStore.loadAllTracks().catch((error) => {
       console.error("Failed to load tracks on app initialization:", error);
