@@ -42,7 +42,6 @@ export const searchYoutube = query(v.string(), async (query) => {
   }
 
   const data = await response.json();
-  console.log("YouTube search data:", data);
   const validatedData = v.parse(v.array(schema), data.items);
 
   const results: YouTubeSearchResult[] = validatedData.map((item: any) => ({
