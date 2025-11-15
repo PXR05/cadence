@@ -1,18 +1,18 @@
 <script lang="ts">
-  import { invalidateAll } from "$app/navigation";
   import { CreatePlaylistDialog, PlaylistCard } from "$lib/components";
   import { ScrollArea } from "$lib/components/ui/scroll-area";
   import { AudioWaveformIcon, PlusIcon } from "@lucide/svelte";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
   import { Button } from "$lib/components/ui/button/index.js";
-
-  let { data } = $props();
+  import { getSpecialPlaylists } from "$lib/utils/playlist";
+  import type { Playlist } from "$lib/schemas";
 
   let createDialogOpen = $state(false);
-  let userPlaylists = $state(data.userPlaylists);
-  let youtubePlaylists = $state(data.youtubePlaylists);
+  let specialPlaylists = $state<Playlist[]>([]);
 
-  const specialPlaylists = $derived(data.specialPlaylists);
+  const userPlaylists = $derived(playlistsStore.userPlaylists);
+  const youtubePlaylists = $derived(playlistsStore.youtubePlaylists);
+
   const allUserPlaylists = $derived([
     ...specialPlaylists,
     ...userPlaylists,
@@ -20,21 +20,14 @@
   ]);
 
   $effect(() => {
-    if (data.streaming?.userPlaylists) {
-      data.streaming.userPlaylists.then((playlists) => {
-        userPlaylists = playlists;
-      });
-    }
-    if (data.streaming?.youtubePlaylists) {
-      data.streaming.youtubePlaylists.then((playlists) => {
-        youtubePlaylists = playlists;
-      });
-    }
+    getSpecialPlaylists().then((playlists) => {
+      specialPlaylists = playlists;
+    });
   });
 
   async function handlePlaylistCreated() {
     playlistsStore.invalidate();
-    await invalidateAll();
+    await playlistsStore.loadAllPlaylists(true);
   }
 </script>
 

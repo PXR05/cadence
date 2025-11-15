@@ -1,7 +1,4 @@
-import {
-  getUserPlaylists,
-  getPlaylistById,
-} from "$lib/remote";
+import { getUserPlaylists, getPlaylistById } from "$lib/remote";
 import {
   getPlaylistsCache,
   savePlaylistsCache,
@@ -11,11 +8,13 @@ import {
   clearPlaylistsCache,
 } from "$lib/db/cache";
 import type { Playlist, PlaylistDetail } from "$lib/schemas";
+import { SvelteMap, SvelteSet } from "svelte/reactivity";
 
 class PlaylistsStore {
   private _userPlaylists = $state<Playlist[]>([]);
   private _youtubePlaylists = $state<Playlist[]>([]);
-  private _playlistDetails = $state<Map<string, PlaylistDetail>>(new Map());
+  private _playlistDetails = $state(new SvelteMap<string, PlaylistDetail>());
+  private _loadingPlaylistIds = $state(new SvelteSet<string>());
   private _lastFetchedAt = $state<string | null>(null);
   private _isInitialLoad = $state(false);
   private _error = $state<string | null>(null);
@@ -242,32 +241,47 @@ class PlaylistsStore {
     return this._playlistDetails.get(id);
   }
 
+  isPlaylistLoading(id: string): boolean {
+    return this._loadingPlaylistIds.has(id);
+  }
+
   async loadPlaylistDetail(
     id: string,
     forceRefresh: boolean = false
   ): Promise<PlaylistDetail> {
-    const cached =
-      this._playlistDetails.get(id) || (await getCachedPlaylistDetail(id));
-
-    if (!forceRefresh && cached) {
-      if (!this._playlistDetails.has(id)) {
-        this._playlistDetails.set(id, cached);
-      }
-      const shouldRefresh = await this.shouldRefreshPlaylistDetail(id, cached);
-      if (!shouldRefresh) {
-        return cached;
-      }
-    }
+    this._loadingPlaylistIds.add(id);
 
     try {
+      const cached =
+        this._playlistDetails.get(id) || (await getCachedPlaylistDetail(id));
+
+      if (!forceRefresh && cached) {
+        if (!this._playlistDetails.has(id)) {
+          this._playlistDetails.set(id, cached);
+        }
+        const shouldRefresh = await this.shouldRefreshPlaylistDetail(
+          id,
+          cached
+        );
+        if (!shouldRefresh) {
+          this._loadingPlaylistIds.delete(id);
+          return cached;
+        }
+      }
+
       const response = await getPlaylistById(id);
       const playlistDetail = response.playlist;
 
       this._playlistDetails.set(id, playlistDetail);
       await savePlaylistDetail(playlistDetail);
 
+      this._loadingPlaylistIds.delete(id);
       return playlistDetail;
     } catch (err) {
+      const cached =
+        this._playlistDetails.get(id) || (await getCachedPlaylistDetail(id));
+      this._loadingPlaylistIds.delete(id);
+
       if (cached) {
         console.warn("Failed to refresh playlist, using cached version:", err);
         return cached;
@@ -299,10 +313,24 @@ class PlaylistsStore {
     await deletePlaylistDetail(id);
   }
 
+  setPlaylistDetail(id: string, playlist: PlaylistDetail): void {
+    this._playlistDetails.set(id, playlist);
+    this._loadingPlaylistIds.delete(id);
+  }
+
+  setPlaylistLoading(id: string): void {
+    this._loadingPlaylistIds.add(id);
+  }
+
+  clearPlaylistLoading(id: string): void {
+    this._loadingPlaylistIds.delete(id);
+  }
+
   async clear(): Promise<void> {
     this._userPlaylists = [];
     this._youtubePlaylists = [];
     this._playlistDetails.clear();
+    this._loadingPlaylistIds.clear();
     this._lastFetchedAt = null;
     this._error = null;
     this._isInitialLoad = false;

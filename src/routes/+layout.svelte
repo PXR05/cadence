@@ -4,8 +4,9 @@
   import { AuthDialog, BottomBar, NavBar, SplashScreen } from "$lib/components";
   import { playerStore } from "$lib/stores/player.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
+  import { playlistsStore } from "$lib/stores/playlists.svelte";
   import { authStore } from "$lib/stores/auth.svelte";
-  import { goto } from "$app/navigation";
+  import { goto, onNavigate } from "$app/navigation";
   import { onMount } from "svelte";
   import { innerWidth } from "svelte/reactivity/window";
   import { page } from "$app/state";
@@ -25,9 +26,23 @@
     }
   });
 
+  onNavigate((navigation) => {
+    if (!document.startViewTransition) return;
+
+    return new Promise((resolve) => {
+      document.startViewTransition(async () => {
+        resolve();
+        await navigation.complete;
+      });
+    });
+  });
+
   function loadInitialData() {
     tracksStore.loadAllTracks().catch((error) => {
       console.error("Failed to load tracks on app initialization:", error);
+    });
+    playlistsStore.loadAllPlaylists().catch((error) => {
+      console.error("Failed to load playlists on app initialization:", error);
     });
   }
 

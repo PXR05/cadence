@@ -9,6 +9,7 @@
   } from "$lib/components/ui/dialog";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "../ui/input";
+  import { EyeIcon, EyeOffIcon } from "@lucide/svelte";
 
   let { onAuthenticated } = $props<{
     onAuthenticated: () => void;
@@ -18,6 +19,7 @@
   let password = $state("");
   let isProcessing = $state(false);
   let error = $state("");
+  let showPassword = $state(false);
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
@@ -75,15 +77,29 @@
 
       <div class="space-y-2">
         <label for="password" class="text-sm font-medium">Password</label>
-        <Input
-          id="password"
-          type="password"
-          bind:value={password}
-          disabled={isProcessing}
-          class="w-full px-3 py-2"
-          placeholder="Enter your password"
-          autocomplete="current-password"
-        />
+        <div class="relative">
+          <Input
+            id="password"
+            type={showPassword ? "text" : "password"}
+            bind:value={password}
+            disabled={isProcessing}
+            class="w-full px-3 py-2"
+            placeholder="Enter your password"
+            autocomplete="current-password"
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            class="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground"
+            onclick={() => (showPassword = !showPassword)}
+          >
+            {#if showPassword}
+              <EyeIcon size={16} />
+            {:else}
+              <EyeOffIcon size={16} />
+            {/if}
+          </Button>
+        </div>
       </div>
 
       {#if error}

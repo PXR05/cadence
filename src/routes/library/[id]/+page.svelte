@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { invalidateAll } from "$app/navigation";
   import { SvelteSet } from "svelte/reactivity";
   import { navigationStore } from "$lib/stores/navigation.svelte";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
@@ -17,12 +16,14 @@
   } from "$lib/components";
   import PlaylistSearch from "$lib/components/playlists/PlaylistSearch.svelte";
   import { innerWidth } from "svelte/reactivity/window";
+  import { LoaderIcon } from "@lucide/svelte";
   import type { PlaylistItem, Playlist } from "$lib/schemas";
 
   let { data } = $props();
 
   const playlistId = $derived(data.playlistId);
-  let playlist = $state(data.playlist);
+  const playlist = $derived(playlistsStore.getPlaylistDetail(playlistId));
+  const isLoading = $derived(playlistsStore.isPlaylistLoading(playlistId));
 
   let searchQuery = $state("");
   let isScrolled = $state(false);
@@ -30,35 +31,25 @@
   const addTracksDialog = useDialogState("add-tracks");
 
   const existingTrackIds = $derived(
-    new SvelteSet(playlist?.items.map((item) => item.audio.id) ?? []),
+    new SvelteSet(playlist?.items.map((item) => item.audio.id) ?? [])
   );
 
   const isNonModifiable = $derived(
     playlist &&
       (isSpecialPlaylist(playlist.id) ||
         isArtistPlaylist(playlist.id) ||
-        isAlbumPlaylist(playlist.id)),
+        isAlbumPlaylist(playlist.id))
   );
 
   const hasAddButton = $derived(
-    !searchQuery.trim() && playlist && !isNonModifiable,
+    !searchQuery.trim() && playlist && !isNonModifiable
   );
 
   const filteredTracks = $derived(
     searchQuery.trim()
       ? filterTracks(playlist?.items ?? [], searchQuery)
-      : (playlist?.items ?? []),
+      : (playlist?.items ?? [])
   );
-
-  $effect(() => {
-    if (data.streaming?.playlist) {
-      data.streaming.playlist.then((freshPlaylist) => {
-        if (freshPlaylist) {
-          playlist = freshPlaylist;
-        }
-      });
-    }
-  });
 
   $effect(() => {
     if (playlist) {
@@ -81,7 +72,7 @@
   function updateNavigation(playlistName: string) {
     navigationStore.setNavigation(
       [{ label: "Library", path: "/library" }],
-      getPlaylistDisplayName({ name: playlistName } as Playlist),
+      getPlaylistDisplayName({ name: playlistName } as Playlist)
     );
   }
 
@@ -93,7 +84,11 @@
 </svelte:head>
 
 <div class="flex flex-col mx-auto w-full h-full border-x relative">
-  {#if playlist}
+  {#if isLoading && !playlist}
+    <div class="flex items-center justify-center h-full">
+      <LoaderIcon class="animate-spin text-muted-foreground" />
+    </div>
+  {:else if playlist}
     <div
       style="--h: {isScrolled ? 10 : 16}rem;"
       class="z-20 p-1.5 md:p-2 flex flex-col absolute top-0 w-full gap-1.5 md:gap-2"

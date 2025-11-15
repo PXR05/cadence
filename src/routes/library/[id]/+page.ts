@@ -1,4 +1,3 @@
-
 export const ssr = false;
 
 import { browser } from "$app/environment";
@@ -18,28 +17,26 @@ export const load: PageLoad = async ({ params }) => {
 
   if (!browser) {
     return {
-      playlist: null as PlaylistDetail | null,
       playlistId,
-      streaming: { playlist: Promise.resolve(null) },
     };
   }
 
   if (isSpecialPlaylist(playlistId)) {
-    const specialPlaylist = loadSpecialPlaylist(playlistId);
-    return {
-      playlist: await specialPlaylist,
-      playlistId,
-      streaming: { playlist: Promise.resolve(await specialPlaylist) },
-    };
+    playlistsStore.setPlaylistLoading(playlistId);
+    loadSpecialPlaylist(playlistId)
+      .then((playlist) => {
+        playlistsStore.setPlaylistDetail(playlistId, playlist);
+      })
+      .catch((err) => {
+        console.error("Failed to load special playlist:", err);
+        playlistsStore.clearPlaylistLoading(playlistId);
+      });
+  } else {
+    playlistsStore.loadPlaylistDetail(playlistId);
   }
 
-  const cachedPlaylist = playlistsStore.getPlaylistDetail(playlistId);
-  const streamingData = playlistsStore.loadPlaylistDetail(playlistId);
-
   return {
-    playlist: cachedPlaylist,
     playlistId,
-    streaming: { playlist: streamingData },
   };
 };
 
@@ -61,7 +58,7 @@ async function loadSpecialPlaylist(id: string): Promise<PlaylistDetail> {
 
   if (id === SPECIAL_PLAYLIST_IDS.ALL_SONGS) {
     await tracksStore.loadAllTracks();
-    
+
     playlist.items = tracksStore.tracks.map((track, index) => ({
       id: `${track.id}_${index}`,
       position: index,

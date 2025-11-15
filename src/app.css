@@ -179,6 +179,15 @@
   --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+@supports(corner-shape: superellipse(1.2)) {
+  :root {
+    --radius: 0.85rem;
+  }
+  * {
+    corner-shape: superellipse(1.2);
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -209,11 +218,5 @@
 ::view-transition-group(*),
 ::view-transition-new(*),
 ::view-transition-old(*) {
-  animation-duration: 0.2s;
-}
-
-::view-transition-group(root),
-::view-transition-new(root),
-::view-transition-old(root) {
   animation-duration: 0.1s;
 }
