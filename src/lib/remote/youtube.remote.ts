@@ -1,8 +1,6 @@
 import { query } from "$app/server";
 import * as v from "valibot";
-import {
-  type YouTubeSearchResult,
-} from "$lib/schemas/youtube";
+import { type YouTubeSearchResult } from "$lib/schemas/youtube";
 
 const schema = v.object({
   id: v.object({
@@ -36,7 +34,7 @@ export const searchYoutube = query(v.string(), async (query) => {
   });
 
   const response = await fetch(
-    `https://www.googleapis.com/youtube/v3/search?${params}`
+    `https://www.googleapis.com/youtube/v3/search?${params}`,
   );
 
   if (!response.ok) {
@@ -44,6 +42,7 @@ export const searchYoutube = query(v.string(), async (query) => {
   }
 
   const data = await response.json();
+  console.log("YouTube search data:", data);
   const validatedData = v.parse(v.array(schema), data.items);
 
   const results: YouTubeSearchResult[] = validatedData.map((item: any) => ({
