@@ -53,6 +53,9 @@
     try {
       await youtubeDownloadStore.downloadFromUrl(youtubeUrl.trim());
       tracksStore.loadAllTracks(true);
+      resetDialog();
+      onOpenChange(false);
+      onCreated?.();
     } catch (err) {
       error = err instanceof Error ? err.message : "Failed to import playlist";
       console.error("Failed to import playlist:", err);
