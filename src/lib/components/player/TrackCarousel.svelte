@@ -19,7 +19,7 @@
   setApi={(emblaApi) => setApi(emblaApi ?? null)}
 >
   {#if playerStore.trackQueue.length === 0}
-    <div class="text-muted-foreground pl-3 -mb-3">No track is playing</div>
+    <div class="pl-3 -mb-3">No track is playing</div>
   {:else}
     <Carousel.Content>
       {#each playerStore.trackQueue as track, i}
@@ -47,7 +47,7 @@
               <p class="font-medium truncate">
                 {trackTitle}
               </p>
-              <p class="text-sm truncate text-muted-foreground">
+              <p class="text-sm truncate font-light">
                 {trackArtist}
               </p>
             </div>

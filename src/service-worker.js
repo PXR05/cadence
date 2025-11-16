@@ -36,13 +36,39 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", async (event) => {
   if (event.request.method !== "GET") return;
 
-  const url = new URL(event.request.url);
-  const cache = await caches.open(CACHE);
+  async function respond() {
+    const url = new URL(event.request.url);
+    const cache = await caches.open(CACHE);
 
-  if (ASSETS.includes(url.pathname)) {
-    const cachedResponse = await cache.match(url.pathname);
-    if (cachedResponse) {
-      event.respondWith(cachedResponse);
+    if (ASSETS.includes(url.pathname)) {
+      const response = await cache.match(url.pathname);
+
+      if (response) {
+        return response;
+      }
+    }
+
+    try {
+      const response = await fetch(event.request);
+      if (!(response instanceof Response)) {
+        throw new Error("invalid response from fetch");
+      }
+
+      if (response.status === 200) {
+        cache.put(event.request, response.clone());
+      }
+
+      return response;
+    } catch (err) {
+      const response = await cache.match(event.request);
+
+      if (response) {
+        return response;
+      }
+
+      throw err;
     }
   }
+
+  event.respondWith(respond());
 });

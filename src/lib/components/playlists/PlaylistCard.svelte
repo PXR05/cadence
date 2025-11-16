@@ -98,7 +98,7 @@
       <p class="text-sm font-medium truncate leading-tight">
         {displayName}
       </p>
-      <p class="text-xs text-muted-foreground leading-tight">
+      <p class="text-xs leading-tight">
         {playlist.itemCount ?? 0} tracks
       </p>
     </div>

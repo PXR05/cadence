@@ -131,7 +131,7 @@
       size="icon"
       variant="ghost"
       onclick={handleClose}
-      class="opacity-70 transition-opacity hover:opacity-100 cursor-pointer"
+      class="transition-opacity hover:opacity-90 cursor-pointer"
       aria-label="Close player details"
     >
       <ChevronDown class="size-6" />
@@ -143,7 +143,7 @@
             {...props}
             size="icon"
             variant="ghost"
-            class="opacity-70 transition-opacity hover:opacity-100 cursor-pointer"
+            class="transition-opacity hover:opacity-90 cursor-pointer"
             aria-label="Menu options"
           >
             <EllipsisIcon class="size-6" />

@@ -24,14 +24,13 @@
   const size = $derived(sizes[variant]);
 
   const textColor = $derived(
-    `color-mix(in oklab, ${playerStore.trackColor} 30%, var(--foreground))`
+    `color-mix(in oklab, ${playerStore.trackColor} 30%, var(--foreground))`,
   );
 </script>
 
 <div
-  class="flex items-center {variant === 'large'
-    ? 'justify-center'
-    : ''} gap-4"
+  class="flex items-center gap-4
+  {variant === 'large' ? 'justify-center' : ''}"
 >
   <Button
     variant="ghost"

@@ -65,7 +65,7 @@
   </div>
 
   <div class="flex flex-col gap-8 px-6 my-auto z-20">
-    <div class="text-center">
+    <div class="text-center mb-2">
       <h2
         class="text-xl font-semibold truncate"
         style="color: color-mix(in oklab, {playerStore.trackColor} 30%, var(--foreground));"
