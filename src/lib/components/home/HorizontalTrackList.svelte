@@ -19,11 +19,11 @@
   {#if tracks.length === 0 && emptyState}
     {@render emptyState()}
   {:else}
-    <ScrollArea orientation="horizontal" class="w-dvw">
+    <ScrollArea orientation="horizontal" class="w-dvw pb-2">
       <div class="flex gap-4">
         {#each tracks as track, i (track.id)}
           {#if i === 0}
-            <div class="ml-3">
+            <div class="ml-2">
               <HorizontalTrackItem {track} />
             </div>
           {:else}

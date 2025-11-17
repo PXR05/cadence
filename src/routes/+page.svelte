@@ -37,29 +37,18 @@
     No songs added yet. Go search for some songs and add them to your library.
   </div>
 {:else}
-  <VirtualScroll
-    items={tracks}
-    rowHeight={ROW_HEIGHT}
-    leftPadding={4}
-    rightPadding={4}
-    class="h-dvh"
-  >
+  <VirtualScroll items={tracks} rowHeight={ROW_HEIGHT} class="h-dvh">
     {#snippet children({ item: track, actualIndex, visibleIndex })}
       {#if actualIndex === 0}
-        <div>
-          <div class="pt-4 grid gap-4">
+        <div class="pt-4 grid gap-2">
+          <HorizontalTrackList title="Recommended" tracks={recommendedTracks} />
+          {#if recentlyPlayed.length > 0}
             <HorizontalTrackList
-              title="Recommended"
-              tracks={recommendedTracks}
+              title="Recently Played"
+              tracks={recentlyPlayed}
             />
-            {#if recentlyPlayed.length > 0}
-              <HorizontalTrackList
-                title="Recently Played"
-                tracks={recentlyPlayed}
-              />
-            {/if}
-          </div>
-          <h2 class="p-4 pb-2 text-2xl font-semibold">All Songs</h2>
+          {/if}
+          <h2 class="px-4 pb-2 text-2xl font-semibold">All Songs</h2>
         </div>
       {:else if visibleIndex === 0}
         <div style="height: {recentlyPlayed.length > 0 ? 672 : 364}px;"></div>
