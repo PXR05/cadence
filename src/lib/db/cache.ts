@@ -40,34 +40,24 @@ export interface CachedPlaylistDetail {
   cachedAt: number;
 }
 
-export interface TracksCache {
-  id: string;
-  tracks: CachedTrack[];
-  lastFetchedAt: string | null;
-}
-
-export interface PlaylistsCache {
-  id: string;
-  userPlaylists: CachedPlaylist[];
-  youtubePlaylists: CachedPlaylist[];
-  lastFetchedAt: string | null;
+export interface CacheMetadata {
+  key: string;
+  value: string | null;
 }
 
 class CacheDatabase extends Dexie {
   tracks!: Table<CachedTrack, string>;
   playlists!: Table<CachedPlaylist, string>;
   playlistDetails!: Table<CachedPlaylistDetail, string>;
-  tracksCache!: Table<TracksCache, string>;
-  playlistsCache!: Table<PlaylistsCache, string>;
+  metadata!: Table<CacheMetadata, string>;
 
   constructor() {
     super("CadenceCacheDB");
-    this.version(1).stores({
+    this.version(2).stores({
       tracks: "id, cachedAt, uploadedAt",
       playlists: "id, cachedAt, updatedAt",
       playlistDetails: "id, cachedAt, updatedAt",
-      tracksCache: "id",
-      playlistsCache: "id",
+      metadata: "key",
     });
   }
 }
@@ -76,7 +66,7 @@ export const cacheDb = new CacheDatabase();
 
 export async function saveTracksCache(
   tracks: AudioFile[],
-  lastFetchedAt: string | null
+  lastFetchedAt: string | null,
 ): Promise<void> {
   const cachedTracks: CachedTrack[] = tracks.map((track) => ({
     ...track,
@@ -85,16 +75,15 @@ export async function saveTracksCache(
 
   await cacheDb.transaction(
     "rw",
-    [cacheDb.tracks, cacheDb.tracksCache],
+    [cacheDb.tracks, cacheDb.metadata],
     async () => {
       await cacheDb.tracks.clear();
       await cacheDb.tracks.bulkAdd(cachedTracks);
-      await cacheDb.tracksCache.put({
-        id: "main",
-        tracks: cachedTracks,
-        lastFetchedAt,
+      await cacheDb.metadata.put({
+        key: "tracks_lastFetchedAt",
+        value: lastFetchedAt,
       });
-    }
+    },
   );
 }
 
@@ -102,10 +91,15 @@ export async function getTracksCache(): Promise<{
   tracks: AudioFile[];
   lastFetchedAt: string | null;
 } | null> {
-  const cache = await cacheDb.tracksCache.get("main");
-  if (!cache) return null;
+  const tracks = await cacheDb.tracks.toArray();
+  if (tracks.length === 0) {
+    const metadata = await cacheDb.metadata.get("tracks_lastFetchedAt");
+    if (!metadata) return null;
+  }
 
-  const tracks: AudioFile[] = cache.tracks.map((track) => ({
+  const metadata = await cacheDb.metadata.get("tracks_lastFetchedAt");
+
+  const audioFiles: AudioFile[] = tracks.map((track) => ({
     id: track.id,
     filename: track.filename,
     size: track.size,
@@ -116,15 +110,19 @@ export async function getTracksCache(): Promise<{
   }));
 
   return {
-    tracks,
-    lastFetchedAt: cache.lastFetchedAt,
+    tracks: audioFiles,
+    lastFetchedAt: metadata?.value ?? null,
   };
+}
+
+export async function deleteTrackFromCache(id: string): Promise<void> {
+  await cacheDb.tracks.delete(id);
 }
 
 export async function savePlaylistsCache(
   userPlaylists: Playlist[],
   youtubePlaylists: Playlist[],
-  lastFetchedAt: string | null
+  lastFetchedAt: string | null,
 ): Promise<void> {
   const cachedUserPlaylists: CachedPlaylist[] = userPlaylists.map((p) => ({
     ...p,
@@ -135,25 +133,23 @@ export async function savePlaylistsCache(
     (p) => ({
       ...p,
       cachedAt: Date.now(),
-    })
+    }),
   );
 
   await cacheDb.transaction(
     "rw",
-    [cacheDb.playlists, cacheDb.playlistsCache],
+    [cacheDb.playlists, cacheDb.metadata],
     async () => {
       await cacheDb.playlists.clear();
       await cacheDb.playlists.bulkAdd([
         ...cachedUserPlaylists,
         ...cachedYoutubePlaylists,
       ]);
-      await cacheDb.playlistsCache.put({
-        id: "main",
-        userPlaylists: cachedUserPlaylists,
-        youtubePlaylists: cachedYoutubePlaylists,
-        lastFetchedAt,
+      await cacheDb.metadata.put({
+        key: "playlists_lastFetchedAt",
+        value: lastFetchedAt,
       });
-    }
+    },
   );
 }
 
@@ -162,38 +158,46 @@ export async function getPlaylistsCache(): Promise<{
   youtubePlaylists: Playlist[];
   lastFetchedAt: string | null;
 } | null> {
-  const cache = await cacheDb.playlistsCache.get("main");
-  if (!cache) return null;
+  const playlists = await cacheDb.playlists.toArray();
+  if (playlists.length === 0) {
+    const metadata = await cacheDb.metadata.get("playlists_lastFetchedAt");
+    if (!metadata) return null;
+  }
 
-  const userPlaylists: Playlist[] = cache.userPlaylists.map((p) => ({
-    id: p.id,
-    name: p.name,
-    userId: p.userId,
-    coverImage: p.coverImage,
-    createdAt: p.createdAt,
-    updatedAt: p.updatedAt,
-    itemCount: p.itemCount,
-  }));
+  const metadata = await cacheDb.metadata.get("playlists_lastFetchedAt");
 
-  const youtubePlaylists: Playlist[] = cache.youtubePlaylists.map((p) => ({
-    id: p.id,
-    name: p.name,
-    userId: p.userId,
-    coverImage: p.coverImage,
-    createdAt: p.createdAt,
-    updatedAt: p.updatedAt,
-    itemCount: p.itemCount,
-  }));
+  // Separate user and youtube playlists based on userId pattern
+  const userPlaylists: Playlist[] = [];
+  const youtubePlaylists: Playlist[] = [];
+
+  playlists.forEach((p) => {
+    const playlist: Playlist = {
+      id: p.id,
+      name: p.name,
+      userId: p.userId,
+      coverImage: p.coverImage,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
+      itemCount: p.itemCount,
+    };
+
+    // YouTube playlists have IDs starting with 'yt-'
+    if (p.id.startsWith("yt-")) {
+      youtubePlaylists.push(playlist);
+    } else {
+      userPlaylists.push(playlist);
+    }
+  });
 
   return {
     userPlaylists,
     youtubePlaylists,
-    lastFetchedAt: cache.lastFetchedAt,
+    lastFetchedAt: metadata?.value ?? null,
   };
 }
 
 export async function savePlaylistDetail(
-  playlistDetail: PlaylistDetail
+  playlistDetail: PlaylistDetail,
 ): Promise<void> {
   await cacheDb.playlistDetails.put({
     ...playlistDetail,
@@ -202,7 +206,7 @@ export async function savePlaylistDetail(
 }
 
 export async function getPlaylistDetail(
-  id: string
+  id: string,
 ): Promise<PlaylistDetail | undefined> {
   const cached = await cacheDb.playlistDetails.get(id);
   if (!cached) return undefined;
@@ -225,23 +229,23 @@ export async function deletePlaylistDetail(id: string): Promise<void> {
 export async function clearTracksCache(): Promise<void> {
   await cacheDb.transaction(
     "rw",
-    [cacheDb.tracks, cacheDb.tracksCache],
+    [cacheDb.tracks, cacheDb.metadata],
     async () => {
       await cacheDb.tracks.clear();
-      await cacheDb.tracksCache.clear();
-    }
+      await cacheDb.metadata.delete("tracks_lastFetchedAt");
+    },
   );
 }
 
 export async function clearPlaylistsCache(): Promise<void> {
   await cacheDb.transaction(
     "rw",
-    [cacheDb.playlists, cacheDb.playlistDetails, cacheDb.playlistsCache],
+    [cacheDb.playlists, cacheDb.playlistDetails, cacheDb.metadata],
     async () => {
       await cacheDb.playlists.clear();
       await cacheDb.playlistDetails.clear();
-      await cacheDb.playlistsCache.clear();
-    }
+      await cacheDb.metadata.delete("playlists_lastFetchedAt");
+    },
   );
 }
 
@@ -252,22 +256,20 @@ export async function clearAllCache(): Promise<void> {
       cacheDb.tracks,
       cacheDb.playlists,
       cacheDb.playlistDetails,
-      cacheDb.tracksCache,
-      cacheDb.playlistsCache,
+      cacheDb.metadata,
     ],
     async () => {
       await cacheDb.tracks.clear();
       await cacheDb.playlists.clear();
       await cacheDb.playlistDetails.clear();
-      await cacheDb.tracksCache.clear();
-      await cacheDb.playlistsCache.clear();
-    }
+      await cacheDb.metadata.clear();
+    },
   );
 }
 
 export async function updateTrackColor(
   trackId: string,
-  color: string
+  color: string,
 ): Promise<void> {
   const track = await cacheDb.tracks.get(trackId);
   if (track) {
@@ -276,30 +278,19 @@ export async function updateTrackColor(
       color,
     });
   }
-
-  const cache = await cacheDb.tracksCache.get("main");
-  if (cache) {
-    const updatedTracks = cache.tracks.map((t) =>
-      t.id === trackId ? { ...t, color } : t
-    );
-    await cacheDb.tracksCache.put({
-      ...cache,
-      tracks: updatedTracks,
-    });
-  }
 }
 
 export async function searchCachedTracks(
   query: string,
-  limit: number = 20
+  limit: number = 20,
 ): Promise<AudioFile[]> {
-  const cache = await cacheDb.tracksCache.get("main");
-  if (!cache) return [];
+  const tracks = await cacheDb.tracks.toArray();
+  if (tracks.length === 0) return [];
 
   const normalizedQuery = query.toLowerCase().trim();
   if (!normalizedQuery) return [];
 
-  const results = cache.tracks.filter((track) => {
+  const results = tracks.filter((track) => {
     if (track.filename.toLowerCase().includes(normalizedQuery)) {
       return true;
     }

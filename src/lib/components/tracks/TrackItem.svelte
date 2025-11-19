@@ -13,10 +13,13 @@
     CloudCheckIcon,
     CloudDownloadIcon,
     CloudOffIcon,
+    Trash2Icon,
   } from "@lucide/svelte";
   import { onMount } from "svelte";
   import type { AudioFile, PlaylistDetail } from "$lib/schemas";
   import { useDialogState } from "$lib/hooks";
+  import { toast } from "svelte-sonner";
+  import { DeleteTrackDialog } from "../admin";
 
   interface Props {
     index: number;
@@ -97,6 +100,24 @@
     }
     isOffline = await downloadStore.checkTrackOfflineStatus(track.id);
   }
+
+  let deleteTrackDialogOpen = $state(false);
+  async function confirmDeleteTrack() {
+    deleteTrackDialogOpen = false;
+    try {
+      await tracksStore.deleteTrack(track.id);
+      if (playerStore.currentTrack?.id === track.id) {
+        playerStore.playNext();
+        // also remove from queue
+      }
+      toast.success("Track deleted");
+    } catch (e) {
+      console.error("Failed to delete track", e);
+      toast.error("Failed to delete track", {
+        description: e instanceof Error ? e.message : JSON.stringify(e),
+      });
+    }
+  }
 </script>
 
 <ContextMenu.Root>
@@ -163,6 +184,14 @@
         Make Available Offline
       {/if}
     </ContextMenu.Item>
+    <ContextMenu.Separator />
+    <ContextMenu.Item
+      variant="destructive"
+      onclick={() => (deleteTrackDialogOpen = true)}
+    >
+      <Trash2Icon size={16} class="mr-2" />
+      Delete Track
+    </ContextMenu.Item>
   </ContextMenu.Content>
 </ContextMenu.Root>
 
@@ -171,4 +200,10 @@
   onOpenChange={(open) => !open && managePlaylistDialog.close()}
   trackId={track.id}
   trackTitle={title}
+/>
+
+<DeleteTrackDialog
+  bind:open={deleteTrackDialogOpen}
+  trackName={track?.metadata?.title || track?.filename || "this track"}
+  onConfirm={confirmDeleteTrack}
 />

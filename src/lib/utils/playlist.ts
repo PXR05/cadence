@@ -1,5 +1,4 @@
-import { cacheDb } from "$lib/db/cache";
-import { db as offlineDB } from "$lib/db/offline";
+import { offlineDb } from "$lib/db/offline";
 import type { Playlist } from "$lib/schemas";
 import { tracksStore } from "$lib/stores/tracks.svelte";
 
@@ -95,7 +94,7 @@ export async function getSpecialPlaylists(): Promise<Playlist[]> {
 
 async function getDownloadedSongsCount(): Promise<number> {
   try {
-    return await offlineDB.tracks.count();
+    return await offlineDb.tracks.count();
   } catch (error) {
     console.error("Failed to get downloaded songs count:", error);
     return 0;

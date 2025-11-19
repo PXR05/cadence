@@ -1,10 +1,12 @@
-import { fetchTracks } from "$lib/remote";
+import { deleteTrack, fetchTracks } from "$lib/remote";
 import {
   getTracksCache,
   saveTracksCache,
   clearTracksCache,
+  deleteTrackFromCache,
 } from "$lib/db/cache";
 import type { AudioFile } from "$lib/schemas";
+import { downloadStore } from "./download.svelte";
 
 class TracksStore {
   private _tracks = $state<AudioFile[]>([]);
@@ -198,6 +200,13 @@ class TracksStore {
     }
 
     return shuffled.slice(0, Math.min(count, shuffled.length));
+  }
+
+  async deleteTrack(trackId: string): Promise<void> {
+    await deleteTrackFromCache(trackId);
+    await downloadStore.removeTrackOffline(trackId);
+    await deleteTrack(trackId);
+    this._tracks = this.tracks.filter((track) => track.id !== trackId);
   }
 
   async clear(): Promise<void> {

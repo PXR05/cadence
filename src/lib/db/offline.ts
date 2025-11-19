@@ -51,7 +51,7 @@ class OfflineDatabase extends Dexie {
   }
 }
 
-export const db = new OfflineDatabase();
+export const offlineDb = new OfflineDatabase();
 
 export async function saveTrackOffline(
   trackId: string,
@@ -60,7 +60,7 @@ export async function saveTrackOffline(
   filename: string,
   size?: number
 ): Promise<void> {
-  await db.tracks.put({
+  await offlineDb.tracks.put({
     id: trackId,
     audioBlob,
     mimeType: audioBlob.type || "audio/mpeg",
@@ -74,11 +74,11 @@ export async function saveTrackOffline(
 export async function getOfflineTrack(
   trackId: string
 ): Promise<OfflineTrack | undefined> {
-  return db.tracks.get(trackId);
+  return offlineDb.tracks.get(trackId);
 }
 
 export async function isTrackOffline(trackId: string): Promise<boolean> {
-  const track = await db.tracks.get(trackId);
+  const track = await offlineDb.tracks.get(trackId);
   return !!track;
 }
 
@@ -86,13 +86,13 @@ export async function isTrackOfflineWithSize(
   trackId: string,
   expectedSize: number
 ): Promise<boolean> {
-  const track = await db.tracks.get(trackId);
+  const track = await offlineDb.tracks.get(trackId);
   if (!track) return false;
   return track.size === expectedSize;
 }
 
 export async function deleteOfflineTrack(trackId: string): Promise<void> {
-  await db.tracks.delete(trackId);
+  await offlineDb.tracks.delete(trackId);
 }
 
 export async function savePlaylistOffline(
@@ -100,7 +100,7 @@ export async function savePlaylistOffline(
   name: string,
   trackIds: string[]
 ): Promise<void> {
-  await db.playlists.put({
+  await offlineDb.playlists.put({
     id: playlistId,
     name,
     trackIds,
@@ -111,11 +111,11 @@ export async function savePlaylistOffline(
 export async function getOfflinePlaylist(
   playlistId: string
 ): Promise<OfflinePlaylist | undefined> {
-  return db.playlists.get(playlistId);
+  return offlineDb.playlists.get(playlistId);
 }
 
 export async function isPlaylistOffline(playlistId: string): Promise<boolean> {
-  const playlist = await db.playlists.get(playlistId);
+  const playlist = await offlineDb.playlists.get(playlistId);
   if (!playlist) return false;
 
   const trackStatuses = await Promise.all(
@@ -126,15 +126,15 @@ export async function isPlaylistOffline(playlistId: string): Promise<boolean> {
 }
 
 export async function deleteOfflinePlaylist(playlistId: string): Promise<void> {
-  const playlist = await db.playlists.get(playlistId);
+  const playlist = await offlineDb.playlists.get(playlistId);
   if (playlist) {
     await Promise.all(playlist.trackIds.map((id) => deleteOfflineTrack(id)));
-    await db.playlists.delete(playlistId);
+    await offlineDb.playlists.delete(playlistId);
   }
 }
 
 export async function getAllOfflinePlaylists(): Promise<OfflinePlaylist[]> {
-  return db.playlists.toArray();
+  return offlineDb.playlists.toArray();
 }
 
 export async function getStorageEstimate(): Promise<{

@@ -1,7 +1,7 @@
 export const ssr = false;
 
 import { browser } from "$app/environment";
-import { db as offlineDb } from "$lib/db/offline";
+import { offlineDb } from "$lib/db/offline";
 import type { AudioFile, PlaylistDetail } from "$lib/schemas";
 import { playlistsStore } from "$lib/stores/playlists.svelte";
 import { tracksStore } from "$lib/stores/tracks.svelte";
