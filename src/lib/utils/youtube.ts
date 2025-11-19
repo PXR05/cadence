@@ -14,14 +14,9 @@ export interface YouTubeProgressEvent {
   result?: YoutubeDownloadResponse;
 }
 
-/**
- * Downloads a YouTube video with progress updates via Server-Sent Events.
- * This function cannot be converted to a remote function because it uses EventSource
- * for streaming progress updates.
- */
 export async function downloadYoutubeWithProgress(
   url: string,
-  onProgress: (event: YouTubeProgressEvent) => void
+  onProgress: (event: YouTubeProgressEvent) => void,
 ): Promise<void> {
   const params = new URLSearchParams({ url });
   const eventSource = new EventSource(`${BASE_URL}/youtube?${params}`);

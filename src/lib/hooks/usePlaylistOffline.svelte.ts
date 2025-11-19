@@ -36,10 +36,9 @@ export function usePlaylistOffline(getPlaylistId: () => string | undefined) {
 
   async function makeOffline(
     playlist: PlaylistDetail,
-    isResume: boolean = false
   ) {
     if (!playlistId) return;
-    await downloadStore.makeOffline(playlist, playlistId, isResume);
+    await downloadStore.makeOffline(playlist, playlistId);
   }
 
   async function removeOffline() {

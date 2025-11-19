@@ -20,74 +20,88 @@ type DownloadProgress = {
   type: "offline" | "download";
 };
 
-type PendingDownload = {
-  playlistId: string;
-  playlistName: string;
-  totalTracks: number;
-  startedAt: number;
-};
+interface QueueItem {
+  id: string;
+  type: "playlist-offline" | "playlist-download" | "track-offline";
+  playlistId?: string;
+  playlistName?: string;
+  playlist?: PlaylistDetail;
+  trackId?: string;
+  trackName?: string;
+  metadata?: {
+    title?: string;
+    artist?: string;
+    album?: string;
+    duration?: number;
+  };
+  filename?: string;
+  size?: number;
+}
+
+interface PersistentState {
+  currentDownload: QueueItem | null;
+  queue: QueueItem[];
+  progress: DownloadProgress | null;
+}
 
 class DownloadStore {
+  private _currentDownload = $state<QueueItem | null>(null);
+  private _queue = $state<QueueItem[]>([]);
   private _progress = $state<DownloadProgress | null>(null);
   private _offlineStatus = $state<Map<string, boolean>>(new Map());
   private _trackOfflineStatus = $state<Map<string, boolean>>(new Map());
   private _abortController: AbortController | null = null;
   private _isCancelled = false;
-  private _isResuming = false;
+  private _isProcessing = false;
 
   constructor() {
     if (typeof window !== "undefined") {
+      this.loadFromStorage();
       setTimeout(() => this.checkForPendingDownloads(), 1000);
     }
   }
 
-  private async checkForPendingDownloads(): Promise<void> {
+  private loadFromStorage() {
     try {
-      const pendingData = localStorage.getItem("cadence.pending_download");
-      if (!pendingData) return;
-
-      const pending: PendingDownload = JSON.parse(pendingData);
-
-      const isComplete = await checkIsPlaylistOffline(pending.playlistId);
-
-      if (isComplete) {
-        localStorage.removeItem("cadence.pending_download");
-        return;
+      const stored = localStorage.getItem("cadence.download_queue");
+      if (stored) {
+        const state: PersistentState = JSON.parse(stored);
+        this._currentDownload = state.currentDownload;
+        this._queue = state.queue || [];
+        this._progress = state.progress;
       }
-
-      const hoursSinceStart =
-        (Date.now() - pending.startedAt) / (1000 * 60 * 60);
-      if (hoursSinceStart > 24) {
-        localStorage.removeItem("cadence.pending_download");
-        return;
-      }
-
-      console.log(
-        `Auto-resuming incomplete download for playlist: ${pending.playlistName}`
-      );
-
-      await this.resumePendingDownload(pending);
     } catch (error) {
-      console.error("Failed to check for pending downloads:", error);
-      localStorage.removeItem("cadence.pending_download");
+      console.error("Failed to load download queue state:", error);
+      localStorage.removeItem("cadence.download_queue");
     }
   }
 
-  private async resumePendingDownload(pending: PendingDownload): Promise<void> {
+  private saveToStorage() {
     try {
-      const response = await fetch(`/api/playlist/${pending.playlistId}`);
-      if (!response.ok) {
-        console.error("Failed to fetch playlist for resume");
-        localStorage.removeItem("cadence.pending_download");
-        return;
-      }
-
-      const playlist: PlaylistDetail = await response.json();
-
-      await this.makeOffline(playlist, pending.playlistId, true);
+      const state: PersistentState = {
+        currentDownload: this._currentDownload,
+        queue: this._queue,
+        progress: this._progress,
+      };
+      localStorage.setItem("cadence.download_queue", JSON.stringify(state));
     } catch (error) {
-      console.error("Failed to resume pending download:", error);
+      console.error("Failed to save download queue state:", error);
     }
+  }
+
+  private async checkForPendingDownloads(): Promise<void> {
+    if (this._currentDownload && !this._isProcessing) {
+      console.log("Resuming pending download:", this._currentDownload.id);
+      await this.processQueue();
+    }
+  }
+
+  get currentDownload() {
+    return this._currentDownload;
+  }
+
+  get queue() {
+    return this._queue;
   }
 
   get progress(): DownloadProgress | null {
@@ -95,7 +109,11 @@ class DownloadStore {
   }
 
   get isDownloading(): boolean {
-    return this._progress !== null;
+    return this._currentDownload !== null;
+  }
+
+  get queueCount() {
+    return this._queue.length;
   }
 
   isPlaylistOffline(playlistId: string): boolean {
@@ -123,7 +141,166 @@ class DownloadStore {
     return response.blob();
   }
 
+  async addPlaylistToDownloadQueue(playlist: PlaylistDetail): Promise<void> {
+    const queueItem: QueueItem = {
+      id: `playlist-download-${playlist.id}`,
+      type: "playlist-download",
+      playlistId: playlist.id,
+      playlistName: playlist.name,
+      playlist,
+    };
+
+    if (this._queue.some((item) => item.id === queueItem.id)) {
+      console.log("Playlist already in download queue:", playlist.name);
+      return;
+    }
+
+    if (this._currentDownload?.id === queueItem.id) {
+      console.log("Playlist is already downloading:", playlist.name);
+      return;
+    }
+
+    this._queue.push(queueItem);
+    this.saveToStorage();
+
+    if (!this._isProcessing) {
+      await this.processQueue();
+    }
+  }
+
+  async addPlaylistToOfflineQueue(
+    playlist: PlaylistDetail,
+    playlistId: string,
+  ): Promise<void> {
+    const queueItem: QueueItem = {
+      id: `playlist-offline-${playlistId}`,
+      type: "playlist-offline",
+      playlistId,
+      playlistName: playlist.name,
+      playlist,
+    };
+
+    if (this._queue.some((item) => item.id === queueItem.id)) {
+      console.log("Playlist already in offline queue:", playlist.name);
+      return;
+    }
+
+    if (this._currentDownload?.id === queueItem.id) {
+      console.log("Playlist is already being saved offline:", playlist.name);
+      return;
+    }
+
+    this._queue.push(queueItem);
+    this.saveToStorage();
+
+    if (!this._isProcessing) {
+      await this.processQueue();
+    }
+  }
+
+  async addTrackToOfflineQueue(
+    trackId: string,
+    metadata: {
+      title?: string;
+      artist?: string;
+      album?: string;
+      duration?: number;
+    },
+    filename: string,
+    size?: number,
+  ): Promise<void> {
+    const queueItem: QueueItem = {
+      id: `track-offline-${trackId}`,
+      type: "track-offline",
+      trackId,
+      trackName: metadata.title || filename,
+      metadata,
+      filename,
+      size,
+    };
+
+    if (this._queue.some((item) => item.id === queueItem.id)) {
+      console.log("Track already in offline queue:", queueItem.trackName);
+      return;
+    }
+
+    if (this._currentDownload?.id === queueItem.id) {
+      console.log("Track is already being saved offline:", queueItem.trackName);
+      return;
+    }
+
+    this._queue.push(queueItem);
+    this.saveToStorage();
+
+    if (!this._isProcessing) {
+      await this.processQueue();
+    }
+  }
+
+  private async processQueue() {
+    if (this._isProcessing) return;
+    if (this._currentDownload === null && this._queue.length === 0) return;
+
+    this._isProcessing = true;
+
+    try {
+      while (this._currentDownload || this._queue.length > 0) {
+        if (!this._currentDownload) {
+          this._currentDownload = this._queue.shift() || null;
+          this.saveToStorage();
+        }
+
+        if (!this._currentDownload) break;
+
+        await this.processQueueItem(this._currentDownload);
+
+        this._currentDownload = null;
+        this.saveToStorage();
+      }
+    } finally {
+      this._isProcessing = false;
+    }
+  }
+
+  private async processQueueItem(queueItem: QueueItem) {
+    try {
+      if (queueItem.type === "playlist-download" && queueItem.playlist) {
+        await this.downloadPlaylistInternal(queueItem.playlist);
+      } else if (
+        queueItem.type === "playlist-offline" &&
+        queueItem.playlist &&
+        queueItem.playlistId
+      ) {
+        await this.makeOfflineInternal(
+          queueItem.playlist,
+          queueItem.playlistId,
+        );
+      } else if (
+        queueItem.type === "track-offline" &&
+        queueItem.trackId &&
+        queueItem.metadata &&
+        queueItem.filename
+      ) {
+        await this.makeTrackOfflineInternal(
+          queueItem.trackId,
+          queueItem.metadata,
+          queueItem.filename,
+          queueItem.size,
+        );
+      }
+    } catch (error) {
+      console.error("Error processing queue item:", error);
+      throw error;
+    }
+  }
+
   async downloadPlaylist(playlist: PlaylistDetail): Promise<void> {
+    await this.addPlaylistToDownloadQueue(playlist);
+  }
+
+  private async downloadPlaylistInternal(
+    playlist: PlaylistDetail,
+  ): Promise<void> {
     this._abortController = new AbortController();
     this._isCancelled = false;
 
@@ -135,6 +312,9 @@ class DownloadStore {
         total: playlist.items.length,
         type: "download",
       };
+      this.saveToStorage();
+
+      const zipFile = new zip();
 
       for (let i = 0; i < playlist.items.length; i++) {
         if (this._isCancelled) {
@@ -149,18 +329,19 @@ class DownloadStore {
             }.${item.audio.filename.split(".").pop()}`
           : item.audio.filename;
 
-        zip.file(filename, blob);
+        zipFile.file(filename, blob);
         this._progress = {
           ...this._progress,
           current: i + 1,
         };
+        this.saveToStorage();
       }
 
       if (this._isCancelled) {
         return;
       }
 
-      const content = await zip.generateAsync({ type: "blob" });
+      const content = await zipFile.generateAsync({ type: "blob" });
       const url = URL.createObjectURL(content);
       const a = document.createElement("a");
       a.href = url;
@@ -173,34 +354,30 @@ class DownloadStore {
       }
       console.error("Failed to download playlist:", error);
       alert("Failed to download playlist. Please try again.");
+      throw error;
     } finally {
       this._progress = null;
       this._abortController = null;
       this._isCancelled = false;
+      this.saveToStorage();
     }
   }
 
   async makeOffline(
     playlist: PlaylistDetail,
     playlistId: string,
-    isResume: boolean = false
+  ): Promise<void> {
+    await this.addPlaylistToOfflineQueue(playlist, playlistId);
+  }
+
+  private async makeOfflineInternal(
+    playlist: PlaylistDetail,
+    playlistId: string,
   ): Promise<void> {
     this._abortController = new AbortController();
     this._isCancelled = false;
-    this._isResuming = isResume;
 
     try {
-      const pendingDownload: PendingDownload = {
-        playlistId,
-        playlistName: playlist.name,
-        totalTracks: playlist.items.length,
-        startedAt: Date.now(),
-      };
-      localStorage.setItem(
-        "cadence.pending_download",
-        JSON.stringify(pendingDownload)
-      );
-
       this._progress = {
         playlistId: playlist.id,
         playlistName: playlist.name,
@@ -208,10 +385,10 @@ class DownloadStore {
         total: playlist.items.length,
         type: "offline",
       };
+      this.saveToStorage();
 
       const trackIds: string[] = [];
       let skippedCount = 0;
-      let resumedFrom = 0;
 
       for (let i = 0; i < playlist.items.length; i++) {
         if (this._isCancelled) {
@@ -223,19 +400,17 @@ class DownloadStore {
 
         const alreadyExists = await isTrackOfflineWithSize(
           item.audio.id,
-          item.audio.size
+          item.audio.size,
         );
 
         if (alreadyExists) {
-          if (i === 0 || skippedCount === 0) {
-            resumedFrom = i + 1;
-          }
           trackIds.push(item.audio.id);
           skippedCount++;
           this._progress = {
             ...this._progress,
             current: i + 1,
           };
+          this.saveToStorage();
           continue;
         }
 
@@ -252,7 +427,7 @@ class DownloadStore {
               duration: item.audio.metadata?.duration,
             },
             item.audio.filename,
-            item.audio.size
+            item.audio.size,
           );
 
           trackIds.push(item.audio.id);
@@ -260,9 +435,9 @@ class DownloadStore {
             ...this._progress,
             current: i + 1,
           };
+          this.saveToStorage();
         } catch (error) {
           console.error(`Failed to download track ${item.audio.id}:`, error);
-
           throw error;
         }
       }
@@ -274,12 +449,6 @@ class DownloadStore {
 
       await savePlaylistOffline(playlistId, playlist.name, trackIds);
       this._offlineStatus.set(playlistId, true);
-
-      localStorage.removeItem("cadence.pending_download");
-
-      if (isResume && resumedFrom > 0) {
-        console.log(`Download resumed from track ${resumedFrom}`);
-      }
 
       if (skippedCount > 0) {
         console.log(`Skipped ${skippedCount} already downloaded track(s)`);
@@ -293,14 +462,14 @@ class DownloadStore {
 
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       alert(
-        `Download failed: ${errorMsg}\n\nYou can resume the download later.`
+        `Download failed: ${errorMsg}\n\nYou can resume the download later.`,
       );
       throw error;
     } finally {
       this._progress = null;
       this._abortController = null;
       this._isCancelled = false;
-      this._isResuming = false;
+      this.saveToStorage();
     }
   }
 
@@ -323,7 +492,21 @@ class DownloadStore {
       duration?: number;
     },
     filename: string,
-    size?: number
+    size?: number,
+  ): Promise<void> {
+    await this.addTrackToOfflineQueue(trackId, metadata, filename, size);
+  }
+
+  private async makeTrackOfflineInternal(
+    trackId: string,
+    metadata: {
+      title?: string;
+      artist?: string;
+      album?: string;
+      duration?: number;
+    },
+    filename: string,
+    size?: number,
   ): Promise<void> {
     this._abortController = new AbortController();
     this._isCancelled = false;
@@ -345,6 +528,7 @@ class DownloadStore {
         total: 1,
         type: "offline",
       };
+      this.saveToStorage();
 
       const blob = await this.downloadTrackBlob(trackId);
 
@@ -355,6 +539,7 @@ class DownloadStore {
           ...this._progress,
           current: 1,
         };
+        this.saveToStorage();
         this._trackOfflineStatus.set(trackId, true);
       }
     } catch (error) {
@@ -363,10 +548,12 @@ class DownloadStore {
       }
       console.error("Failed to make track offline:", error);
       alert("Failed to save track offline. Please try again.");
+      throw error;
     } finally {
       this._progress = null;
       this._abortController = null;
       this._isCancelled = false;
+      this.saveToStorage();
     }
   }
 
@@ -388,7 +575,41 @@ class DownloadStore {
       this._abortController = null;
     }
 
-    this._progress = null;
+    if (this._currentDownload) {
+      this._currentDownload = null;
+      this._progress = null;
+      this.saveToStorage();
+    }
+  }
+
+  removeFromQueue(id: string) {
+    this._queue = this._queue.filter((item) => item.id !== id);
+    this.saveToStorage();
+  }
+
+  clearQueue() {
+    this._queue = [];
+    this.saveToStorage();
+  }
+
+  isInQueue(id: string): boolean {
+    return (
+      this._queue.some((item) => item.id === id) ||
+      this._currentDownload?.id === id
+    );
+  }
+
+  isPlaylistInQueue(playlistId: string, type: "offline" | "download"): boolean {
+    const id =
+      type === "offline"
+        ? `playlist-offline-${playlistId}`
+        : `playlist-download-${playlistId}`;
+    return this.isInQueue(id);
+  }
+
+  isTrackInQueue(trackId: string): boolean {
+    const id = `track-offline-${trackId}`;
+    return this.isInQueue(id);
   }
 }
 
