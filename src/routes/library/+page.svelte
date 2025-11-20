@@ -5,11 +5,10 @@
   import { playlistsStore } from "$lib/stores/playlists.svelte";
   import { Button } from "$lib/components/ui/button/index.js";
   import { getSpecialPlaylists } from "$lib/utils/playlist";
-  import type { Playlist } from "$lib/schemas";
 
   let createDialogOpen = $state(false);
-  let specialPlaylists = $state<Playlist[]>([]);
 
+  const specialPlaylists = $derived(getSpecialPlaylists());
   const userPlaylists = $derived(playlistsStore.userPlaylists);
   const youtubePlaylists = $derived(playlistsStore.youtubePlaylists);
 
@@ -18,12 +17,6 @@
     ...userPlaylists,
     ...youtubePlaylists,
   ]);
-
-  $effect(() => {
-    getSpecialPlaylists().then((playlists) => {
-      specialPlaylists = playlists;
-    });
-  });
 
   async function handlePlaylistCreated() {
     playlistsStore.invalidate();

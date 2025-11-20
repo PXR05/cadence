@@ -22,8 +22,6 @@
         goto("/");
         return;
       }
-      await userManagement?.loadUsers();
-      await trackManagement?.loadTracks();
     } catch {
       goto("/");
     }

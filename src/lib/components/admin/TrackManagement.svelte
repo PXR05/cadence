@@ -10,6 +10,7 @@
   import UploadTrackDialog from "./UploadTrackDialog.svelte";
   import TrackPagination from "./TrackPagination.svelte";
   import type { AudioFile } from "$lib/schemas";
+    import { onMount } from "svelte";
 
   let tracksLoading = $state(false);
   let tracksInitialLoading = $state(true);
@@ -28,7 +29,7 @@
     }
   }
 
-  export async function loadTracks(page: number = 1) {
+  async function loadTracks(page: number = 1) {
     tracksLoading = true;
     try {
       const result = await fetchTracks({ page, limit: 10 });
@@ -42,6 +43,10 @@
       tracksInitialLoading = false;
     }
   }
+  
+  onMount(() => {
+    loadTracks();
+  });
 
   function openAddTrackDialog() {
     uploadTrackDialogOpen = true;

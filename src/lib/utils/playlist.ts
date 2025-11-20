@@ -2,6 +2,20 @@ import { offlineDb } from "$lib/db/offline";
 import type { Playlist } from "$lib/schemas";
 import { tracksStore } from "$lib/stores/tracks.svelte";
 
+let cachedDownloadedCount = 0;
+let isInitialized = false;
+
+async function updateDownloadedSongsCache(): Promise<void> {
+  try {
+    cachedDownloadedCount = await offlineDb.tracks.count();
+    isInitialized = true;
+  } catch (error) {
+    console.error("Failed to update downloaded songs count cache:", error);
+  }
+}
+
+updateDownloadedSongsCache();
+
 export function getPlaylistDisplayName(playlist: Playlist): string {
   if (playlist.name.startsWith("artist:")) {
     return playlist.name.replace("artist:", "");
@@ -41,7 +55,7 @@ export type SpecialPlaylistId =
 
 export function isSpecialPlaylist(playlistId: string): boolean {
   return Object.values(SPECIAL_PLAYLIST_IDS).includes(
-    playlistId as SpecialPlaylistId
+    playlistId as SpecialPlaylistId,
   );
 }
 
@@ -69,8 +83,10 @@ export function getSpecialPlaylist(playlistId: string): Playlist | undefined {
   return undefined;
 }
 
-export async function getSpecialPlaylists(): Promise<Playlist[]> {
+export function getSpecialPlaylists(): Playlist[] {
   const now = new Date();
+
+  updateDownloadedSongsCache();
 
   return [
     {
@@ -87,16 +103,11 @@ export async function getSpecialPlaylists(): Promise<Playlist[]> {
       userId: "system",
       createdAt: now,
       updatedAt: now,
-      itemCount: await getDownloadedSongsCount(),
+      itemCount: getDownloadedSongsCount(),
     },
   ];
 }
 
-async function getDownloadedSongsCount(): Promise<number> {
-  try {
-    return await offlineDb.tracks.count();
-  } catch (error) {
-    console.error("Failed to get downloaded songs count:", error);
-    return 0;
-  }
+function getDownloadedSongsCount(): number {
+  return cachedDownloadedCount;
 }

@@ -16,6 +16,7 @@
   import ResetPasswordDialog from "./ResetPasswordDialog.svelte";
   import TrackPagination from "./TrackPagination.svelte";
   import type { User } from "$lib/schemas";
+    import { onMount } from "svelte";
 
   let usersLoading = $state(false);
   let usersInitialLoading = $state(true);
@@ -38,7 +39,7 @@
     }
   }
 
-  export async function loadUsers(page: number = 1) {
+  async function loadUsers(page: number = 1) {
     usersLoading = true;
     try {
       const result = await listUsers({ page, limit: 10 });
@@ -52,6 +53,10 @@
       usersInitialLoading = false;
     }
   }
+  
+  onMount(() => {
+    loadUsers();
+  });
 
   function openDeleteDialog(user: User) {
     selectedUser = user;
