@@ -353,7 +353,6 @@ class DownloadStore {
         return;
       }
       console.error("Failed to download playlist:", error);
-      alert("Failed to download playlist. Please try again.");
       throw error;
     } finally {
       this._progress = null;
@@ -461,9 +460,7 @@ class DownloadStore {
       console.error("Failed to make playlist offline:", error);
 
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
-      alert(
-        `Download failed: ${errorMsg}\n\nYou can resume the download later.`,
-      );
+      console.error(errorMsg);
       throw error;
     } finally {
       this._progress = null;
@@ -479,7 +476,6 @@ class DownloadStore {
       this._offlineStatus.set(playlistId, false);
     } catch (error) {
       console.error("Failed to remove offline playlist:", error);
-      alert("Failed to remove offline playlist. Please try again.");
     }
   }
 
@@ -532,7 +528,18 @@ class DownloadStore {
 
       const blob = await this.downloadTrackBlob(trackId);
 
-      await saveTrackOffline(trackId, blob, metadata, filename, size);
+      await saveTrackOffline(
+        trackId,
+        blob,
+        {
+          title: metadata.title,
+          artist: metadata.artist,
+          album: metadata.album,
+          duration: metadata.duration,
+        },
+        filename,
+        size,
+      );
 
       if (!this._isCancelled) {
         this._progress = {
@@ -547,7 +554,6 @@ class DownloadStore {
         return;
       }
       console.error("Failed to make track offline:", error);
-      alert("Failed to save track offline. Please try again.");
       throw error;
     } finally {
       this._progress = null;
@@ -563,7 +569,6 @@ class DownloadStore {
       this._trackOfflineStatus.set(trackId, false);
     } catch (error) {
       console.error("Failed to remove offline track:", error);
-      alert("Failed to remove offline track. Please try again.");
     }
   }
 

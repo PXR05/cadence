@@ -16,9 +16,10 @@ export interface YouTubeProgressEvent {
 
 export async function downloadYoutubeWithProgress(
   url: string,
+  stream: string,
   onProgress: (event: YouTubeProgressEvent) => void,
 ): Promise<void> {
-  const params = new URLSearchParams({ url });
+  const params = new URLSearchParams({ url, stream });
   const eventSource = new EventSource(`${BASE_URL}/youtube?${params}`);
 
   return new Promise((resolve, reject) => {
@@ -39,9 +40,11 @@ export async function downloadYoutubeWithProgress(
       }
     };
 
-    eventSource.onerror = (error) => {
-      eventSource.close();
-      reject(new Error("Connection to server lost"));
+    eventSource.onerror = (event) => {
+      console.error("SSE connection error:", event);
+      reject(
+        new Error("Connection to server lost" + (event ? `: ${event}` : "")),
+      );
     };
   });
 }

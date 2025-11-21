@@ -15,6 +15,7 @@ interface DownloadProgress {
 interface QueueItem {
   type: "video" | "url";
   videoId: string;
+  streamId: string;
   result?: YouTubeSearchResult;
   url?: string;
 }
@@ -106,6 +107,7 @@ class YouTubeDownloadStore {
     const queueItem: QueueItem = {
       type: "video",
       videoId: result.videoId,
+      streamId: crypto.randomUUID(),
       result,
     };
 
@@ -136,6 +138,7 @@ class YouTubeDownloadStore {
 
     const queueItem: QueueItem = {
       type: "url",
+      streamId: crypto.randomUUID(),
       videoId,
       url,
     };
@@ -188,7 +191,7 @@ class YouTubeDownloadStore {
   }
 
   private async downloadTrack(queueItem: QueueItem) {
-    const { type, videoId, result, url } = queueItem;
+    const { type, videoId, streamId, result, url } = queueItem;
 
     const isUrl = type === "url";
     const isPlaylist =
@@ -216,6 +219,7 @@ class YouTubeDownloadStore {
     try {
       await downloadYoutubeWithProgress(
         downloadUrl,
+        streamId,
         (event: YouTubeProgressEvent) => {
           if (event.type === "progress" && event.data?.percent !== undefined) {
             let overallPercent = event.data.percent;
