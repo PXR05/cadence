@@ -11,6 +11,10 @@ export interface YouTubeProgressEvent {
     downloaded?: string;
     totalSize?: string;
   };
+  playlistTitle?: string,
+  playlistTotal?: number,
+  playlistCurrent?: number,
+  videoTitle?: string,
   result?: YoutubeDownloadResponse;
 }
 

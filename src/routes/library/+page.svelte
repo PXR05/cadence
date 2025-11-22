@@ -28,8 +28,7 @@
   <title>Library | Cadence</title>
 </svelte:head>
 
-<div style="--h: 4rem;" class="p-2 absolute top-0 left-0 right-0 z-30">
-  <div class="_bg _blur absolute inset-0 -z-10"></div>
+<div style="--h: 6rem;" class="p-2 absolute top-0 left-0 right-0 z-30">
   <div class="_bg _color absolute inset-0 -z-10"></div>
   <div class="flex items-start justify-between gap-2">
     <h2 class="text-2xl font-semibold p-2">Playlists</h2>
@@ -96,13 +95,6 @@
     &::before,
     &::after {
       background-color: color-mix(in oklab, var(--background) 50%, transparent);
-    }
-  }
-
-  ._blur {
-    &::before,
-    &::after {
-      backdrop-filter: blur(1rem) saturate(120%) brightness(120%);
     }
   }
 </style>

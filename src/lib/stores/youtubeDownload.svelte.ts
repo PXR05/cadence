@@ -240,33 +240,15 @@ class YouTubeDownloadStore {
             this.saveToStorage();
           } else if (event.type === "info") {
             const infoMessage = event.message;
-            let title = this._progress?.title || initialTitle;
-            let percent = this._progress?.percent || 0;
+            const title =
+              event.videoTitle ?? this._progress?.title ?? initialTitle;
 
-            if (infoMessage.includes("videos in playlist:")) {
-              const match = infoMessage.match(
-                /Found (\d+) videos in playlist:\s+(.+)/i
-              );
-              if (match) {
-                playlistTotal = parseInt(match[1], 10);
-                title = match[2];
-                percent = 0;
-              }
-            } else if (infoMessage.match(/\[\d+\/\d+\]/)) {
-              const progressMatch = infoMessage.match(/\[(\d+)\/(\d+)\]/);
-              if (progressMatch) {
-                playlistCurrent = parseInt(progressMatch[1], 10);
-                playlistTotal = parseInt(progressMatch[2], 10);
-                percent = ((playlistCurrent - 1) / playlistTotal) * 100;
-              }
-
-              const titleMatch = infoMessage.match(
-                /\[\d+\/\d+\]\s+Downloading:\s+(.+)/
-              );
-              if (titleMatch) {
-                title = titleMatch[1];
-              }
-            }
+            playlistTotal = event.playlistTotal ?? playlistTotal;
+            playlistCurrent = event.playlistCurrent ?? playlistCurrent;
+            const percent =
+              playlistTotal > 0
+                ? (playlistCurrent / playlistTotal) * 100
+                : (this._progress?.percent ?? 0);
 
             this._progress = {
               videoId,
@@ -276,7 +258,7 @@ class YouTubeDownloadStore {
             };
             this.saveToStorage();
           }
-        }
+        },
       );
 
       this._completedVideoId = videoId;

@@ -49,7 +49,7 @@
   const isNonModifiable = $derived(
     isSpecialPlaylist(playlist.id) ||
       isArtistPlaylist(playlist.id) ||
-      isAlbumPlaylist(playlist.id)
+      isAlbumPlaylist(playlist.id),
   );
 
   $effect(() => {
@@ -68,7 +68,7 @@
   }) {
     navigationStore.setNavigation(
       [{ label: "Library", path: "/library" }],
-      getPlaylistDisplayName({ name: updated.name } as Playlist)
+      getPlaylistDisplayName({ name: updated.name } as Playlist),
     );
     await playlistsStore.invalidatePlaylistDetail(playlistId);
     playlistsStore.invalidate();
@@ -84,7 +84,7 @@
   async function handlePlaylistResync() {
     try {
       await youtubeDownloadStore.downloadFromUrl(
-        `https://music.youtube.com/playlist?list=${playlistId.replace("youtube_", "")}`
+        `https://music.youtube.com/playlist?list=${playlistId.replace("youtube_", "")}`,
       );
       toast.success("Resynced from YouTube");
     } catch (error) {
@@ -181,27 +181,29 @@
     </Button>
 
     <div
-      class="flex flex-col truncate h-full justify-end transition-all duration-200
-      {isScrolled ? '' : 'max-sm:pb-10'}"
+      class="flex flex-col truncate h-full justify-end transition-all duration-200 sm:pr-28
+      {isScrolled ? 'pr-28' : 'max-sm:pb-10'}"
     >
-      <h1
-        class="flex items-center gap-2 font-semibold truncate transition-all duration-200 text-2xl
-        {isScrolled ? 'pl-10 mb-0.5' : ''}"
-      >
-        {playlist.name}
-        {#if offline.isOffline}
-          <CloudCheckIcon
-            size={isScrolled ? 16 : 20}
-            class="flex-shrink-0 text-primary"
-          />
-        {/if}
-      </h1>
       <p
         class="text-sm text-muted-foreground transition-all duration-200
         {isScrolled ? 'opacity-0 h-0' : 'h-5'}"
       >
         {playlist.items.length} tracks
       </p>
+      <div
+        class="flex items-center gap-2 truncate transition-all duration-200
+        {isScrolled ? 'pl-10 mb-0.5' : ''}"
+      >
+        <h1 class="truncate font-semibold text-2xl">
+          {playlist.name}
+        </h1>
+        {#if offline.isOffline}
+          <CloudCheckIcon
+            size={isScrolled ? 16 : 20}
+            class="flex-shrink-0 text-primary"
+          />
+        {/if}
+      </div>
     </div>
 
     <div

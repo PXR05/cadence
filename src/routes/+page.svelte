@@ -24,6 +24,10 @@
   });
 </script>
 
+<svelte:head>
+  <title>Cadence</title>
+</svelte:head>
+
 {#if isInitialLoad}
   <div class="mx-auto w-full h-full grid place-items-center p-8">
     <LoaderIcon class="animate-spin text-muted-foreground" />
