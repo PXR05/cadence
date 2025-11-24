@@ -91,7 +91,7 @@ export async function getTracksCache(): Promise<{
   tracks: AudioFile[];
   lastFetchedAt: string | null;
 } | null> {
-  const tracks = await cacheDb.tracks.toArray();
+  const tracks = await cacheDb.tracks.orderBy("uploadedAt").reverse().toArray();
   if (tracks.length === 0) {
     const metadata = await cacheDb.metadata.get("tracks_lastFetchedAt");
     if (!metadata) return null;

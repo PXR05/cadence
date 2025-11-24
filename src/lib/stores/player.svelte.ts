@@ -444,24 +444,11 @@ class PlayerState {
       navigator.mediaSession.setActionHandler("nexttrack", () =>
         this.playNext(),
       );
-
-      this.updateMediaPosition();
     }
 
     await this.loadTrackColor(track);
   }
 
-  updateMediaPosition() {
-    if ("mediaSession" in navigator && this.playerRef) {
-      if (isNaN(this.playerRef.duration)) return;
-      navigator.mediaSession.setPositionState({
-        duration: this.playerRef.duration,
-        playbackRate: this.playerRef.playbackRate,
-        position: this.playerRef.currentTime,
-      });
-    }
-  }
-J
   async play(opts?: { track?: AudioFile; index?: number }) {
     const { track, index } = opts || {};
     if (this.playerRef) {
@@ -524,6 +511,7 @@ J
   playNext() {
     if (this.isRepeated) {
       this.seek(0);
+      this.play({ index: this.queueIndex });
       return;
     }
     if (this.queueIndex < this.trackQueue.length - 1) {
@@ -540,6 +528,7 @@ J
   playPrevious() {
     if (this.isRepeated) {
       this.seek(0);
+      this.play({ index: this.queueIndex });
       return;
     }
     if (this.queueIndex > 0) {
@@ -562,7 +551,6 @@ J
     if (this.playerRef) {
       this.playerRef.currentTime = time;
       this.currentTime = time;
-      this.updateMediaPosition();
     }
   }
 
