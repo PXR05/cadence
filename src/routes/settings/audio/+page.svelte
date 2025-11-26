@@ -220,7 +220,7 @@
             x - 1,
             HEIGHT - PADDING.bottom - barHeight,
             2,
-            barHeight
+            barHeight,
           );
         }
       }
@@ -280,7 +280,7 @@
       const bandX = freqToX(band.frequency);
       const bandY = gainToY(band.gain);
       const distance = Math.sqrt(
-        Math.pow(x - bandX, 2) + Math.pow(y - bandY, 2)
+        Math.pow(x - bandX, 2) + Math.pow(y - bandY, 2),
       );
 
       if (distance < 15) {
@@ -439,7 +439,7 @@
                     value={band[control.key as keyof typeof band]}
                     oninput={(e) => {
                       const val = parseFloat(
-                        (e.target as HTMLInputElement).value
+                        (e.target as HTMLInputElement).value,
                       );
                       if (!isNaN(val)) {
                         playerStore.updateEqualizerBand(band.id, {
@@ -493,8 +493,6 @@
             <SelectItem value="Large Room 2">Large Room 2</SelectItem>
             <SelectItem value="Plate High">Plate High</SelectItem>
             <SelectItem value="Plate Low">Plate Low</SelectItem>
-            <SelectItem value="Long Reverb 1">Long Reverb 1</SelectItem>
-            <SelectItem value="Long Reverb 2">Long Reverb 2</SelectItem>
           </SelectContent>
         </SelectRoot>
       </div>

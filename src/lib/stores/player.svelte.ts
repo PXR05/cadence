@@ -594,6 +594,32 @@ class PlayerState {
     }
   }
 
+  reorderQueue(from: number, to: number) {
+    if (from === to) return;
+
+    if (this.isShuffled && this.shuffledIndices) {
+      const newIndices = [...this.shuffledIndices];
+      const [movedIndex] = newIndices.splice(from, 1);
+      newIndices.splice(to, 0, movedIndex);
+      this.shuffledIndices = newIndices;
+    } else {
+      const newQueue = [...this.persistedState.trackQueue];
+      const [movedTrack] = newQueue.splice(from, 1);
+      newQueue.splice(to, 0, movedTrack);
+      this.trackQueue = newQueue;
+    }
+
+    if (this.queueIndex === from) {
+      this.queueIndex = to;
+    } else if (from < this.queueIndex && to >= this.queueIndex) {
+      this.queueIndex--;
+    } else if (from > this.queueIndex && to <= this.queueIndex) {
+      this.queueIndex++;
+    }
+
+    this.syncCarouselToTrack(this.queueIndex);
+  }
+
   clearQueue() {
     this.trackQueue = [];
     this.queueIndex = -1;

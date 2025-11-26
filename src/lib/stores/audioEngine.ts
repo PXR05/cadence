@@ -15,27 +15,41 @@ export class AudioEngine {
   private reverbEnabled: boolean = false;
   private reverbPreset: string = "Small Hall 1";
 
+  private frequencyDataBuffer: Uint8Array | null = null;
+  private timeDomainDataBuffer: Uint8Array | null = null;
+
+  private impulseResponseCache: Map<string, AudioBuffer> = new Map();
+
+  private irGenerationPending: boolean = false;
+
   initialize(
     player: HTMLAudioElement,
     bands: EqualizerBand[],
     eqEnabled: boolean,
     reverbEnabled: boolean,
     reverbPreset: string,
-    volume: number
+    volume: number,
   ) {
     this.equalizerBands = bands;
     this.equalizerEnabled = eqEnabled;
     this.reverbEnabled = reverbEnabled;
     this.reverbPreset = reverbPreset;
 
-    this.audioContext = new AudioContext();
+    this.audioContext = new AudioContext({ latencyHint: "playback" });
 
     this.sourceNode = this.audioContext.createMediaElementSource(player);
     this.gainNode = this.audioContext.createGain();
     this.analyzerNode = this.audioContext.createAnalyser();
 
-    this.analyzerNode.fftSize = 2048;
+    this.analyzerNode.fftSize = 1024;
     this.analyzerNode.smoothingTimeConstant = 0.8;
+
+    this.frequencyDataBuffer = new Uint8Array(
+      this.analyzerNode.frequencyBinCount,
+    );
+    this.timeDomainDataBuffer = new Uint8Array(
+      this.analyzerNode.frequencyBinCount,
+    );
 
     this.equalizerNodes = this.equalizerBands.map((band) => {
       const filter = this.audioContext!.createBiquadFilter();
@@ -94,29 +108,39 @@ export class AudioEngine {
       this.audioContext.close();
       this.audioContext = null;
     }
+
+    this.frequencyDataBuffer = null;
+    this.timeDomainDataBuffer = null;
+    this.impulseResponseCache.clear();
   }
 
   getFrequencyData(): Uint8Array | null {
-    if (!this.analyzerNode) return null;
-    const bufferLength = this.analyzerNode.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    this.analyzerNode.getByteFrequencyData(dataArray);
-    return dataArray;
+    if (!this.analyzerNode || !this.frequencyDataBuffer) return null;
+    this.analyzerNode.getByteFrequencyData(
+      this.frequencyDataBuffer as Uint8Array<ArrayBuffer>,
+    );
+    return this.frequencyDataBuffer;
   }
 
   getTimeDomainData(): Uint8Array | null {
-    if (!this.analyzerNode) return null;
-    const bufferLength = this.analyzerNode.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    this.analyzerNode.getByteTimeDomainData(dataArray);
-    return dataArray;
+    if (!this.analyzerNode || !this.timeDomainDataBuffer) return null;
+    this.analyzerNode.getByteTimeDomainData(
+      this.timeDomainDataBuffer as Uint8Array<ArrayBuffer>,
+    );
+    return this.timeDomainDataBuffer;
   }
 
   setAnalyzerFFTSize(
-    size: 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 4096 | 8192 | 16384 | 32768
+    size: 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 4096 | 8192 | 16384 | 32768,
   ) {
     if (this.analyzerNode) {
       this.analyzerNode.fftSize = size;
+      this.frequencyDataBuffer = new Uint8Array(
+        this.analyzerNode.frequencyBinCount,
+      );
+      this.timeDomainDataBuffer = new Uint8Array(
+        this.analyzerNode.frequencyBinCount,
+      );
     }
   }
 
@@ -127,8 +151,9 @@ export class AudioEngine {
   }
 
   setVolume(volume: number) {
-    if (this.gainNode) {
-      this.gainNode.gain.value = volume;
+    if (this.gainNode && this.audioContext) {
+      const now = this.audioContext.currentTime;
+      this.gainNode.gain.setTargetAtTime(volume, now, 0.015);
     }
   }
 
@@ -141,19 +166,25 @@ export class AudioEngine {
   updateEqualizerBand(
     id: number,
     updates: Partial<EqualizerBand>,
-    bands: EqualizerBand[]
+    bands: EqualizerBand[],
   ) {
     this.equalizerBands = bands;
     const bandIndex = bands.findIndex((b) => b.id === id);
     if (bandIndex === -1) return;
 
     const node = this.equalizerNodes[bandIndex];
-    if (node) {
+    if (node && this.audioContext) {
+      const now = this.audioContext.currentTime;
       if (updates.type !== undefined) node.type = updates.type;
-      if (updates.frequency !== undefined)
-        node.frequency.value = updates.frequency;
-      if (updates.gain !== undefined) node.gain.value = updates.gain;
-      if (updates.Q !== undefined) node.Q.value = updates.Q;
+      if (updates.frequency !== undefined) {
+        node.frequency.setTargetAtTime(updates.frequency, now, 0.015);
+      }
+      if (updates.gain !== undefined) {
+        node.gain.setTargetAtTime(updates.gain, now, 0.015);
+      }
+      if (updates.Q !== undefined) {
+        node.Q.setTargetAtTime(updates.Q, now, 0.015);
+      }
     }
   }
 
@@ -163,8 +194,10 @@ export class AudioEngine {
   }
 
   resetEqualizer() {
+    if (!this.audioContext) return;
+    const now = this.audioContext.currentTime;
     this.equalizerNodes.forEach((node) => {
-      node.gain.value = 0;
+      node.gain.setTargetAtTime(0, now, 0.015);
     });
   }
 
@@ -181,268 +214,333 @@ export class AudioEngine {
   private async loadImpulseResponse(preset: string) {
     if (!this.audioContext || !this.convolverNode) return;
 
-    const impulseResponse = await this.generateImpulseResponse(preset);
-    this.convolverNode.buffer = impulseResponse;
+    const cached = this.impulseResponseCache.get(preset);
+    if (cached) {
+      this.convolverNode.buffer = cached;
+      return;
+    }
+
+    if (this.irGenerationPending) return;
+    this.irGenerationPending = true;
+
+    try {
+      const impulseResponse = await this.generateImpulseResponseAsync(preset);
+      this.impulseResponseCache.set(preset, impulseResponse);
+      if (this.convolverNode) {
+        this.convolverNode.buffer = impulseResponse;
+      }
+    } finally {
+      this.irGenerationPending = false;
+    }
   }
 
-  private async generateImpulseResponse(preset: string): Promise<AudioBuffer> {
+  private async generateImpulseResponseAsync(
+    preset: string,
+  ): Promise<AudioBuffer> {
     if (!this.audioContext) {
       throw new Error("AudioContext not initialized");
     }
 
     const sampleRate = this.audioContext.sampleRate;
-    let duration: number;
-    let decay: number;
-    let earlyReflections: { delay: number; gain: number }[];
-    let density: number;
-    let modulation: number;
+    const params = this.getPresetParams(preset);
 
-    switch (preset) {
-      case "Small Hall 1":
-        duration = 2.1;
-        decay = 2.5;
-        density = 0.5;
-        modulation = 0.3;
-        earlyReflections = [
-          { delay: 0.01, gain: 0.5 },
-          { delay: 0.022, gain: 0.45 },
-          { delay: 0.035, gain: 0.4 },
-          { delay: 0.048, gain: 0.35 },
-        ];
-        break;
-      case "Small Hall 2":
-        duration = 2.3;
-        decay = 2.8;
-        density = 0.5;
-        modulation = 0.25;
-        earlyReflections = [
-          { delay: 0.01, gain: 0.5 },
-          { delay: 0.022, gain: 0.45 },
-          { delay: 0.035, gain: 0.4 },
-          { delay: 0.048, gain: 0.35 },
-        ];
-        break;
-      case "Medium Hall 1":
-        duration = 2.8;
-        decay = 2.3;
-        density = 0.6;
-        modulation = 0.25;
-        earlyReflections = [
-          { delay: 0.01, gain: 0.55 },
-          { delay: 0.024, gain: 0.5 },
-          { delay: 0.039, gain: 0.45 },
-          { delay: 0.055, gain: 0.4 },
-          { delay: 0.072, gain: 0.35 },
-        ];
-        break;
-      case "Medium Hall 2":
-        duration = 2.9;
-        decay = 2.4;
-        density = 0.6;
-        modulation = 0.2;
-        earlyReflections = [
-          { delay: 0.01, gain: 0.55 },
-          { delay: 0.024, gain: 0.5 },
-          { delay: 0.039, gain: 0.45 },
-          { delay: 0.055, gain: 0.4 },
-          { delay: 0.072, gain: 0.35 },
-        ];
-        break;
-      case "Large Hall 1":
-        duration = 3.8;
-        decay = 1.8;
-        density = 0.7;
-        modulation = 0.15;
-        earlyReflections = [
-          { delay: 0.018, gain: 0.6 },
-          { delay: 0.036, gain: 0.55 },
-          { delay: 0.056, gain: 0.5 },
-          { delay: 0.078, gain: 0.45 },
-          { delay: 0.102, gain: 0.4 },
-          { delay: 0.128, gain: 0.35 },
-        ];
-        break;
-      case "Large Hall 2":
-        duration = 4.2;
-        decay = 1.7;
-        density = 0.7;
-        modulation = 0.2;
-        earlyReflections = [
-          { delay: 0.018, gain: 0.6 },
-          { delay: 0.036, gain: 0.55 },
-          { delay: 0.056, gain: 0.5 },
-          { delay: 0.078, gain: 0.45 },
-          { delay: 0.102, gain: 0.4 },
-          { delay: 0.128, gain: 0.35 },
-        ];
-        break;
-      case "Small Room 1":
-        duration = 0.5;
-        decay = 5.5;
-        density = 0.4;
-        modulation = 0.2;
-        earlyReflections = [
-          { delay: 0.005, gain: 0.7 },
-          { delay: 0.012, gain: 0.6 },
-          { delay: 0.02, gain: 0.5 },
-        ];
-        break;
-      case "Small Room 2":
-        duration = 0.5;
-        decay = 5.5;
-        density = 0.45;
-        modulation = 0.3;
-        earlyReflections = [
-          { delay: 0.005, gain: 0.7 },
-          { delay: 0.012, gain: 0.6 },
-          { delay: 0.02, gain: 0.5 },
-        ];
-        break;
-      case "Medium Room 1":
-        duration = 0.8;
-        decay = 4.0;
-        density = 0.5;
-        modulation = 0.2;
-        earlyReflections = [
-          { delay: 0.008, gain: 0.65 },
-          { delay: 0.018, gain: 0.6 },
-          { delay: 0.029, gain: 0.5 },
-          { delay: 0.042, gain: 0.4 },
-        ];
-        break;
-      case "Medium Room 2":
-        duration = 1.2;
-        decay = 3.2;
-        density = 0.55;
-        modulation = 0.3;
-        earlyReflections = [
-          { delay: 0.016, gain: 0.65 },
-          { delay: 0.03, gain: 0.6 },
-          { delay: 0.046, gain: 0.5 },
-          { delay: 0.064, gain: 0.4 },
-        ];
-        break;
-      case "Large Room 1":
-        duration = 1.8;
-        decay = 2.6;
-        density = 0.65;
-        modulation = 0.2;
-        earlyReflections = [
-          { delay: 0.01, gain: 0.7 },
-          { delay: 0.025, gain: 0.65 },
-          { delay: 0.042, gain: 0.6 },
-          { delay: 0.061, gain: 0.5 },
-          { delay: 0.082, gain: 0.4 },
-        ];
-        break;
-      case "Large Room 2":
-        duration = 1.9;
-        decay = 2.5;
-        density = 0.65;
-        modulation = 0.3;
-        earlyReflections = [
-          { delay: 0.02, gain: 0.7 },
-          { delay: 0.04, gain: 0.65 },
-          { delay: 0.062, gain: 0.6 },
-          { delay: 0.086, gain: 0.5 },
-          { delay: 0.112, gain: 0.4 },
-        ];
-        break;
-      case "Plate High":
-        duration = 1.8;
-        decay = 2.6;
-        density = 0.8;
-        modulation = 0.2;
-        earlyReflections = [
-          { delay: 0.0, gain: 0.8 },
-          { delay: 0.003, gain: 0.75 },
-          { delay: 0.007, gain: 0.7 },
-          { delay: 0.012, gain: 0.6 },
-          { delay: 0.018, gain: 0.5 },
-        ];
-        break;
-      case "Plate Low":
-        duration = 1.9;
-        decay = 2.5;
-        density = 0.8;
-        modulation = 0.3;
-        earlyReflections = [
-          { delay: 0.0, gain: 0.8 },
-          { delay: 0.003, gain: 0.75 },
-          { delay: 0.007, gain: 0.7 },
-          { delay: 0.012, gain: 0.6 },
-          { delay: 0.018, gain: 0.5 },
-        ];
-        break;
-      case "Long Reverb 1":
-        duration = 12.0;
-        decay = 0.6;
-        density = 0.9;
-        modulation = 0.35;
-        earlyReflections = [
-          { delay: 0.0, gain: 0.4 },
-          { delay: 0.015, gain: 0.38 },
-          { delay: 0.032, gain: 0.36 },
-          { delay: 0.051, gain: 0.34 },
-        ];
-        break;
-      case "Long Reverb 2":
-        duration = 30.0;
-        decay = 0.25;
-        density = 0.95;
-        modulation = 0.4;
-        earlyReflections = [
-          { delay: 0.0, gain: 0.35 },
-          { delay: 0.02, gain: 0.33 },
-          { delay: 0.042, gain: 0.31 },
-          { delay: 0.066, gain: 0.29 },
-        ];
-        break;
-      default:
-        duration = 2.1;
-        decay = 2.5;
-        density = 0.5;
-        modulation = 0.25;
-        earlyReflections = [
-          { delay: 0.02, gain: 0.6 },
-          { delay: 0.038, gain: 0.5 },
-          { delay: 0.058, gain: 0.4 },
-        ];
-    }
+    const cappedDuration = Math.min(params.duration, 5);
+    const length = Math.floor(sampleRate * cappedDuration);
 
-    const length = Math.floor(sampleRate * duration);
     const impulse = this.audioContext.createBuffer(2, length, sampleRate);
     const left = impulse.getChannelData(0);
     const right = impulse.getChannelData(1);
 
-    for (let i = 0; i < length; i++) {
+    const chunkSize = 8192;
+    const totalChunks = Math.ceil(length / chunkSize);
+
+    for (let chunk = 0; chunk < totalChunks; chunk++) {
+      const startIdx = chunk * chunkSize;
+      const endIdx = Math.min(startIdx + chunkSize, length);
+
+      this.processImpulseChunk(
+        left,
+        right,
+        startIdx,
+        endIdx,
+        sampleRate,
+        params,
+      );
+
+      if (chunk < totalChunks - 1) {
+        await this.yieldToMainThread();
+      }
+    }
+
+    return impulse;
+  }
+
+  private processImpulseChunk(
+    left: Float32Array,
+    right: Float32Array,
+    startIdx: number,
+    endIdx: number,
+    sampleRate: number,
+    params: ReverbParams,
+  ) {
+    const { decay, density, modulation, earlyReflections } = params;
+
+    const reflectionSamples = earlyReflections.map((r) => ({
+      sample: Math.floor(r.delay * sampleRate),
+      gain: r.gain,
+    }));
+
+    for (let i = startIdx; i < endIdx; i++) {
       const t = i / sampleRate;
       const envelope = Math.exp(-decay * t);
 
       let leftSample = 0;
       let rightSample = 0;
 
-      earlyReflections.forEach((reflection, idx) => {
-        const reflectionSample = Math.floor(reflection.delay * sampleRate);
-        if (i === reflectionSample) {
-          leftSample += reflection.gain * (idx % 2 === 0 ? 1 : -1);
-          rightSample += reflection.gain * (idx % 2 === 0 ? -1 : 1);
+      for (let j = 0; j < reflectionSamples.length; j++) {
+        const reflection = reflectionSamples[j];
+        if (i === reflection.sample) {
+          const sign = j % 2 === 0 ? 1 : -1;
+          leftSample += reflection.gain * sign;
+          rightSample += reflection.gain * -sign;
         }
-      });
+      }
 
       const densityFactor = Math.min(1, t * density * 10);
       const mod = Math.sin(t * modulation * 1000) * 0.3;
 
-      leftSample +=
-        (Math.random() * 2 - 1) * envelope * densityFactor * (1 + mod);
-      rightSample +=
-        (Math.random() * 2 - 1) * envelope * densityFactor * (1 - mod);
+      const rand1 = this.fastRandom() * 2 - 1;
+      const rand2 = this.fastRandom() * 2 - 1;
+
+      leftSample += rand1 * envelope * densityFactor * (1 + mod);
+      rightSample += rand2 * envelope * densityFactor * (1 - mod);
 
       left[i] = leftSample;
       right[i] = rightSample;
     }
+  }
 
-    return impulse;
+  private randomSeed: number = 1;
+  private fastRandom(): number {
+    this.randomSeed = (this.randomSeed * 16807) % 2147483647;
+    return this.randomSeed / 2147483647;
+  }
+
+  private yieldToMainThread(): Promise<void> {
+    return new Promise((resolve) => {
+      if (typeof requestIdleCallback !== "undefined") {
+        requestIdleCallback(() => resolve(), { timeout: 16 });
+      } else {
+        setTimeout(resolve, 0);
+      }
+    });
+  }
+
+  private getPresetParams(preset: string): ReverbParams {
+    switch (preset) {
+      case "Small Hall 1":
+        return {
+          duration: 2.1,
+          decay: 2.5,
+          density: 0.5,
+          modulation: 0.3,
+          earlyReflections: [
+            { delay: 0.01, gain: 0.5 },
+            { delay: 0.022, gain: 0.45 },
+            { delay: 0.035, gain: 0.4 },
+            { delay: 0.048, gain: 0.35 },
+          ],
+        };
+      case "Small Hall 2":
+        return {
+          duration: 2.3,
+          decay: 2.8,
+          density: 0.5,
+          modulation: 0.25,
+          earlyReflections: [
+            { delay: 0.01, gain: 0.5 },
+            { delay: 0.022, gain: 0.45 },
+            { delay: 0.035, gain: 0.4 },
+            { delay: 0.048, gain: 0.35 },
+          ],
+        };
+      case "Medium Hall 1":
+        return {
+          duration: 2.8,
+          decay: 2.3,
+          density: 0.6,
+          modulation: 0.25,
+          earlyReflections: [
+            { delay: 0.01, gain: 0.55 },
+            { delay: 0.024, gain: 0.5 },
+            { delay: 0.039, gain: 0.45 },
+            { delay: 0.055, gain: 0.4 },
+            { delay: 0.072, gain: 0.35 },
+          ],
+        };
+      case "Medium Hall 2":
+        return {
+          duration: 2.9,
+          decay: 2.4,
+          density: 0.6,
+          modulation: 0.2,
+          earlyReflections: [
+            { delay: 0.01, gain: 0.55 },
+            { delay: 0.024, gain: 0.5 },
+            { delay: 0.039, gain: 0.45 },
+            { delay: 0.055, gain: 0.4 },
+            { delay: 0.072, gain: 0.35 },
+          ],
+        };
+      case "Large Hall 1":
+        return {
+          duration: 3.8,
+          decay: 1.8,
+          density: 0.7,
+          modulation: 0.15,
+          earlyReflections: [
+            { delay: 0.018, gain: 0.6 },
+            { delay: 0.036, gain: 0.55 },
+            { delay: 0.056, gain: 0.5 },
+            { delay: 0.078, gain: 0.45 },
+            { delay: 0.102, gain: 0.4 },
+            { delay: 0.128, gain: 0.35 },
+          ],
+        };
+      case "Large Hall 2":
+        return {
+          duration: 4.2,
+          decay: 1.7,
+          density: 0.7,
+          modulation: 0.2,
+          earlyReflections: [
+            { delay: 0.018, gain: 0.6 },
+            { delay: 0.036, gain: 0.55 },
+            { delay: 0.056, gain: 0.5 },
+            { delay: 0.078, gain: 0.45 },
+            { delay: 0.102, gain: 0.4 },
+            { delay: 0.128, gain: 0.35 },
+          ],
+        };
+      case "Small Room 1":
+        return {
+          duration: 0.5,
+          decay: 5.5,
+          density: 0.4,
+          modulation: 0.2,
+          earlyReflections: [
+            { delay: 0.005, gain: 0.7 },
+            { delay: 0.012, gain: 0.6 },
+            { delay: 0.02, gain: 0.5 },
+          ],
+        };
+      case "Small Room 2":
+        return {
+          duration: 0.5,
+          decay: 5.5,
+          density: 0.45,
+          modulation: 0.3,
+          earlyReflections: [
+            { delay: 0.005, gain: 0.7 },
+            { delay: 0.012, gain: 0.6 },
+            { delay: 0.02, gain: 0.5 },
+          ],
+        };
+      case "Medium Room 1":
+        return {
+          duration: 0.8,
+          decay: 4.0,
+          density: 0.5,
+          modulation: 0.2,
+          earlyReflections: [
+            { delay: 0.008, gain: 0.65 },
+            { delay: 0.018, gain: 0.6 },
+            { delay: 0.029, gain: 0.5 },
+            { delay: 0.042, gain: 0.4 },
+          ],
+        };
+      case "Medium Room 2":
+        return {
+          duration: 1.2,
+          decay: 3.2,
+          density: 0.55,
+          modulation: 0.3,
+          earlyReflections: [
+            { delay: 0.016, gain: 0.65 },
+            { delay: 0.03, gain: 0.6 },
+            { delay: 0.046, gain: 0.5 },
+            { delay: 0.064, gain: 0.4 },
+          ],
+        };
+      case "Large Room 1":
+        return {
+          duration: 1.8,
+          decay: 2.6,
+          density: 0.65,
+          modulation: 0.2,
+          earlyReflections: [
+            { delay: 0.01, gain: 0.7 },
+            { delay: 0.025, gain: 0.65 },
+            { delay: 0.042, gain: 0.6 },
+            { delay: 0.061, gain: 0.5 },
+            { delay: 0.082, gain: 0.4 },
+          ],
+        };
+      case "Large Room 2":
+        return {
+          duration: 1.9,
+          decay: 2.5,
+          density: 0.65,
+          modulation: 0.3,
+          earlyReflections: [
+            { delay: 0.02, gain: 0.7 },
+            { delay: 0.04, gain: 0.65 },
+            { delay: 0.062, gain: 0.6 },
+            { delay: 0.086, gain: 0.5 },
+            { delay: 0.112, gain: 0.4 },
+          ],
+        };
+      case "Plate High":
+        return {
+          duration: 1.8,
+          decay: 2.6,
+          density: 0.8,
+          modulation: 0.2,
+          earlyReflections: [
+            { delay: 0.0, gain: 0.8 },
+            { delay: 0.003, gain: 0.75 },
+            { delay: 0.007, gain: 0.7 },
+            { delay: 0.012, gain: 0.6 },
+            { delay: 0.018, gain: 0.5 },
+          ],
+        };
+      case "Plate Low":
+        return {
+          duration: 1.9,
+          decay: 2.5,
+          density: 0.8,
+          modulation: 0.3,
+          earlyReflections: [
+            { delay: 0.0, gain: 0.8 },
+            { delay: 0.003, gain: 0.75 },
+            { delay: 0.007, gain: 0.7 },
+            { delay: 0.012, gain: 0.6 },
+            { delay: 0.018, gain: 0.5 },
+          ],
+        };
+      default:
+        return {
+          duration: 2.1,
+          decay: 2.5,
+          density: 0.5,
+          modulation: 0.25,
+          earlyReflections: [
+            { delay: 0.02, gain: 0.6 },
+            { delay: 0.038, gain: 0.5 },
+            { delay: 0.058, gain: 0.4 },
+          ],
+        };
+    }
   }
 
   private reconnectAudioGraph() {
@@ -480,4 +578,12 @@ export class AudioEngine {
 
     currentNode.connect(this.analyzerNode);
   }
+}
+
+interface ReverbParams {
+  duration: number;
+  decay: number;
+  density: number;
+  modulation: number;
+  earlyReflections: { delay: number; gain: number }[];
 }

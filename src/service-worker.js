@@ -6,6 +6,10 @@
 
 import { build, files, prerendered, version } from "$service-worker";
 
+const BASE_URL = "/api/audio";
+const IMAGE_CACHE = "image-cache";
+const IMAGE_URL_PATTERN = new RegExp(`^${BASE_URL}/[^/]+/image$`);
+
 const self = /** @type {ServiceWorkerGlobalScope} */ (
   /** @type {unknown} */ (globalThis.self)
 );
@@ -33,12 +37,31 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(deleteOldCaches());
 });
 
-self.addEventListener("fetch", async (event) => {
+self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
   async function respond() {
     const url = new URL(event.request.url);
     const cache = await caches.open(CACHE);
+
+    if (IMAGE_URL_PATTERN.test(url.pathname)) {
+      const imageCache = await caches.open(IMAGE_CACHE);
+      const cachedImage = await imageCache.match(event.request);
+
+      if (cachedImage) {
+        return cachedImage;
+      }
+
+      try {
+        const response = await fetch(event.request);
+        if (response.status === 200) {
+          imageCache.put(event.request, response.clone());
+        }
+        return response;
+      } catch (err) {
+        throw err;
+      }
+    }
 
     if (ASSETS.includes(url.pathname)) {
       const response = await cache.match(url.pathname);
@@ -71,4 +94,28 @@ self.addEventListener("fetch", async (event) => {
   }
 
   event.respondWith(respond());
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "CACHE_IMAGE") {
+    const imageUrl = event.data.url;
+
+    async function cacheImage() {
+      try {
+        const imageCache = await caches.open(IMAGE_CACHE);
+        const existingResponse = await imageCache.match(imageUrl);
+
+        if (!existingResponse) {
+          const response = await fetch(imageUrl);
+          if (response.status === 200) {
+            await imageCache.put(imageUrl, response);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to cache image:", err);
+      }
+    }
+
+    event.waitUntil(cacheImage());
+  }
 });

@@ -415,7 +415,7 @@ class DownloadStore {
 
         try {
           const blob = await this.downloadTrackBlob(item.audio.id);
-
+    
           await saveTrackOffline(
             item.audio.id,
             blob,

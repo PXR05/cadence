@@ -14,10 +14,13 @@
 
   let virtualScroll: any = $state(null);
   const ROW_HEIGHT = 52;
+  let previousOpen = $state(false);
+
   $effect(() => {
-    if (open && virtualScroll && playerStore.queueIndex >= 0) {
+    if (open && !previousOpen && virtualScroll && playerStore.queueIndex >= 0) {
       virtualScroll?.scrollToIndex(playerStore.queueIndex, false);
     }
+    previousOpen = open;
   });
 </script>
 
@@ -58,6 +61,8 @@
       rightPadding={8}
       itemGap={4}
       getItemKey={(track) => track.id ?? track.filename}
+      enableDragReorder
+      onReorder={(from, to) => playerStore.reorderQueue(from, to)}
     >
       {#snippet emptyState()}
         <div class="text-center py-8 text-muted-foreground pt-15.5">
@@ -65,9 +70,9 @@
         </div>
       {/snippet}
 
-      {#snippet children({ item: track, index })}
+      {#snippet children({ item: track, index, dragHandleProps })}
         {@const isCurrentTrack = index === playerStore.queueIndex}
-        <QueueItem {index} {track} {isCurrentTrack} />
+        <QueueItem {index} {track} {isCurrentTrack} {dragHandleProps} />
       {/snippet}
     </VirtualScroll>
   </Dialog.Content>

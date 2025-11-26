@@ -32,7 +32,6 @@ export async function addPlayHistoryEntry(
 
   await historyDb.playHistory.add(entry);
 
-  // Keep only the last 100 entries
   const count = await historyDb.playHistory.count();
   if (count > 100) {
     const oldestEntries = await historyDb.playHistory
@@ -56,7 +55,6 @@ export async function getRecentPlayHistory(
     .reverse()
     .toArray();
 
-  // Deduplicate by trackId, keeping the most recent entry
   const seenTracks = new Set<string>();
   const uniqueEntries: PlayHistoryEntry[] = [];
 

@@ -166,7 +166,6 @@ export async function getPlaylistsCache(): Promise<{
 
   const metadata = await cacheDb.metadata.get("playlists_lastFetchedAt");
 
-  // Separate user and youtube playlists based on userId pattern
   const userPlaylists: Playlist[] = [];
   const youtubePlaylists: Playlist[] = [];
 
@@ -181,7 +180,6 @@ export async function getPlaylistsCache(): Promise<{
       itemCount: p.itemCount,
     };
 
-    // YouTube playlists have IDs starting with 'yt-'
     if (p.id.startsWith("yt-")) {
       youtubePlaylists.push(playlist);
     } else {

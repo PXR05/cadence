@@ -106,9 +106,11 @@
     deleteTrackDialogOpen = false;
     try {
       await tracksStore.deleteTrack(track.id);
-      if (playerStore.currentTrack?.id === track.id) {
-        playerStore.playNext();
-        // also remove from queue
+      const queueIndex = playerStore.trackQueue.findIndex(
+        (queuedTrack) => queuedTrack.id === track.id,
+      );
+      if (queueIndex !== -1) {
+        playerStore.removeFromQueue(queueIndex);
       }
       toast.success("Track deleted");
     } catch (e) {

@@ -1,4 +1,5 @@
 import Dexie, { type Table } from "dexie";
+import { getImageUrl } from "$lib/constants";
 
 export interface OfflineTrack {
   id: string;
@@ -58,7 +59,7 @@ export async function saveTrackOffline(
   audioBlob: Blob,
   metadata: OfflineTrack["metadata"],
   filename: string,
-  size?: number
+  size?: number,
 ): Promise<void> {
   await offlineDb.tracks.put({
     id: trackId,
@@ -69,10 +70,17 @@ export async function saveTrackOffline(
     filename,
     downloadedAt: Date.now(),
   });
+
+  if (navigator.serviceWorker?.controller) {
+    navigator.serviceWorker.controller.postMessage({
+      type: "CACHE_IMAGE",
+      url: getImageUrl(trackId),
+    });
+  }
 }
 
 export async function getOfflineTrack(
-  trackId: string
+  trackId: string,
 ): Promise<OfflineTrack | undefined> {
   return offlineDb.tracks.get(trackId);
 }
@@ -84,7 +92,7 @@ export async function isTrackOffline(trackId: string): Promise<boolean> {
 
 export async function isTrackOfflineWithSize(
   trackId: string,
-  expectedSize: number
+  expectedSize: number,
 ): Promise<boolean> {
   const track = await offlineDb.tracks.get(trackId);
   if (!track) return false;
@@ -98,7 +106,7 @@ export async function deleteOfflineTrack(trackId: string): Promise<void> {
 export async function savePlaylistOffline(
   playlistId: string,
   name: string,
-  trackIds: string[]
+  trackIds: string[],
 ): Promise<void> {
   await offlineDb.playlists.put({
     id: playlistId,
@@ -109,7 +117,7 @@ export async function savePlaylistOffline(
 }
 
 export async function getOfflinePlaylist(
-  playlistId: string
+  playlistId: string,
 ): Promise<OfflinePlaylist | undefined> {
   return offlineDb.playlists.get(playlistId);
 }
@@ -119,7 +127,7 @@ export async function isPlaylistOffline(playlistId: string): Promise<boolean> {
   if (!playlist) return false;
 
   const trackStatuses = await Promise.all(
-    playlist.trackIds.map((id) => isTrackOffline(id))
+    playlist.trackIds.map((id) => isTrackOffline(id)),
   );
 
   return trackStatuses.every((status) => status);
