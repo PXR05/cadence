@@ -1,13 +1,9 @@
 <script lang="ts">
   import { playerStore } from "$lib/stores/player.svelte";
-  import { GripHorizontalIcon, PlayIcon } from "@lucide/svelte";
+  import { GripHorizontalIcon, PlayIcon, XIcon } from "@lucide/svelte";
   import { Button } from "../ui/button";
+  import { Swiper } from "../ui/swiper";
   import type { AudioFile } from "$lib/schemas";
-
-  interface DragHandleProps {
-    onpointerdown: (e: PointerEvent) => void;
-    style: string;
-  }
 
   const {
     index,
@@ -18,53 +14,22 @@
     index: number;
     isCurrentTrack: boolean;
     track: AudioFile;
-    dragHandleProps?: DragHandleProps;
+    dragHandleProps?: {
+      onpointerdown: (e: PointerEvent) => void;
+      style: string;
+    };
   } = $props();
 
   const textColor = $derived(
     `color-mix(in oklab, ${playerStore.trackColor} 80%, var(--foreground))`,
   );
 
-  let swipeContainer: HTMLDivElement;
-  let isRemoving = $state(false);
-  let removeDirection = $state<"left" | "right" | null>(null);
-
-  $effect(() => {
-    if (swipeContainer && !isRemoving) {
-      const centerPosition =
-        swipeContainer.scrollWidth / 2 - swipeContainer.clientWidth / 2;
-      swipeContainer.scrollLeft = centerPosition;
-    }
-  });
-
-  function onSwipeEnd() {
-    if (!swipeContainer || isRemoving) return;
-
-    const scroll_center = swipeContainer.scrollWidth / 2;
-    const viewport_center = swipeContainer.clientWidth / 2;
-    const current = swipeContainer.scrollLeft + viewport_center;
-    const dx = current - scroll_center;
-
-    if (Math.abs(dx) >= 100) {
-      isRemoving = true;
-      removeDirection = dx < 0 ? "right" : "left";
-      setTimeout(() => {
-        playerStore.removeFromQueue(index);
-      }, 200);
-    }
+  function handleSwipe() {
+    playerStore.removeFromQueue(index);
   }
 </script>
 
-<div
-  class="swipe-container"
-  class:removing={isRemoving}
-  class:removing-left={removeDirection === "left"}
-  class:removing-right={removeDirection === "right"}
-  bind:this={swipeContainer}
-  ontouchend={onSwipeEnd}
-  onpointerup={onSwipeEnd}
->
-  <div class="swipe-pad"></div>
+<Swiper onswipe={handleSwipe}>
   <div class="flex items-center justify-center gap-2">
     <Button
       variant="ghost"
@@ -103,15 +68,28 @@
       </div>
 
       {#if dragHandleProps}
-        <span
-          class="text-muted-foreground px-2 cursor-grab active:cursor-grabbing touch-none"
-          onpointerdown={dragHandleProps.onpointerdown}
-          style={dragHandleProps.style}
-          role="button"
-          aria-label="Drag to reorder"
-        >
-          <GripHorizontalIcon />
-        </span>
+        <div class="flex items-center group/grip">
+          <button
+            type="button"
+            class="text-muted-foreground p-1 hidden md:opacity-0 md:group-hover/grip:opacity-100 md:block hover:text-destructive transition-opacity"
+            onclick={(e) => {
+              e.stopPropagation();
+              playerStore.removeFromQueue(index);
+            }}
+            aria-label="Remove from queue"
+          >
+            <XIcon size={18} />
+          </button>
+          <span
+            class="text-muted-foreground px-2 cursor-grab active:cursor-grabbing touch-none"
+            onpointerdown={dragHandleProps.onpointerdown}
+            style={dragHandleProps.style}
+            role="button"
+            aria-label="Drag to reorder"
+          >
+            <GripHorizontalIcon />
+          </span>
+        </div>
       {:else if track.metadata && track.metadata.duration && track.metadata.duration > 0}
         <span class="text-muted-foreground px-2">
           <GripHorizontalIcon />
@@ -119,51 +97,4 @@
       {/if}
     </Button>
   </div>
-  <div class="swipe-pad"></div>
-</div>
-
-<style>
-  .swipe-container {
-    width: 100%;
-    scroll-snap-type: x mandatory;
-    overflow-x: scroll;
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    container-type: inline-size;
-    transition:
-      opacity 200ms ease-out,
-      transform 200ms ease-out;
-
-    &.removing {
-      opacity: 0;
-    }
-
-    &.removing-left {
-      transform: translateX(-100%);
-    }
-
-    &.removing-right {
-      transform: translateX(100%);
-    }
-
-    > :nth-child(2) {
-      width: 100cqw;
-      scroll-snap-align: center;
-    }
-
-    .swipe-pad {
-      width: 50cqw;
-    }
-    @media (width > 768px) {
-      .swipe-pad {
-        width: 0;
-      }
-    }
-
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-    ::-webkit-scrollbar {
-      display: none;
-    }
-  }
-</style>
+</Swiper>

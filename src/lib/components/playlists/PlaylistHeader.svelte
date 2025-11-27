@@ -199,7 +199,7 @@
         </h1>
         {#if offline.isOffline}
           <CloudCheckIcon
-            size={isScrolled ? 16 : 20}
+            size={20}
             class="flex-shrink-0 text-primary"
           />
         {/if}
