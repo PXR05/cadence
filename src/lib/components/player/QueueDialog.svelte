@@ -1,9 +1,10 @@
 <script lang="ts">
   import { playerStore } from "$lib/stores/player.svelte";
   import * as Dialog from "$lib/components/ui/dialog";
-  import { ChevronDown, PlayIcon } from "@lucide/svelte";
+  import { ChevronDown, LoaderIcon } from "@lucide/svelte";
   import { VirtualScroll } from "../ui/virtual-scroll";
   import QueueItem from "./QueueItem.svelte";
+  import { onMount } from "svelte";
 
   interface Props {
     open: boolean;
@@ -15,8 +16,19 @@
   let virtualScroll: any = $state(null);
   const ROW_HEIGHT = 52;
   let previousOpen = $state(false);
+  let shouldRender = $state(false);
+
+  onMount(() => {});
 
   $effect(() => {
+    if (open) {
+      setTimeout(() => {
+        shouldRender = true;
+      }, 200);
+    } else {
+      shouldRender = false;
+      return;
+    }
     if (open && !previousOpen && virtualScroll && playerStore.queueIndex >= 0) {
       virtualScroll?.scrollToIndex(playerStore.queueIndex, false);
     }
@@ -51,29 +63,37 @@
       </Dialog.Close>
     </div>
 
-    <VirtualScroll
-      bind:this={virtualScroll}
-      items={playerStore.trackQueue}
-      rowHeight={ROW_HEIGHT}
-      class="mt-14 h-[calc(100dvh-3.5rem)] md:h-[calc(90dvh-3.5rem)]"
-      topOffset={4}
-      leftPadding={8}
-      rightPadding={8}
-      itemGap={4}
-      getItemKey={(track) => track.id ?? track.filename}
-      enableDragReorder
-      onReorder={(from, to) => playerStore.reorderQueue(from, to)}
-    >
-      {#snippet emptyState()}
-        <div class="text-center py-8 text-muted-foreground pt-15.5">
-          No tracks in queue
-        </div>
-      {/snippet}
+    {#if shouldRender}
+      <VirtualScroll
+        bind:this={virtualScroll}
+        items={playerStore.trackQueue}
+        rowHeight={ROW_HEIGHT}
+        class="mt-14 h-[calc(100dvh-3.5rem)] md:h-[calc(90dvh-3.5rem)]"
+        topOffset={4}
+        leftPadding={8}
+        rightPadding={8}
+        itemGap={4}
+        getItemKey={(track) => track.id ?? track.filename}
+        enableDragReorder
+        onReorder={(from, to) => playerStore.reorderQueue(from, to)}
+      >
+        {#snippet emptyState()}
+          <div class="text-center py-8 text-muted-foreground pt-15.5">
+            No tracks in queue
+          </div>
+        {/snippet}
 
-      {#snippet children({ item: track, index, dragHandleProps })}
-        {@const isCurrentTrack = index === playerStore.queueIndex}
-        <QueueItem {index} {track} {isCurrentTrack} {dragHandleProps} />
-      {/snippet}
-    </VirtualScroll>
+        {#snippet children({ item: track, index, dragHandleProps })}
+          {@const isCurrentTrack = index === playerStore.queueIndex}
+          <QueueItem {index} {track} {isCurrentTrack} {dragHandleProps} />
+        {/snippet}
+      </VirtualScroll>
+    {:else}
+      <div
+        class="flex items-center justify-center flex-1 text-muted-foreground"
+      >
+        <LoaderIcon class="animate-spin" size={24} />
+      </div>
+    {/if}
   </Dialog.Content>
 </Dialog.Root>

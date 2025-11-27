@@ -12,6 +12,7 @@
   import { navigationStore } from "$lib/stores/navigation.svelte";
   import { flip } from "svelte/animate";
   import { Tween } from "svelte/motion";
+  import { playerStore } from "$lib/stores/player.svelte";
 
   const {
     orientation = "horizontal",
@@ -64,7 +65,7 @@
   const activeTabIndex = $derived(tabs.findIndex((tab) => isActive(tab.path)));
 
   const displayPosition = $derived(
-    isDragging ? dragOffset : tabPosition.current
+    isDragging ? dragOffset : tabPosition.current,
   );
 
   $effect(() => {
@@ -186,11 +187,18 @@
         onpointerdown={handleIndicatorPointerDown}
         onpointerup={handleIndicatorPointerUp}
         onpointercancel={handleIndicatorPointerUp}
-        class="absolute rounded-lg bg-primary touch-none cursor-grab active:cursor-grabbing z-10 transition-all duration-100 ease-out-back
+        class="absolute rounded-lg touch-none cursor-grab active:cursor-grabbing z-10 transition-all duration-100 ease-out-back
         {isDragging
           ? 'opacity-90 max-md:scale-y-90 md:scale-x-90'
           : 'pointer-events-auto'}"
-        style={orientation === "horizontal"
+        style="
+        background-color:
+          color-mix(
+            in oklab,
+            {playerStore.trackColor ?? 'var(--primary)'} 40%,
+            var(--foreground)
+          );
+        {orientation === 'horizontal'
           ? `
             top: 0.375rem;
             bottom: 0.375rem;
@@ -204,7 +212,7 @@
             top: 0.375rem;
             height: calc((100% - 0.75rem) / ${tabs.length} - 0.375rem);
             transform: translateY(calc(${displayPosition} * (100% + 0.5rem)));
-            `}
+            `}"
       ></div>
     {/if}
 
@@ -230,7 +238,7 @@
             {isUnderIndicator
               ? 'text-primary-foreground'
               : active
-                ? 'text-primary'
+                ? 'text-[color-mix(in_oklab,var(--primary)_40%,var(--foreground))]'
                 : 'text-muted-foreground hover:text-accent-foreground'}"
           />
         </div>

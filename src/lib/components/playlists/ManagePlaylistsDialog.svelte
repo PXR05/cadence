@@ -232,11 +232,7 @@
       >
         Cancel
       </Button>
-      <Button
-        onclick={handleSave}
-        disabled={saving}
-        class="h-11 flex-1"
-      >
+      <Button onclick={handleSave} disabled={saving} class="h-11 flex-1">
         {#if saving}
           <LoaderIcon class="animate-spin" size={14} />
           Saving...

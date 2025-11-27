@@ -11,9 +11,10 @@
   interface Props {
     track: AudioFile;
     onQueueOpen: () => void;
+    isPanelAnimating?: boolean;
   }
 
-  const { track, onQueueOpen }: Props = $props();
+  const { track, onQueueOpen, isPanelAnimating = false }: Props = $props();
 
   const trackTitle = $derived(track?.metadata?.title ?? track?.filename ?? "");
   const trackArtist = $derived(track?.metadata?.artist ?? "Unknown Artist");
@@ -25,7 +26,7 @@
   }
 </script>
 
-<div class="flex-1 flex flex-col justify-between gap-8">
+<div class="flex-1 flex flex-col justify-between gap-4">
   <div class="relative flex-shrink-0 my-auto w-full z-20">
     <img
       loading="lazy"
@@ -64,7 +65,7 @@
     </Carousel.Root>
   </div>
 
-  <div class="flex flex-col gap-8 px-6 my-auto z-20">
+  <div class="flex flex-col gap-10 px-6 my-auto z-20">
     <div class="text-center mb-2">
       <h2
         class="text-xl font-semibold truncate"
@@ -80,9 +81,11 @@
       </p>
     </div>
 
-    <ProgressBar height={12} showTime />
+    <div class="flex flex-col gap-6">
+      <ProgressBar height={10} {isPanelAnimating} />
 
-    <PlaybackControls variant="large" />
+      <PlaybackControls variant="large" />
+    </div>
   </div>
 
   <div class="p-4 z-20">

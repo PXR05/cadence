@@ -33,6 +33,7 @@
 		"vite": "^7.1.9"
 	},
 	"dependencies": {
+		"@humanspeak/svelte-virtual-list": "^0.3.6",
 		"color.js": "^1.2.0",
 		"colorjs.io": "^0.5.2",
 		"dexie": "^4.2.1",

@@ -42,6 +42,12 @@
     return window.innerHeight - 6; // 0.375rem = 6px
   });
 
+  // Track if the panel is currently animating (dragging or spring settling)
+  const isPanelAnimating = $derived(
+    isDragging ||
+      Math.abs(translateSpring.current - translateSpring.target) > 1,
+  );
+
   $effect(() => {
     if (!isDragging) {
       if (panelState.isOpen) {
@@ -133,7 +139,7 @@
 
     const clampedTranslate = Math.max(
       0,
-      Math.min(closedPosition, newTranslate)
+      Math.min(closedPosition, newTranslate),
     );
 
     translateSpring.set(clampedTranslate, { instant: true });
@@ -327,7 +333,7 @@
         {/if}
       </div>
       <div class="px-2 pb-2">
-        <ProgressBar />
+        <ProgressBar {isPanelAnimating} />
       </div>
     </div>
 
@@ -348,6 +354,7 @@
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onMouseDown={handleMouseDown}
+        {isPanelAnimating}
       />
     </div>
   </div>

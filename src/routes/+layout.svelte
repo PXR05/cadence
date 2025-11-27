@@ -12,7 +12,7 @@
   import { page } from "$app/state";
   import { slide } from "svelte/transition";
   import { Toaster } from "$lib/components/ui/sonner";
-
+  
   let { children } = $props();
 
   let showSplash = $state(true);
@@ -100,7 +100,7 @@
 <Toaster position="top-right" />
 <ModeWatcher />
 
-{#if showSplash}
+{#if showSplash && !authStore.isAuthenticated}
   <SplashScreen onComplete={() => (showSplash = false)} />
 {:else if !authStore.isAuthenticated}
   <AuthDialog onAuthenticated={loadInitialData} />

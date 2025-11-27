@@ -23,6 +23,7 @@
     onTouchMove?: (e: TouchEvent) => void;
     onTouchEnd?: (e: TouchEvent) => void;
     onMouseDown?: (e: MouseEvent) => void;
+    isPanelAnimating?: boolean;
   }
 
   let {
@@ -32,6 +33,7 @@
     onTouchMove,
     onTouchEnd,
     onMouseDown,
+    isPanelAnimating = false,
   }: Props = $props();
 
   const track = $derived(playerStore.currentTrack);
@@ -68,7 +70,7 @@
           duration: track.metadata?.duration,
         },
         track.filename,
-        track.size
+        track.size,
       );
     }
     isOffline = await downloadStore.checkTrackOfflineStatus(track.id);
@@ -174,7 +176,7 @@
   </div>
 
   {#if track}
-    <PlayerDetails {track} {onQueueOpen} />
+    <PlayerDetails {track} {onQueueOpen} {isPanelAnimating} />
   {/if}
 </div>
 

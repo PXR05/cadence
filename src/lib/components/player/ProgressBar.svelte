@@ -5,9 +5,11 @@
   const {
     height = 6,
     showTime,
+    isPanelAnimating = false,
   }: {
     height?: number;
     showTime?: boolean;
+    isPanelAnimating?: boolean;
   } = $props();
 
   let progressBar: HTMLDivElement | null = $state(null);
@@ -108,18 +110,22 @@
     <div
       style="
       transform: translateX({-100 + currentProgress}%);
-      transition: {isDragging ? 'none' : 'transform 100ms linear'};
+      transition: {isDragging || isPanelAnimating
+        ? 'none'
+        : 'transform 100ms linear'};
       background-color:
         color-mix(
           in oklab,
-          {primaryColor} 80%,
+          {primaryColor} 40%,
           var(--foreground)
         );"
       class="w-full h-full rounded-full"
     ></div>
     <div
       style="transform: translateX(calc({currentProgress}% - {height}px));
-      transition: {isDragging ? 'none' : 'transform 100ms linear'};"
+      transition: {isDragging || isPanelAnimating
+        ? 'none'
+        : 'transform 100ms linear'};"
       class="w-full h-full absolute inset-0"
     >
       <div
@@ -130,7 +136,7 @@
   </div>
   {#if showTime}
     <div
-      style="padding-top: {height * 3}px;"
+      style="padding-top: {height * 3.5}px;"
       class="w-full flex justify-between gap-2 text-muted-foreground select-none pointer-events-none tabular-nums"
     >
       <span draggable={false}>
