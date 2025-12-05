@@ -42,10 +42,10 @@
     return window.innerHeight - 6; // 0.375rem = 6px
   });
 
-  // Track if the panel is currently animating (dragging or spring settling)
   const isPanelAnimating = $derived(
     isDragging ||
-      Math.abs(translateSpring.current - translateSpring.target) > 1,
+      (translateSpring.current !== 0 &&
+        translateSpring.current !== translateSpring.target),
   );
 
   $effect(() => {
@@ -348,7 +348,7 @@
       style="opacity: {detailsPanelOpacity}; touch-action: none; overscroll-behavior: none;"
     >
       <PlayerDetailsPanel
-        onOpenChange={() => panelState.toggle()}
+        onOpenChange={(v) => (v ? panelState.open() : panelState.close())}
         onQueueOpen={() => queueDialog.open()}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}

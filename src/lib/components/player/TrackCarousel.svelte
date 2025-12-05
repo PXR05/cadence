@@ -34,14 +34,12 @@
                 loading="lazy"
                 src={getImageUrl(track.id)}
                 alt={track.id}
-                class="rounded-md size-12 flex-shrink-0 object-cover"
+                class="rounded-md size-12 flex-shrink-0 object-cover text-transparent"
               />
             {:else}
               <div
                 class="rounded-md size-12 flex-shrink-0 bg-muted/50 grid place-items-center"
-              >
-                <ListMusicIcon class="text-muted-foreground" />
-              </div>
+              ></div>
             {/if}
             <div class="text-left flex-1 min-w-0">
               <p class="font-medium truncate">

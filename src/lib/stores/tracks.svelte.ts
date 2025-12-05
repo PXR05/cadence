@@ -99,15 +99,6 @@ class TracksStore {
         });
 
         allTracks.push(...result.tracks);
-
-        if (currentPage === 1) {
-          this._tracks = [...result.tracks];
-          this.isInitialLoad = false;
-          this.isLoadingMore = result.hasMore;
-        } else {
-          this._tracks = [...allTracks];
-        }
-
         hasMore = result.hasMore;
         currentPage++;
       }

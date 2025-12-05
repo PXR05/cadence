@@ -50,14 +50,12 @@
                 loading="lazy"
                 src={getImageUrl(queueTrack.id)}
                 alt={queueTrack.id}
-                class="size-[min(40dvh,90dvw)] object-cover mx-auto rounded-2xl"
+                class="size-[min(40dvh,90dvw)] object-cover mx-auto rounded-2xl text-transparent"
               />
             {:else}
               <div
                 class="h-[min(40dvh,90dvw)] aspect-square bg-muted/50 mx-auto rounded-2xl grid place-items-center"
-              >
-                <ListMusicIcon size={48} class="text-muted-foreground" />
-              </div>
+              ></div>
             {/if}
           </Carousel.Item>
         {/each}
@@ -90,9 +88,14 @@
 
   <div class="p-4 z-20">
     <Button
-      variant="ghost"
+      variant="outline"
       onclick={onQueueOpen}
-      class="w-full py-3 px-4 transition-colors flex items-center justify-center gap-2"
+      class="w-full h-11 rounded-lg transition-colors flex items-center justify-center gap-2"
+      style="
+      --color: color-mix(in oklab, {playerStore.trackColor} 30%, var(--muted-foreground));
+      color: var(--color);
+      border-color: transparent;
+      background-color: color-mix(in oklab, var(--color) 10%, transparent);"
     >
       <ListMusicIcon size={20} />
       <span>Open Queue</span>

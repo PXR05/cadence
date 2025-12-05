@@ -90,6 +90,7 @@ export const YoutubeDownloadResponseSchema = v.object({
 export const FetchTracksOptionsSchema = v.object({
   page: v.optional(v.number()),
   limit: v.optional(v.number()),
+  total: v.optional(v.number()),
   sortBy: v.optional(v.picklist(["filename", "size", "uploadedAt", "title"])),
   sortOrder: v.optional(v.picklist(["asc", "desc"])),
 });
