@@ -1,10 +1,12 @@
 <script lang="ts">
-  import { getImageUrl, playerStore } from "$lib/stores/player.svelte";
+  import { getImageUrl } from "$lib/stores/player.svelte";
+  import { playerStore } from "$lib/stores/player.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import type { AudioFile } from "$lib/schemas";
   import { CloudCheckIcon } from "@lucide/svelte";
   import { downloadStore } from "$lib/stores/download.svelte";
   import { onMount } from "svelte";
+  import { TrackContextMenu } from "../tracks";
 
   interface Props {
     track: AudioFile;
@@ -26,38 +28,51 @@
   onMount(async () => {
     isOffline = await downloadStore.checkTrackOfflineStatus(track.id);
   });
+
+  async function refreshOfflineStatus() {
+    isOffline = await downloadStore.checkTrackOfflineStatus(track.id);
+  }
 </script>
 
-<button onclick={handlePlay} class="flex flex-col gap-2 w-40 md:w-48">
-  <div
-    class="aspect-square rounded-md overflow-hidden border bg-muted relative"
+<TrackContextMenu
+  {track}
+  {isOffline}
+  onOfflineStatusChange={refreshOfflineStatus}
+>
+  <button
+    onclick={handlePlay}
+    class="flex flex-col gap-2 w-40 md:w-48 text-left"
   >
-    <img
-      loading="lazy"
-      src={getImageUrl(track.id)}
-      alt={title}
-      class="size-full object-cover transition-transform"
-    />
-  </div>
-  <div class="flex flex-col text-left flex-1 min-w-0">
-    <div class="flex items-center gap-1.5">
-      <p
-        class="font-medium truncate {isCurrentTrack
-          ? 'text-primary'
-          : 'text-foreground'}"
-      >
-        {title}
-      </p>
-      {#if isOffline}
-        <CloudCheckIcon size={16} class="flex-shrink-0 text-primary" />
-      {/if}
-    </div>
-    <p
-      class="truncate text-sm {isCurrentTrack
-        ? 'text-primary/50'
-        : 'text-muted-foreground'}"
+    <div
+      class="aspect-square rounded-md overflow-hidden border bg-muted relative"
     >
-      {artist}
-    </p>
-  </div>
-</button>
+      <img
+        loading="lazy"
+        src={getImageUrl(track.id)}
+        alt={title}
+        class="size-full object-cover transition-transform"
+      />
+    </div>
+    <div class="flex flex-col text-left flex-1 min-w-0">
+      <div class="flex items-center gap-1.5">
+        <p
+          class="font-medium truncate {isCurrentTrack
+            ? 'text-primary'
+            : 'text-foreground'}"
+        >
+          {title}
+        </p>
+        {#if isOffline}
+          <CloudCheckIcon size={16} class="flex-shrink-0 text-primary" />
+        {/if}
+      </div>
+      <p
+        class="truncate text-sm {isCurrentTrack
+          ? 'text-primary/50'
+          : 'text-muted-foreground'}"
+      >
+        {artist}
+      </p>
+    </div>
+  </button>
+</TrackContextMenu>

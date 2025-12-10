@@ -5,7 +5,7 @@
   import { playerStore } from "$lib/stores/player.svelte";
   import { ListMusicIcon, PauseIcon, PlayIcon } from "@lucide/svelte";
   import { onDestroy, onMount } from "svelte";
-  import { innerWidth } from "svelte/reactivity/window";
+  import { innerHeight, innerWidth } from "svelte/reactivity/window";
   import { Spring } from "svelte/motion";
   import { Button } from "../ui/button";
   import PlaybackControls from "./PlaybackControls.svelte";
@@ -37,15 +37,15 @@
 
   const closedPosition = $derived.by(() => {
     if (isTopRoute && isMobile) {
-      return window.innerHeight - 62; // 3.875rem = 62px
+      return (innerHeight.current ?? window.innerHeight) - 62; // 3.875rem = 62px
     }
-    return window.innerHeight - 6; // 0.375rem = 6px
+    return (innerHeight.current ?? window.innerHeight) - 6; // 0.375rem = 6px
   });
 
   const isPanelAnimating = $derived(
     isDragging ||
       (translateSpring.current !== 0 &&
-        translateSpring.current !== translateSpring.target)
+        translateSpring.current !== translateSpring.target),
   );
 
   $effect(() => {
@@ -139,7 +139,7 @@
 
     const clampedTranslate = Math.max(
       0,
-      Math.min(closedPosition, newTranslate)
+      Math.min(closedPosition, newTranslate),
     );
 
     translateSpring.set(clampedTranslate, { instant: true });

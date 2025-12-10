@@ -5,3 +5,4 @@ export { default as ManagePlaylistsDialog } from "./ManagePlaylistsDialog.svelte
 export { default as PlaylistCard } from "./PlaylistCard.svelte";
 export { default as PlaylistHeader } from "./PlaylistHeader.svelte";
 export { default as PlaylistTrackList } from "./PlaylistTrackList.svelte";
+export { default as PlaylistContextMenu } from "./PlaylistContextMenu.svelte";
