@@ -45,7 +45,7 @@
   const isPanelAnimating = $derived(
     isDragging ||
       (translateSpring.current !== 0 &&
-        translateSpring.current !== translateSpring.target),
+        translateSpring.current !== translateSpring.target)
   );
 
   $effect(() => {
@@ -139,7 +139,7 @@
 
     const clampedTranslate = Math.max(
       0,
-      Math.min(closedPosition, newTranslate),
+      Math.min(closedPosition, newTranslate)
     );
 
     translateSpring.set(clampedTranslate, { instant: true });

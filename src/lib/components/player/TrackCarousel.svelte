@@ -26,30 +26,26 @@
         {@const trackTitle = track.metadata?.title ?? track.filename ?? ""}
         {@const trackArtist = track.metadata?.artist ?? "Unknown Artist"}
         <Carousel.Item onclick={onTrackClick}>
-          <div
-            class="md:pointer-events-none flex items-center flex-1 min-w-0 gap-2 text-left w-full pl-2"
-          >
-            {#if shouldLoadItem(i)}
+          {#if shouldLoadItem(i)}
+            <div
+              class="md:pointer-events-none flex items-center flex-1 min-w-0 gap-2 text-left w-full pl-2"
+            >
               <img
                 loading="lazy"
                 src={getImageUrl(track.id)}
                 alt={track.id}
                 class="rounded-md size-12 flex-shrink-0 object-cover text-transparent"
               />
-            {:else}
-              <div
-                class="rounded-md size-12 flex-shrink-0 bg-muted/50 grid place-items-center"
-              ></div>
-            {/if}
-            <div class="text-left flex-1 min-w-0">
-              <p class="font-medium truncate">
-                {trackTitle}
-              </p>
-              <p class="text-sm truncate font-light">
-                {trackArtist}
-              </p>
+              <div class="text-left flex-1 min-w-0">
+                <p class="font-medium truncate">
+                  {trackTitle}
+                </p>
+                <p class="text-sm truncate font-light">
+                  {trackArtist}
+                </p>
+              </div>
             </div>
-          </div>
+          {/if}
         </Carousel.Item>
       {/each}
     </Carousel.Content>

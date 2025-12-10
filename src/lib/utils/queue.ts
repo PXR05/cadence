@@ -10,11 +10,18 @@ export function shouldLoadItem(
     currentIndex: playerStore.queueIndex,
     buffer: 1,
     queueLength: playerStore.trackQueue.length,
-  }
+  },
 ) {
+  if (opts.queueLength === 0) {
+    return false;
+  }
   const actualIndex = index % opts.queueLength;
-  return (
-    Math.abs(actualIndex - opts.currentIndex) <= opts.buffer &&
-    opts.queueLength > 0
-  );
+  const inRange = Math.abs(actualIndex - opts.currentIndex) <= opts.buffer;
+  if (opts.currentIndex === 0) {
+    return inRange || actualIndex === opts.queueLength - 1;
+  }
+  if (opts.currentIndex === opts.queueLength - 1) {
+    return inRange || actualIndex === 0;
+  }
+  return inRange;
 }
