@@ -5,13 +5,35 @@ import {
   AudioListResponseSchema,
   SearchSuggestionsResponseSchema,
   DeleteTrackResponseSchema,
-  FetchTracksOptionsSchema,
-  SearchTracksOptionsSchema,
-  SearchSuggestionsOptionsSchema,
-  FetchRandomTracksOptionsSchema,
   type AudioFile,
 } from "$lib/schemas/audio";
 import { API_URL as BACKEND_URL } from "$env/static/private";
+
+const FetchTracksOptionsSchema = v.object({
+  page: v.optional(v.number()),
+  limit: v.optional(v.number()),
+  total: v.optional(v.number()),
+  sortBy: v.optional(v.picklist(["filename", "size", "uploadedAt", "title"])),
+  sortOrder: v.optional(v.picklist(["asc", "desc"])),
+});
+
+const SearchTracksOptionsSchema = v.object({
+  q: v.string(),
+  page: v.optional(v.number()),
+  limit: v.optional(v.number()),
+});
+
+const SearchSuggestionsOptionsSchema = v.object({
+  q: v.string(),
+  limit: v.optional(v.number()),
+});
+
+const FetchRandomTracksOptionsSchema = v.object({
+  page: v.optional(v.number()),
+  limit: v.optional(v.number()),
+  seed: v.optional(v.string()),
+  firstTrackId: v.optional(v.string()),
+});
 
 function getAuthToken(): string {
   const { cookies } = getRequestEvent();

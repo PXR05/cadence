@@ -9,14 +9,40 @@ import {
   AddItemToPlaylistResponseSchema,
   RemoveItemFromPlaylistResponseSchema,
   GetUserPlaylistsResponseSchema,
-  GetUserPlaylistsOptionsSchema,
-  CreatePlaylistSchema,
-  UpdatePlaylistSchema,
-  AddItemToPlaylistSchema,
-  RemoveItemFromPlaylistSchema,
-  ReorderPlaylistItemSchema,
 } from "$lib/schemas/playlist";
 import { API_URL as BACKEND_URL } from "$env/static/private";
+
+const GetUserPlaylistsOptionsSchema = v.object({
+  type: v.optional(v.picklist(["user", "artist", "album", "auto", "youtube"])),
+  limit: v.optional(v.number()),
+});
+
+const CreatePlaylistSchema = v.object({
+  name: v.string(),
+  coverImage: v.optional(v.any()),
+});
+
+const UpdatePlaylistSchema = v.object({
+  id: v.string(),
+  name: v.optional(v.string()),
+  coverImage: v.optional(v.any()),
+});
+
+const AddItemToPlaylistSchema = v.object({
+  playlistId: v.string(),
+  audioId: v.string(),
+});
+
+const RemoveItemFromPlaylistSchema = v.object({
+  playlistId: v.string(),
+  itemId: v.string(),
+});
+
+const ReorderPlaylistItemSchema = v.object({
+  playlistId: v.string(),
+  itemId: v.string(),
+  position: v.number(),
+});
 
 function getAuthToken(): string {
   const { cookies } = getRequestEvent();

@@ -1,5 +1,5 @@
 import * as v from "valibot";
-import { AudioFileSchema } from "./audio";
+import { AudioFileSchema } from "./base";
 
 export const PlaylistItemSchema = v.object({
   id: v.string(),

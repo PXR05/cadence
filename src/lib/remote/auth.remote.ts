@@ -7,11 +7,23 @@ import {
   CreateUserResponseSchema,
   ResetPasswordResponseSchema,
   DeleteUserResponseSchema,
-  ListUsersOptionsSchema,
-  CreateUserSchema,
-  ResetPasswordSchema,
 } from "$lib/schemas/auth";
 import { API_URL as BACKEND_URL } from "$env/static/private";
+
+const ListUsersOptionsSchema = v.object({
+  page: v.optional(v.number()),
+  limit: v.optional(v.number()),
+});
+
+const CreateUserSchema = v.object({
+  username: v.string(),
+  password: v.string(),
+});
+
+const ResetPasswordSchema = v.object({
+  userId: v.string(),
+  newPassword: v.string(),
+});
 
 function getAuthToken(): string | undefined {
   const { cookies } = getRequestEvent();
