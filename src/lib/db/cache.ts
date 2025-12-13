@@ -158,7 +158,7 @@ export async function getPlaylistsCache(): Promise<{
   youtubePlaylists: Playlist[];
   lastFetchedAt: string | null;
 } | null> {
-  const playlists = await cacheDb.playlists.toArray();
+  const playlists = await cacheDb.playlists.orderBy('createdAt').toArray();
   if (playlists.length === 0) {
     const metadata = await cacheDb.metadata.get("playlists_lastFetchedAt");
     if (!metadata) return null;
@@ -180,7 +180,7 @@ export async function getPlaylistsCache(): Promise<{
       itemCount: p.itemCount,
     };
 
-    if (p.id.startsWith("yt-")) {
+    if (p.id.startsWith("youtube_")) {
       youtubePlaylists.push(playlist);
     } else {
       userPlaylists.push(playlist);

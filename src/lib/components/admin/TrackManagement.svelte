@@ -10,7 +10,7 @@
   import UploadTrackDialog from "./UploadTrackDialog.svelte";
   import TrackPagination from "./TrackPagination.svelte";
   import type { AudioFile } from "$lib/schemas";
-    import { onMount } from "svelte";
+  import { onMount } from "svelte";
 
   let tracksLoading = $state(false);
   let tracksInitialLoading = $state(true);
@@ -43,7 +43,7 @@
       tracksInitialLoading = false;
     }
   }
-  
+
   onMount(() => {
     loadTracks();
   });

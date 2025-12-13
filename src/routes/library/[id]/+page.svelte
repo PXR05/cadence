@@ -18,6 +18,7 @@
   import { innerWidth } from "svelte/reactivity/window";
   import { LoaderIcon } from "@lucide/svelte";
   import type { PlaylistItem, Playlist } from "$lib/schemas";
+  import { fade } from "svelte/transition";
 
   let { data } = $props();
 
@@ -31,24 +32,24 @@
   const addTracksDialog = useDialogState("add-tracks");
 
   const existingTrackIds = $derived(
-    new SvelteSet(playlist?.items.map((item) => item.audio.id) ?? [])
+    new SvelteSet(playlist?.items.map((item) => item.audio.id) ?? []),
   );
 
   const isNonModifiable = $derived(
     playlist &&
       (isSpecialPlaylist(playlist.id) ||
         isArtistPlaylist(playlist.id) ||
-        isAlbumPlaylist(playlist.id))
+        isAlbumPlaylist(playlist.id)),
   );
 
   const hasAddButton = $derived(
-    !searchQuery.trim() && playlist && !isNonModifiable
+    !searchQuery.trim() && playlist && !isNonModifiable,
   );
 
   const filteredTracks = $derived(
     searchQuery.trim()
       ? filterTracks(playlist?.items ?? [], searchQuery)
-      : (playlist?.items ?? [])
+      : (playlist?.items ?? []),
   );
 
   $effect(() => {
@@ -72,7 +73,7 @@
   function updateNavigation(playlistName: string) {
     navigationStore.setNavigation(
       [{ label: "Library", path: "/library" }],
-      getPlaylistDisplayName({ name: playlistName } as Playlist)
+      getPlaylistDisplayName({ name: playlistName } as Playlist),
     );
   }
 
@@ -90,6 +91,7 @@
     </div>
   {:else if playlist}
     <div
+      transition:fade={{ duration: 150 }}
       style="--h: {isScrolled ? 10 : 16}rem;"
       class="z-20 p-1.5 md:p-2 flex flex-col absolute top-0 w-full gap-1.5 md:gap-2"
     >

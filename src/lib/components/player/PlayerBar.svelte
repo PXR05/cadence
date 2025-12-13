@@ -30,10 +30,13 @@
   let lastMoveY = $state(0);
   let lastMoveTime = $state(0);
 
-  const translateSpring = new Spring(0, {
-    stiffness: 0.3,
-    damping: 1,
-  });
+  const translateSpring = new Spring(
+    innerHeight.current ?? (window ? window.innerHeight : 0),
+    {
+      stiffness: 0.3,
+      damping: 1,
+    },
+  );
 
   const closedPosition = $derived.by(() => {
     if (isTopRoute && isMobile) {
@@ -267,7 +270,7 @@
 <div
   class="absolute bottom-0 left-0 right-0"
   style="
-    transform: translateY({playerTranslate});
+    transform: translate3d(0, {playerTranslate}, 0);
     will-change: transform;
     overscroll-behavior: none;"
 >

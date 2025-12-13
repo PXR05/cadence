@@ -109,7 +109,7 @@
   >
     <div
       style="
-      transform: translateX({-100 + currentProgress}%);
+      transform: translate3d({-100 + currentProgress}%, 0, 0);
       transition: {isDragging || isPanelAnimating
         ? 'none'
         : 'transform 100ms linear'};
@@ -122,7 +122,7 @@
       class="w-full h-full rounded-full"
     ></div>
     <div
-      style="transform: translateX(calc({currentProgress}% - {height}px));
+      style="transform: translate3d(calc({currentProgress}% - {height}px), 0, 0);
       transition: {isDragging || isPanelAnimating
         ? 'none'
         : 'transform 100ms linear'};"

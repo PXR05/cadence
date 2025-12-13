@@ -33,7 +33,7 @@
   <div
     class="absolute bottom-0 left-0 right-0 transition-all duration-200 space-y-1.5"
     style="
-      transform: translateY({downloadTranslate});
+      transform: translate3d(0, {downloadTranslate}, 0);
       will-change: transform;"
   >
     <YoutubeDownloadProgress />
@@ -43,7 +43,7 @@
   <div
     class="absolute bottom-1.5 left-1.5 right-1.5 transition-all duration-200"
     style="
-    transform: translateY({navTranslate});
+    transform: translate3d(0, {navTranslate}, 0);
     will-change: transform;"
   >
     <NavBar />

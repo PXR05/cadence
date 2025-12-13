@@ -199,15 +199,15 @@
         const targetTop =
           pointerY - rect.top + scrollTop - topOffset - dragOffsetY;
         const offset = targetTop - currentTop;
-        return `translateY(${offset}px)`;
+        return `translate3d(0, ${offset}px, 0)`;
       }
     } else if (dragFromIndex < dragToIndex) {
       if (actualIndex > dragFromIndex && actualIndex <= dragToIndex) {
-        return `translateY(-${rowHeight}px)`;
+        return `translate3d(0, -${rowHeight}px, 0)`;
       }
     } else if (dragFromIndex > dragToIndex) {
       if (actualIndex >= dragToIndex && actualIndex < dragFromIndex) {
-        return `translateY(${rowHeight}px)`;
+        return `translate3d(0, ${rowHeight}px, 0)`;
       }
     }
     return "";
@@ -380,7 +380,7 @@
         left: {leftPadding}px;
         right: {rightPadding}px;
         gap: {itemGap}px;
-        transform: translateY({range.start * rowHeight}px);"
+        transform: translate3d(0, {range.start * rowHeight}px, 0);"
       >
         {#each items.slice(range.start, range.end) as item, i (getKey(item, range.start + i))}
           {@const actualIndex = range.start + i}

@@ -2,7 +2,6 @@
   import { getImageUrl, playerStore } from "$lib/stores/player.svelte";
   import * as Carousel from "$lib/components/ui/carousel";
   import type { CarouselAPI } from "$lib/components/ui/carousel/context";
-  import { ListMusicIcon } from "@lucide/svelte";
   import { shouldLoadItem } from "$lib/utils/queue";
 
   interface Props {

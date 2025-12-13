@@ -5,6 +5,8 @@
   import { playlistsStore } from "$lib/stores/playlists.svelte";
   import { Button } from "$lib/components/ui/button/index.js";
   import { getSpecialPlaylists } from "$lib/utils/playlist";
+  import { flip } from "svelte/animate";
+  import { fade } from "svelte/transition";
 
   let createDialogOpen = $state(false);
 
@@ -48,7 +50,9 @@
     class="p-2 pt-16 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 pb-72"
   >
     {#each allUserPlaylists as playlist (playlist.id)}
-      <PlaylistCard {playlist} size="large" />
+      <div animate:flip={{ duration: 150 }} transition:fade={{ duration: 150 }}>
+        <PlaylistCard {playlist} size="large" />
+      </div>
     {/each}
     <button
       onclick={() => (createDialogOpen = true)}

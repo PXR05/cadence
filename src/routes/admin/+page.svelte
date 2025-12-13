@@ -11,9 +11,6 @@
   let loading = $state(true);
   let activeTab = $state<"users" | "tracks">("tracks");
 
-  let userManagement: UserManagement | undefined = $state();
-  let trackManagement: TrackManagement | undefined = $state();
-
   onMount(async () => {
     try {
       const result = await getCurrentUser();
@@ -79,9 +76,9 @@
 
   <div class="relative p-2 space-y-2">
     {#if activeTab === "users"}
-      <UserManagement bind:this={userManagement} />
+      <UserManagement />
     {:else}
-      <TrackManagement bind:this={trackManagement} />
+      <TrackManagement />
     {/if}
   </div>
 </div>

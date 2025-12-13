@@ -3,6 +3,7 @@
   import HorizontalTrackItem from "./HorizontalTrackItem.svelte";
   import type { AudioFile } from "$lib/schemas";
   import type { Snippet } from "svelte";
+  import { slide } from "svelte/transition";
 
   interface Props {
     title: string;

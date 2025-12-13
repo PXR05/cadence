@@ -16,7 +16,7 @@
   import ResetPasswordDialog from "./ResetPasswordDialog.svelte";
   import TrackPagination from "./TrackPagination.svelte";
   import type { User } from "$lib/schemas";
-    import { onMount } from "svelte";
+  import { onMount } from "svelte";
 
   let usersLoading = $state(false);
   let usersInitialLoading = $state(true);
@@ -53,7 +53,7 @@
       usersInitialLoading = false;
     }
   }
-  
+
   onMount(() => {
     loadUsers();
   });
@@ -110,7 +110,7 @@
   async function handleChangePassword(
     userId: string,
     currentPassword: string,
-    newPassword: string
+    newPassword: string,
   ) {
     usersLoading = true;
     try {

@@ -204,14 +204,14 @@
             bottom: 0.375rem;
             left: 0.375rem;
             width: calc((100% - 0.75rem) / ${tabs.length} - 0.375rem);
-            transform: translateX(calc(${displayPosition} * (100% + 0.5rem)));
+            transform: translate3d(calc(${displayPosition} * (100% + 0.5rem)), 0, 0);
             `
           : `
             left: 0.375rem;
             right: 0.375rem;
             top: 0.375rem;
             height: calc((100% - 0.75rem) / ${tabs.length} - 0.375rem);
-            transform: translateY(calc(${displayPosition} * (100% + 0.5rem)));
+            transform: translate3d(0, calc(${displayPosition} * (100% + 0.5rem)), 0);
             `}"
       ></div>
     {/if}

@@ -26,7 +26,7 @@ class HistoryState {
       const trackIds = historyEntries.map((entry) => entry.trackId);
 
       const tracks = tracksStore.tracks.filter((track) =>
-        trackIds.includes(track.id)
+        trackIds.includes(track.id),
       );
 
       this.recentlyPlayed = trackIds

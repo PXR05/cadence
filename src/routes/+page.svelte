@@ -6,7 +6,7 @@
   import { historyStore } from "$lib/stores/history.svelte";
   import { VirtualScroll } from "$lib/components/ui/virtual-scroll";
   import { playerStore } from "$lib/stores/player.svelte";
-  import { onMount } from "svelte";
+  import { fade, slide } from "svelte/transition";
 
   const tracks = $derived(tracksStore.tracks);
   const isInitialLoad = $derived(tracksStore.isInitialLoad);
@@ -19,8 +19,10 @@
 
   const ROW_HEIGHT = 80;
 
-  onMount(async () => {
-    await historyStore.loadRecentlyPlayed(10);
+  $effect(() => {
+    if (tracksStore.tracksCount > 0) {
+      historyStore.loadRecentlyPlayed(10);
+    }
   });
 </script>
 
@@ -41,36 +43,46 @@
     No songs added yet. Go search for some songs and add them to your library.
   </div>
 {:else}
-  <VirtualScroll items={tracks} rowHeight={ROW_HEIGHT} class="h-dvh">
-    {#snippet children({ item: track, actualIndex, visibleIndex })}
-      {#if actualIndex === 0}
-        <div class="pt-4 grid gap-2">
-          <HorizontalTrackList title="Recommended" tracks={recommendedTracks} />
-          {#if recentlyPlayed.length > 0}
+  <div transition:fade={{ duration: 150 }}>
+    <VirtualScroll items={tracks} rowHeight={ROW_HEIGHT} class="h-dvh">
+      {#snippet children({ item: track, actualIndex, visibleIndex })}
+        {#if actualIndex === 0}
+          <div class="pt-4 grid">
             <HorizontalTrackList
-              title="Recently Played"
-              tracks={recentlyPlayed}
+              title="Recommended"
+              tracks={recommendedTracks}
             />
-          {/if}
-          <h2 class="px-4 pb-2 text-2xl font-semibold">All Songs</h2>
-        </div>
-      {:else if visibleIndex === 0}
-        <div style="height: {recentlyPlayed.length > 0 ? 672 : 364}px;"></div>
-      {/if}
+            {#if recentlyPlayed.length > 0}
+              <div
+                class="pt-2"
+                transition:slide={{ axis: "y", duration: 200, delay: 100 }}
+              >
+                <HorizontalTrackList
+                  title="Recently Played"
+                  tracks={recentlyPlayed}
+                />
+              </div>
+            {/if}
+            <h2 class="px-4 pb-2 text-2xl font-semibold">All Songs</h2>
+          </div>
+        {:else if visibleIndex === 0}
+          <div style="height: {recentlyPlayed.length > 0 ? 672 : 364}px;"></div>
+        {/if}
 
-      <TrackItem
-        index={actualIndex}
-        isCurrentTrack={track.id === currentId}
-        {track}
-      />
-    {/snippet}
-  </VirtualScroll>
+        <TrackItem
+          index={actualIndex}
+          isCurrentTrack={track.id === currentId}
+          {track}
+        />
+      {/snippet}
+    </VirtualScroll>
 
-  {#if isLoadingMore}
-    <div
-      class="p-4 flex items-center justify-center gap-2 text-muted-foreground border-t sticky bottom-0 bg-background"
-    >
-      <LoaderIcon class="animate-spin text-muted-foreground" size={16} />
-    </div>
-  {/if}
+    {#if isLoadingMore}
+      <div
+        class="p-4 flex items-center justify-center gap-2 text-muted-foreground border-t sticky bottom-0 bg-background"
+      >
+        <LoaderIcon class="animate-spin text-muted-foreground" size={16} />
+      </div>
+    {/if}
+  </div>
 {/if}
