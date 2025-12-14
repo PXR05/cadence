@@ -3,7 +3,9 @@
   import HorizontalTrackItem from "./HorizontalTrackItem.svelte";
   import type { AudioFile } from "$lib/schemas";
   import type { Snippet } from "svelte";
-  import { slide } from "svelte/transition";
+  import { flip } from "svelte/animate";
+  import { fade } from "svelte/transition";
+  import { cubicOut } from "svelte/easing";
 
   interface Props {
     title: string;
@@ -14,22 +16,23 @@
   const { title, tracks, emptyState }: Props = $props();
 </script>
 
-<div class="flex flex-col gap-4">
+<div class="flex flex-col gap-2">
   <h2 class="text-2xl font-semibold px-4">{title}</h2>
 
   {#if tracks.length === 0 && emptyState}
     {@render emptyState()}
   {:else}
-    <ScrollArea orientation="horizontal" class="w-dvw pb-2">
-      <div class="flex gap-4">
+    <ScrollArea orientation="horizontal" class="w-dvw px-2 pb-4">
+      <div class="flex">
         {#each tracks as track, i (track.id)}
-          {#if i === 0}
-            <div class="ml-2">
-              <HorizontalTrackItem {track} />
-            </div>
-          {:else}
+          <div
+            animate:flip={{
+              duration: 150,
+              easing: cubicOut,
+            }}
+          >
             <HorizontalTrackItem {track} />
-          {/if}
+          </div>
         {/each}
       </div>
     </ScrollArea>

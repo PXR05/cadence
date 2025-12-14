@@ -3,10 +3,13 @@
   import { playerStore } from "$lib/stores/player.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { downloadStore } from "$lib/stores/download.svelte";
-  import { CloudCheckIcon } from "@lucide/svelte";
+  import { CloudCheckIcon, EllipsisVerticalIcon } from "@lucide/svelte";
   import { onMount } from "svelte";
   import type { AudioFile, PlaylistDetail } from "$lib/schemas";
   import TrackContextMenu from "./TrackContextMenu.svelte";
+  import TrackMenuItems from "./TrackMenuItems.svelte";
+  import { Button } from "../ui/button";
+  import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
 
   interface Props {
     index: number;
@@ -61,7 +64,7 @@
   onOfflineStatusChange={refreshOfflineStatus}
 >
   <button
-    class="relative flex items-center gap-4 w-full hover:bg-muted/30 p-2 select-none text-left
+    class="relative flex items-center gap-4 w-full rounded-xl hover:bg-muted/30 p-2 select-none text-left
     {isCurrentTrack ? 'bg-muted/50' : ''}"
     onclick={handlePlay}
   >
@@ -94,5 +97,28 @@
         {artist}
       </p>
     </div>
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger
+        onclick={(e: MouseEvent) => e.stopPropagation()}
+        class="cursor-pointer"
+      >
+        <Button
+          size="icon"
+          variant="ghost"
+          class="text-muted-foreground transition-opacity hover:opacity-90 pointer-events-none"
+        >
+          <EllipsisVerticalIcon class="size-5" />
+        </Button>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Content>
+        <TrackMenuItems
+          {track}
+          {isOffline}
+          onOfflineStatusChange={refreshOfflineStatus}
+          MenuItem={DropdownMenu.Item}
+          MenuSeparator={DropdownMenu.Separator}
+        />
+      </DropdownMenu.Content>
+    </DropdownMenu.Root>
   </button>
 </TrackContextMenu>

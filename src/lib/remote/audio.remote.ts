@@ -100,7 +100,10 @@ export const searchTracks = query(
     });
 
     if (!response.ok) {
-      throw error(response.status, `Backend error: ${response.statusText}`);
+      throw error(
+        response.status,
+        `Backend error: ${JSON.stringify(await response.text())}`,
+      );
     }
 
     const data = await response.json();
@@ -112,7 +115,7 @@ export const searchTracks = query(
       totalPages: validated.totalPages,
       currentPage: page,
     };
-  }
+  },
 );
 
 export const getSearchSuggestions = query(
@@ -132,7 +135,7 @@ export const getSearchSuggestions = query(
         headers: {
           Authorization: `Bearer ${authHash}`,
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -141,7 +144,7 @@ export const getSearchSuggestions = query(
 
     const data = await response.json();
     return v.parse(SearchSuggestionsResponseSchema, data);
-  }
+  },
 );
 
 export const fetchRandomTracks = query(
@@ -182,7 +185,7 @@ export const fetchRandomTracks = query(
       totalPages: validated.totalPages,
       currentPage: page,
     };
-  }
+  },
 );
 
 export const deleteTrack = command(v.string(), async (id) => {

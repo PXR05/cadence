@@ -41,7 +41,7 @@
 >
   <button
     onclick={handlePlay}
-    class="flex flex-col gap-2 w-40 md:w-48 text-left"
+    class="flex flex-col gap-2 w-48 md:w-56 text-left hover:bg-muted/30 p-2 rounded-md transition-colors {isCurrentTrack ? 'bg-muted/50' : ''}"
   >
     <div
       class="aspect-square rounded-md overflow-hidden border bg-muted relative"

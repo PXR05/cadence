@@ -195,6 +195,9 @@
   }
 
   function handleTouchStart(e: TouchEvent) {
+    if (!playerStore.currentTrack) {
+      return;
+    }
     handleDragStart(e.touches[0].clientY, e);
   }
 

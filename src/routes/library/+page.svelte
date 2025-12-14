@@ -47,10 +47,13 @@
 
 <ScrollArea class="h-dvh">
   <div
-    class="p-2 pt-16 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 pb-72"
+    class="p-4 pt-16 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 pb-72"
   >
-    {#each allUserPlaylists as playlist (playlist.id)}
-      <div animate:flip={{ duration: 150 }} transition:fade={{ duration: 150 }}>
+    {#each allUserPlaylists as playlist, i (playlist.id)}
+      <div
+        animate:flip={{ duration: 150 }}
+        transition:fade={{ duration: 150, delay: i * 25 }}
+      >
         <PlaylistCard {playlist} size="large" />
       </div>
     {/each}

@@ -56,38 +56,51 @@
     updateURL(searchQuery);
 
     try {
-      const results = await Promise.all([
-        searchTracks({
-          q: searchQuery.trim(),
-          page: 1,
-          limit: LIMIT,
-        }),
-        searchYoutube(searchQuery.trim()),
-      ]);
-
-      const localResult = results[0];
-      const youtubeResult = results[1];
+      const localResult = await searchTracks({
+        q: searchQuery.trim(),
+        page: 1,
+        limit: LIMIT,
+      });
 
       tracks = localResult.tracks;
-      if (tracks.length > 0) {
+      isOffline = false;
+    } catch (error) {
+      console.error(
+        "Error performing online search, falling back to cache:",
+        error,
+      );
+
+      try {
+        const cachedResults = await searchCachedTracks(
+          searchQuery.trim(),
+          LIMIT,
+        );
+        tracks = cachedResults;
+        isOffline = true;
+      } catch (cacheError) {
+        console.error("Error searching cache:", cacheError);
+        tracks = [];
         isOffline = false;
       }
+    }
+
+    try {
+      const youtubeResult = await searchYoutube(searchQuery.trim());
 
       const existingYoutubeIds = new Set(
-        tracks.map((track) => track.youtubeId).filter(Boolean)
+        tracks.map((track) => track.youtubeId).filter(Boolean),
       );
 
       youtubeResults = youtubeResult.filter(
-        (result: YouTubeSearchResult) => !existingYoutubeIds.has(result.videoId)
+        (result: YouTubeSearchResult) =>
+          !existingYoutubeIds.has(result.videoId),
       );
     } catch (error) {
-      console.error("Error performing search:", error);
-      tracks = [];
+      console.error("Error searching YouTube:", error);
       youtubeResults = [];
-      isOffline = false;
-    } finally {
-      loading = false;
     }
+
+    loading = false;
   }
 
   function handleInput() {
@@ -187,7 +200,7 @@
 </form>
 
 <ScrollArea class="h-dvh">
-  <div class="flex flex-col mx-auto w-full h-full border-x overflow-auto">
+  <div class="flex flex-col mx-auto w-full h-full overflow-auto">
     <div class="flex-1 pt-32 md:pt-30">
       {#if loading}
         <div

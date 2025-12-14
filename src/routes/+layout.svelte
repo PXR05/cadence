@@ -10,8 +10,9 @@
   import { onMount } from "svelte";
   import { innerWidth } from "svelte/reactivity/window";
   import { page } from "$app/state";
-  import { slide } from "svelte/transition";
+  import { fade, slide } from "svelte/transition";
   import { Toaster } from "$lib/components/ui/sonner";
+  import { quintOut } from "svelte/easing";
 
   let { children } = $props();
 

@@ -4,9 +4,10 @@
   import { HorizontalTrackList } from "$lib/components/home";
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { historyStore } from "$lib/stores/history.svelte";
-  import { VirtualScroll } from "$lib/components/ui/virtual-scroll";
+  import * as Carousel from "$lib/components/ui/carousel";
   import { playerStore } from "$lib/stores/player.svelte";
   import { fade, slide } from "svelte/transition";
+  import { ScrollArea } from "$lib/components/ui/scroll-area";
 
   const tracks = $derived(tracksStore.tracks);
   const isInitialLoad = $derived(tracksStore.isInitialLoad);
@@ -18,6 +19,8 @@
   const recentlyPlayed = $derived(historyStore.recentlyPlayed);
 
   const ROW_HEIGHT = 80;
+  const COLUMNS = 4;
+  const ROWS = 4;
 
   $effect(() => {
     if (tracksStore.tracksCount > 0) {
@@ -43,46 +46,52 @@
     No songs added yet. Go search for some songs and add them to your library.
   </div>
 {:else}
-  <div transition:fade={{ duration: 150 }}>
-    <VirtualScroll items={tracks} rowHeight={ROW_HEIGHT} class="h-dvh">
-      {#snippet children({ item: track, actualIndex, visibleIndex })}
-        {#if actualIndex === 0}
-          <div class="pt-4 grid">
-            <HorizontalTrackList
-              title="Recommended"
-              tracks={recommendedTracks}
-            />
-            {#if recentlyPlayed.length > 0}
-              <div
-                class="pt-2"
-                transition:slide={{ axis: "y", duration: 200, delay: 100 }}
-              >
-                <HorizontalTrackList
-                  title="Recently Played"
-                  tracks={recentlyPlayed}
-                />
-              </div>
-            {/if}
-            <h2 class="px-4 pb-2 text-2xl font-semibold">All Songs</h2>
-          </div>
-        {:else if visibleIndex === 0}
-          <div style="height: {recentlyPlayed.length > 0 ? 672 : 364}px;"></div>
-        {/if}
+  <ScrollArea class="h-dvh py-2">
+    <div transition:fade={{ duration: 150 }} class="pt-2 grid pb-72">
+      <HorizontalTrackList title="Recommended" tracks={recommendedTracks} />
 
-        <TrackItem
-          index={actualIndex}
-          isCurrentTrack={track.id === currentId}
-          {track}
-        />
-      {/snippet}
-    </VirtualScroll>
+      {#if recentlyPlayed.length > 0}
+        <div transition:slide={{ axis: "y", duration: 200, delay: 100 }}>
+          <HorizontalTrackList
+            title="Recently Played"
+            tracks={recentlyPlayed}
+          />
+        </div>
+      {/if}
 
-    {#if isLoadingMore}
-      <div
-        class="p-4 flex items-center justify-center gap-2 text-muted-foreground border-t sticky bottom-0 bg-background"
+      <h2 class="px-4 pb-2 text-2xl font-semibold">Releases</h2>
+
+      <Carousel.Root
+        class="w-dvw"
+        opts={{
+          align: "start",
+        }}
       >
-        <LoaderIcon class="animate-spin text-muted-foreground" size={16} />
-      </div>
-    {/if}
-  </div>
+        <Carousel.Content
+          class="w-[calc(100dvw-2rem)] md:w-[calc(50dvw-1rem)] lg:w-[calc(33dvw-0.5rem)] xl:w-[25dvw] ml-2"
+        >
+          {#each { length: COLUMNS }, i}
+            <Carousel.Item class="grid gap-2 p-0">
+              {#each tracks.slice(ROWS * i, ROWS * i + ROWS) as item, i (item)}
+                {@const index = ROWS * i + i}
+                <TrackItem
+                  {index}
+                  isCurrentTrack={item.id === currentId}
+                  track={item}
+                />
+              {/each}
+            </Carousel.Item>
+          {/each}
+        </Carousel.Content>
+      </Carousel.Root>
+
+      {#if isLoadingMore}
+        <div
+          class="p-4 flex items-center justify-center gap-2 text-muted-foreground border-t sticky bottom-0 bg-background"
+        >
+          <LoaderIcon class="animate-spin text-muted-foreground" size={16} />
+        </div>
+      {/if}
+    </div>
+  </ScrollArea>
 {/if}

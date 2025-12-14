@@ -6,4 +6,6 @@
   <title>Search | Cadence</title>
 </svelte:head>
 
-<SearchView />
+<div class="px-2">
+  <SearchView />
+</div>

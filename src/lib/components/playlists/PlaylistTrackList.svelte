@@ -45,7 +45,7 @@
     bind:this={virtualScrollRef}
     {items}
     rowHeight={ROW_HEIGHT}
-    class="h-dvh"
+    class="h-dvh px-2"
     {topOffset}
     {onScroll}
   >
