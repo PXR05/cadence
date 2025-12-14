@@ -2,6 +2,8 @@
   import "../app.css";
   import { ModeWatcher } from "mode-watcher";
   import { AuthDialog, BottomBar, NavBar, SplashScreen } from "$lib/components";
+  import { TrackMenuDialog } from "$lib/components/tracks";
+  import { PlaylistMenuDialog } from "$lib/components/playlists";
   import { playerStore } from "$lib/stores/player.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
@@ -100,6 +102,8 @@
 
 <Toaster position="top-right" />
 <ModeWatcher />
+<TrackMenuDialog />
+<PlaylistMenuDialog />
 
 {#if showSplash && !authStore.isAuthenticated}
   <SplashScreen onComplete={() => (showSplash = false)} />

@@ -12,14 +12,25 @@
 
   interface Props {
     open: boolean;
+    onOpenChange?: (open: boolean) => void;
     trackName: string;
     onConfirm: () => void;
   }
 
-  let { open = $bindable(), trackName, onConfirm }: Props = $props();
+  let {
+    open = $bindable(),
+    onOpenChange,
+    trackName,
+    onConfirm,
+  }: Props = $props();
+
+  function handleOpenChange(isOpen: boolean) {
+    open = isOpen;
+    onOpenChange?.(isOpen);
+  }
 </script>
 
-<AlertDialog bind:open>
+<AlertDialog bind:open onOpenChange={handleOpenChange}>
   <AlertDialogContent>
     <AlertDialogHeader>
       <AlertDialogTitle>Delete Track</AlertDialogTitle>
