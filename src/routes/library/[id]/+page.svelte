@@ -1,6 +1,5 @@
 <script lang="ts">
   import { SvelteSet } from "svelte/reactivity";
-  import { navigationStore } from "$lib/stores/navigation.svelte";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
   import { useDialogState } from "$lib/hooks";
   import {
@@ -52,12 +51,6 @@
       : (playlist?.items ?? []),
   );
 
-  $effect(() => {
-    if (playlist) {
-      updateNavigation(playlist.name);
-    }
-  });
-
   function filterTracks(items: PlaylistItem[], query: string) {
     const lowerQuery = query.toLowerCase();
     return items.filter((item) => {
@@ -68,13 +61,6 @@
         artist.toLowerCase().includes(lowerQuery)
       );
     });
-  }
-
-  function updateNavigation(playlistName: string) {
-    navigationStore.setNavigation(
-      [{ label: "Library", path: "/library" }],
-      getPlaylistDisplayName({ name: playlistName } as Playlist),
-    );
   }
 
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);

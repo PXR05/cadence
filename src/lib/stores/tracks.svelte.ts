@@ -91,16 +91,21 @@ class TracksStore {
       let hasMore = true;
 
       while (hasMore) {
-        const result = await fetchTracks({
-          page: currentPage,
-          limit: 100,
-          sortBy: "uploadedAt",
-          sortOrder: "desc",
-        });
+        try {
+          const result = await fetchTracks({
+            page: currentPage,
+            limit: 100,
+            sortBy: "uploadedAt",
+            sortOrder: "desc",
+          });
 
-        allTracks.push(...result.tracks);
-        hasMore = result.hasMore;
-        currentPage++;
+          allTracks.push(...result.tracks);
+          hasMore = result.hasMore;
+          currentPage++;
+        } catch (err) {
+          console.error("Error fetching tracks page:", err);
+          return;
+        }
       }
 
       this._tracks = allTracks;

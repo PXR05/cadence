@@ -1,10 +1,8 @@
 <script lang="ts">
-  import { MediaQuery } from "svelte/reactivity";
   import { goto } from "$app/navigation";
   import { page } from "$app/state";
   import { untrack } from "svelte";
-  import * as Dialog from "$lib/components/ui/dialog";
-  import * as Drawer from "$lib/components/ui/drawer";
+  import { MenuDialog } from "$lib/components/ui/menu-dialog";
   import { trackMenuStore } from "$lib/stores/trackMenu.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { getImageUrl, getStreamUrl } from "$lib/stores/player.svelte";
@@ -13,7 +11,7 @@
   import { useDialogState } from "$lib/hooks";
   import { ManagePlaylistsDialog } from "../playlists";
   import { DeleteTrackDialog } from "../admin";
-  import { Button, buttonVariants } from "../ui/button";
+  import { Button } from "../ui/button";
   import {
     DownloadIcon,
     ListMusicIcon,
@@ -22,12 +20,10 @@
     CloudDownloadIcon,
     CloudOffIcon,
     Trash2Icon,
-    XIcon,
   } from "@lucide/svelte";
   import { toast } from "svelte-sonner";
 
   const PARAM_NAME = "track-menu";
-  const isDesktop = new MediaQuery("(min-width: 768px)");
 
   const managePlaylistDialog = useDialogState("manage-playlists");
   const deleteTrackDialog = useDialogState("delete-track");
@@ -86,6 +82,7 @@
     track?.metadata?.title ?? track?.filename ?? "Unknown",
   );
   const artist = $derived(track?.metadata?.artist ?? "Unknown Artist");
+  const imageUrl = $derived(track ? getImageUrl(track.id) : "");
 
   function handleClose() {
     closeDialog();
@@ -187,135 +184,96 @@
   }
 </script>
 
-{#snippet trackHeader()}
-  <div class="flex gap-3 p-4">
-    <div class="rounded-md size-20 flex-shrink-0 overflow-hidden">
-      <img
-        src={getImageUrl(track?.id ?? "")}
-        alt={title}
-        class="size-full object-cover"
-      />
-    </div>
-    <div class="flex flex-col flex-1 min-w-0 mt-auto">
-      <p class="font-medium truncate">{title}</p>
-      <p class="text-sm text-muted-foreground truncate">{artist}</p>
-    </div>
-    {#if isDesktop.current}
-      <Drawer.Close class={buttonVariants({ variant: "ghost", size: "icon" })}>
-        <XIcon class="size-5" />
-      </Drawer.Close>
-    {/if}
-  </div>
-{/snippet}
-
 {#snippet menuItems()}
-  <div class="flex flex-col p-2">
-    <Button
-      variant="ghost"
-      class="justify-start gap-3 h-12"
-      onclick={handlePlayNext}
-    >
-      <SkipForwardIcon class="size-5" />
-      Play Next
-    </Button>
+  <Button
+    variant="ghost"
+    class="justify-start gap-3 h-12"
+    onclick={handlePlayNext}
+  >
+    <SkipForwardIcon class="size-5" />
+    Play Next
+  </Button>
 
-    <Button
-      variant="ghost"
-      class="justify-start gap-3 h-12"
-      onclick={handleAddToQueue}
-    >
-      <PlusIcon class="size-5" />
-      Add to Queue
-    </Button>
+  <Button
+    variant="ghost"
+    class="justify-start gap-3 h-12"
+    onclick={handleAddToQueue}
+  >
+    <PlusIcon class="size-5" />
+    Add to Queue
+  </Button>
 
-    <div class="h-px bg-border my-1"></div>
+  <div class="h-px bg-border my-1"></div>
 
-    <Button
-      variant="ghost"
-      class="justify-start gap-3 h-12"
-      onclick={handleAddToPlaylist}
-    >
-      <ListMusicIcon class="size-5" />
-      Add to Playlist
-    </Button>
+  <Button
+    variant="ghost"
+    class="justify-start gap-3 h-12"
+    onclick={handleAddToPlaylist}
+  >
+    <ListMusicIcon class="size-5" />
+    Add to Playlist
+  </Button>
 
-    <div class="h-px bg-border my-1"></div>
+  <div class="h-px bg-border my-1"></div>
 
-    <Button
-      variant="ghost"
-      class="justify-start gap-3 h-12"
-      onclick={handleDownload}
-    >
-      <DownloadIcon class="size-5" />
-      Download
-    </Button>
+  <Button
+    variant="ghost"
+    class="justify-start gap-3 h-12"
+    onclick={handleDownload}
+  >
+    <DownloadIcon class="size-5" />
+    Download
+  </Button>
 
-    <Button
-      variant="ghost"
-      class="justify-start gap-3 h-12"
-      onclick={handleToggleOffline}
-    >
-      {#if trackMenuStore.isOffline}
-        <CloudOffIcon class="size-5" />
-        Remove from Offline
-      {:else}
-        <CloudDownloadIcon class="size-5" />
-        Make Available Offline
-      {/if}
-    </Button>
+  <Button
+    variant="ghost"
+    class="justify-start gap-3 h-12"
+    onclick={handleToggleOffline}
+  >
+    {#if trackMenuStore.isOffline}
+      <CloudOffIcon class="size-5" />
+      Remove from Offline
+    {:else}
+      <CloudDownloadIcon class="size-5" />
+      Make Available Offline
+    {/if}
+  </Button>
 
-    <div class="h-px bg-border my-1"></div>
+  <div class="h-px bg-border my-1"></div>
 
-    <Button
-      variant="ghost"
-      class="justify-start gap-3 h-12 text-destructive hover:text-destructive hover:bg-destructive/10"
-      onclick={handleDeleteTrack}
-    >
-      <Trash2Icon class="size-5" />
-      Delete Track
-    </Button>
-  </div>
+  <Button
+    variant="ghost"
+    class="justify-start gap-3 h-12 text-destructive hover:text-destructive hover:bg-destructive/10"
+    onclick={handleDeleteTrack}
+  >
+    <Trash2Icon class="size-5" />
+    Delete Track
+  </Button>
 {/snippet}
-
-{#if isDesktop.current}
-  <Dialog.Root open={isOpen} onOpenChange={handleOpenChange}>
-    <Dialog.Content class="max-w-sm p-0 gap-0" showCloseButton={false}>
-      {#if track}
-        {@render trackHeader()}
-        {@render menuItems()}
-      {/if}
-    </Dialog.Content>
-  </Dialog.Root>
-{:else}
-  <Drawer.Root open={isOpen} onOpenChange={handleOpenChange}>
-    <Drawer.Content>
-      {#if track}
-        <Drawer.Header class="text-left p-0">
-          {@render trackHeader()}
-        </Drawer.Header>
-        {@render menuItems()}
-        <Drawer.Footer class="pt-2">
-          <Drawer.Close>
-            <Button variant="outline" class="w-full">Cancel</Button>
-          </Drawer.Close>
-        </Drawer.Footer>
-      {/if}
-    </Drawer.Content>
-  </Drawer.Root>
-{/if}
 
 {#if track}
-  <ManagePlaylistsDialog
-    open={managePlaylistDialog.isOpen}
-    onOpenChange={handleManagePlaylistOpenChange}
-    trackId={track.id}
-    trackTitle={title}
-  />
+  <MenuDialog
+    open={isOpen}
+    onOpenChange={handleOpenChange}
+    {imageUrl}
+    {title}
+    subtitle={artist}
+    {menuItems}
+  >
+    {#snippet children()}
+      <ManagePlaylistsDialog
+        open={managePlaylistDialog.isOpen}
+        onOpenChange={handleManagePlaylistOpenChange}
+        trackId={track.id}
+        trackTitle={title}
+      />
 
-  <DeleteTrackDialog
-    open={deleteTrackDialog.isOpen}
-    onOpenChange={handleDeleteDialogOpenChange}
-    trackName={track?.metadata?.title || track?.filename || "this track"}
-    onConfirm={confirmDeleteTrack}
-  />
+      <DeleteTrackDialog
+        open={deleteTrackDialog.isOpen}
+        onOpenChange={handleDeleteDialogOpenChange}
+        trackName={track?.metadata?.title || track?.filename || "this track"}
+        onConfirm={confirmDeleteTrack}
+      />
+    {/snippet}
+  </MenuDialog>
 {/if}

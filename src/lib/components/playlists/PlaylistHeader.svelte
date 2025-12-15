@@ -1,7 +1,6 @@
 <script lang="ts">
   import { goto, invalidateAll } from "$app/navigation";
   import { playerStore, getPlaylistImageUrl } from "$lib/stores/player.svelte";
-  import { navigationStore } from "$lib/stores/navigation.svelte";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
   import { useDialogState, usePlaylistOffline } from "$lib/hooks";
   import {
@@ -34,6 +33,7 @@
   import { youtubeDownloadStore } from "$lib/stores/youtubeDownload.svelte";
   import { toast } from "svelte-sonner";
   import type { Playlist, PlaylistDetail } from "$lib/schemas";
+  import { playlistMenuStore } from "$lib/stores/playlistMenu.svelte";
 
   interface Props {
     playlist: PlaylistDetail;
@@ -62,14 +62,7 @@
     playerStore.setQueue(tracks, 0);
   }
 
-  async function handlePlaylistUpdated(updated: {
-    name: string;
-    coverImage?: string;
-  }) {
-    navigationStore.setNavigation(
-      [{ label: "Library", path: "/library" }],
-      getPlaylistDisplayName({ name: updated.name } as Playlist),
-    );
+  async function handlePlaylistUpdated() {
     await playlistsStore.invalidatePlaylistDetail(playlistId);
     playlistsStore.invalidate();
     invalidateAll();
@@ -81,19 +74,23 @@
     goto("/library", { replaceState: true });
   }
 
-  async function handlePlaylistResync() {
-    try {
-      await youtubeDownloadStore.downloadFromUrl(
-        `https://music.youtube.com/playlist?list=${playlistId.replace("youtube_", "")}`,
-      );
-      toast.success("Resynced from YouTube");
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Failed to download from YouTube";
-      toast.error(errorMessage);
-    }
+  function handleMenu(e: MouseEvent) {
+    e.preventDefault();
+    playlistMenuStore.open(
+      {
+        id: playlist.id,
+        name: playlist.name,
+        userId: playlist.userId,
+        createdAt: playlist.createdAt,
+        updatedAt: playlist.updatedAt,
+        coverImage: playlist.coverImage,
+        itemCount: playlist.items.length,
+      },
+      offline.isOffline,
+      offline.isDownloading,
+      () => invalidateAll(),
+      () => goto("/library", { replaceState: true }),
+    );
   }
 </script>
 
@@ -198,10 +195,7 @@
           {playlist.name}
         </h1>
         {#if offline.isOffline}
-          <CloudCheckIcon
-            size={20}
-            class="flex-shrink-0 text-primary"
-          />
+          <CloudCheckIcon size={20} class="flex-shrink-0 text-primary" />
         {/if}
       </div>
     </div>
@@ -231,66 +225,14 @@
   style="transform: scale({isScrolled ? 0.8 : 1});
   opacity: {isScrolled ? 0 : 1};"
 >
-  <DropdownMenu.Root>
-    <DropdownMenu.Trigger>
-      <Button
-        variant="ghost"
-        size="icon"
-        class="md:p-2 bg-background"
-        title="Playlist options"
-      >
-        <EllipsisIcon size={20} />
-      </Button>
-    </DropdownMenu.Trigger>
-    <DropdownMenu.Content align="end">
-      {#if !isNonModifiable}
-        <DropdownMenu.Item
-          disabled={isNonModifiable}
-          onclick={() => editDialog.open()}
-        >
-          <PencilIcon size={16} class="mr-2" />
-          Edit Playlist
-        </DropdownMenu.Item>
-        <DropdownMenu.Separator />
-      {/if}
-
-      <DropdownMenu.Item
-        onclick={() => offline.downloadPlaylist(playlist)}
-        disabled={offline.isDownloading || playlist.items.length === 0}
-      >
-        <DownloadIcon size={16} class="mr-2" />
-        Download as ZIP
-      </DropdownMenu.Item>
-
-      {#if isYoutubePlaylist(playlist.id)}
-        <DropdownMenu.Item
-          onclick={() => handlePlaylistResync()}
-          disabled={playlist.items.length === 0}
-        >
-          <RefreshCwIcon size={16} class="mr-2" />
-          Resync Playlist
-        </DropdownMenu.Item>
-      {/if}
-
-      {#if offline.isOffline || playlist.id === SPECIAL_PLAYLIST_IDS.DOWNLOADED}
-        <DropdownMenu.Item
-          onclick={() => offline.removeOffline()}
-          disabled={offline.isDownloading}
-        >
-          <CloudOffIcon size={16} class="mr-2" />
-          Remove Offline
-        </DropdownMenu.Item>
-      {:else}
-        <DropdownMenu.Item
-          onclick={() => offline.makeOffline(playlist)}
-          disabled={offline.isDownloading || playlist.items.length === 0}
-        >
-          <CloudDownloadIcon size={16} class="mr-2" />
-          Make Offline
-        </DropdownMenu.Item>
-      {/if}
-    </DropdownMenu.Content>
-  </DropdownMenu.Root>
+  <Button
+    variant="ghost"
+    size="icon"
+    class="md:p-2 bg-background"
+    onclick={handleMenu}
+  >
+    <EllipsisIcon size={20} />
+  </Button>
 </div>
 
 {#if !isNonModifiable}

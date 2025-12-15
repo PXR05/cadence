@@ -9,7 +9,6 @@
     ShieldIcon,
   } from "@lucide/svelte";
   import { onMount } from "svelte";
-  import { navigationStore } from "$lib/stores/navigation.svelte";
   import { flip } from "svelte/animate";
   import { Tween } from "svelte/motion";
   import { playerStore } from "$lib/stores/player.svelte";
@@ -80,13 +79,7 @@
     }
     return page.url.pathname.startsWith(tabPath);
   }
-
-  $effect(() => {
-    if (isTopRoute) {
-      navigationStore.clear();
-    }
-  });
-
+  
   function handleIndicatorPointerDown(e: PointerEvent) {
     if (!navElement || !indicatorElement) return;
 

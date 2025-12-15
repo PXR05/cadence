@@ -1,10 +1,8 @@
 <script lang="ts">
-  import { MediaQuery } from "svelte/reactivity";
   import { goto } from "$app/navigation";
   import { page } from "$app/state";
   import { untrack } from "svelte";
-  import * as Dialog from "$lib/components/ui/dialog";
-  import * as Drawer from "$lib/components/ui/drawer";
+  import { MenuDialog } from "$lib/components/ui/menu-dialog";
   import { playlistMenuStore } from "$lib/stores/playlistMenu.svelte";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
   import { youtubeDownloadStore } from "$lib/stores/youtubeDownload.svelte";
@@ -19,20 +17,18 @@
     SPECIAL_PLAYLIST_IDS,
   } from "$lib/utils/playlist";
   import EditPlaylistDialog from "./EditPlaylistDialog.svelte";
-  import { Button, buttonVariants } from "../ui/button";
+  import { Button } from "../ui/button";
   import {
     CloudDownloadIcon,
     CloudOffIcon,
     PencilIcon,
     RefreshCwIcon,
     DownloadIcon,
-    XIcon,
     MusicIcon,
   } from "@lucide/svelte";
   import { toast } from "svelte-sonner";
 
   const PARAM_NAME = "playlist-menu";
-  const isDesktop = new MediaQuery("(min-width: 768px)");
 
   const editDialog = useDialogState("edit-playlist");
 
@@ -101,10 +97,12 @@
   );
 
   const itemCount = $derived(playlist?.itemCount ?? 0);
+  const imageUrl = $derived(
+    playlist?.coverImage ? getPlaylistImageUrl(playlist.id) : undefined,
+  );
 
   const offline = usePlaylistOffline(() => playlistId);
 
-  // Check offline status when playlist changes
   $effect(() => {
     if (playlist) {
       offline.checkOfflineStatus();
@@ -177,10 +175,7 @@
     editDialog.open();
   }
 
-  async function handlePlaylistUpdated(updated: {
-    name: string;
-    coverImage?: string;
-  }) {
+  async function handlePlaylistUpdated() {
     if (!playlist) return;
     await playlistsStore.invalidatePlaylistDetail(playlist.id);
     playlistsStore.invalidate();
@@ -204,131 +199,91 @@
   }
 </script>
 
-{#snippet playlistHeader()}
-  <div class="flex gap-3 p-4">
-    <div
-      class="rounded-md size-20 flex-shrink-0 overflow-hidden bg-muted grid place-items-center"
-    >
-      {#if playlist?.coverImage}
-        <img
-          src={getPlaylistImageUrl(playlist.id)}
-          alt={displayName}
-          class="size-full object-cover"
-        />
-      {:else}
-        <MusicIcon class="size-6 text-muted-foreground" />
-      {/if}
-    </div>
-    <div class="flex flex-col flex-1 min-w-0 mt-auto">
-      <p class="font-medium truncate">{displayName}</p>
-      <p class="text-sm text-muted-foreground truncate">
-        {itemCount} tracks
-      </p>
-    </div>
-    {#if isDesktop.current}
-      <Drawer.Close class={buttonVariants({ variant: "ghost", size: "icon" })}>
-        <XIcon class="size-5" />
-      </Drawer.Close>
-    {/if}
-  </div>
+{#snippet imageFallback()}
+  <MusicIcon class="size-6 text-muted-foreground" />
 {/snippet}
 
 {#snippet menuItems()}
-  <div class="flex flex-col p-1">
-    {#if !isNonModifiable}
-      <Button
-        variant="ghost"
-        class="justify-start gap-3 h-12"
-        onclick={handleEditPlaylist}
-      >
-        <PencilIcon class="size-5" />
-        Edit Playlist
-      </Button>
-
-      <div class="h-px bg-border my-1"></div>
-    {/if}
-
+  {#if !isNonModifiable}
     <Button
       variant="ghost"
       class="justify-start gap-3 h-12"
-      onclick={handleDownloadPlaylist}
-      disabled={offline.isDownloading || itemCount === 0}
+      onclick={handleEditPlaylist}
     >
-      <DownloadIcon class="size-5" />
-      Download as ZIP
+      <PencilIcon class="size-5" />
+      Edit Playlist
     </Button>
 
-    {#if playlist && isYoutubePlaylist(playlist.id)}
-      <Button
-        variant="ghost"
-        class="justify-start gap-3 h-12"
-        onclick={handlePlaylistResync}
-        disabled={itemCount === 0}
-      >
-        <RefreshCwIcon class="size-5" />
-        Resync Playlist
-      </Button>
-    {/if}
-
     <div class="h-px bg-border my-1"></div>
+  {/if}
 
-    {#if offline.isOffline || playlist?.id === SPECIAL_PLAYLIST_IDS.DOWNLOADED}
-      <Button
-        variant="ghost"
-        class="justify-start gap-3 h-12"
-        onclick={handleRemoveOffline}
-        disabled={offline.isDownloading}
-      >
-        <CloudOffIcon class="size-5" />
-        Remove Offline
-      </Button>
-    {:else}
-      <Button
-        variant="ghost"
-        class="justify-start gap-3 h-12"
-        onclick={handleMakeOffline}
-        disabled={offline.isDownloading || itemCount === 0}
-      >
-        <CloudDownloadIcon class="size-5" />
-        Make Offline
-      </Button>
-    {/if}
-  </div>
+  <Button
+    variant="ghost"
+    class="justify-start gap-3 h-12"
+    onclick={handleDownloadPlaylist}
+    disabled={offline.isDownloading || itemCount === 0}
+  >
+    <DownloadIcon class="size-5" />
+    Download as ZIP
+  </Button>
+
+  {#if playlist && isYoutubePlaylist(playlist.id)}
+    <Button
+      variant="ghost"
+      class="justify-start gap-3 h-12"
+      onclick={handlePlaylistResync}
+      disabled={itemCount === 0}
+    >
+      <RefreshCwIcon class="size-5" />
+      Resync Playlist
+    </Button>
+  {/if}
+
+  <div class="h-px bg-border my-1"></div>
+
+  {#if offline.isOffline || playlist?.id === SPECIAL_PLAYLIST_IDS.DOWNLOADED}
+    <Button
+      variant="ghost"
+      class="justify-start gap-3 h-12"
+      onclick={handleRemoveOffline}
+      disabled={offline.isDownloading}
+    >
+      <CloudOffIcon class="size-5" />
+      Remove Offline
+    </Button>
+  {:else}
+    <Button
+      variant="ghost"
+      class="justify-start gap-3 h-12"
+      onclick={handleMakeOffline}
+      disabled={offline.isDownloading || itemCount === 0}
+    >
+      <CloudDownloadIcon class="size-5" />
+      Make Offline
+    </Button>
+  {/if}
 {/snippet}
 
-{#if isDesktop.current}
-  <Dialog.Root open={isOpen} onOpenChange={handleOpenChange}>
-    <Dialog.Content class="max-w-sm p-0 gap-0" showCloseButton={false}>
-      {#if playlist}
-        {@render playlistHeader()}
-        {@render menuItems()}
+{#if playlist}
+  <MenuDialog
+    open={isOpen}
+    onOpenChange={handleOpenChange}
+    {imageUrl}
+    {imageFallback}
+    title={displayName}
+    subtitle="{itemCount} tracks"
+    {menuItems}
+  >
+    {#snippet children()}
+      {#if !isNonModifiable}
+        <EditPlaylistDialog
+          open={editDialog.isOpen}
+          onOpenChange={handleEditDialogOpenChange}
+          playlist={{ ...playlist, items: [] }}
+          onUpdated={handlePlaylistUpdated}
+          onDeleted={handlePlaylistDeleted}
+        />
       {/if}
-    </Dialog.Content>
-  </Dialog.Root>
-{:else}
-  <Drawer.Root open={isOpen} onOpenChange={handleOpenChange}>
-    <Drawer.Content>
-      {#if playlist}
-        <Drawer.Header class="text-left p-0">
-          {@render playlistHeader()}
-        </Drawer.Header>
-        {@render menuItems()}
-        <Drawer.Footer class="pt-2">
-          <Drawer.Close>
-            <Button variant="outline" class="w-full">Cancel</Button>
-          </Drawer.Close>
-        </Drawer.Footer>
-      {/if}
-    </Drawer.Content>
-  </Drawer.Root>
-{/if}
-
-{#if playlist && !isNonModifiable}
-  <EditPlaylistDialog
-    open={editDialog.isOpen}
-    onOpenChange={handleEditDialogOpenChange}
-    playlist={{ ...playlist, items: [] }}
-    onUpdated={handlePlaylistUpdated}
-    onDeleted={handlePlaylistDeleted}
-  />
+    {/snippet}
+  </MenuDialog>
 {/if}

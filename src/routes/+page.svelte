@@ -1,5 +1,9 @@
 <script lang="ts">
-  import { LoaderIcon } from "@lucide/svelte";
+  import {
+    LoaderIcon,
+    SquareDashedIcon,
+    TriangleAlertIcon,
+  } from "@lucide/svelte";
   import TrackItem from "$lib/components/tracks/TrackItem.svelte";
   import { HorizontalTrackList } from "$lib/components/home";
   import { tracksStore } from "$lib/stores/tracks.svelte";
@@ -18,7 +22,6 @@
   const recommendedTracks = $derived(tracksStore.getRandomTracks(10));
   const recentlyPlayed = $derived(historyStore.recentlyPlayed);
 
-  const ROW_HEIGHT = 80;
   const COLUMNS = 4;
   const ROWS = 4;
 
@@ -38,12 +41,26 @@
     <LoaderIcon class="animate-spin text-muted-foreground" />
   </div>
 {:else if error}
-  <div class="mx-auto w-full p-16 text-destructive text-center">
-    Error loading tracks: {error}
+  <div
+    class="mx-auto w-full h-full grid place-items-center p-16 text-destructive text-center"
+  >
+    <div class="flex flex-col items-center text-destructive">
+      <TriangleAlertIcon
+        size={48}
+        strokeWidth={1.5}
+        class="mb-4"
+      />
+      <p class="text-center">
+        Error loading tracks: {error}
+      </p>
+    </div>
   </div>
 {:else if tracks.length === 0}
-  <div class="mx-auto w-full p-16 text-muted-foreground text-center">
-    No songs added yet. Go search for some songs and add them to your library.
+  <div class="mx-auto w-full h-full grid place-items-center p-16">
+    <div class="flex flex-col items-center text-muted-foreground">
+      <SquareDashedIcon size={48} strokeWidth={1.5} class="mb-4 rotate-45" />
+      <p class="text-center">No songs added yet.</p>
+    </div>
   </div>
 {:else}
   <ScrollArea class="h-dvh py-2">

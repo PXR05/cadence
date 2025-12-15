@@ -256,7 +256,7 @@
         <div
           class="flex flex-col items-center justify-center flex-1 p-8 pb-48 md:pb-36 h-full"
         >
-          <SearchIcon size={48} class="text-muted-foreground mb-4" />
+          <SearchIcon strokeWidth={1.5} size={48} class="text-muted-foreground mb-4" />
           <p class="text-muted-foreground text-center">
             Search by title, artist, or album
           </p>

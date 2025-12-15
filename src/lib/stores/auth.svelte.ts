@@ -135,7 +135,7 @@ class AuthStore {
     if (!this.token) {
       return null;
     }
-    
+
     if ("onLine" in navigator && !navigator.onLine) {
       this.restoreUserFromToken();
       return this.user;
@@ -170,7 +170,7 @@ class AuthStore {
       return;
     }
 
-    if (isTokenExpired(token)) {
+    if (isTokenExpired(token) && "onLine" in navigator && navigator.onLine) {
       console.warn("Token is expired, clearing auth state");
       this.logout();
       return;
