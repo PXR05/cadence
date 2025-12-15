@@ -11,7 +11,7 @@ import { downloadStore } from "./download.svelte";
 class TracksStore {
   private _tracks = $state<AudioFile[]>([]);
   private _lastFetchedAt = $state<string | null>(null);
-  private _isInitialLoad = $state(false);
+  private _isInitialLoad = $state(true);
   private _isLoadingMore = $state(false);
   private _error = $state<string | null>(null);
   private _initialized = false;
@@ -73,11 +73,13 @@ class TracksStore {
 
     if (!forceRefresh && this.tracks.length > 0 && this.lastFetchedAt) {
       if ("onLine" in navigator && !navigator.onLine) {
+        this.isInitialLoad = false;
         return;
       }
 
       const shouldRefresh = await this.shouldRefreshTracks();
       if (!shouldRefresh) {
+        this.isInitialLoad = false;
         return;
       }
     }

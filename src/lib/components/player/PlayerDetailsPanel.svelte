@@ -1,20 +1,13 @@
 <script lang="ts">
   import { getStreamUrl } from "$lib/stores/player.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
-  import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
-  import {
-    ChevronDown,
-    CloudDownloadIcon,
-    CloudOffIcon,
-    DownloadIcon,
-    EllipsisIcon,
-    ListMusicIcon,
-  } from "@lucide/svelte";
+  import { ChevronDown, EllipsisIcon } from "@lucide/svelte";
   import PlayerDetails from "./PlayerDetails.svelte";
   import { ManagePlaylistsDialog } from "../playlists";
   import { onMount } from "svelte";
   import { Button } from "../ui/button";
   import { downloadStore } from "$lib/stores/download.svelte";
+  import { trackMenuStore } from "$lib/stores/trackMenu.svelte";
 
   interface Props {
     onOpenChange: (open: boolean) => void;
@@ -42,43 +35,21 @@
   let managePlaylistsDialogOpen = $state(false);
   let panelElement: HTMLDivElement | null = $state(null);
   let dropdownOpen = $state(false);
-
-  function handleDownload() {
-    if (track) {
-      const downloadUrl = getStreamUrl(track.id);
-      const link = document.createElement("a");
-      link.href = downloadUrl;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  }
-
   let isOffline = $state(false);
 
-  async function handleToggleOffline() {
+  async function refreshOfflineStatus() {
     if (!track) return;
-    if (isOffline) {
-      await downloadStore.removeTrackOffline(track.id);
-    } else {
-      await downloadStore.makeTrackOffline(
-        track.id,
-        {
-          title: track.metadata?.title,
-          artist: track.metadata?.artist,
-          album: track.metadata?.album,
-          duration: track.metadata?.duration,
-        },
-        track.filename,
-        track.size,
-      );
-    }
     isOffline = await downloadStore.checkTrackOfflineStatus(track.id);
   }
 
   function handleClose() {
     onOpenChange(false);
   }
+
+  onMount(async () => {
+    if (!track) return;
+    isOffline = await downloadStore.checkTrackOfflineStatus(track.id);
+  });
 
   onMount(() => {
     if (panelElement) {
@@ -138,41 +109,17 @@
     >
       <ChevronDown class="size-6" />
     </Button>
-    <DropdownMenu.Root bind:open={dropdownOpen}>
-      <DropdownMenu.Trigger>
-        {#snippet child({ props })}
-          <Button
-            {...props}
-            size="icon"
-            variant="ghost"
-            class="transition-opacity hover:opacity-90 cursor-pointer"
-            aria-label="Menu options"
-          >
-            <EllipsisIcon class="size-6" />
-          </Button>
-        {/snippet}
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Content>
-        <DropdownMenu.Item onclick={() => (managePlaylistsDialogOpen = true)}>
-          <ListMusicIcon size={16} class="mr-2" />
-          Add to Playlist
-        </DropdownMenu.Item>
-        <DropdownMenu.Separator />
-        <DropdownMenu.Item onclick={handleDownload}>
-          <DownloadIcon size={16} class="mr-2" />
-          Download
-        </DropdownMenu.Item>
-        <DropdownMenu.Item onclick={handleToggleOffline}>
-          {#if isOffline}
-            <CloudOffIcon size={16} class="mr-2" />
-            Remove from Offline
-          {:else}
-            <CloudDownloadIcon size={16} class="mr-2" />
-            Make Available Offline
-          {/if}
-        </DropdownMenu.Item>
-      </DropdownMenu.Content>
-    </DropdownMenu.Root>
+    <Button
+      size="icon"
+      variant="ghost"
+      class="transition-opacity hover:opacity-90 cursor-pointer"
+      onclick={() =>
+        track
+          ? trackMenuStore.open(track, isOffline, refreshOfflineStatus)
+          : {}}
+    >
+      <EllipsisIcon class="size-6" />
+    </Button>
   </div>
 
   {#if track}
