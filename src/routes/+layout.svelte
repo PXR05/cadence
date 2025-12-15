@@ -1,7 +1,13 @@
 <script lang="ts">
   import "../app.css";
   import { ModeWatcher } from "mode-watcher";
-  import { AuthDialog, BottomBar, NavBar, SplashScreen } from "$lib/components";
+  import {
+    AuthDialog,
+    BottomBar,
+    NavBar,
+    SplashScreen,
+    UpdateNotification,
+  } from "$lib/components";
   import { TrackMenuDialog } from "$lib/components/tracks";
   import { PlaylistMenuDialog } from "$lib/components/playlists";
   import { playerStore } from "$lib/stores/player.svelte";
@@ -12,13 +18,13 @@
   import { onMount } from "svelte";
   import { innerWidth } from "svelte/reactivity/window";
   import { page } from "$app/state";
-  import { fade, slide } from "svelte/transition";
+  import { slide } from "svelte/transition";
   import { Toaster } from "$lib/components/ui/sonner";
-  import { quintOut } from "svelte/easing";
 
   let { children } = $props();
 
   let showSplash = $state(true);
+  let updateWorker = $state<ServiceWorker | null>(null);
 
   onMount(async () => {
     if (authStore.token) {
@@ -27,7 +33,40 @@
         loadInitialData();
       }
     }
+
+    if ("serviceWorker" in navigator) {
+      const registration = await navigator.serviceWorker.ready;
+
+      if (registration.waiting) {
+        updateWorker = registration.waiting;
+      }
+
+      registration.addEventListener("updatefound", () => {
+        const newWorker = registration.installing;
+        if (newWorker) {
+          newWorker.addEventListener("statechange", () => {
+            if (
+              newWorker.state === "installed" &&
+              navigator.serviceWorker.controller
+            ) {
+              updateWorker = newWorker;
+            }
+          });
+        }
+      });
+
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        window.location.reload();
+      });
+    }
   });
+
+  function handleUpdate() {
+    if (updateWorker) {
+      updateWorker.postMessage({ type: "SKIP_WAITING" });
+      updateWorker = null;
+    }
+  }
 
   function loadInitialData() {
     tracksStore.loadAllTracks().catch((error) => {
@@ -100,7 +139,7 @@
 
 <svelte:window onkeydown={(e) => handleKeyboardEvent(e)} />
 
-<Toaster position="top-right" />
+<Toaster position="top-right" richColors />
 <ModeWatcher />
 <TrackMenuDialog />
 <PlaylistMenuDialog />
@@ -109,6 +148,10 @@
   <SplashScreen onComplete={() => (showSplash = false)} />
 {:else if !authStore.isAuthenticated}
   <AuthDialog onAuthenticated={loadInitialData} />
+{/if}
+
+{#if updateWorker}
+  <UpdateNotification onUpdate={handleUpdate} />
 {/if}
 
 {#if authStore.isAuthenticated}

@@ -79,7 +79,7 @@
     }
     return page.url.pathname.startsWith(tabPath);
   }
-  
+
   function handleIndicatorPointerDown(e: PointerEvent) {
     if (!navElement || !indicatorElement) return;
 
@@ -212,8 +212,7 @@
     {#each tabs as tab, i (tab.path)}
       {@const active = isActive(tab.path)}
       {@const isUnderIndicator = Math.abs(displayPosition - i) < 0.5}
-      <a
-        href={tab.path}
+      <button
         draggable="false"
         animate:flip={{ duration: 200 }}
         onclick={(e) => handleTabClick(e, i)}
@@ -235,7 +234,7 @@
                 : 'text-muted-foreground hover:text-accent-foreground'}"
           />
         </div>
-      </a>
+      </button>
     {/each}
   </nav>
 {/if}

@@ -28,7 +28,7 @@
 
 <div class="flex-1 flex flex-col justify-between gap-4">
   <div class="relative flex-shrink-0 my-auto w-full z-20">
-    <img
+    <!-- <img
       loading="lazy"
       src={playerStore.currentImageUrl}
       alt={playerStore.currentTrack?.id ?? ""}
@@ -36,7 +36,7 @@
       onauxclick={() => false}
       oncontextmenu={() => false}
       class="h-[min(42.5dvh,90dvw)] scale-200 aspect-square object-cover absolute inset-0 m-auto pointer-events-none blur-3xl -z-1 saturate-75 brightness-150 dark:saturate-100 dark:brightness-100"
-    />
+    /> -->
     <Carousel.Root
       class="w-full z-20"
       opts={{ loop: true }}

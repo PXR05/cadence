@@ -27,14 +27,25 @@ self.addEventListener("install", (event) => {
   event.waitUntil(addFilesToCache());
 });
 
+async function notifyClientsOfUpdate() {
+  const clients = await self.clients.matchAll({ type: "window" });
+  for (const client of clients) {
+    client.postMessage({ type: "SW_UPDATE_AVAILABLE", version });
+  }
+}
+
 self.addEventListener("activate", (event) => {
   async function deleteOldCaches() {
     for (const key of await caches.keys()) {
-      if (key !== CACHE) await caches.delete(key);
+      if (key !== CACHE && key !== IMAGE_CACHE) await caches.delete(key);
     }
   }
 
-  event.waitUntil(deleteOldCaches());
+  event.waitUntil(
+    deleteOldCaches().then(() => {
+      return self.clients.claim();
+    }),
+  );
 });
 
 self.addEventListener("fetch", (event) => {
@@ -97,6 +108,18 @@ self.addEventListener("fetch", (event) => {
 });
 
 self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+    return;
+  }
+
+  if (event.data && event.data.type === "CHECK_FOR_UPDATE") {
+    if (self.registration && self.registration.waiting) {
+      notifyClientsOfUpdate();
+    }
+    return;
+  }
+
   if (event.data && event.data.type === "CACHE_IMAGE") {
     const imageUrl = event.data.url;
 
