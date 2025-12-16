@@ -6,7 +6,6 @@
   import { ListMusicIcon, PauseIcon, PlayIcon } from "@lucide/svelte";
   import { onDestroy, onMount } from "svelte";
   import { innerHeight, innerWidth } from "svelte/reactivity/window";
-  import { Spring } from "svelte/motion";
   import { Button } from "../ui/button";
   import PlaybackControls from "./PlaybackControls.svelte";
   import PlayerDetailsPanel from "./PlayerDetailsPanel.svelte";
@@ -14,6 +13,7 @@
   import QueueDialog from "./QueueDialog.svelte";
   import TrackCarousel from "./TrackCarousel.svelte";
   import VolumeControl from "./VolumeControl.svelte";
+  import gsap from "gsap";
 
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
   const isTopRoute = $derived(page.url.pathname.split("/").length <= 2);
@@ -30,13 +30,12 @@
   let lastMoveY = $state(0);
   let lastMoveTime = $state(0);
 
-  const translateSpring = new Spring(
-    innerHeight.current ?? (window ? window.innerHeight : 0),
-    {
-      stiffness: 0.3,
-      damping: 1,
-    },
+  let translateY = $state(
+    innerHeight.current ??
+      (typeof window !== "undefined" ? window.innerHeight : 0),
   );
+  let containerEl: HTMLDivElement | null = $state(null);
+  let gsapTween: gsap.core.Tween | null = null;
 
   const closedPosition = $derived.by(() => {
     if (isTopRoute && isMobile) {
@@ -47,30 +46,56 @@
 
   const isPanelAnimating = $derived(
     isDragging ||
-      (translateSpring.current !== 0 &&
-        translateSpring.current !== translateSpring.target),
+      (gsapTween !== null ? (gsapTween as gsap.core.Tween).isActive() : false),
   );
 
   $effect(() => {
-    if (!isDragging) {
-      if (panelState.isOpen) {
-        translateSpring.target = 0;
-      } else {
-        translateSpring.target = closedPosition;
-      }
+    if (!isDragging && containerEl) {
+      const targetY = panelState.isOpen ? 0 : closedPosition;
+      animateToPosition(targetY);
     }
   });
 
-  const playerTranslate = $derived(`${translateSpring.current}px`);
+  function animateToPosition(targetY: number, duration?: number) {
+    if (!containerEl) return;
+
+    if (gsapTween) {
+      gsapTween.kill();
+    }
+
+    const currentTranslateY = translateY;
+    const distance = Math.abs(targetY - currentTranslateY);
+
+    const animDuration =
+      duration ?? Math.min(0.4, Math.max(0.15, distance / 1500));
+
+    gsapTween = gsap.to(
+      { y: currentTranslateY },
+      {
+        y: targetY,
+        duration: animDuration,
+        ease: "power2.out",
+        onUpdate: function () {
+          translateY = this.targets()[0].y;
+        },
+        onComplete: () => {
+          translateY = targetY;
+          gsapTween = null;
+        },
+      },
+    );
+  }
+
+  const playerTranslate = $derived(`${translateY}px`);
 
   const playerBarOpacity = $derived.by(() => {
-    const currentPos = translateSpring.current;
-    return Math.min(1, currentPos / closedPosition);
+    const closedPos = closedPosition || 1;
+    return Math.min(1, translateY / closedPos);
   });
 
   const detailsPanelOpacity = $derived.by(() => {
-    const currentPos = translateSpring.current;
-    return Math.max(0, 1 - currentPos / closedPosition);
+    const closedPos = closedPosition || 1;
+    return Math.max(0, 1 - translateY / closedPos);
   });
 
   let audioEl: HTMLAudioElement | null = $state(null);
@@ -120,13 +145,16 @@
       return;
     }
 
+    if (gsapTween) {
+      gsapTween.kill();
+      gsapTween = null;
+    }
+
     isDragging = true;
     startY = clientY;
     currentY = clientY;
     lastMoveY = clientY;
     lastMoveTime = Date.now();
-
-    translateSpring.set(translateSpring.current, { instant: true });
   }
 
   function handleDragMove(clientY: number, event?: TouchEvent | MouseEvent) {
@@ -145,7 +173,7 @@
       Math.min(closedPosition, newTranslate),
     );
 
-    translateSpring.set(clampedTranslate, { instant: true });
+    translateY = clampedTranslate;
 
     lastMoveY = currentY;
     currentY = clientY;
@@ -165,7 +193,7 @@
       shouldOpen = moveDelta < 0;
     } else {
       const threshold = closedPosition * 0.1;
-      const currentPos = translateSpring.current;
+      const currentPos = translateY;
 
       if (panelState.isOpen) {
         shouldOpen = currentPos < threshold;
@@ -176,14 +204,12 @@
 
     const targetPosition = shouldOpen ? 0 : closedPosition;
 
-    let momentumDuration = 0;
-    if (Math.abs(velocityPxPerMs) > 0.1) {
-      momentumDuration = Math.min(200, Math.abs(velocityPxPerMs) * 400);
+    let duration = 0.3;
+    if (Math.abs(velocityPxPerMs) > 0.5) {
+      duration = Math.max(0.15, 0.3 - Math.abs(velocityPxPerMs) * 0.1);
     }
 
-    translateSpring.set(targetPosition, {
-      preserveMomentum: momentumDuration,
-    });
+    animateToPosition(targetPosition, duration);
 
     if (shouldOpen) {
       panelState.open();
@@ -260,6 +286,9 @@
   });
 
   onDestroy(() => {
+    if (gsapTween) {
+      gsapTween.kill();
+    }
     playerStore.cleanup();
   });
 
@@ -271,6 +300,7 @@
 </script>
 
 <div
+  bind:this={containerEl}
   class="absolute bottom-0 left-0 right-0"
   style="
     transform: translate3d(0, {playerTranslate}, 0);
