@@ -55,6 +55,14 @@
         }
       });
 
+      navigator.serviceWorker.addEventListener("message", (event) => {
+        if (event.data?.type === "SW_UPDATE_AVAILABLE") {
+          if (registration.waiting) {
+            updateWorker = registration.waiting;
+          }
+        }
+      });
+
       navigator.serviceWorker.addEventListener("controllerchange", () => {
         window.location.reload();
       });

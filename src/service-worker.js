@@ -24,7 +24,11 @@ self.addEventListener("install", (event) => {
     await cache.addAll(ASSETS);
   }
 
-  event.waitUntil(addFilesToCache());
+  event.waitUntil(
+    addFilesToCache().then(() => {
+      notifyClientsOfUpdate();
+    }),
+  );
 });
 
 async function notifyClientsOfUpdate() {
