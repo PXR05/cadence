@@ -122,7 +122,7 @@
       <div class="flex items-center p-1.5">
         <SearchIcon
           size={16}
-          class="absolute transition-all text-muted-foreground flex-shrink-0
+          class="absolute transition-all text-muted-foreground shrink-0
           {!isEmpty ? 'opacity-0' : ''}"
           style="transform: translateX({!isEmpty ? '0' : '0.75rem'})"
         />
@@ -131,7 +131,7 @@
           bind:value={searchQuery}
           type="text"
           placeholder="search..."
-          class="flex-1 text-base h-auto transition-all px-3 py-3 outline-none !bg-background rounded-lg border border-input/15
+          class="flex-1 text-base h-auto transition-all px-3 py-3 outline-none bg-background! rounded-lg border border-input/15
             {!isEmpty ? '' : 'pl-9'}"
           disabled={loading}
         />
@@ -182,12 +182,12 @@
           variant="ghost"
           onclick={() => toggleTrack(track.id)}
           disabled={loading}
-          class="h-auto !transition-none w-full flex items-center gap-3 p-2 text-left group
+          class="h-auto transition-none! w-full flex items-center gap-3 p-2 text-left group
             {isSelected ? 'bg-muted/70' : ''}
             {actualIndex === filteredTracks.length - 1 ? 'mb-20' : ''}"
         >
           <div
-            class="size-4 border-2 border-muted-foreground flex-shrink-0 grid place-items-center rounded-sm"
+            class="size-4 border-2 border-muted-foreground shrink-0 grid place-items-center rounded-sm"
           >
             {#if isSelected}
               <div class="size-2 bg-primary rounded-sm"></div>
@@ -195,7 +195,7 @@
           </div>
 
           <div
-            class="size-12 border flex-shrink-0 overflow-hidden rounded-md bg-muted"
+            class="size-12 border shrink-0 overflow-hidden rounded-md bg-muted"
           >
             <img
               loading="lazy"

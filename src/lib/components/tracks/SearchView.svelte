@@ -168,7 +168,7 @@
   >
     <SearchIcon
       size={16}
-      class="absolute transition-all text-muted-foreground flex-shrink-0
+      class="absolute transition-all text-muted-foreground shrink-0
       {!isEmpty ? 'opacity-0' : ''}"
       style="transform: translateX({!isEmpty ? '0' : '0.75rem'})"
     />
@@ -178,7 +178,7 @@
       oninput={handleInput}
       type="text"
       placeholder="search..."
-      class="flex-1 text-base h-auto !bg-transparent border-0 transition-all p-3 outline-none font-mono placeholder:text-muted-foreground
+      class="flex-1 text-base h-auto bg-transparent! border-0 transition-all p-3 outline-none font-mono placeholder:text-muted-foreground
         {!isEmpty ? '' : 'pl-9'}"
     />
     <Button
@@ -256,7 +256,11 @@
         <div
           class="flex flex-col items-center justify-center flex-1 p-8 pb-48 md:pb-36 h-full"
         >
-          <SearchIcon strokeWidth={1.5} size={48} class="text-muted-foreground mb-4" />
+          <SearchIcon
+            strokeWidth={1.5}
+            size={48}
+            class="text-muted-foreground mb-4"
+          />
           <p class="text-muted-foreground text-center">
             Search by title, artist, or album
           </p>

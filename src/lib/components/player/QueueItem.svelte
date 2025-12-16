@@ -37,7 +37,7 @@
       class="h-auto !transition-none w-full flex items-center gap-3 p-2 text-left group rounded-lg
      {isCurrentTrack ? 'bg-muted/70' : ''}"
     >
-      <div class="w-8 text-center flex-shrink-0">
+      <div class="w-8 text-center shrink-0">
         {#if isCurrentTrack && playerStore.isPlaying}
           <PlayIcon
             size={16}

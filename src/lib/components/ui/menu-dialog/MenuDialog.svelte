@@ -34,7 +34,7 @@
 {#snippet header()}
   <div class="flex gap-3 p-4">
     <div
-      class="rounded-md size-20 flex-shrink-0 overflow-hidden bg-muted grid place-items-center"
+      class="rounded-md size-20 shrink-0 overflow-hidden bg-muted grid place-items-center"
     >
       {#if imageUrl}
         <img src={imageUrl} alt={title} class="size-full object-cover" />

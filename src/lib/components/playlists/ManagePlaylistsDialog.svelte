@@ -197,14 +197,14 @@
             variant="ghost"
             onclick={() => togglePlaylist(playlist.id)}
             disabled={saving}
-            class="h-auto !transition-none w-full flex items-center gap-3 p-2 text-left group
+            class="h-auto transition-none! w-full flex items-center gap-3 p-2 text-left group
               {isSelected ? 'bg-muted/70' : ''} {actualIndex ===
             playlists.length - 1
               ? 'mb-20'
               : ''}"
           >
             <div
-              class="size-4 border-2 border-muted-foreground flex-shrink-0 grid place-items-center rounded-sm"
+              class="size-4 border-2 border-muted-foreground shrink-0 grid place-items-center rounded-sm"
             >
               {#if isSelected}
                 <div class="size-2 bg-primary rounded-sm"></div>

@@ -92,7 +92,7 @@
     : 'border-transparent'}"
 >
   <div
-    class="border flex-shrink-0 overflow-hidden bg-muted relative grid place-items-center rounded-xl transition-all duration-200
+    class="border shrink-0 overflow-hidden bg-muted relative grid place-items-center rounded-xl transition-all duration-200
     {isScrolled ? 'size-0' : 'size-40 md:size-64'}"
     style="transform: scale({isScrolled ? 0 : 1});
     opacity: {isScrolled ? 0 : 1};"
@@ -186,7 +186,7 @@
           {playlist.name}
         </h1>
         {#if offline.isOffline}
-          <CloudCheckIcon size={20} class="flex-shrink-0 text-primary" />
+          <CloudCheckIcon size={20} class="shrink-0 text-primary" />
         {/if}
       </div>
     </div>

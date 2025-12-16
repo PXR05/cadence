@@ -17,7 +17,7 @@
 >
   <SearchIcon
     size={16}
-    class="absolute transition-all text-muted-foreground flex-shrink-0 
+    class="absolute transition-all text-muted-foreground shrink-0 
     {!isEmpty ? 'opacity-0' : ''}"
     style="transform: translateX({!isEmpty ? '0' : '0.75rem'})"
   />

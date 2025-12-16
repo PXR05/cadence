@@ -16,7 +16,7 @@
 {#if visible}
   <div
     transition:fly={{ duration: 200, y: -50 }}
-    class="fixed top-2 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-1rem)] max-w-md"
+    class="fixed top-2 max-md:left-1/2 max-md:-translate-x-1/2 right-2 z-100 w-[calc(100%-1rem)] max-w-md"
   >
     <div
       class="flex items-center gap-3 p-3 rounded-xl border bg-background shadow-lg"

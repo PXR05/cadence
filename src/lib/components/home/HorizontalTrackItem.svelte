@@ -66,7 +66,7 @@
         {title}
       </p>
       {#if isOffline}
-        <CloudCheckIcon size={16} class="flex-shrink-0 text-primary" />
+        <CloudCheckIcon size={16} class="shrink-0 text-primary" />
       {/if}
     </div>
     <p

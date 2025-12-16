@@ -81,7 +81,7 @@
     {/each}
     <button
       onclick={() => (createDialogOpen = true)}
-      class="rounded-lg aspect-square w-full flex-shrink-0 border hover:bg-muted/50 transition-colors grid place-items-center"
+      class="rounded-lg aspect-square w-full shrink-0 border hover:bg-muted/50 transition-colors grid place-items-center"
     >
       <PlusIcon
         size={48}

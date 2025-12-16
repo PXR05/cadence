@@ -26,8 +26,8 @@
   }
 </script>
 
-<div class="flex-1 flex flex-col justify-between gap-4">
-  <div class="relative flex-shrink-0 my-auto w-full z-20">
+<div class="h-full flex-1 flex flex-col justify-between gap-4">
+  <div class="relative shrink-0 my-auto w-full z-20">
     <!-- <img
       loading="lazy"
       src={playerStore.currentImageUrl}

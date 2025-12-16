@@ -56,7 +56,7 @@
           class="w-full flex items-center gap-4 p-2 hover:bg-muted/50 transition-colors"
         >
           <div
-            class="size-16 border flex-shrink-0 bg-muted grid place-items-center rounded-md"
+            class="size-16 border shrink-0 bg-muted grid place-items-center rounded-md"
           >
             <PlusIcon size={24} class="text-muted-foreground" />
           </div>

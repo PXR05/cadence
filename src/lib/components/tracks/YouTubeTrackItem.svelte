@@ -23,9 +23,7 @@
   class="relative flex items-center gap-4 w-full hover:bg-muted/30 p-2 border select-none
     {isInQueue ? 'cursor-default' : 'cursor-pointer'}"
 >
-  <div
-    class="rounded-md size-16 flex-shrink-0 overflow-hidden relative"
-  >
+  <div class="rounded-md size-16 shrink-0 overflow-hidden relative">
     <img
       loading="lazy"
       src={result.thumbnail}
