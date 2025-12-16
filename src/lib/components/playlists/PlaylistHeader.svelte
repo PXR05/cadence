@@ -1,39 +1,30 @@
 <script lang="ts">
   import { goto, invalidateAll } from "$app/navigation";
-  import { playerStore, getPlaylistImageUrl } from "$lib/stores/player.svelte";
-  import { playlistsStore } from "$lib/stores/playlists.svelte";
   import { useDialogState, usePlaylistOffline } from "$lib/hooks";
+  import type { PlaylistDetail } from "$lib/schemas";
+  import { getPlaylistImageUrl, playerStore } from "$lib/stores/player.svelte";
+  import { playlistMenuStore } from "$lib/stores/playlistMenu.svelte";
+  import { playlistsStore } from "$lib/stores/playlists.svelte";
   import {
-    getPlaylistDisplayName,
-    isArtistPlaylist,
     isAlbumPlaylist,
+    isArtistPlaylist,
     isSpecialPlaylist,
-    SPECIAL_PLAYLIST_IDS,
     isYoutubePlaylist,
+    SPECIAL_PLAYLIST_IDS,
   } from "$lib/utils/playlist";
   import {
-    PlayIcon,
-    EllipsisIcon,
-    MusicIcon,
-    Disc3Icon,
-    UserIcon,
-    CloudDownloadIcon,
-    CloudCheckIcon,
-    PencilIcon,
-    LibraryIcon,
     ArrowLeft,
-    CloudOffIcon,
+    CloudCheckIcon,
+    Disc3Icon,
+    EllipsisIcon,
+    LibraryIcon,
+    MusicIcon,
+    PlayIcon,
+    UserIcon,
     YoutubeIcon,
-    RefreshCwIcon,
-    DownloadIcon,
   } from "@lucide/svelte";
-  import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import { Button } from "../ui/button";
   import EditPlaylistDialog from "./EditPlaylistDialog.svelte";
-  import { youtubeDownloadStore } from "$lib/stores/youtubeDownload.svelte";
-  import { toast } from "svelte-sonner";
-  import type { Playlist, PlaylistDetail } from "$lib/schemas";
-  import { playlistMenuStore } from "$lib/stores/playlistMenu.svelte";
 
   interface Props {
     playlist: PlaylistDetail;
@@ -220,10 +211,11 @@
 </div>
 
 <div
-  class="top-1.5 md:top-2 right-1.5 md:right-2 absolute z-10 transition-all duration-200
-  {isScrolled ? 'pointer-events-none' : ''}"
-  style="transform: scale({isScrolled ? 0.8 : 1});
-  opacity: {isScrolled ? 0 : 1};"
+  class="top-1.5 md:top-2 right-1.5 md:right-2 absolute z-10"
+  style="will-change: transform, opacity;
+  transform: scale({isScrolled ? 0.8 : 1});
+  opacity: {isScrolled ? 0 : 1};
+  {isScrolled ? 'pointer-events: none;' : ''}"
 >
   <Button
     variant="ghost"

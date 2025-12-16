@@ -24,17 +24,6 @@
   let searchQuery = $state("");
   let loading = $state(false);
   let searchInput: HTMLInputElement | null = $state(null);
-  let shouldRender = $state(false);
-
-  $effect(() => {
-    if (open) {
-      setTimeout(() => {
-        shouldRender = true;
-      }, 200);
-    } else {
-      shouldRender = false;
-    }
-  });
 
   const tracks = $derived(tracksStore.tracks);
   const availableTracks = $derived(
@@ -89,7 +78,6 @@
   function resetDialog() {
     selectedTracks = new SvelteSet<string>();
     searchQuery = "";
-    shouldRender = false;
   }
 
   function handleOpenChange(isOpen: boolean) {
@@ -163,79 +151,71 @@
       </div>
     </div>
 
-    {#if shouldRender}
-      <VirtualScroll
-        items={filteredTracks}
-        rowHeight={ROW_HEIGHT}
-        class="mt-30 h-[calc(100dvh-8rem)] md:h-[calc(90dvh-8rem)]"
-        topOffset={8}
-        leftPadding={8}
-        rightPadding={8}
-        itemGap={4}
-        getItemKey={(track) => track.id}
-      >
-        {#snippet emptyState()}
-          <div class="text-center py-8 text-muted-foreground pt-15.5">
-            {#if availableTracks.length === 0}
-              All tracks are already in this playlist
-            {:else if searchQuery.trim()}
-              No tracks found
-            {:else}
-              No tracks available
+    <VirtualScroll
+      items={filteredTracks}
+      rowHeight={ROW_HEIGHT}
+      class="mt-30 h-[calc(100dvh-8rem)] md:h-[calc(90dvh-8rem)]"
+      topOffset={8}
+      leftPadding={8}
+      rightPadding={8}
+      itemGap={4}
+      getItemKey={(track) => track.id}
+    >
+      {#snippet emptyState()}
+        <div class="text-center py-8 text-muted-foreground pt-15.5">
+          {#if availableTracks.length === 0}
+            All tracks are already in this playlist
+          {:else if searchQuery.trim()}
+            No tracks found
+          {:else}
+            No tracks available
+          {/if}
+        </div>
+      {/snippet}
+
+      {#snippet children({ item: track, actualIndex })}
+        {@const isSelected = selectedTracks.has(track.id)}
+        {@const title = track.metadata?.title || track.filename}
+        {@const artist = track.metadata?.artist || "Unknown"}
+
+        <Button
+          variant="ghost"
+          onclick={() => toggleTrack(track.id)}
+          disabled={loading}
+          class="h-auto !transition-none w-full flex items-center gap-3 p-2 text-left group
+            {isSelected ? 'bg-muted/70' : ''}
+            {actualIndex === filteredTracks.length - 1 ? 'mb-20' : ''}"
+        >
+          <div
+            class="size-4 border-2 border-muted-foreground flex-shrink-0 grid place-items-center rounded-sm"
+          >
+            {#if isSelected}
+              <div class="size-2 bg-primary rounded-sm"></div>
             {/if}
           </div>
-        {/snippet}
 
-        {#snippet children({ item: track, actualIndex })}
-          {@const isSelected = selectedTracks.has(track.id)}
-          {@const title = track.metadata?.title || track.filename}
-          {@const artist = track.metadata?.artist || "Unknown"}
-
-          <Button
-            variant="ghost"
-            onclick={() => toggleTrack(track.id)}
-            disabled={loading}
-            class="h-auto !transition-none w-full flex items-center gap-3 p-2 text-left group
-              {isSelected ? 'bg-muted/70' : ''}
-              {actualIndex === filteredTracks.length - 1 ? 'mb-20' : ''}"
+          <div
+            class="size-12 border flex-shrink-0 overflow-hidden rounded-md bg-muted"
           >
-            <div
-              class="size-4 border-2 border-muted-foreground flex-shrink-0 grid place-items-center rounded-sm"
-            >
-              {#if isSelected}
-                <div class="size-2 bg-primary rounded-sm"></div>
-              {/if}
-            </div>
+            <img
+              loading="lazy"
+              src={getImageUrl(track.id)}
+              alt={title}
+              class="size-full object-cover"
+            />
+          </div>
 
-            <div
-              class="size-12 border flex-shrink-0 overflow-hidden rounded-md bg-muted"
-            >
-              <img
-                loading="lazy"
-                src={getImageUrl(track.id)}
-                alt={title}
-                class="size-full object-cover"
-              />
-            </div>
-
-            <div class="flex-1 min-w-0">
-              <p class="font-medium truncate text-sm">
-                {title}
-              </p>
-              <p class="text-xs truncate text-muted-foreground">
-                {artist}
-              </p>
-            </div>
-          </Button>
-        {/snippet}
-      </VirtualScroll>
-    {:else}
-      <div
-        class="flex items-center justify-center flex-1 text-muted-foreground mt-30"
-      >
-        <LoaderIcon class="animate-spin" size={24} />
-      </div>
-    {/if}
+          <div class="flex-1 min-w-0">
+            <p class="font-medium truncate text-sm">
+              {title}
+            </p>
+            <p class="text-xs truncate text-muted-foreground">
+              {artist}
+            </p>
+          </div>
+        </Button>
+      {/snippet}
+    </VirtualScroll>
 
     <div
       class="absolute bottom-1.5 left-1.5 right-1.5 z-10 rounded-lg bg-muted border border-input/15 p-1.5 flex gap-1.5"

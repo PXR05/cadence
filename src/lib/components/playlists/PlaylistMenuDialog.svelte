@@ -1,12 +1,13 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
-  import { page } from "$app/state";
-  import { untrack } from "svelte";
   import { MenuDialog } from "$lib/components/ui/menu-dialog";
   import { playlistMenuStore } from "$lib/stores/playlistMenu.svelte";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
   import { youtubeDownloadStore } from "$lib/stores/youtubeDownload.svelte";
-  import { useDialogState, usePlaylistOffline } from "$lib/hooks";
+  import {
+    useDialogState,
+    useMenuDialogState,
+    usePlaylistOffline,
+  } from "$lib/hooks";
   import { getPlaylistImageUrl } from "$lib/stores/player.svelte";
   import {
     getPlaylistDisplayName,
@@ -28,25 +29,12 @@
   } from "@lucide/svelte";
   import { toast } from "svelte-sonner";
 
-  const PARAM_NAME = "playlist-menu";
-
   const editDialog = useDialogState("edit-playlist");
 
-  let isOpen = $state(page.url.searchParams.has(PARAM_NAME));
-
-  $effect.pre(() => {
-    const playlistIdFromUrl = page.url.searchParams.get(PARAM_NAME);
-    const currentlyOpen = playlistIdFromUrl !== null;
-
-    if (currentlyOpen !== untrack(() => isOpen)) {
-      isOpen = currentlyOpen;
-
-      if (currentlyOpen && playlistIdFromUrl) {
-        restorePlaylistFromId(playlistIdFromUrl);
-      } else if (!currentlyOpen) {
-        playlistMenuStore.clear();
-      }
-    }
+  const dialogState = useMenuDialogState({
+    paramName: "playlist-menu",
+    onOpen: restorePlaylistFromId,
+    onClose: () => playlistMenuStore.clear(),
   });
 
   async function restorePlaylistFromId(playlistId: string) {
@@ -60,27 +48,7 @@
     }
   }
 
-  function openDialog(playlistId: string) {
-    if (isOpen) return;
-
-    const url = new URL(page.url);
-    url.searchParams.set(PARAM_NAME, playlistId);
-    goto(url.toString(), {
-      replaceState: false,
-      noScroll: true,
-      keepFocus: true,
-    });
-    isOpen = true;
-  }
-
-  function closeDialog() {
-    if (isOpen) {
-      history.back();
-      isOpen = false;
-    }
-  }
-
-  playlistMenuStore.registerDialogHandlers(openDialog, closeDialog);
+  playlistMenuStore.registerDialogHandlers(dialogState.open, dialogState.close);
 
   const playlist = $derived(playlistMenuStore.playlist);
   const displayName = $derived(
@@ -110,13 +78,7 @@
   });
 
   function handleClose() {
-    closeDialog();
-  }
-
-  function handleOpenChange(open: boolean) {
-    if (!open && isOpen) {
-      closeDialog();
-    }
+    dialogState.close();
   }
 
   async function getPlaylistDetail() {
@@ -266,8 +228,8 @@
 
 {#if playlist}
   <MenuDialog
-    open={isOpen}
-    onOpenChange={handleOpenChange}
+    open={dialogState.isOpen}
+    onOpenChange={dialogState.handleOpenChange}
     {imageUrl}
     {imageFallback}
     title={displayName}

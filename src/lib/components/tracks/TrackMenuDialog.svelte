@@ -1,14 +1,11 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
-  import { page } from "$app/state";
-  import { untrack } from "svelte";
   import { MenuDialog } from "$lib/components/ui/menu-dialog";
   import { trackMenuStore } from "$lib/stores/trackMenu.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { getImageUrl, getStreamUrl } from "$lib/stores/player.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
   import { downloadStore } from "$lib/stores/download.svelte";
-  import { useDialogState } from "$lib/hooks";
+  import { useDialogState, useMenuDialogState } from "$lib/hooks";
   import { ManagePlaylistsDialog } from "../playlists";
   import { DeleteTrackDialog } from "../admin";
   import { Button } from "../ui/button";
@@ -23,26 +20,13 @@
   } from "@lucide/svelte";
   import { toast } from "svelte-sonner";
 
-  const PARAM_NAME = "track-menu";
-
   const managePlaylistDialog = useDialogState("manage-playlists");
   const deleteTrackDialog = useDialogState("delete-track");
 
-  let isOpen = $state(page.url.searchParams.has(PARAM_NAME));
-
-  $effect.pre(() => {
-    const trackIdFromUrl = page.url.searchParams.get(PARAM_NAME);
-    const currentlyOpen = trackIdFromUrl !== null;
-
-    if (currentlyOpen !== untrack(() => isOpen)) {
-      isOpen = currentlyOpen;
-
-      if (currentlyOpen && trackIdFromUrl) {
-        restoreTrackFromId(trackIdFromUrl);
-      } else if (!currentlyOpen) {
-        trackMenuStore.clear();
-      }
-    }
+  const dialogState = useMenuDialogState({
+    paramName: "track-menu",
+    onOpen: restoreTrackFromId,
+    onClose: () => trackMenuStore.clear(),
   });
 
   async function restoreTrackFromId(trackId: string) {
@@ -55,27 +39,7 @@
     }
   }
 
-  function openDialog(trackId: string) {
-    if (isOpen) return;
-
-    const url = new URL(page.url);
-    url.searchParams.set(PARAM_NAME, trackId);
-    goto(url.toString(), {
-      replaceState: false,
-      noScroll: true,
-      keepFocus: true,
-    });
-    isOpen = true;
-  }
-
-  function closeDialog() {
-    if (isOpen) {
-      history.back();
-      isOpen = false;
-    }
-  }
-
-  trackMenuStore.registerDialogHandlers(openDialog, closeDialog);
+  trackMenuStore.registerDialogHandlers(dialogState.open, dialogState.close);
 
   const track = $derived(trackMenuStore.track);
   const title = $derived(
@@ -85,13 +49,7 @@
   const imageUrl = $derived(track ? getImageUrl(track.id) : "");
 
   function handleClose() {
-    closeDialog();
-  }
-
-  function handleOpenChange(open: boolean) {
-    if (!open && isOpen) {
-      closeDialog();
-    }
+    dialogState.close();
   }
 
   function handlePlayNext() {
@@ -253,8 +211,8 @@
 
 {#if track}
   <MenuDialog
-    open={isOpen}
-    onOpenChange={handleOpenChange}
+    open={dialogState.isOpen}
+    onOpenChange={dialogState.handleOpenChange}
     {imageUrl}
     {title}
     subtitle={artist}

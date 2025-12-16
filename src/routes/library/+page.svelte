@@ -4,13 +4,35 @@
   import { AudioWaveformIcon, PlusIcon } from "@lucide/svelte";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
   import { Button } from "$lib/components/ui/button/index.js";
-  import { getSpecialPlaylists } from "$lib/utils/playlist";
+  import { SPECIAL_PLAYLIST_IDS } from "$lib/utils/playlist";
   import { flip } from "svelte/animate";
   import { fade } from "svelte/transition";
+  import { tracksStore } from "$lib/stores/tracks.svelte";
+  import { offlineDb } from "$lib/db/offline";
+  import { liveQuery } from "dexie";
 
   let createDialogOpen = $state(false);
 
-  const specialPlaylists = $derived(getSpecialPlaylists());
+  let offlineCount = liveQuery(() => offlineDb.tracks.count());
+
+  const specialPlaylists = $derived([
+    {
+      id: SPECIAL_PLAYLIST_IDS.ALL_SONGS,
+      name: "All Songs",
+      userId: "system",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      itemCount: tracksStore.tracksCount,
+    },
+    {
+      id: SPECIAL_PLAYLIST_IDS.DOWNLOADED,
+      name: "Downloaded Songs",
+      userId: "system",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      itemCount: $offlineCount || 0,
+    },
+  ]);
   const userPlaylists = $derived(playlistsStore.userPlaylists);
   const youtubePlaylists = $derived(playlistsStore.youtubePlaylists);
 

@@ -149,7 +149,7 @@
         <ChevronDown />
       </Dialog.Close>
 
-      <Dialog.Header>
+      <Dialog.Header class="truncate">
         <Dialog.Title class="text-center">Add to Playlists</Dialog.Title>
         <Dialog.Description class="truncate text-center">
           {trackTitle}

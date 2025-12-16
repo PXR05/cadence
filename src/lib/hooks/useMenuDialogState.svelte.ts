@@ -2,31 +2,47 @@ import { goto } from "$app/navigation";
 import { page } from "$app/state";
 import { untrack } from "svelte";
 
-export function useDialogState(dialogName: string) {
-  let isOpen = $state(page.url.searchParams.has(dialogName));
+interface MenuDialogOptions<T> {
+  paramName: string;
+  onOpen?: (id: string) => void | Promise<void>;
+  onClose?: () => void;
+  getIdFromItem?: (item: T) => string;
+}
+
+export function useMenuDialogState<T>(options: MenuDialogOptions<T>) {
+  const { paramName, onOpen, onClose, getIdFromItem } = options;
+
+  let isOpen = $state(page.url.searchParams.has(paramName));
   let skipNextSync = false;
 
   $effect.pre(() => {
-    const currentlyOpen = page.url.searchParams.has(dialogName);
-    
+    const idFromUrl = page.url.searchParams.get(paramName);
+    const currentlyOpen = idFromUrl !== null;
+
     if (skipNextSync) {
       skipNextSync = false;
       return;
     }
-    
+
     if (currentlyOpen !== untrack(() => isOpen)) {
       isOpen = currentlyOpen;
+
+      if (currentlyOpen && idFromUrl) {
+        onOpen?.(idFromUrl);
+      } else if (!currentlyOpen) {
+        onClose?.();
+      }
     }
   });
 
-  function open() {
+  function open(id: string) {
     if (isOpen) return;
 
     skipNextSync = true;
     isOpen = true;
 
     const url = new URL(page.url);
-    url.searchParams.set(dialogName, "");
+    url.searchParams.set(paramName, id);
     goto(url.toString(), {
       replaceState: false,
       noScroll: true,
@@ -43,11 +59,9 @@ export function useDialogState(dialogName: string) {
     history.back();
   }
 
-  function toggle() {
-    if (isOpen) {
+  function handleOpenChange(open: boolean) {
+    if (!open && isOpen) {
       close();
-    } else {
-      open();
     }
   }
 
@@ -57,6 +71,6 @@ export function useDialogState(dialogName: string) {
     },
     open,
     close,
-    toggle,
+    handleOpenChange,
   };
 }
