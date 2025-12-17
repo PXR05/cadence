@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { getStreamUrl } from "$lib/stores/player.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
   import { ChevronDown, EllipsisIcon } from "@lucide/svelte";
   import PlayerDetails from "./PlayerDetails.svelte";
