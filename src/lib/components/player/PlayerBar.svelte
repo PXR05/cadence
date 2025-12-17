@@ -61,6 +61,13 @@
         }
     });
 
+    $effect(() => {
+        const pos = closedPosition;
+        if (!isDragging && !panelState.isOpen && containerEl) {
+            applyPosition(pos, false);
+        }
+    });
+
     function getOpacity(yPos: number) {
         return Math.min(1, Math.max(0, yPos / (closedPosition || 1)));
     }
