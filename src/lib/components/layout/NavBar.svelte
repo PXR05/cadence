@@ -30,7 +30,6 @@
   let dragOffset = $state(0);
   let navElement: HTMLElement | null = $state(null);
   let indicatorElement: HTMLElement | null = $state(null);
-  let skipNextSync = false;
 
   const tabPosition = new Tween(0, {
     duration: 400,
@@ -69,10 +68,6 @@
   );
 
   $effect(() => {
-    if (skipNextSync) {
-      skipNextSync = false;
-      return;
-    }
     if (activeTabIndex >= 0 && !isDragging && !isReleaseAnimating) {
       tabPosition.target = activeTabIndex;
     }
@@ -147,7 +142,6 @@
     isReleaseAnimating = true;
 
     if (clampedTab !== activeTabIndex) {
-      skipNextSync = true;
       goto(tabs[clampedTab].path);
     }
 
@@ -168,7 +162,6 @@
     if (tabIndex === activeTabIndex) return;
 
     e.preventDefault();
-    skipNextSync = true;
     tabPosition.target = tabIndex;
     goto(tabs[tabIndex].path);
   }

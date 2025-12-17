@@ -65,30 +65,26 @@
             gsapTween.kill();
         }
 
-        const currentTranslateY = translateY;
+        const currentTranslateY = gsap.getProperty(containerEl, "y") as number;
         const distance = Math.abs(targetY - currentTranslateY);
 
         const animDuration =
-            duration ?? Math.min(0.4, Math.max(0.15, distance / 1500));
+            duration ?? Math.min(0.25, Math.max(0.1, distance / 2500));
 
-        gsapTween = gsap.to(
-            { y: currentTranslateY },
-            {
-                y: targetY,
-                duration: animDuration,
-                ease: "power2.out",
-                onUpdate: function () {
-                    translateY = this.targets()[0].y;
-                },
-                onComplete: () => {
-                    translateY = targetY;
-                    gsapTween = null;
-                },
+        gsapTween = gsap.to(containerEl, {
+            y: targetY,
+            duration: animDuration,
+            ease: "power2.out",
+            force3D: true,
+            onUpdate: function () {
+                translateY = gsap.getProperty(containerEl, "y") as number;
             },
-        );
+            onComplete: () => {
+                translateY = targetY;
+                gsapTween = null;
+            },
+        });
     }
-
-    const playerTranslate = $derived(`${translateY}px`);
 
     const playerBarOpacity = $derived.by(() => {
         const closedPos = closedPosition || 1;
@@ -175,6 +171,9 @@
             Math.min(closedPosition, newTranslate),
         );
 
+        if (containerEl) {
+            gsap.set(containerEl, { y: clampedTranslate, force3D: true });
+        }
         translateY = clampedTranslate;
 
         lastMoveY = currentY;
@@ -257,6 +256,13 @@
         window.addEventListener("mousemove", handleMouseMove);
         window.addEventListener("mouseup", handleMouseUp);
 
+        // Set initial position using GSAP
+        if (containerEl) {
+            const initialY = panelState.isOpen ? 0 : closedPosition;
+            gsap.set(containerEl, { y: initialY, force3D: true });
+            translateY = initialY;
+        }
+
         if (playerBarElement) {
             const touchStartHandler = (e: TouchEvent) => {
                 handleTouchStart(e);
@@ -311,7 +317,6 @@
     bind:this={containerEl}
     class="absolute bottom-0 left-0 right-0"
     style="
-    transform: translate3d(0, {playerTranslate}, 0);
     will-change: transform;
     overscroll-behavior: none;"
 >
