@@ -39,6 +39,7 @@
     /> -->
     <Carousel.Root
       class="w-full z-20"
+      style="will-change: transform; transform: translateZ(0); contain: layout style;"
       opts={{ loop: true }}
       setApi={(emblaApi) => setDetailCarouselApi(emblaApi ?? null)}
     >

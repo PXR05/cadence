@@ -15,7 +15,7 @@ export function useMenuDialogState<T>(options: MenuDialogOptions<T>) {
   let isOpen = $state(page.url.searchParams.has(paramName));
   let skipNextSync = false;
 
-  $effect.pre(() => {
+  $effect(() => {
     const idFromUrl = page.url.searchParams.get(paramName);
     const currentlyOpen = idFromUrl !== null;
 

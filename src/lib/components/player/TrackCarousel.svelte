@@ -14,6 +14,7 @@
 
 <Carousel.Root
   class="w-[calc(100dvw-5rem)] md:w-full self-center"
+  style="will-change: transform; transform: translateZ(0); contain: layout style;"
   opts={{ loop: true }}
   setApi={(emblaApi) => setApi(emblaApi ?? null)}
 >

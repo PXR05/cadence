@@ -6,7 +6,7 @@ export function useDialogState(dialogName: string) {
   let isOpen = $state(page.url.searchParams.has(dialogName));
   let skipNextSync = false;
 
-  $effect.pre(() => {
+  $effect(() => {
     const currentlyOpen = page.url.searchParams.has(dialogName);
     
     if (skipNextSync) {

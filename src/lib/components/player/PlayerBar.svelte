@@ -389,7 +389,7 @@
         />
 
         <div
-            style="opacity: {detailsPanelOpacity}; touch-action: none; overscroll-behavior: none;"
+            style="opacity: {detailsPanelOpacity}; touch-action: none; overscroll-behavior: none; will-change: transform, opacity; transform: translateZ(0); contain: layout style paint;"
         >
             <PlayerDetailsPanel
                 onOpenChange={(v) =>
