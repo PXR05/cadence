@@ -33,7 +33,6 @@
 
   let managePlaylistsDialogOpen = $state(false);
   let panelElement: HTMLDivElement | null = $state(null);
-  let dropdownOpen = $state(false);
   let isOffline = $state(false);
 
   async function refreshOfflineStatus() {
@@ -53,15 +52,11 @@
   onMount(() => {
     if (panelElement) {
       const handleTouchStart = (e: TouchEvent) => {
-        if (!dropdownOpen) {
-          onTouchStart?.(e);
-        }
+        onTouchStart?.(e);
       };
 
       const handleTouchMove = (e: TouchEvent) => {
-        if (!dropdownOpen) {
-          onTouchMove?.(e);
-        }
+        onTouchMove?.(e);
       };
 
       panelElement.addEventListener("touchstart", handleTouchStart, {
@@ -91,12 +86,10 @@
       var(--background) 50%,
       color-mix(in oklab, {playerStore.trackColor} 10%, var(--background)) 100%
     );
-    touch-action: {dropdownOpen ? 'auto' : 'none'};
     overscroll-behavior: none;
-    pointer-events: {dropdownOpen ? 'auto' : 'auto'};
     "
-  ontouchend={(e) => !dropdownOpen && onTouchEnd?.(e)}
-  onmousedown={(e) => !dropdownOpen && onMouseDown?.(e)}
+  ontouchend={(e) => onTouchEnd?.(e)}
+  onmousedown={(e) => onMouseDown?.(e)}
 >
   <div class="flex justify-between items-center p-6">
     <Button

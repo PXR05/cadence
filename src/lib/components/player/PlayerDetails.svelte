@@ -37,7 +37,7 @@
       oncontextmenu={() => false}
       class="h-[min(42.5dvh,90dvw)] scale-200 aspect-square object-cover absolute inset-0 m-auto pointer-events-none blur-3xl -z-1 saturate-75 brightness-150 dark:saturate-100 dark:brightness-100"
     /> -->
-    <Carousel.Root
+    <!-- <Carousel.Root
       class="w-full z-20"
       style="will-change: transform; transform: translateZ(0); contain: layout style;"
       opts={{ loop: true }}
@@ -61,7 +61,13 @@
           </Carousel.Item>
         {/each}
       </Carousel.Content>
-    </Carousel.Root>
+    </Carousel.Root> -->
+    <img
+      loading="lazy"
+      src={getImageUrl(playerStore.currentTrack?.id ?? "")}
+      alt={playerStore.currentTrack?.id ?? ""}
+      class="size-[min(40dvh,90dvw)] object-cover mx-auto rounded-2xl text-transparent"
+    />
   </div>
 
   <div class="flex flex-col gap-10 px-6 my-auto z-20">

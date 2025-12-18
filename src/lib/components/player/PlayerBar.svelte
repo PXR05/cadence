@@ -2,7 +2,7 @@
     import { page } from "$app/state";
     import type { CarouselAPI } from "$lib/components/ui/carousel/context";
     import { useDialogState } from "$lib/hooks/useDialogState.svelte";
-    import { playerStore } from "$lib/stores/player.svelte";
+    import { getImageUrl, playerStore } from "$lib/stores/player.svelte";
     import { ListMusicIcon, PauseIcon, PlayIcon } from "@lucide/svelte";
     import gsap from "gsap";
     import { onDestroy, onMount } from "svelte";
@@ -313,6 +313,8 @@
             playerStore.initializeCarousel("main", api);
         }
     }
+
+    const track = $derived(playerStore.currentTrack);
 </script>
 
 {#snippet barControls()}
@@ -362,6 +364,7 @@
     <div
         bind:this={playerBarElement}
         class="mx-1.5 rounded-xl overflow-clip border border-input/15 bg-muted-foreground/10 dark:bg-muted/50 backdrop-blur-md"
+        style="opacity: {playerBarOpacity};"
         role="button"
         tabindex="0"
         ontouchend={handleTouchEnd}
@@ -370,10 +373,29 @@
         <div
             class=" relative flex md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center max-md:justify-between py-2 min-h-16"
         >
-            <TrackCarousel
+            <!-- <TrackCarousel
                 onTrackClick={() => (isMobile ? panelState.open() : {})}
                 setApi={(emblaApi) => setCarouselApi(emblaApi)}
-            />
+            /> -->
+
+            <div
+                class="md:pointer-events-none flex items-center flex-1 min-w-0 gap-2 text-left w-full pl-2"
+            >
+                <img
+                    loading="lazy"
+                    src={getImageUrl(track?.id ?? "")}
+                    alt={track?.id}
+                    class="rounded-md size-12 shrink-0 object-cover text-transparent"
+                />
+                <div class="text-left flex-1 min-w-0">
+                    <p class="font-medium truncate">
+                        {track?.metadata?.title ?? track?.filename ?? ""}
+                    </p>
+                    <p class="text-sm truncate font-light">
+                        {track?.metadata?.artist ?? "Unknown Artist"}
+                    </p>
+                </div>
+            </div>
 
             {#if playerStore.currentTrack}
                 {@render barControls()}
@@ -399,7 +421,10 @@
             onOpenChange={(open) => !open && queueDialog.close()}
         />
 
-        <div class="overscroll-none contain-layout contain-style contain-paint">
+        <div
+            class="overscroll-none contain-layout contain-style contain-paint"
+            style="opacity: {detailsPanelOpacity};"
+        >
             <PlayerDetailsPanel
                 onOpenChange={(v) =>
                     v ? panelState.open() : panelState.close()}
