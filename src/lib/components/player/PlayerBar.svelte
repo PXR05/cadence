@@ -4,7 +4,9 @@
     import { useDialogState } from "$lib/hooks/useDialogState.svelte";
     import { playerStore } from "$lib/stores/player.svelte";
     import { ListMusicIcon, PauseIcon, PlayIcon } from "@lucide/svelte";
+    import gsap from "gsap";
     import { onDestroy, onMount } from "svelte";
+    import { cubicOut } from "svelte/easing";
     import { innerHeight, innerWidth } from "svelte/reactivity/window";
     import { Button } from "../ui/button";
     import PlaybackControls from "./PlaybackControls.svelte";
@@ -14,36 +16,90 @@
     import TrackCarousel from "./TrackCarousel.svelte";
     import VolumeControl from "./VolumeControl.svelte";
 
-    const { panelState }: { panelState: ReturnType<typeof useDialogState> } =
-        $props();
-
     const isMobile = $derived((innerWidth.current ?? 0) <= 768);
     const isTopRoute = $derived(page.url.pathname.split("/").length <= 2);
-    const closedPosition = $derived.by(() => {
-        if (isTopRoute && isMobile) {
-            return (innerHeight.current ?? window.innerHeight) - 62;
-        }
-        return (innerHeight.current ?? window.innerHeight) - 6;
-    });
 
-    let containerEl: HTMLDivElement | null = $state(null);
-    let barWrapperEl: HTMLDivElement | null = $state(null);
-    let detailsWrapperEl: HTMLDivElement | null = $state(null);
-    let playerBarEl: HTMLDivElement | null = $state(null);
-    let audioEl: HTMLAudioElement | null = $state(null);
+    const {
+        panelState,
+    }: {
+        panelState: ReturnType<typeof useDialogState>;
+    } = $props();
 
     let isDragging = $state(false);
-    let dragStartY = $state(0);
-    let dragCurrentY = $state(0);
-    let dragLastY = $state(0);
-    let dragLastTime = $state(0);
-    let currentTranslateY = $state(0);
+    let startY = $state(0);
+    let currentY = $state(0);
+    let lastMoveY = $state(0);
+    let lastMoveTime = $state(0);
 
-    let isAnimating = $state(false);
-    let animationTimeoutId: ReturnType<typeof setTimeout> | null = null;
-    let lastPanelState: boolean | null = null;
+    let translateY = $state(
+        innerHeight.current ??
+            (typeof window !== "undefined" ? window.innerHeight : 0),
+    );
+    let containerEl: HTMLDivElement | null = $state(null);
+    let gsapTween: gsap.core.Tween | null = null;
 
-    const isPanelAnimating = $derived(isDragging || isAnimating);
+    const closedPosition = $derived.by(() => {
+        if (isTopRoute && isMobile) {
+            return (innerHeight.current ?? window.innerHeight) - 62; // 3.875rem = 62px
+        }
+        return (innerHeight.current ?? window.innerHeight) - 6; // 0.375rem = 6px
+    });
+
+    const isPanelAnimating = $derived(
+        isDragging ||
+            (gsapTween !== null
+                ? (gsapTween as gsap.core.Tween).isActive()
+                : false),
+    );
+
+    $effect(() => {
+        if (!isDragging && containerEl) {
+            const targetY = panelState.isOpen ? 0 : closedPosition;
+            animateToPosition(targetY);
+        }
+    });
+
+    function animateToPosition(targetY: number, duration?: number) {
+        if (!containerEl) return;
+
+        if (gsapTween) {
+            gsapTween.kill();
+        }
+
+        const currentTranslateY = gsap.getProperty(containerEl, "y") as number;
+        const distance = Math.abs(targetY - currentTranslateY);
+
+        const animDuration =
+            duration ?? Math.min(0.25, Math.max(0.1, distance / 2500));
+
+        gsapTween = gsap.to(containerEl, {
+            y: targetY,
+            duration: animDuration,
+            ease: "power2.out",
+            force3D: true,
+            onUpdate: function () {
+                translateY = gsap.getProperty(containerEl, "y") as number;
+            },
+            onComplete: () => {
+                translateY = targetY;
+                gsapTween = null;
+            },
+        });
+    }
+
+    const playerBarOpacity = $derived.by(() => {
+        const closedPos = closedPosition || 1;
+        const clampedPos = Math.min(1, translateY / closedPos);
+        return cubicOut(clampedPos);
+    });
+
+    const detailsPanelOpacity = $derived.by(() => {
+        const closedPos = closedPosition || 1;
+        const clampedPos = Math.max(0, 1 - translateY / closedPos);
+        return cubicOut(clampedPos);
+    });
+
+    let audioEl: HTMLAudioElement | null = $state(null);
     const queueDialog = useDialogState("queue");
 
     $effect(() => {
@@ -52,88 +108,12 @@
         }
     });
 
-    $effect(() => {
-        const isOpen = panelState.isOpen;
-        if (!isDragging && containerEl && lastPanelState !== isOpen) {
-            lastPanelState = isOpen;
-            const targetY = isOpen ? 0 : closedPosition;
-            animateToPosition(targetY);
-        }
-    });
-
-    $effect(() => {
-        const pos = closedPosition;
-        if (!isDragging && !panelState.isOpen && containerEl) {
-            applyPosition(pos, false);
-        }
-    });
-
-    function getOpacity(yPos: number) {
-        return Math.min(1, Math.max(0, yPos / (closedPosition || 1)));
-    }
-
-    function applyPosition(yPos: number, transition = false) {
-        if (!containerEl) return;
-
-        const barOpacity = getOpacity(yPos);
-        const detailsOpacity = 1 - barOpacity;
-        const duration = "0.3s";
-        const easing = "cubic-bezier(0.33, 1, 0.68, 1)";
-        const transitionValue = transition ? `${duration} ${easing}` : "";
-
-        containerEl.style.transition = transition
-            ? `transform ${transitionValue}`
-            : "";
-        containerEl.style.transform = `translate3d(0, ${yPos}px, 0)`;
-
-        if (barWrapperEl) {
-            barWrapperEl.style.transition = transition
-                ? `opacity ${transitionValue}`
-                : "";
-            barWrapperEl.style.opacity = String(barOpacity);
-        }
-        if (detailsWrapperEl) {
-            detailsWrapperEl.style.transition = transition
-                ? `opacity ${transitionValue}`
-                : "";
-            detailsWrapperEl.style.opacity = String(detailsOpacity);
-        }
-
-        currentTranslateY = yPos;
-    }
-
-    function clearTransitions() {
-        if (containerEl) containerEl.style.transition = "";
-        if (barWrapperEl) barWrapperEl.style.transition = "";
-        if (detailsWrapperEl) detailsWrapperEl.style.transition = "";
-    }
-
-    function animateToPosition(targetY: number, duration = 0.3) {
-        if (!containerEl) return;
-
-        if (animationTimeoutId) {
-            clearTimeout(animationTimeoutId);
-            animationTimeoutId = null;
-        }
-
-        isAnimating = true;
-
-        requestAnimationFrame(() => {
-            applyPosition(targetY, true);
-
-            animationTimeoutId = setTimeout(() => {
-                clearTransitions();
-                isAnimating = false;
-                animationTimeoutId = null;
-            }, duration * 1000);
-        });
-    }
-
     function shouldIgnoreDrag(target: EventTarget | null): boolean {
         if (!(target instanceof Element)) return false;
+
         if (!panelState.isOpen) return false;
 
-        const selectors = [
+        const interactiveSelectors = [
             "button",
             "input",
             "textarea",
@@ -141,98 +121,123 @@
             "a",
             '[role="button"]',
             '[role="slider"]',
+            // Carousel
             '[data-slot="carousel"]',
             '[data-slot="carousel-content"]',
             '[data-slot="carousel-item"]',
             "[data-embla-container]",
             "[data-embla-slide]",
             '[role="region"][aria-roledescription="carousel"]',
+            // Progress bar
             '[role="progressbar"]',
             'input[type="range"]',
             ".touch-none",
         ].join(",");
 
-        return target.closest(selectors) !== null;
+        return target.closest(interactiveSelectors) !== null;
     }
 
     function handleDragStart(clientY: number, event: TouchEvent | MouseEvent) {
-        if (!isMobile || shouldIgnoreDrag(event.target)) return;
-
-        if (animationTimeoutId) {
-            clearTimeout(animationTimeoutId);
-            animationTimeoutId = null;
+        if (!isMobile) {
+            return;
         }
-        clearTransitions();
-        isAnimating = false;
+
+        if (shouldIgnoreDrag(event.target)) {
+            return;
+        }
+
+        if (gsapTween) {
+            gsapTween.kill();
+            gsapTween = null;
+        }
 
         isDragging = true;
-        dragStartY = clientY;
-        dragCurrentY = clientY;
-        dragLastY = clientY;
-        dragLastTime = Date.now();
+        startY = clientY;
+        currentY = clientY;
+        lastMoveY = clientY;
+        lastMoveTime = Date.now();
     }
 
     function handleDragMove(clientY: number, event?: TouchEvent | MouseEvent) {
         if (!isDragging) return;
 
+        const deltaY = clientY - startY;
+        const startPosition = panelState.isOpen ? 0 : closedPosition;
+        const newTranslate = startPosition + deltaY;
+
         if (event && "touches" in event && event.cancelable) {
             event.preventDefault();
         }
 
-        const deltaY = clientY - dragStartY;
-        const startPos = panelState.isOpen ? 0 : closedPosition;
-        const newY = Math.max(0, Math.min(closedPosition, startPos + deltaY));
+        const clampedTranslate = Math.max(
+            0,
+            Math.min(closedPosition, newTranslate),
+        );
 
-        applyPosition(newY, false);
+        if (containerEl) {
+            gsap.set(containerEl, { y: clampedTranslate, force3D: true });
+        }
+        translateY = clampedTranslate;
 
-        dragLastY = dragCurrentY;
-        dragCurrentY = clientY;
-        dragLastTime = Date.now();
+        lastMoveY = currentY;
+        currentY = clientY;
+        lastMoveTime = Date.now();
     }
 
     function handleDragEnd() {
         if (!isDragging) return;
 
-        const timeDelta = Date.now() - dragLastTime;
-        const moveDelta = dragCurrentY - dragLastY;
-        const velocity = timeDelta > 0 ? moveDelta / timeDelta : 0;
+        const timeDelta = Date.now() - lastMoveTime;
+        const moveDelta = currentY - lastMoveY;
+        const velocityPxPerMs = timeDelta > 0 ? moveDelta / timeDelta : 0;
 
-        let shouldOpen: boolean;
-        if (Math.abs(velocity) > 0.3) {
+        let shouldOpen = false;
+
+        if (Math.abs(velocityPxPerMs) > 0.3) {
             shouldOpen = moveDelta < 0;
         } else {
             const threshold = closedPosition * 0.1;
-            shouldOpen = panelState.isOpen
-                ? currentTranslateY < threshold
-                : currentTranslateY < closedPosition - threshold;
+            const currentPos = translateY;
+
+            if (panelState.isOpen) {
+                shouldOpen = currentPos < threshold;
+            } else {
+                shouldOpen = currentPos < closedPosition - threshold;
+            }
         }
 
-        const targetY = shouldOpen ? 0 : closedPosition;
-        const duration =
-            Math.abs(velocity) > 0.5
-                ? Math.max(0.15, 0.3 - Math.abs(velocity) * 0.1)
-                : 0.25;
+        const targetPosition = shouldOpen ? 0 : closedPosition;
 
-        isDragging = false;
-        lastPanelState = shouldOpen;
+        let duration = 0.3;
+        if (Math.abs(velocityPxPerMs) > 0.5) {
+            duration = Math.max(0.15, 0.3 - Math.abs(velocityPxPerMs) * 0.1);
+        }
 
-        animateToPosition(targetY, duration);
+        animateToPosition(targetPosition, duration);
 
         if (shouldOpen) {
             panelState.open();
         } else {
             panelState.close();
         }
+
+        isDragging = false;
     }
 
     function handleTouchStart(e: TouchEvent) {
-        if (!playerStore.currentTrack) return;
+        if (!playerStore.currentTrack) {
+            return;
+        }
         handleDragStart(e.touches[0].clientY, e);
     }
 
     function handleTouchMove(e: TouchEvent) {
-        if (isDragging) handleDragMove(e.touches[0].clientY, e);
+        if (isDragging) {
+            handleDragMove(e.touches[0].clientY, e);
+        }
     }
+
+    let playerBarElement: HTMLDivElement | null = $state(null);
 
     function handleTouchEnd() {
         handleDragEnd();
@@ -256,34 +261,57 @@
 
         if (containerEl) {
             const initialY = panelState.isOpen ? 0 : closedPosition;
-            lastPanelState = panelState.isOpen;
-            applyPosition(initialY, false);
+            gsap.set(containerEl, { y: initialY, force3D: true });
+            translateY = initialY;
         }
 
-        if (playerBarEl) {
-            playerBarEl.addEventListener("touchstart", handleTouchStart, {
+        if (playerBarElement) {
+            const touchStartHandler = (e: TouchEvent) => {
+                handleTouchStart(e);
+            };
+
+            const touchMoveHandler = (e: TouchEvent) => {
+                handleTouchMove(e);
+            };
+
+            playerBarElement.addEventListener("touchstart", touchStartHandler, {
                 passive: false,
             });
-            playerBarEl.addEventListener("touchmove", handleTouchMove, {
+            playerBarElement.addEventListener("touchmove", touchMoveHandler, {
                 passive: false,
             });
+
+            return () => {
+                window.removeEventListener("mousemove", handleMouseMove);
+                window.removeEventListener("mouseup", handleMouseUp);
+                playerBarElement?.removeEventListener(
+                    "touchstart",
+                    touchStartHandler,
+                );
+                playerBarElement?.removeEventListener(
+                    "touchmove",
+                    touchMoveHandler,
+                );
+            };
         }
 
         return () => {
             window.removeEventListener("mousemove", handleMouseMove);
             window.removeEventListener("mouseup", handleMouseUp);
-            playerBarEl?.removeEventListener("touchstart", handleTouchStart);
-            playerBarEl?.removeEventListener("touchmove", handleTouchMove);
         };
     });
 
     onDestroy(() => {
-        if (animationTimeoutId) clearTimeout(animationTimeoutId);
+        if (gsapTween) {
+            gsapTween.kill();
+        }
         playerStore.cleanup();
     });
 
     function setCarouselApi(api: CarouselAPI | null) {
-        if (api) playerStore.initializeCarousel("main", api);
+        if (api) {
+            playerStore.initializeCarousel("main", api);
+        }
     }
 </script>
 
@@ -332,40 +360,34 @@
 
 {#snippet bar()}
     <div
-        bind:this={barWrapperEl}
-        data-player-bar
+        bind:this={playerBarElement}
+        class="mx-1.5 rounded-xl overflow-clip border border-input/15 bg-muted-foreground/10 dark:bg-muted/50 backdrop-blur-md"
         role="button"
         tabindex="0"
         ontouchend={handleTouchEnd}
         onmousedown={handleMouseDown}
     >
         <div
-            bind:this={playerBarEl}
-            class="mx-1.5 rounded-xl overflow-clip border border-input/15 bg-muted-foreground/10 dark:bg-muted/50 backdrop-blur-md"
+            class=" relative flex md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center max-md:justify-between py-2 min-h-16"
         >
-            <div
-                class="relative flex md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center max-md:justify-between py-2 min-h-16"
-            >
-                <TrackCarousel
-                    onTrackClick={() => (isMobile ? panelState.open() : {})}
-                    setApi={(emblaApi) => setCarouselApi(emblaApi)}
-                />
+            <TrackCarousel
+                onTrackClick={() => (isMobile ? panelState.open() : {})}
+                setApi={(emblaApi) => setCarouselApi(emblaApi)}
+            />
 
-                {#if playerStore.currentTrack}
-                    {@render barControls()}
-                {/if}
-            </div>
-            <div class="px-2 pb-2">
-                <ProgressBar {isPanelAnimating} />
-            </div>
+            {#if playerStore.currentTrack}
+                {@render barControls()}
+            {/if}
+        </div>
+        <div class="px-2 pb-2">
+            <ProgressBar {isPanelAnimating} />
         </div>
     </div>
 {/snippet}
 
 <div
     bind:this={containerEl}
-    class="absolute bottom-0 left-0 right-0"
-    style="will-change: transform; overscroll-behavior: none;"
+    class="absolute bottom-0 left-0 right-0 will-change-transform overscroll-none"
 >
     <div class="select-none h-[calc(100dvh+5rem)]">
         {@render bar()}
@@ -377,11 +399,7 @@
             onOpenChange={(open) => !open && queueDialog.close()}
         />
 
-        <div
-            bind:this={detailsWrapperEl}
-            data-details-panel
-            style="touch-action: none; overscroll-behavior: none; will-change: opacity;"
-        >
+        <div class="overscroll-none contain-layout contain-style contain-paint">
             <PlayerDetailsPanel
                 onOpenChange={(v) =>
                     v ? panelState.open() : panelState.close()}

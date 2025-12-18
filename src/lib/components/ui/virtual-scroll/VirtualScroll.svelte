@@ -390,11 +390,12 @@
             role="listitem"
             aria-setsize={items.length}
             aria-posinset={actualIndex + 1}
-            style="transition: {isDragging && !isBeingDragged
+            style="
+              transition: {isDragging && !isBeingDragged
               ? 'transform 150ms ease-out'
-              : 'none'}; transform: {dragTransform}; {isBeingDragged
-              ? 'z-index: 50; position: relative;'
-              : ''}"
+              : 'none'}; 
+              transform: {dragTransform}; 
+              {isBeingDragged ? 'z-index: 50; position: relative;' : ''}"
             class={isBeingDragged ? "opacity-90 shadow-lg" : ""}
           >
             {@render children({

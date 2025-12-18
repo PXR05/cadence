@@ -41,7 +41,7 @@
   </div>
   <PlayerBar {panelState} />
   <div
-    class="absolute bottom-1.5 left-1.5 right-1.5 transition-all duration-200"
+    class="absolute bottom-1.5 left-1.5 right-1.5 transition-all duration-200 z-60"
     style="
     transform: translate3d(0, {navTranslate}, 0);
     will-change: transform;"
