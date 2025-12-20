@@ -1,17 +1,20 @@
 <script lang="ts">
-  import { getImageUrl, playerStore } from "$lib/stores/player.svelte";
-  import { ChevronDown, EllipsisIcon, ListMusicIcon } from "@lucide/svelte";
-  import { ManagePlaylistsDialog } from "../playlists";
-  import { onMount } from "svelte";
-  import { Button } from "../ui/button";
   import { downloadStore } from "$lib/stores/download.svelte";
+  import { getImageUrl, playerStore } from "$lib/stores/player.svelte";
   import { trackMenuStore } from "$lib/stores/trackMenu.svelte";
   import { shouldLoadItem } from "$lib/utils/queue";
-  import { ProgressBar, PlaybackControls } from ".";
+  import {
+      ChevronDown,
+      ChevronUpIcon,
+      EllipsisIcon,
+      ListMusicIcon,
+  } from "@lucide/svelte";
+  import { onMount } from "svelte";
+  import { PlaybackControls, ProgressBar } from ".";
+  import { ManagePlaylistsDialog } from "../playlists";
+  import { Button } from "../ui/button";
   import * as Carousel from "../ui/carousel";
   import type { CarouselAPI } from "../ui/carousel/context";
-  import { VirtualScroll } from "../ui/virtual-scroll";
-  import QueueItem from "./QueueItem.svelte";
 
   interface Props {
     onOpenChange: (open: boolean) => void;
@@ -40,6 +43,30 @@
   let managePlaylistsDialogOpen = $state(false);
   let panelElement: HTMLDivElement | null = $state(null);
   let isOffline = $state(false);
+
+  let swipeStartY = $state(0);
+  let isSwiping = $state(false);
+  const SWIPE_THRESHOLD = 50;
+
+  function handleSwipeStart(e: TouchEvent | MouseEvent) {
+    const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+    swipeStartY = clientY;
+    isSwiping = true;
+  }
+
+  function handleSwipeEnd(e: TouchEvent | MouseEvent) {
+    if (!isSwiping) return;
+
+    const clientY =
+      "changedTouches" in e ? e.changedTouches[0].clientY : e.clientY;
+    const swipeDistance = swipeStartY - clientY;
+
+    if (swipeDistance > SWIPE_THRESHOLD) {
+      onQueueOpen();
+    }
+
+    isSwiping = false;
+  }
 
   async function refreshOfflineStatus() {
     if (!track) return;
@@ -84,21 +111,6 @@
       playerStore.initializeCarousel("detail", api);
     }
   }
-
-  const ROW_HEIGHT = 52;
-  let open = $state(false);
-  let previousOpen = $state(false);
-  let virtualScroll: any = $state(null);
-
-  $effect(() => {
-    if (!open) {
-      return;
-    }
-    if (open && !previousOpen && virtualScroll && playerStore.queueIndex >= 0) {
-      virtualScroll?.scrollToIndex(playerStore.queueIndex, false);
-    }
-    previousOpen = open;
-  });
 </script>
 
 {#snippet coverCarousel()}
@@ -165,33 +177,6 @@
   </div>
 {/snippet}
 
-{#snippet queue()}
-  <div class="h-24"></div>
-  <VirtualScroll
-    bind:this={virtualScroll}
-    items={playerStore.trackQueue}
-    rowHeight={ROW_HEIGHT}
-    class="h-[calc(100dvh-6rem)]"
-    leftPadding={8}
-    rightPadding={8}
-    itemGap={4}
-    getItemKey={(track) => track.id ?? track.filename}
-    enableDragReorder
-    onReorder={(from, to) => playerStore.reorderQueue(from, to)}
-  >
-    {#snippet emptyState()}
-      <div class="text-center py-8 text-muted-foreground pt-15.5">
-        No tracks in queue
-      </div>
-    {/snippet}
-
-    {#snippet children({ item: track, index, dragHandleProps })}
-      {@const isCurrentTrack = index === playerStore.queueIndex}
-      <QueueItem {index} {track} {isCurrentTrack} {dragHandleProps} />
-    {/snippet}
-  </VirtualScroll>
-{/snippet}
-
 <div
   bind:this={panelElement}
   role="dialog"
@@ -238,6 +223,32 @@
         {@render controls()}
       </div>
     {/if}
+
+    <div
+      class="z-20"
+      role="presentation"
+      ontouchstart={handleSwipeStart}
+      ontouchend={handleSwipeEnd}
+      onmousedown={handleSwipeStart}
+      onmouseup={handleSwipeEnd}
+    >
+      <Button
+        variant="ghost"
+        onclick={onQueueOpen}
+        class="hover:bg-transparent! w-full h-full py-6 flex-col items-center justify-center gap-1 bg-transparent"
+      >
+        <ChevronUpIcon size={24} />
+
+        <span class="flex items-center gap-2 text-muted-foreground">
+          <ListMusicIcon size={20} />
+          <span>
+            {playerStore.queueLength} track{playerStore.queueLength !== 1
+              ? "s"
+              : ""} in queue
+          </span>
+        </span>
+      </Button>
+    </div>
   </div>
 </div>
 

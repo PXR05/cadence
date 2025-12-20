@@ -33,10 +33,10 @@
     let gsapTween: gsap.core.Tween | null = null;
 
     const closedPosition = $derived.by(() => {
-        if (isTopRoute && isMobile) {
-            return (innerHeight.current ?? window.innerHeight) - 62 - 80; // 3.875rem = 62px
-        }
-        return (innerHeight.current ?? window.innerHeight) - 6 - 80; // 0.375rem = 6px
+        const height = innerHeight.current || window.innerHeight;
+        if (height === 0) return 0;
+        if (isTopRoute && isMobile) return height - 62 - 80; // 3.875rem = 62px
+        return height - 6 - 80; // 0.375rem = 6px
     });
 
     const isPanelAnimating = $derived(
@@ -107,6 +107,27 @@
         }
     });
 
+    let gestureStartX = $state(0);
+    let gestureStartY = $state(0);
+    let gestureDirection: "none" | "horizontal" | "vertical" = $state("none");
+    let isOnCarousel = $state(false);
+    const DIRECTION_THRESHOLD = 10;
+
+    function isCarouselElement(target: EventTarget | null): boolean {
+        if (!(target instanceof Element)) return false;
+
+        const carouselSelectors = [
+            '[data-slot="carousel"]',
+            '[data-slot="carousel-content"]',
+            '[data-slot="carousel-item"]',
+            "[data-embla-container]",
+            "[data-embla-slide]",
+            '[role="region"][aria-roledescription="carousel"]',
+        ].join(",");
+
+        return target.closest(carouselSelectors) !== null;
+    }
+
     function shouldIgnoreDrag(target: EventTarget | null): boolean {
         if (!(target instanceof Element)) return false;
 
@@ -120,13 +141,6 @@
             "a",
             '[role="button"]',
             '[role="slider"]',
-            // Carousel
-            '[data-slot="carousel"]',
-            '[data-slot="carousel-content"]',
-            '[data-slot="carousel-item"]',
-            "[data-embla-container]",
-            "[data-embla-slide]",
-            '[role="region"][aria-roledescription="carousel"]',
             // Progress bar
             '[role="progressbar"]',
             'input[type="range"]',
@@ -145,19 +159,61 @@
             return;
         }
 
-        if (gsapTween) {
-            gsapTween.kill();
-            gsapTween = null;
-        }
+        isOnCarousel = isCarouselElement(event.target);
 
-        isDragging = true;
-        startY = clientY;
-        currentY = clientY;
-        lastMoveY = clientY;
-        lastMoveTime = Date.now();
+        const clientX =
+            "touches" in event ? event.touches[0].clientX : event.clientX;
+        gestureStartX = clientX;
+        gestureStartY = clientY;
+        gestureDirection = "none";
+
+        if (!isOnCarousel) {
+            if (gsapTween) {
+                gsapTween.kill();
+                gsapTween = null;
+            }
+
+            isDragging = true;
+            startY = clientY;
+            currentY = clientY;
+            lastMoveY = clientY;
+            lastMoveTime = Date.now();
+        }
     }
 
-    function handleDragMove(clientY: number, event?: TouchEvent | MouseEvent) {
+    function handleGestureMove(clientX: number, clientY: number) {
+        if (isOnCarousel && gestureDirection === "none") {
+            const deltaX = Math.abs(clientX - gestureStartX);
+            const deltaY = Math.abs(clientY - gestureStartY);
+
+            if (deltaX > DIRECTION_THRESHOLD || deltaY > DIRECTION_THRESHOLD) {
+                if (deltaY > deltaX) {
+                    gestureDirection = "vertical";
+
+                    if (gsapTween) {
+                        gsapTween.kill();
+                        gsapTween = null;
+                    }
+
+                    isDragging = true;
+                    startY = gestureStartY;
+                    currentY = clientY;
+                    lastMoveY = gestureStartY;
+                    lastMoveTime = Date.now();
+                } else {
+                    gestureDirection = "horizontal";
+                }
+            }
+        }
+    }
+
+    function handleDragMove(
+        clientX: number,
+        clientY: number,
+        event?: TouchEvent | MouseEvent,
+    ) {
+        handleGestureMove(clientX, clientY);
+
         if (!isDragging) return;
 
         const deltaY = clientY - startY;
@@ -184,6 +240,9 @@
     }
 
     function handleDragEnd() {
+        gestureDirection = "none";
+        isOnCarousel = false;
+
         if (!isDragging) return;
 
         const timeDelta = Date.now() - lastMoveTime;
@@ -233,9 +292,7 @@
     }
 
     function handleTouchMove(e: TouchEvent) {
-        if (isDragging) {
-            handleDragMove(e.touches[0].clientY, e);
-        }
+        handleDragMove(e.touches[0].clientX, e.touches[0].clientY, e);
     }
 
     function handleTouchEnd() {
@@ -247,7 +304,7 @@
     }
 
     function handleMouseMove(e: MouseEvent) {
-        handleDragMove(e.clientY, e);
+        handleDragMove(e.clientX, e.clientY, e);
     }
 
     function handleMouseUp() {
@@ -369,6 +426,7 @@
             <TrackCarousel
                 onTrackClick={() => (isMobile ? panelState.open() : {})}
                 setApi={(emblaApi) => setCarouselApi(emblaApi)}
+                isDisabled={isPanelAnimating}
             />
 
             {#if playerStore.currentTrack}

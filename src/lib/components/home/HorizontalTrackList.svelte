@@ -4,7 +4,6 @@
   import type { AudioFile } from "$lib/schemas";
   import type { Snippet } from "svelte";
   import { flip } from "svelte/animate";
-  import { fade } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
 
   interface Props {
@@ -22,7 +21,7 @@
   {#if tracks.length === 0 && emptyState}
     {@render emptyState()}
   {:else}
-    <ScrollArea orientation="horizontal" class="w-dvw px-2 pb-4">
+    <ScrollArea orientation="horizontal" class="w-dvw pb-4">
       <div class="flex">
         {#each tracks as track, i (track.id)}
           <div
@@ -30,6 +29,7 @@
               duration: 150,
               easing: cubicOut,
             }}
+            class="{i === 0 ? 'ml-2' : ''}"
           >
             <HorizontalTrackItem {track} />
           </div>
