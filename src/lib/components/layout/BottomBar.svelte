@@ -39,7 +39,7 @@
     <YoutubeDownloadProgress />
     <OfflineDownloadProgress />
   </div>
-  <PlayerBar {panelState} />
+  <PlayerBar />
   <div
     class="absolute bottom-1.5 left-1.5 right-1.5 transition-all duration-200 z-60"
     style="

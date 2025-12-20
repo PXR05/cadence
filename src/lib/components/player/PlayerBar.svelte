@@ -19,11 +19,7 @@
     const isMobile = $derived((innerWidth.current ?? 0) <= 768);
     const isTopRoute = $derived(page.url.pathname.split("/").length <= 2);
 
-    const {
-        panelState,
-    }: {
-        panelState: ReturnType<typeof useDialogState>;
-    } = $props();
+    const panelState = useDialogState("player-detail");
 
     let isDragging = $state(false);
     let startY = $state(0);
