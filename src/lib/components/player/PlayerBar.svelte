@@ -15,6 +15,8 @@
     import QueueDialog from "./QueueDialog.svelte";
     import TrackCarousel from "./TrackCarousel.svelte";
     import VolumeControl from "./VolumeControl.svelte";
+    import { vaulEase } from "$lib/utils";
+    import { useMenuDialogState } from "$lib/hooks";
 
     const isMobile = $derived((innerWidth.current ?? 0) <= 768);
     const isTopRoute = $derived(page.url.pathname.split("/").length <= 2);
@@ -74,14 +76,14 @@
         const distance = Math.abs(targetY - startY);
 
         const animDuration =
-            duration ?? Math.min(0.4, Math.max(0.2, distance / 1500));
+            duration ?? Math.min(0.3, Math.max(0.15, distance / 1000));
 
         const proxy = { y: startY };
 
         gsapTween = gsap.to(proxy, {
             y: targetY,
             duration: animDuration,
-            ease: "power2.out",
+            ease: vaulEase,
             onUpdate: () => {
                 if (containerEl) {
                     gsap.set(containerEl, { y: proxy.y, force3D: true });
@@ -99,7 +101,6 @@
     }
 
     let audioEl: HTMLAudioElement | null = $state(null);
-    const queueDialog = useDialogState("queue");
 
     $effect(() => {
         if (audioEl && !playerStore.isLoaded) {
@@ -270,7 +271,7 @@
 
         let duration = 0.3;
         if (Math.abs(velocityPxPerMs) > 0.5) {
-            duration = Math.max(0.15, 0.3 - Math.abs(velocityPxPerMs) * 0.1);
+            duration = Math.max(0.2, 0.3 - Math.abs(velocityPxPerMs) * 0.15);
         }
 
         animateToPosition(targetPosition, duration);
@@ -366,6 +367,10 @@
             playerStore.initializeCarousel("main", api);
         }
     }
+
+    const queueDialog = useMenuDialogState({
+        paramName: "queue-dialog",
+    });
 </script>
 
 {#snippet barControls()}
@@ -378,7 +383,7 @@
     >
         <Button
             variant="ghost"
-            onclick={() => queueDialog.open()}
+            onclick={() => queueDialog.open("")}
             class="size-8 grid place-items-center"
             aria-label="Open queue"
         >
@@ -456,7 +461,7 @@
             <PlayerDetailsPanel
                 onOpenChange={(v) =>
                     v ? panelState.open() : panelState.close()}
-                onQueueOpen={() => queueDialog.open()}
+                onQueueOpen={() => queueDialog.open("")}
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
@@ -467,9 +472,6 @@
 
         <audio bind:this={audioEl}></audio>
 
-        <QueueDialog
-            open={queueDialog.isOpen}
-            onOpenChange={(open) => !open && queueDialog.close()}
-        />
+        <QueueDialog />
     </div>
 </div>

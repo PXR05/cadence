@@ -6,13 +6,11 @@
   import { MediaQuery } from "svelte/reactivity";
   import { VirtualScroll } from "../ui/virtual-scroll";
   import QueueItem from "./QueueItem.svelte";
+  import { useMenuDialogState } from "$lib/hooks";
 
-  interface Props {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-  }
-
-  let { open = $bindable(), onOpenChange }: Props = $props();
+  const dialogState = useMenuDialogState({
+    paramName: "queue-dialog",
+  });
 
   const isDesktop = new MediaQuery("(min-width: 768px)");
 
@@ -20,14 +18,76 @@
   const ROW_HEIGHT = 52;
   let previousOpen = $state(false);
 
+  let touchStartY = 0;
+  let isTouchActive = false;
+
+  function handleTouchStart(e: TouchEvent) {
+    if (isDesktop.current) return;
+
+    const container = virtualScroll?.getContainerRef?.();
+    if (!container) return;
+
+    if (container.scrollTop <= 0) {
+      touchStartY = e.touches[0].clientY;
+      isTouchActive = true;
+    }
+  }
+
+  function handleTouchMove(e: TouchEvent) {
+    if (!isTouchActive || isDesktop.current) return;
+
+    const container = virtualScroll?.getContainerRef?.();
+    if (!container) return;
+
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - touchStartY;
+
+    if (container.scrollTop <= 0 && deltaY > 0) {
+      e.preventDefault();
+      e.stopPropagation();
+    } else {
+      isTouchActive = false;
+    }
+  }
+
+  function handleTouchEnd() {
+    isTouchActive = false;
+  }
+
   $effect(() => {
-    if (!open) {
+    if (isDesktop.current) return;
+
+    const container = virtualScroll?.getContainerRef?.();
+    if (!container) return;
+
+    container.addEventListener("touchstart", handleTouchStart, {
+      passive: true,
+    });
+    container.addEventListener("touchmove", handleTouchMove, {
+      passive: false,
+    });
+    container.addEventListener("touchend", handleTouchEnd, { passive: true });
+
+    return () => {
+      container.removeEventListener("touchstart", handleTouchStart);
+      container.removeEventListener("touchmove", handleTouchMove);
+      container.removeEventListener("touchend", handleTouchEnd);
+    };
+  });
+
+  $effect(() => {
+    if (!dialogState.isOpen) {
       return;
     }
-    if (open && !previousOpen && virtualScroll && playerStore.queueIndex >= 0) {
+    if (
+      dialogState.isOpen &&
+      !previousOpen &&
+      virtualScroll &&
+      playerStore.queueIndex >= 0
+    ) {
       virtualScroll?.scrollToIndex(playerStore.queueIndex, false);
     }
-    previousOpen = open;
+    previousOpen = dialogState.isOpen;
   });
 </script>
 
@@ -75,7 +135,7 @@
     bind:this={virtualScroll}
     items={playerStore.trackQueue}
     rowHeight={ROW_HEIGHT}
-    class="mt-8 md:mt-13 h-[calc(80dvh-3.5rem)] md:h-[calc(90dvh-3.5rem)]"
+    class="overscroll-y-contain mt-8 md:mt-13 h-[calc(80dvh-3.5rem)] md:h-[calc(90dvh-3.5rem)]"
     topOffset={8}
     leftPadding={8}
     rightPadding={8}
@@ -98,7 +158,10 @@
 {/snippet}
 
 {#if isDesktop.current}
-  <Dialog.Root {open} {onOpenChange}>
+  <Dialog.Root
+    open={dialogState.isOpen}
+    onOpenChange={dialogState.handleOpenChange}
+  >
     <Dialog.Content
       showCloseButton={false}
       class="md:max-w-2xl h-[90dvh] overflow-clip max-w-dvw flex flex-col z-60 p-0 max-md:border-0 rounded-none md:rounded-2xl bg-background"
@@ -108,7 +171,10 @@
     </Dialog.Content>
   </Dialog.Root>
 {:else}
-  <Drawer.Root {open} {onOpenChange}>
+  <Drawer.Root
+    open={dialogState.isOpen}
+    onOpenChange={dialogState.handleOpenChange}
+  >
     <Drawer.Content class="overflow-clip p-0 rounded-t-2xl bg-background">
       {@render header()}
       {@render queueContent()}

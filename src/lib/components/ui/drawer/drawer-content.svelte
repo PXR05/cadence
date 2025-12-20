@@ -13,7 +13,9 @@
 		children,
 		...restProps
 	}: DrawerPrimitive.ContentProps & {
-		portalProps?: WithoutChildrenOrChild<ComponentProps<typeof DrawerPortal>>;
+		portalProps?: WithoutChildrenOrChild<
+			ComponentProps<typeof DrawerPortal>
+		>;
 	} = $props();
 </script>
 
