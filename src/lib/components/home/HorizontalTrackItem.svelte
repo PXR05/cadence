@@ -4,9 +4,10 @@
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { trackMenuStore } from "$lib/stores/trackMenu.svelte";
   import type { AudioFile } from "$lib/schemas";
-  import { CloudCheckIcon } from "@lucide/svelte";
+  import { CloudCheckIcon, EllipsisVerticalIcon } from "@lucide/svelte";
   import { downloadStore } from "$lib/stores/download.svelte";
   import { onMount } from "svelte";
+  import { Button } from "../ui/button";
 
   interface Props {
     track: AudioFile;
@@ -33,15 +34,15 @@
     isOffline = await downloadStore.checkTrackOfflineStatus(track.id);
   }
 
-  function handleContextMenu(e: MouseEvent) {
-    e.preventDefault();
+  function handleOpenMenu(e: MouseEvent) {
+    e.stopPropagation();
     trackMenuStore.open(track, isOffline, refreshOfflineStatus);
   }
 </script>
 
 <button
   onclick={handlePlay}
-  oncontextmenu={handleContextMenu}
+  oncontextmenu={handleOpenMenu}
   class="flex flex-col gap-2 w-48 md:w-56 text-left hover:bg-muted/30 p-2 rounded-md transition-colors {isCurrentTrack
     ? 'bg-muted/50'
     : ''}"
@@ -56,25 +57,36 @@
       class="size-full object-cover transition-transform"
     />
   </div>
-  <div class="flex flex-col text-left flex-1 min-w-0">
-    <div class="flex items-center gap-1.5">
+  <div class="flex items-center gap-2">
+    <div class="flex flex-col text-left flex-1 min-w-0">
+      <div class="flex items-center gap-1.5">
+        <p
+          class="font-medium truncate {isCurrentTrack
+            ? 'text-primary'
+            : 'text-foreground'}"
+        >
+          {title}
+        </p>
+        {#if isOffline}
+          <CloudCheckIcon size={16} class="shrink-0 text-primary" />
+        {/if}
+      </div>
       <p
-        class="font-medium truncate {isCurrentTrack
-          ? 'text-primary'
-          : 'text-foreground'}"
+        class="truncate text-sm {isCurrentTrack
+          ? 'text-primary/50'
+          : 'text-muted-foreground'}"
       >
-        {title}
+        {artist}
       </p>
-      {#if isOffline}
-        <CloudCheckIcon size={16} class="shrink-0 text-primary" />
-      {/if}
     </div>
-    <p
-      class="truncate text-sm {isCurrentTrack
-        ? 'text-primary/50'
-        : 'text-muted-foreground'}"
+
+    <Button
+      size="icon"
+      variant="ghost"
+      class="text-muted-foreground transition-opacity hover:opacity-90"
+      onclick={handleOpenMenu}
     >
-      {artist}
-    </p>
+      <EllipsisVerticalIcon class="size-5" />
+    </Button>
   </div>
 </button>

@@ -67,7 +67,7 @@
 </script>
 
 <button
-  class="relative flex items-center gap-4 w-full rounded-xl hover:bg-muted/30 p-2 select-none text-left
+  class="truncate relative flex items-center gap-4 w-full rounded-xl hover:bg-muted/30 p-2 select-none text-left
   {isCurrentTrack ? 'bg-muted/50' : ''}"
   onclick={handlePlay}
   oncontextmenu={handleContextMenu}
@@ -80,8 +80,8 @@
       class="size-full object-cover"
     />
   </div>
-  <div class="flex flex-col text-left flex-1 min-w-0">
-    <div class="flex items-center gap-1.5">
+  <div class="flex flex-col text-left flex-1 min-w-0 ">
+    <div class="flex items-center gap-1.5 ">
       <p
         class="font-medium truncate {isCurrentTrack
           ? 'text-primary'

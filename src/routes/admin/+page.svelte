@@ -29,8 +29,8 @@
     activeTab = tab;
   }
 
-  function handleLogout() {
-    authStore.logout();
+  async function handleLogout() {
+    await authStore.logout();
     goto("/");
   }
 </script>

@@ -1,0 +1,63 @@
+Loading svelte-check in workspace: c:\Download\random\code\Svelte\cadence
+Getting Svelte diagnostics...
+
+c:\Download\random\code\Svelte\cadence\[32msrc\lib\utils.ts[39m:19:17
+[31mError[39m: Parameter 't' implicitly has an 'any' type. 
+[36m
+  function getT([35mt[36m, p1, p2) {
+    return 3 * (1 - t) * (1 - t) * t * p1 + 3 * (1 - t) * t * t * p2 + t * t * t;[39m
+
+c:\Download\random\code\Svelte\cadence\[32msrc\lib\utils.ts[39m:19:20
+[31mError[39m: Parameter 'p1' implicitly has an 'any' type. 
+[36m
+  function getT(t, [35mp1[36m, p2) {
+    return 3 * (1 - t) * (1 - t) * t * p1 + 3 * (1 - t) * t * t * p2 + t * t * t;[39m
+
+c:\Download\random\code\Svelte\cadence\[32msrc\lib\utils.ts[39m:19:24
+[31mError[39m: Parameter 'p2' implicitly has an 'any' type. 
+[36m
+  function getT(t, p1, [35mp2[36m) {
+    return 3 * (1 - t) * (1 - t) * t * p1 + 3 * (1 - t) * t * t * p2 + t * t * t;[39m
+
+c:\Download\random\code\Svelte\cadence\[32msrc\lib\utils.ts[39m:23:21
+[31mError[39m: Parameter 't' implicitly has an 'any' type. 
+[36m
+  function getSlope([35mt[36m, p1, p2) {
+    return 3 * (1 - t) * (1 - t) * p1 + 6 * (1 - t) * t * (p2 - p1) + 3 * t * t * (1 - p2);[39m
+
+c:\Download\random\code\Svelte\cadence\[32msrc\lib\utils.ts[39m:23:24
+[31mError[39m: Parameter 'p1' implicitly has an 'any' type. 
+[36m
+  function getSlope(t, [35mp1[36m, p2) {
+    return 3 * (1 - t) * (1 - t) * p1 + 6 * (1 - t) * t * (p2 - p1) + 3 * t * t * (1 - p2);[39m
+
+c:\Download\random\code\Svelte\cadence\[32msrc\lib\utils.ts[39m:23:28
+[31mError[39m: Parameter 'p2' implicitly has an 'any' type. 
+[36m
+  function getSlope(t, p1, [35mp2[36m) {
+    return 3 * (1 - t) * (1 - t) * p1 + 6 * (1 - t) * t * (p2 - p1) + 3 * t * t * (1 - p2);[39m
+
+c:\Download\random\code\Svelte\cadence\[32msrc\lib\components\ui\carousel\carousel.svelte[39m:25:3
+[33mWarn[39m: This reference only captures the initial value of `orientation`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally (svelte)
+[36m		scrollNext,
+		[35morientation[36m,
+		canScrollNext: false,[39m
+
+c:\Download\random\code\Svelte\cadence\[32msrc\lib\components\ui\carousel\carousel.svelte[39m:29:12
+[33mWarn[39m: This reference only captures the initial value of `opts`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally (svelte)
+[36m		handleKeyDown,
+		options: [35mopts[36m,
+		plugins,[39m
+
+c:\Download\random\code\Svelte\cadence\[32msrc\lib\components\ui\carousel\carousel.svelte[39m:30:3
+[33mWarn[39m: This reference only captures the initial value of `plugins`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally (svelte)
+[36m		options: opts,
+		[35mplugins[36m,
+		onInit,[39m
+
+====================================
+[31msvelte-check found 6 errors and 3 warnings in 2 files
+[39m
