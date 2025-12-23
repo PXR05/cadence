@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button";
+    import { appearanceStore } from "$lib/stores/appearance.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
   import { RefreshCwIcon } from "@lucide/svelte";
   import { fly } from "svelte/transition";
@@ -15,7 +16,7 @@
 
 {#if visible}
   <div
-    transition:fly={{ duration: 200, y: -50 }}
+    transition:fly={{ duration: appearanceStore.disableAnimations ? 0 : 200, y: -50 }}
     class="fixed top-2 max-md:left-1/2 max-md:-translate-x-1/2 right-2 z-100 w-[calc(100%-1rem)] max-w-md"
   >
     <div

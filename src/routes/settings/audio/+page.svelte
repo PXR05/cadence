@@ -24,6 +24,7 @@
   } from "@lucide/svelte";
   import { ScrollArea } from "$lib/components/ui/scroll-area";
   import SettingCard from "$lib/components/SettingCard.svelte";
+  import { appearanceStore } from "$lib/stores/appearance.svelte";
 
   const filterTypes: FilterType[] = [
     "lowshelf",
@@ -472,7 +473,9 @@
 
 <div class="absolute top-0 w-full p-1.5 md:p-2 z-50">
   <div
-    class="flex-1 flex items-center flex-row gap-1.5 md:gap-2 bg-muted-foreground/10 dark:bg-muted/50 rounded-xl p-1.5 md:p-2 backdrop-blur-md border border-input/15"
+    class="flex-1 flex items-center flex-row gap-1.5 md:gap-2 rounded-xl p-1.5 md:p-2 border-input/15 {appearanceStore.disableBlur
+      ? 'bg-muted'
+      : 'bg-muted-foreground/10 dark:bg-muted/50 backdrop-blur-md'}"
   >
     <Button
       variant="ghost"

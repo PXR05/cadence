@@ -1,6 +1,7 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
   import { onMount } from "svelte";
+    import { appearanceStore } from "$lib/stores/appearance.svelte";
 
   let { onComplete = () => {} }: { onComplete?: () => void } = $props();
 
@@ -26,11 +27,11 @@
 
 {#if show}
   <div
-    class="fixed inset-0 z-[9999] flex items-center justify-center bg-background"
+    class="fixed inset-0 z-9999 flex items-center justify-center bg-background"
   >
     {#if logoVisible}
       <img
-        transition:fade={{ duration: 200 }}
+        transition:fade={{ duration: appearanceStore.disableAnimations ? 0 : 200 }}
         src="/favicon.svg"
         alt="Cadence Logo"
         class="w-32 h-32"

@@ -4,7 +4,8 @@
   import type { AudioFile } from "$lib/schemas";
   import type { Snippet } from "svelte";
   import { flip } from "svelte/animate";
-  import { cubicOut } from "svelte/easing";
+  import { appearanceStore } from "$lib/stores/appearance.svelte";
+  import { vaulEase } from "$lib/utils";
 
   interface Props {
     title: string;
@@ -21,13 +22,16 @@
   {#if tracks.length === 0 && emptyState}
     {@render emptyState()}
   {:else}
-    <ScrollArea orientation="horizontal" class="w-dvw md:w-[calc(100dvw-256px)] pb-4 pr-4">
+    <ScrollArea
+      orientation="horizontal"
+      class="w-dvw md:w-[calc(100dvw-256px)] pb-4 pr-4"
+    >
       <div class="flex">
         {#each tracks as track, i (track.id)}
           <div
             animate:flip={{
-              duration: 150,
-              easing: cubicOut,
+              duration: appearanceStore.disableAnimations ? 0 : 150,
+              easing: vaulEase,
             }}
             class={i === 0 ? "ml-2" : ""}
           >

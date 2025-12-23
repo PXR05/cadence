@@ -25,6 +25,7 @@
   } from "@lucide/svelte";
   import { Button } from "../ui/button";
   import EditPlaylistDialog from "./EditPlaylistDialog.svelte";
+  import { appearanceStore } from "$lib/stores/appearance.svelte";
 
   interface Props {
     playlist: PlaylistDetail;
@@ -86,14 +87,18 @@
 </script>
 
 <div
-  class="flex-1 flex items-end rounded-xl border transition-all duration-200
+  class="flex-1 flex items-end rounded-xl border
   {isScrolled
-    ? 'bg-muted-foreground/10 dark:bg-muted/50 backdrop-blur-md border-input/15 p-2'
-    : 'border-transparent'}"
+    ? appearanceStore.disableBlur
+      ? 'bg-muted border-input/15 p-2'
+      : 'bg-muted-foreground/10 dark:bg-muted/50 backdrop-blur-md border-input/15 p-2'
+    : 'border-transparent'}
+    {appearanceStore.disableAnimations ? '' : 'transition-all duration-200'}"
 >
   <div
-    class="border shrink-0 overflow-hidden bg-muted relative grid place-items-center rounded-xl transition-all duration-200
-    {isScrolled ? 'size-0' : 'size-40 md:size-64'}"
+    class="border shrink-0 overflow-hidden bg-muted relative grid place-items-center rounded-xl
+    {isScrolled ? 'size-0' : 'size-40 md:size-64'}
+    {appearanceStore.disableAnimations ? '' : 'transition-all duration-200'}"
     style="transform: scale({isScrolled ? 0 : 1});
     opacity: {isScrolled ? 0 : 1};"
   >
@@ -157,8 +162,9 @@
   </div>
 
   <div
-    class="relative w-full flex justify-between sm:items-end gap-2 truncate transition-all duration-200
-    {isScrolled ? 'flex-row items-center h-9' : 'h-40 md:h-64 ml-2'}"
+    class="relative w-full flex justify-between sm:items-end gap-2 truncate
+    {isScrolled ? 'flex-row items-center h-9' : 'h-40 md:h-64 ml-2'}
+    {appearanceStore.disableAnimations ? '' : 'transition-all duration-200'}"
   >
     <Button
       variant={isScrolled ? "ghost" : "outline"}
@@ -171,18 +177,21 @@
     </Button>
 
     <div
-      class="flex flex-col truncate h-full justify-end transition-all duration-200 sm:pr-28
-      {isScrolled ? 'pr-28' : 'max-sm:pb-10'}"
+      class="flex flex-col truncate h-full justify-end sm:pr-28
+      {isScrolled ? 'pr-28' : 'max-sm:pb-10'}
+      {appearanceStore.disableAnimations ? '' : 'transition-all duration-200'}"
     >
       <p
-        class="text-sm text-muted-foreground transition-all duration-200
-        {isScrolled ? 'opacity-0 h-0' : 'h-5'}"
+        class="text-sm text-muted-foreground
+        {isScrolled ? 'opacity-0 h-0' : 'h-5'}
+        {appearanceStore.disableAnimations ? '' : 'transition-all duration-200'}"
       >
         {playlist.items.length} tracks
       </p>
       <div
-        class="flex items-center gap-2 truncate transition-all duration-200
-        {isScrolled ? 'pl-10 mb-0.5' : ''}"
+        class="flex items-center gap-2 truncate 
+        {isScrolled ? 'pl-10 mb-0.5' : ''}
+        {appearanceStore.disableAnimations ? '' : 'transition-all duration-200'}"
       >
         <h1
           class="truncate font-semibold {isScrolled
@@ -198,9 +207,10 @@
     </div>
 
     <div
-      class="flex gap-2 absolute bottom-0 right-0 transition-all duration-200 origin-right
-      {isScrolled ? 'max-sm:w-[100px]' : 'max-sm:w-[calc(100dvw-11.4rem)]'}"
-    >
+      class="flex gap-2 absolute bottom-0 right-0
+      {isScrolled ? 'max-sm:w-[100px]' : 'max-sm:w-[calc(100dvw-11.4rem)]'}
+      {appearanceStore.disableAnimations ? '' : 'transition-all duration-200 origin-right'}"
+    > 
       <Button
         onclick={handlePlay}
         disabled={playlist.items.length === 0}

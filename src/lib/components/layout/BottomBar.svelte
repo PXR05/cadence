@@ -6,6 +6,7 @@
   import { innerWidth } from "svelte/reactivity/window";
   import { page } from "$app/state";
   import { useDialogState } from "$lib/hooks";
+  import { appearanceStore } from "$lib/stores/appearance.svelte";
 
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
   const isTopRoute = $derived(page.url.pathname.split("/").length <= 2);
@@ -28,10 +29,10 @@
 </script>
 
 <div class="flex flex-col gap-1.5 fixed bottom-0 left-0 right-0 z-50">
-  <!-- <div class="_bg _blur absolute inset-0 -z-10"></div> -->
   <div class="_bg _color absolute inset-0 -z-10"></div>
   <div
-    class="absolute bottom-0 left-0 right-0 transition-all duration-200 space-y-1.5"
+    class="absolute bottom-0 left-0 right-0 space-y-1.5
+    {appearanceStore.disableAnimations ? '' : 'transition-all duration-200'}"
     style="
       transform: translate3d(0, {downloadTranslate}, 0);
       will-change: transform;"
@@ -41,7 +42,8 @@
   </div>
   <PlayerBar />
   <div
-    class="absolute bottom-1.5 left-1.5 right-1.5 transition-all duration-200 z-60"
+    class="absolute bottom-1.5 left-1.5 right-1.5 z-60
+    {appearanceStore.disableAnimations ? '' : 'transition-all duration-200'}"
     style="
     transform: translate3d(0, {navTranslate}, 0);
     will-change: transform;"
@@ -77,11 +79,4 @@
       background-color: var(--background);
     }
   }
-
-  /* ._blur {
-    &::before,
-    &::after {
-      backdrop-filter: blur(1rem) saturate(120%) contrast(120%) brightness(120%);
-    }
-  } */
 </style>

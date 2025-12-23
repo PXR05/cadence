@@ -164,7 +164,9 @@
 
 {#if authStore.isAuthenticated}
   <Sidebar.Provider>
-    <AppSidebar />
+    {#if innerWidth.current ?? window.innerWidth > 768}
+      <AppSidebar />
+    {/if}
     <Sidebar.Inset
       class="relative bg-background min-h-dvh flex flex-col"
       style="--h: {navHeight}px;"

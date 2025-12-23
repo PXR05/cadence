@@ -17,6 +17,7 @@
     import VolumeControl from "./VolumeControl.svelte";
     import { vaulEase } from "$lib/utils";
     import { useMenuDialogState } from "$lib/hooks";
+    import { appearanceStore } from "$lib/stores/appearance.svelte";
 
     const isMobile = $derived((innerWidth.current ?? 0) <= 768);
     const isTopRoute = $derived(page.url.pathname.split("/").length <= 2);
@@ -82,7 +83,7 @@
 
         gsapTween = gsap.to(proxy, {
             y: targetY,
-            duration: animDuration,
+            duration: appearanceStore.disableAnimations ? 0 : animDuration,
             ease: vaulEase,
             onUpdate: () => {
                 if (containerEl) {
@@ -419,7 +420,10 @@
 {#snippet bar()}
     <div
         bind:this={barElement}
-        class="mx-1.5 rounded-xl overflow-clip border border-input/15 bg-muted-foreground/10 dark:bg-muted/50 backdrop-blur-md"
+        class="mx-1.5 rounded-xl overflow-clip border border-input/15
+        {appearanceStore.disableBlur
+            ? 'bg-muted'
+            : 'bg-muted-foreground/10 dark:bg-muted/50 backdrop-blur-md'}"
         role="button"
         tabindex="0"
         ontouchend={handleTouchEnd}

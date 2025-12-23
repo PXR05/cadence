@@ -14,6 +14,7 @@
   import { youtubeDownloadStore } from "$lib/stores/youtubeDownload.svelte";
   import { searchYoutube } from "$lib/remote/youtube.remote";
   import type { AudioFile, YouTubeSearchResult } from "$lib/schemas";
+  import { appearanceStore } from "$lib/stores/appearance.svelte";
 
   const LIMIT = 10;
   const DEBOUNCE_MS = 300;
@@ -160,11 +161,16 @@
   style="--h: 8rem;"
   class="p-2 absolute top-0 left-0 right-0 z-10"
 >
-  <div class="_bg _blur absolute inset-0 -z-10"></div>
+  {#if !appearanceStore.disableBlur}
+    <div class="_bg _blur absolute inset-0 -z-10"></div>
+  {/if}
   <div class="_bg _color absolute inset-0 -z-10"></div>
   <h2 class="text-2xl font-semibold p-2">Search</h2>
   <div
-    class="mt-2 flex items-center relative bg-muted-foreground/10 dark:bg-muted/50 backdrop-blur-md rounded-xl overflow-clip border border-input/15"
+    class="mt-2 flex items-center relative rounded-xl overflow-clip border border-input/15
+    {appearanceStore.disableBlur
+      ? 'bg-muted'
+      : 'bg-muted-foreground/10 dark:bg-muted/50 backdrop-blur-md'}"
   >
     <SearchIcon
       size={16}

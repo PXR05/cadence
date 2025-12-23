@@ -8,6 +8,7 @@
   import { playerStore } from "$lib/stores/player.svelte";
   import { vaulEase } from "$lib/utils";
   import { navItems } from "./navItems";
+  import { appearanceStore } from "$lib/stores/appearance.svelte";
 
   const {
     orientation = "horizontal",
@@ -16,8 +17,6 @@
     orientation?: "vertical" | "horizontal";
     size?: number;
   } = $props();
-
-  let isAdmin = $state(false);
 
   let isDragging = $state(false);
   let isReleaseAnimating = $state(false);
@@ -28,18 +27,17 @@
   let indicatorElement: HTMLElement | null = $state(null);
 
   const tabPosition = new Tween(0, {
-    duration: 400,
-    easing: (t) => vaulEase(t),
+    duration: appearanceStore.disableAnimations ? 0 : 400,
+    easing: vaulEase,
   });
 
   onMount(async () => {
     try {
       if (authStore.token) {
         await authStore.getCurrentUser();
-        isAdmin = authStore.isAdmin;
       }
     } catch (error) {
-      isAdmin = false;
+      console.error(error);
     }
   });
 
@@ -135,8 +133,8 @@
     const adjustedDuration = Math.min(400, 200 + distanceToTarget * 150);
 
     await tabPosition.set(clampedTab, {
-      duration: adjustedDuration,
-      easing: (t) => vaulEase(t),
+      duration: appearanceStore.disableAnimations ? 0 : adjustedDuration,
+      easing: vaulEase,
     });
 
     isReleaseAnimating = false;
@@ -155,8 +153,12 @@
   <nav
     bind:this={navElement}
     onpointermove={handlePointerMove}
-    class="overflow-clip mx-auto flex rounded-xl border border-input/15 bg-muted-foreground/10 dark:bg-muted/50 backdrop-blur-md relative p-1.5 gap-1.5 select-none
-      {orientation === 'horizontal' ? 'flex-row w-full' : 'flex-col h-full'}"
+    class="overflow-clip mx-auto flex rounded-xl border border-input/15 relative p-1.5 gap-1.5 select-none
+      {orientation === 'horizontal' ? 'flex-row w-full' : 'flex-col h-full'}
+      {appearanceStore.disableBlur
+      ? 'bg-muted'
+      : 'bg-muted-foreground/10 dark:bg-muted/50 backdrop-blur-md'}
+      "
   >
     {#if activeTabIndex >= 0}
       <div
@@ -164,10 +166,13 @@
         onpointerdown={handleIndicatorPointerDown}
         onpointerup={handleIndicatorPointerUp}
         onpointercancel={handleIndicatorPointerUp}
-        class="absolute rounded-lg touch-none cursor-grab active:cursor-grabbing z-10 transition-all duration-100 ease-out-back
+        class="absolute rounded-lg touch-none cursor-grab active:cursor-grabbing z-10
         {isDragging
           ? 'opacity-90 max-md:scale-y-90 md:scale-x-90'
-          : 'pointer-events-auto'}"
+          : 'pointer-events-auto'}
+        {appearanceStore.disableAnimations
+          ? ''
+          : 'transition-all duration-100 ease-out-back'}"
         style="
         background-color:
           color-mix(
@@ -198,7 +203,7 @@
       {@const isUnderIndicator = Math.abs(displayPosition - i) < 0.5}
       <button
         draggable="false"
-        animate:flip={{ duration: 200 }}
+        animate:flip={{ duration: appearanceStore.disableAnimations ? 0 : 200 }}
         onclick={(e) => handleTabClick(e, i)}
         class="relative flex-1 z-20 grid place-items-center cursor-pointer
         {active ? 'pointer-events-none' : ''}"

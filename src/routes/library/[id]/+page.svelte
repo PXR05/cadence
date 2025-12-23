@@ -16,6 +16,7 @@
   import { LoaderIcon } from "@lucide/svelte";
   import type { PlaylistDetail, PlaylistItem } from "$lib/schemas";
   import { fade } from "svelte/transition";
+  import { appearanceStore } from "$lib/stores/appearance.svelte.js";
 
   let { data } = $props();
 
@@ -84,11 +85,15 @@
     </div>
   {:else}
     <div
-      transition:fade={{ duration: 150 }}
+      transition:fade={{
+        duration: appearanceStore.disableAnimations ? 0 : 150,
+      }}
       style="--h: {isScrolled ? 10 : 16}rem;"
       class="z-20 p-1.5 md:p-2 flex flex-col absolute top-0 w-full gap-1.5 md:gap-2"
     >
-      <div class="_bg _blur absolute inset-0 -z-10"></div>
+      {#if !appearanceStore.disableBlur}
+        <div class="_bg _blur absolute inset-0 -z-10"></div>
+      {/if}
       <div class="_bg _color absolute inset-0 -z-10"></div>
       <PlaylistHeader {playlist} {isScrolled} />
 

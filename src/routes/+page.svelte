@@ -12,6 +12,7 @@
   import { playerStore } from "$lib/stores/player.svelte";
   import { fade, slide } from "svelte/transition";
   import { ScrollArea } from "$lib/components/ui/scroll-area";
+  import { appearanceStore } from "$lib/stores/appearance.svelte";
 
   const tracks = $derived(tracksStore.tracks);
   const isInitialLoad = $derived(tracksStore.isInitialLoad);
@@ -60,11 +61,22 @@
   </div>
 {:else}
   <ScrollArea class="h-dvh py-2">
-    <div transition:fade={{ duration: 150 }} class="pt-2 grid pb-72">
+    <div
+      transition:fade={{
+        duration: appearanceStore.disableAnimations ? 0 : 150,
+      }}
+      class="pt-2 grid pb-72"
+    >
       <HorizontalTrackList title="Recommended" tracks={recommendedTracks} />
 
       {#if recentlyPlayed.length > 0}
-        <div transition:slide={{ axis: "y", duration: 200, delay: 100 }}>
+        <div
+          transition:slide={{
+            axis: "y",
+            duration: appearanceStore.disableAnimations ? 0 : 200,
+            delay: appearanceStore.disableAnimations ? 0 : 100,
+          }}
+        >
           <HorizontalTrackList
             title="Recently Played"
             tracks={recentlyPlayed}

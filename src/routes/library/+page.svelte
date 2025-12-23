@@ -10,6 +10,7 @@
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { offlineDb } from "$lib/db/offline";
   import { liveQuery } from "dexie";
+  import { appearanceStore } from "$lib/stores/appearance.svelte";
 
   let createDialogOpen = $state(false);
 
@@ -53,7 +54,9 @@
 </svelte:head>
 
 <div style="--h: 6rem;" class="p-2 absolute top-0 left-0 right-0 z-30">
-  <div class="_bg _blur absolute inset-0 -z-10"></div>
+  {#if !appearanceStore.disableBlur}
+    <div class="_bg _blur absolute inset-0 -z-10"></div>
+  {/if}
   <div class="_bg _color absolute inset-0 -z-10"></div>
   <h2 class="text-2xl font-semibold p-2">Playlists</h2>
 </div>
@@ -64,8 +67,11 @@
   >
     {#each allUserPlaylists as playlist, i (playlist.id)}
       <div
-        animate:flip={{ duration: 150 }}
-        transition:fade={{ duration: 150, delay: i * 25 }}
+        animate:flip={{ duration: appearanceStore.disableAnimations ? 0 : 150 }}
+        transition:fade={{
+          duration: appearanceStore.disableAnimations ? 0 : 150,
+          delay: appearanceStore.disableAnimations ? 0 : i * 25,
+        }}
       >
         <PlaylistCard {playlist} size="large" />
       </div>

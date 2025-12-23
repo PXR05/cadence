@@ -3,6 +3,7 @@
   import { XIcon } from "@lucide/svelte";
   import * as AlertDialog from "$lib/components/ui/alert-dialog";
   import { Button } from "../ui/button";
+  import { appearanceStore } from "$lib/stores/appearance.svelte";
 
   const progress = $derived(youtubeDownloadStore.progress);
   const queueCount = $derived(youtubeDownloadStore.queueCount);
@@ -22,7 +23,10 @@
 
 {#if progress}
   <div
-    class="border rounded-xl overflow-clip border-input/15 bg-muted-foreground/10 dark:bg-muted/50 backdrop-blur-md mx-1.5"
+    class="border rounded-xl overflow-clip border-input/15 mx-1.5
+    {appearanceStore.disableBlur
+      ? 'bg-muted'
+      : 'bg-muted-foreground/10 dark:bg-muted/50 backdrop-blur-md'}"
   >
     <div class="flex items-center justify-between p-3 gap-2">
       <div class="flex-1 min-w-0">
@@ -46,7 +50,8 @@
         </div>
         <div class="w-full bg-muted border overflow-hidden h-1.5 rounded-sm">
           <div
-            class="h-full bg-primary transition-all duration-200"
+            class="h-full bg-primary
+            {appearanceStore.disableAnimations ? '' : 'transition-all duration-200'}"
             style="width: {percentage}%"
           ></div>
         </div>

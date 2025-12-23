@@ -25,6 +25,7 @@
     import { slide } from "svelte/transition";
     import MenuDialog from "$lib/components/ui/menu-dialog/MenuDialog.svelte";
     import { playerStore } from "$lib/stores/player.svelte";
+    import { appearanceStore } from "$lib/stores/appearance.svelte";
 
     let isAdmin = $state(false);
     let accountMenuOpen = $state(false);
@@ -111,9 +112,31 @@
     <title>Settings | Cadence</title>
 </svelte:head>
 
+{#snippet toggleSwitch(label: string, checked: boolean, onclick: () => void)}
+    <button
+        class="flex items-center justify-between w-full p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+        {onclick}
+    >
+        <span class="text-sm font-medium">{label}</span>
+        <div
+            class="relative w-11 h-6 rounded-full transition-colors {checked
+                ? 'bg-primary'
+                : 'bg-muted-foreground/30'}"
+        >
+            <div
+                class="absolute top-1 size-4 rounded-full bg-white transition-transform {checked
+                    ? 'translate-x-6'
+                    : 'translate-x-1'}"
+            ></div>
+        </div>
+    </button>
+{/snippet}
+
 <!-- Account header -->
 <div style="--h: 5rem;" class="p-2 absolute top-0 left-0 right-0 z-30">
-    <div class="_bg _blur absolute inset-0 -z-10"></div>
+    {#if !appearanceStore.disableBlur}
+        <div class="_bg _blur absolute inset-0 -z-10"></div>
+    {/if}
     <div class="_bg _color absolute inset-0 -z-10"></div>
     <h2 class="text-2xl font-semibold p-2">Settings</h2>
 </div>
@@ -168,7 +191,7 @@
             <button
                 transition:slide={{
                     axis: "y",
-                    duration: 150,
+                    duration: appearanceStore.disableAnimations ? 0 : 150,
                 }}
                 class="flex items-center justify-between w-full p-4 rounded-xl border bg-background md:bg-card hover:bg-muted/50 transition-colors text-left"
                 onclick={() => goto("/settings/admin")}
@@ -188,35 +211,55 @@
 
         <!-- Theme Settings -->
         <SettingCard icon={PaletteIcon} title="Appearance">
-            <div class="p-3 space-y-3">
-                <p class="text-sm text-muted-foreground">
-                    Choose your preferred theme
-                </p>
-                <div class="grid grid-cols-3 gap-2">
-                    {#each themeOptions as option}
-                        {@const Icon = option.icon}
-                        <Button
-                            style="--primary: color-mix(
-                                in oklab,
-                                {playerStore.trackColor ??
-                                'var(--primary)'} 40%,
-                                var(--foreground)
-                            );"
-                            variant={mode.current === option.value ||
-                            (mode.current === undefined &&
-                                option.value === "system")
-                                ? "default"
-                                : "outline"}
-                            class="flex flex-col gap-1 h-auto py-3"
-                            onclick={() =>
-                                option.value === "system"
-                                    ? resetMode()
-                                    : setMode(option.value as "light" | "dark")}
-                        >
-                            <Icon class="size-5" />
-                            <span class="text-xs">{option.label}</span>
-                        </Button>
-                    {/each}
+            <div class="p-3 space-y-4">
+                <div class="space-y-3">
+                    <p class="text-sm text-muted-foreground">
+                        Choose your preferred theme
+                    </p>
+                    <div class="grid grid-cols-3 gap-2">
+                        {#each themeOptions as option}
+                            {@const Icon = option.icon}
+                            <Button
+                                style="--primary: color-mix(
+                                    in oklab,
+                                    {playerStore.trackColor ??
+                                    'var(--primary)'} 40%,
+                                    var(--foreground)
+                                );"
+                                variant={mode.current === option.value ||
+                                (mode.current === undefined &&
+                                    option.value === "system")
+                                    ? "default"
+                                    : "outline"}
+                                class="flex flex-col gap-1 h-auto py-3"
+                                onclick={() =>
+                                    option.value === "system"
+                                        ? resetMode()
+                                        : setMode(
+                                              option.value as "light" | "dark",
+                                          )}
+                            >
+                                <Icon class="size-5" />
+                                <span class="text-xs">{option.label}</span>
+                            </Button>
+                        {/each}
+                    </div>
+                </div>
+
+                <div class="border-t pt-4 space-y-3">
+                    <p class="text-sm text-muted-foreground">Visual effects</p>
+                    <div class="space-y-2">
+                        {@render toggleSwitch(
+                            "Disable Blur",
+                            appearanceStore.disableBlur,
+                            () => appearanceStore.toggleBlur(),
+                        )}
+                        {@render toggleSwitch(
+                            "Disable Animations",
+                            appearanceStore.disableAnimations,
+                            () => appearanceStore.toggleAnimations(),
+                        )}
+                    </div>
                 </div>
             </div>
         </SettingCard>

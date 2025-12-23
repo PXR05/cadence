@@ -16,14 +16,13 @@
     import { Tween } from "svelte/motion";
     import { vaulEase } from "$lib/utils";
     import { playerStore } from "$lib/stores/player.svelte";
+    import { appearanceStore } from "$lib/stores/appearance.svelte";
 
-    let isAdmin = $state(false);
+    let indicatorTop = new Tween(0, { duration: appearanceStore.disableAnimations ? 0 : 300, easing: vaulEase });
+    let indicatorHeight = new Tween(32, { duration: appearanceStore.disableAnimations ? 0 : 300, easing: vaulEase });
 
-    let indicatorTop = new Tween(0, { duration: 300, easing: vaulEase });
-    let indicatorHeight = new Tween(32, { duration: 300, easing: vaulEase });
-
-    let hoverTop = new Tween(0, { duration: 200, easing: vaulEase });
-    let hoverHeight = new Tween(32, { duration: 200, easing: vaulEase });
+    let hoverTop = new Tween(0, { duration: appearanceStore.disableAnimations ? 0 : 200, easing: vaulEase });
+    let hoverHeight = new Tween(32, { duration: appearanceStore.disableAnimations ? 0 : 200, easing: vaulEase });
     let isHovering = $state(false);
 
     let sidebarContentEl: HTMLElement | null = $state(null);
@@ -32,10 +31,9 @@
         try {
             if (authStore.token) {
                 await authStore.getCurrentUser();
-                isAdmin = authStore.isAdmin;
             }
         } catch (error) {
-            isAdmin = false;
+            console.error(error);
         }
     });
 

@@ -17,6 +17,7 @@
   } from "@lucide/svelte";
   import { SPECIAL_PLAYLIST_IDS } from "$lib/utils/playlist";
   import type { Playlist } from "$lib/schemas";
+  import { appearanceStore } from "$lib/stores/appearance.svelte";
 
   interface Props {
     playlist: Playlist;
@@ -113,7 +114,10 @@
   </div>
   <div class="absolute bottom-0 w-full z-10 p-1">
     <div
-      class="py-1 px-2 bg-muted/80 dark:bg-muted/50 backdrop-blur-md border border-input/15 rounded-md"
+      class="py-1 px-2 border border-input/15 rounded-md
+      {appearanceStore.disableBlur
+        ? 'bg-muted'
+        : 'bg-muted/80 dark:bg-muted/50 backdrop-blur-md'}"
     >
       <p class="text-sm font-medium truncate leading-tight">
         {displayName}
