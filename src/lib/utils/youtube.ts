@@ -47,7 +47,7 @@ export async function downloadYoutubeWithProgress(
     eventSource.onerror = (event) => {
       console.error("SSE connection error:", event);
       reject(
-        new Error("Connection to server lost" + (event ? `: ${event}` : "")),
+        new Error("Connection to server lost" + (event ? `: ${JSON.stringify(event)}` : "")),
       );
     };
   });

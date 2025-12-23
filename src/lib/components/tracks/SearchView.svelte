@@ -2,9 +2,10 @@
   import { onMount } from "svelte";
   import { page } from "$app/state";
   import { goto } from "$app/navigation";
-  import { LoaderIcon, SearchIcon, XIcon } from "@lucide/svelte";
+  import { LoaderIcon, PlusIcon, SearchIcon, XIcon } from "@lucide/svelte";
   import TrackItem from "./TrackItem.svelte";
   import YouTubeTrackItem from "./YouTubeTrackItem.svelte";
+  import UploadTrackDialog from "../admin/UploadTrackDialog.svelte";
   import { searchTracks } from "$lib/remote";
   import { searchCachedTracks } from "$lib/db/cache";
   import { Input } from "../ui/input";
@@ -15,6 +16,7 @@
   import { searchYoutube } from "$lib/remote/youtube.remote";
   import type { AudioFile, YouTubeSearchResult } from "$lib/schemas";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
+  import { toast } from "svelte-sonner";
 
   const LIMIT = 10;
   const DEBOUNCE_MS = 300;
@@ -29,6 +31,27 @@
   let searchDebounce: number | null = null;
   let initialized = $state(false);
   let isOffline = $state(false);
+  let uploadDialogOpen = $state(false);
+  let uploadLoading = $state(false);
+
+  function handleUploadComplete(successCount: number, totalCount: number) {
+    toast.success(
+      `Successfully uploaded ${successCount} of ${totalCount} track(s)`,
+    );
+  }
+
+  function handleUploadError(error: string) {
+    toast.error(error);
+  }
+
+  async function handleYoutubeUpload(url: string) {
+    try {
+      await youtubeDownloadStore.addUrlToQueue(url);
+      toast.success("Added to download queue");
+    } catch (error) {
+      toast.error("Failed to add to download queue");
+    }
+  }
 
   $effect(() => {
     const urlQuery = page.url.searchParams.get("q") || "";
@@ -166,44 +189,63 @@
   {/if}
   <div class="_bg _color absolute inset-0 -z-10"></div>
   <h2 class="text-2xl font-semibold p-2">Search</h2>
-  <div
-    class="mt-2 flex items-center relative rounded-xl overflow-clip border border-input/15
+  <div class="flex items-center gap-2">
+    <div
+      class="flex-1 mt-2 flex items-center relative rounded-xl overflow-clip border border-input/15
     {appearanceStore.disableBlur
-      ? 'bg-muted'
-      : 'bg-muted-foreground/10 dark:bg-muted/50 backdrop-blur-md'}"
-  >
-    <SearchIcon
-      size={16}
-      class="absolute transition-all text-muted-foreground shrink-0
-      {!isEmpty ? 'opacity-0' : ''}"
-      style="transform: translateX({!isEmpty ? '0' : '0.75rem'})"
-    />
-    <Input
-      bind:ref={searchInput}
-      bind:value={searchQuery}
-      oninput={handleInput}
-      type="text"
-      placeholder="search..."
-      class="flex-1 text-base h-auto bg-transparent! border-0 transition-all p-3 outline-none font-mono placeholder:text-muted-foreground
-        {!isEmpty ? '' : 'pl-9'}"
-    />
-    <Button
-      variant="ghost"
-      size="icon"
-      class="text-muted-foreground absolute right-1 rounded-lg
-        {isEmpty ? 'opacity-0' : ''}"
-      style="transform: translateX({isEmpty ? '0.5rem' : '0rem'})"
-      onclick={clearSearch}
-      disabled={isEmpty || isDebouncing || loading}
+        ? 'bg-muted'
+        : 'bg-muted-foreground/10 dark:bg-muted/50 backdrop-blur-md'}"
     >
-      {#if isDebouncing || loading}
-        <LoaderIcon class="animate-spin" size={16} />
-      {:else if !isEmpty}
-        <XIcon size={16} />
-      {/if}
+      <SearchIcon
+        size={16}
+        class="absolute transition-all text-muted-foreground shrink-0
+      {!isEmpty ? 'opacity-0' : ''}"
+        style="transform: translateX({!isEmpty ? '0' : '0.75rem'})"
+      />
+      <Input
+        bind:ref={searchInput}
+        bind:value={searchQuery}
+        oninput={handleInput}
+        type="text"
+        placeholder="search..."
+        class="flex-1 text-base h-auto bg-transparent! border-0 transition-all p-3 outline-none font-mono placeholder:text-muted-foreground
+        {!isEmpty ? '' : 'pl-9'}"
+      />
+      <Button
+        variant="ghost"
+        size="icon"
+        class="text-muted-foreground absolute right-1 rounded-lg
+        {isEmpty ? 'opacity-0' : ''}"
+        style="transform: translateX({isEmpty ? '0.5rem' : '0rem'})"
+        onclick={clearSearch}
+        disabled={isEmpty || isDebouncing || loading}
+      >
+        {#if isDebouncing || loading}
+          <LoaderIcon class="animate-spin" size={16} />
+        {:else if !isEmpty}
+          <XIcon size={16} />
+        {/if}
+      </Button>
+    </div>
+    <Button
+      variant="outline"
+      size="icon"
+      class="mt-2 size-11 rounded-xl shrink-0"
+      onclick={() => (uploadDialogOpen = true)}
+      aria-label="Add track"
+    >
+      <PlusIcon size={20} />
     </Button>
   </div>
 </form>
+
+<UploadTrackDialog
+  bind:open={uploadDialogOpen}
+  loading={uploadLoading}
+  onUploadComplete={handleUploadComplete}
+  onUploadError={handleUploadError}
+  onYoutubeUpload={handleYoutubeUpload}
+/>
 
 <ScrollArea class="h-dvh">
   <div class="flex flex-col mx-auto w-full h-full overflow-auto">
