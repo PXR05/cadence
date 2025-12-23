@@ -1,5 +1,7 @@
 import type { EqualizerBand } from "./player.svelte";
 
+const REFLECTION_MAP_CACHE_KEY = "cadence.reflection_maps";
+
 export class AudioEngine {
   audioContext: AudioContext | null = null;
   sourceNode: MediaElementAudioSourceNode | null = null;
@@ -21,6 +23,15 @@ export class AudioEngine {
   private impulseResponseCache: Map<string, AudioBuffer> = new Map();
 
   private irGenerationPending: boolean = false;
+
+  private reflectionMapCache: Map<
+    string,
+    Map<number, { gain: number; index: number }>
+  > = new Map();
+
+  private lastFrequencyDataTime: number = 0;
+  private lastTimeDomainDataTime: number = 0;
+  private analyzerThrottleMs: number = 33;
 
   initialize(
     player: HTMLAudioElement,
@@ -116,6 +127,13 @@ export class AudioEngine {
 
   getFrequencyData(): Uint8Array | null {
     if (!this.analyzerNode || !this.frequencyDataBuffer) return null;
+
+    const now = performance.now();
+    if (now - this.lastFrequencyDataTime < this.analyzerThrottleMs) {
+      return this.frequencyDataBuffer;
+    }
+    this.lastFrequencyDataTime = now;
+
     this.analyzerNode.getByteFrequencyData(
       this.frequencyDataBuffer as Uint8Array<ArrayBuffer>,
     );
@@ -124,6 +142,13 @@ export class AudioEngine {
 
   getTimeDomainData(): Uint8Array | null {
     if (!this.analyzerNode || !this.timeDomainDataBuffer) return null;
+
+    const now = performance.now();
+    if (now - this.lastTimeDomainDataTime < this.analyzerThrottleMs) {
+      return this.timeDomainDataBuffer;
+    }
+    this.lastTimeDomainDataTime = now;
+
     this.analyzerNode.getByteTimeDomainData(
       this.timeDomainDataBuffer as Uint8Array<ArrayBuffer>,
     );
@@ -148,6 +173,10 @@ export class AudioEngine {
     if (this.analyzerNode) {
       this.analyzerNode.smoothingTimeConstant = Math.max(0, Math.min(1, value));
     }
+  }
+
+  setAnalyzerThrottleMs(ms: number) {
+    this.analyzerThrottleMs = Math.max(16, ms);
   }
 
   setVolume(volume: number) {
@@ -204,21 +233,14 @@ export class AudioEngine {
     });
   }
 
-  /**
-   * Rebuild the entire equalizer chain with new bands.
-   * Used when adding or removing bands.
-   */
   rebuildEqualizer(bands: EqualizerBand[]) {
     if (!this.audioContext) return;
 
-    // Disconnect and remove old nodes
     this.equalizerNodes.forEach((node) => node.disconnect());
     this.equalizerNodes = [];
 
-    // Store the new bands configuration
     this.equalizerBands = bands;
 
-    // Create new filter nodes
     this.equalizerNodes = bands.map((band) => {
       const filter = this.audioContext!.createBiquadFilter();
       filter.type = band.type;
@@ -228,7 +250,6 @@ export class AudioEngine {
       return filter;
     });
 
-    // Reconnect the audio graph
     this.reconnectAudioGraph();
   }
 
@@ -282,8 +303,16 @@ export class AudioEngine {
     const left = impulse.getChannelData(0);
     const right = impulse.getChannelData(1);
 
-    const chunkSize = 8192;
+    const chunkSize = 16384;
     const totalChunks = Math.ceil(length / chunkSize);
+
+    const reflectionMap = this.buildReflectionMap(
+      params.earlyReflections,
+      sampleRate,
+      preset,
+    );
+
+    this.randomSeed = 1;
 
     for (let chunk = 0; chunk < totalChunks; chunk++) {
       const startIdx = chunk * chunkSize;
@@ -296,14 +325,85 @@ export class AudioEngine {
         endIdx,
         sampleRate,
         params,
+        reflectionMap,
       );
-
-      if (chunk < totalChunks - 1) {
+      if (chunk % 2 === 0 && chunk < totalChunks - 1) {
         await this.yieldToMainThread();
       }
     }
 
     return impulse;
+  }
+
+  private buildReflectionMap(
+    earlyReflections: { delay: number; gain: number }[],
+    sampleRate: number,
+    preset: string,
+  ): Map<number, { gain: number; index: number }> {
+    const cacheKey = `${preset}:${sampleRate}`;
+
+    const memoryCached = this.reflectionMapCache.get(cacheKey);
+    if (memoryCached) {
+      return memoryCached;
+    }
+
+    const storageCached = this.loadReflectionMapFromStorage(cacheKey);
+    if (storageCached) {
+      this.reflectionMapCache.set(cacheKey, storageCached);
+      return storageCached;
+    }
+
+    const map = new Map<number, { gain: number; index: number }>();
+    earlyReflections.forEach((r, index) => {
+      const sample = Math.floor(r.delay * sampleRate);
+      map.set(sample, { gain: r.gain, index });
+    });
+
+    this.reflectionMapCache.set(cacheKey, map);
+    this.saveReflectionMapToStorage(cacheKey, map);
+
+    return map;
+  }
+
+  private loadReflectionMapFromStorage(
+    cacheKey: string,
+  ): Map<number, { gain: number; index: number }> | null {
+    try {
+      const stored = localStorage.getItem(REFLECTION_MAP_CACHE_KEY);
+      if (!stored) return null;
+
+      const allMaps = JSON.parse(stored) as Record<
+        string,
+        Array<[number, { gain: number; index: number }]>
+      >;
+      const entries = allMaps[cacheKey];
+      if (!entries) return null;
+
+      return new Map(entries);
+    } catch {
+      return null;
+    }
+  }
+
+  private saveReflectionMapToStorage(
+    cacheKey: string,
+    map: Map<number, { gain: number; index: number }>,
+  ) {
+    try {
+      const stored = localStorage.getItem(REFLECTION_MAP_CACHE_KEY);
+      const allMaps = stored
+        ? (JSON.parse(stored) as Record<
+            string,
+            Array<[number, { gain: number; index: number }]>
+          >)
+        : {};
+
+      allMaps[cacheKey] = Array.from(map.entries());
+
+      localStorage.setItem(REFLECTION_MAP_CACHE_KEY, JSON.stringify(allMaps));
+    } catch {
+      console.warn("Failed to save reflection map to storage");
+    }
   }
 
   private processImpulseChunk(
@@ -313,38 +413,38 @@ export class AudioEngine {
     endIdx: number,
     sampleRate: number,
     params: ReverbParams,
+    reflectionMap: Map<number, { gain: number; index: number }>,
   ) {
-    const { decay, density, modulation, earlyReflections } = params;
-
-    const reflectionSamples = earlyReflections.map((r) => ({
-      sample: Math.floor(r.delay * sampleRate),
-      gain: r.gain,
-    }));
+    const { decay, density, modulation } = params;
+    const invSampleRate = 1 / sampleRate;
+    const densityScale = density * 10;
+    const modScale = modulation * 1000;
 
     for (let i = startIdx; i < endIdx; i++) {
-      const t = i / sampleRate;
+      const t = i * invSampleRate;
       const envelope = Math.exp(-decay * t);
 
       let leftSample = 0;
       let rightSample = 0;
 
-      for (let j = 0; j < reflectionSamples.length; j++) {
-        const reflection = reflectionSamples[j];
-        if (i === reflection.sample) {
-          const sign = j % 2 === 0 ? 1 : -1;
-          leftSample += reflection.gain * sign;
-          rightSample += reflection.gain * -sign;
-        }
+      const reflection = reflectionMap.get(i);
+      if (reflection) {
+        const sign = reflection.index % 2 === 0 ? 1 : -1;
+        leftSample += reflection.gain * sign;
+        rightSample += reflection.gain * -sign;
       }
 
-      const densityFactor = Math.min(1, t * density * 10);
-      const mod = Math.sin(t * modulation * 1000) * 0.3;
+      const densityFactor = Math.min(1, t * densityScale);
+
+      const modArg = t * modScale;
+      const mod = this.fastSin(modArg) * 0.3;
 
       const rand1 = this.fastRandom() * 2 - 1;
       const rand2 = this.fastRandom() * 2 - 1;
 
-      leftSample += rand1 * envelope * densityFactor * (1 + mod);
-      rightSample += rand2 * envelope * densityFactor * (1 - mod);
+      const envDensity = envelope * densityFactor;
+      leftSample += rand1 * envDensity * (1 + mod);
+      rightSample += rand2 * envDensity * (1 - mod);
 
       left[i] = leftSample;
       right[i] = rightSample;
@@ -357,10 +457,36 @@ export class AudioEngine {
     return this.randomSeed / 2147483647;
   }
 
+  private fastSin(x: number): number {
+    const PI = 3.141592653589793;
+    const TWO_PI = 6.283185307179586;
+
+    x = x % TWO_PI;
+    if (x < 0) x += TWO_PI;
+
+    if (x < PI) {
+      const x2 = x * (PI - x);
+      return (16 * x2) / (49.348022005446793 - 4 * x2);
+    } else {
+      const x1 = x - PI;
+      const x2 = x1 * (PI - x1);
+      return -(16 * x2) / (49.348022005446793 - 4 * x2);
+    }
+  }
+
   private yieldToMainThread(): Promise<void> {
     return new Promise((resolve) => {
-      if (typeof requestIdleCallback !== "undefined") {
-        requestIdleCallback(() => resolve(), { timeout: 16 });
+      if (
+        "scheduler" in globalThis &&
+        "yield" in (globalThis as unknown as { scheduler: { yield: () => Promise<void> } }).scheduler
+      ) {
+        (
+          globalThis as unknown as { scheduler: { yield: () => Promise<void> } }
+        ).scheduler
+          .yield()
+          .then(resolve);
+      } else if (typeof requestIdleCallback !== "undefined") {
+        requestIdleCallback(() => resolve(), { timeout: 8 });
       } else {
         setTimeout(resolve, 0);
       }

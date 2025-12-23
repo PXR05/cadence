@@ -616,7 +616,7 @@
                   );
                 }
               }}
-              class="border rounded-lg p-2 flex flex-col items-center justify-center gap-2 bg-background md:bg-card text-xs h-full min-h-[140px] border-dashed border-muted-foreground/50 hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer group"
+              class="border rounded-lg p-2 flex flex-col items-center justify-center gap-2 bg-background md:bg-card text-xs h-full min-h-35 border-dashed border-muted-foreground/50 hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer group"
             >
               <div
                 class="size-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/20 transition-colors"
@@ -636,7 +636,7 @@
             </button>
           {:else}
             <div
-              class="border rounded-lg p-2 flex flex-col items-center justify-center gap-2 bg-muted/30 text-xs h-full min-h-[140px] border-dashed border-muted-foreground/30"
+              class="border rounded-lg p-2 flex flex-col items-center justify-center gap-2 bg-muted/30 text-xs h-full min-h-35 border-dashed border-muted-foreground/30"
             >
               <div
                 class="size-10 rounded-full bg-muted/50 flex items-center justify-center"

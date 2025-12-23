@@ -369,12 +369,8 @@ class PlayerState {
     this.audioEngine.resetEqualizer();
   }
 
-  /**
-   * Check if a frequency would overlap with existing bands.
-   * Returns true if there's an overlap (frequency is too close to an existing band).
-   */
   private isFrequencyOverlapping(frequency: number, excludeBandId?: number): boolean {
-    const MIN_FREQUENCY_RATIO = 1.5; // Minimum ratio between adjacent frequencies
+    const MIN_FREQUENCY_RATIO = 1.5;
     
     for (const band of this.equalizerBands) {
       if (excludeBandId !== undefined && band.id === excludeBandId) continue;
@@ -390,10 +386,6 @@ class PlayerState {
     return false;
   }
 
-  /**
-   * Find a suitable frequency for a new band that doesn't overlap with existing bands.
-   * Returns null if no suitable frequency can be found.
-   */
   findAvailableFrequency(): number | null {
     const MIN_FREQ = 20;
     const MAX_FREQ = 20000;
@@ -401,28 +393,24 @@ class PlayerState {
       60, 150, 250, 400, 630, 1000, 1600, 2500, 4000, 6300, 10000, 16000
     ];
     
-    // Sort existing bands by frequency
     const sortedBands = [...this.equalizerBands].sort((a, b) => a.frequency - b.frequency);
     
-    // Try candidate frequencies first
     for (const freq of candidateFrequencies) {
       if (!this.isFrequencyOverlapping(freq)) {
         return freq;
       }
     }
     
-    // If no candidate works, try to find a gap between existing bands
     for (let i = 0; i < sortedBands.length - 1; i++) {
       const lowFreq = sortedBands[i].frequency;
       const highFreq = sortedBands[i + 1].frequency;
-      const midFreq = Math.sqrt(lowFreq * highFreq); // Geometric mean for log scale
+      const midFreq = Math.sqrt(lowFreq * highFreq);
       
       if (!this.isFrequencyOverlapping(midFreq)) {
         return Math.round(midFreq);
       }
     }
     
-    // Try below the lowest band
     if (sortedBands.length > 0) {
       const lowestFreq = sortedBands[0].frequency;
       const belowFreq = lowestFreq / 2;
@@ -431,7 +419,6 @@ class PlayerState {
       }
     }
     
-    // Try above the highest band
     if (sortedBands.length > 0) {
       const highestFreq = sortedBands[sortedBands.length - 1].frequency;
       const aboveFreq = highestFreq * 2;
@@ -443,11 +430,6 @@ class PlayerState {
     return null;
   }
 
-  /**
-   * Add a new equalizer band. Returns the new band if successful, or null if:
-   * - Maximum of 8 bands reached
-   * - The frequency overlaps with an existing band
-   */
   addEqualizerBand(options?: { 
     frequency?: number; 
     type?: FilterType;
@@ -462,21 +444,18 @@ class PlayerState {
     
     let frequency = options?.frequency;
     
-    // If no frequency specified, find an available one
     if (frequency === undefined) {
       frequency = this.findAvailableFrequency() ?? undefined;
     }
     
     if (frequency === undefined) {
-      return null; // No available frequency slot
+      return null;
     }
     
-    // Check if the frequency overlaps with existing bands
     if (this.isFrequencyOverlapping(frequency)) {
       return null;
     }
     
-    // Generate a new unique ID
     const existingIds = this.equalizerBands.map(b => b.id);
     let newId = 0;
     while (existingIds.includes(newId)) {
@@ -493,9 +472,7 @@ class PlayerState {
     };
     
     const bands = [...this.equalizerBands, newBand];
-    // Sort bands by frequency for consistent display
     bands.sort((a, b) => a.frequency - b.frequency);
-    // Reassign IDs based on frequency order
     bands.forEach((band, index) => {
       band.id = index;
     });
@@ -506,10 +483,6 @@ class PlayerState {
     return newBand;
   }
 
-  /**
-   * Remove an equalizer band by ID.
-   * Returns true if the band was removed, false if not found or if only 1 band remains.
-   */
   removeEqualizerBand(id: number): boolean {
     const MIN_BANDS = 1;
     
@@ -523,7 +496,6 @@ class PlayerState {
     }
     
     const bands = this.equalizerBands.filter(b => b.id !== id);
-    // Reassign IDs based on frequency order
     bands.sort((a, b) => a.frequency - b.frequency);
     bands.forEach((band, index) => {
       band.id = index;
@@ -535,16 +507,11 @@ class PlayerState {
     return true;
   }
 
-  /**
-   * Check if a frequency can be used for a band (doesn't overlap with others).
-   */
   canUseFrequency(frequency: number, excludeBandId?: number): boolean {
     return !this.isFrequencyOverlapping(frequency, excludeBandId);
   }
 
-  /**
-   * Get the maximum number of bands allowed.
-   */
+
   get maxBands(): number {
     return 8;
   }

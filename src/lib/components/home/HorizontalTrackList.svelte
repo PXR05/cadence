@@ -24,9 +24,9 @@
   {:else}
     <ScrollArea
       orientation="horizontal"
-      class="w-dvw md:w-[calc(100dvw-256px)] pb-4 pr-4"
+      class="w-dvw md:w-[calc(100dvw-256px)] pb-4"
     >
-      <div class="flex">
+      <div class="flex pr-4">
         {#each tracks as track, i (track.id)}
           <div
             animate:flip={{
