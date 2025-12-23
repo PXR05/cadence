@@ -369,6 +369,186 @@ class PlayerState {
     this.audioEngine.resetEqualizer();
   }
 
+  /**
+   * Check if a frequency would overlap with existing bands.
+   * Returns true if there's an overlap (frequency is too close to an existing band).
+   */
+  private isFrequencyOverlapping(frequency: number, excludeBandId?: number): boolean {
+    const MIN_FREQUENCY_RATIO = 1.5; // Minimum ratio between adjacent frequencies
+    
+    for (const band of this.equalizerBands) {
+      if (excludeBandId !== undefined && band.id === excludeBandId) continue;
+      
+      const ratio = frequency > band.frequency 
+        ? frequency / band.frequency 
+        : band.frequency / frequency;
+      
+      if (ratio < MIN_FREQUENCY_RATIO) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Find a suitable frequency for a new band that doesn't overlap with existing bands.
+   * Returns null if no suitable frequency can be found.
+   */
+  findAvailableFrequency(): number | null {
+    const MIN_FREQ = 20;
+    const MAX_FREQ = 20000;
+    const candidateFrequencies = [
+      60, 150, 250, 400, 630, 1000, 1600, 2500, 4000, 6300, 10000, 16000
+    ];
+    
+    // Sort existing bands by frequency
+    const sortedBands = [...this.equalizerBands].sort((a, b) => a.frequency - b.frequency);
+    
+    // Try candidate frequencies first
+    for (const freq of candidateFrequencies) {
+      if (!this.isFrequencyOverlapping(freq)) {
+        return freq;
+      }
+    }
+    
+    // If no candidate works, try to find a gap between existing bands
+    for (let i = 0; i < sortedBands.length - 1; i++) {
+      const lowFreq = sortedBands[i].frequency;
+      const highFreq = sortedBands[i + 1].frequency;
+      const midFreq = Math.sqrt(lowFreq * highFreq); // Geometric mean for log scale
+      
+      if (!this.isFrequencyOverlapping(midFreq)) {
+        return Math.round(midFreq);
+      }
+    }
+    
+    // Try below the lowest band
+    if (sortedBands.length > 0) {
+      const lowestFreq = sortedBands[0].frequency;
+      const belowFreq = lowestFreq / 2;
+      if (belowFreq >= MIN_FREQ && !this.isFrequencyOverlapping(belowFreq)) {
+        return Math.round(belowFreq);
+      }
+    }
+    
+    // Try above the highest band
+    if (sortedBands.length > 0) {
+      const highestFreq = sortedBands[sortedBands.length - 1].frequency;
+      const aboveFreq = highestFreq * 2;
+      if (aboveFreq <= MAX_FREQ && !this.isFrequencyOverlapping(aboveFreq)) {
+        return Math.round(aboveFreq);
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * Add a new equalizer band. Returns the new band if successful, or null if:
+   * - Maximum of 8 bands reached
+   * - The frequency overlaps with an existing band
+   */
+  addEqualizerBand(options?: { 
+    frequency?: number; 
+    type?: FilterType;
+    gain?: number;
+    Q?: number;
+  }): EqualizerBand | null {
+    const MAX_BANDS = 8;
+    
+    if (this.equalizerBands.length >= MAX_BANDS) {
+      return null;
+    }
+    
+    let frequency = options?.frequency;
+    
+    // If no frequency specified, find an available one
+    if (frequency === undefined) {
+      frequency = this.findAvailableFrequency() ?? undefined;
+    }
+    
+    if (frequency === undefined) {
+      return null; // No available frequency slot
+    }
+    
+    // Check if the frequency overlaps with existing bands
+    if (this.isFrequencyOverlapping(frequency)) {
+      return null;
+    }
+    
+    // Generate a new unique ID
+    const existingIds = this.equalizerBands.map(b => b.id);
+    let newId = 0;
+    while (existingIds.includes(newId)) {
+      newId++;
+    }
+    
+    const newBand: EqualizerBand = {
+      id: newId,
+      type: options?.type ?? "peaking",
+      frequency: frequency,
+      gain: options?.gain ?? 0,
+      Q: options?.Q ?? 1,
+      enabled: true,
+    };
+    
+    const bands = [...this.equalizerBands, newBand];
+    // Sort bands by frequency for consistent display
+    bands.sort((a, b) => a.frequency - b.frequency);
+    // Reassign IDs based on frequency order
+    bands.forEach((band, index) => {
+      band.id = index;
+    });
+    
+    this.persistedState.equalizerBands = bands;
+    this.audioEngine.rebuildEqualizer(bands);
+    
+    return newBand;
+  }
+
+  /**
+   * Remove an equalizer band by ID.
+   * Returns true if the band was removed, false if not found or if only 1 band remains.
+   */
+  removeEqualizerBand(id: number): boolean {
+    const MIN_BANDS = 1;
+    
+    if (this.equalizerBands.length <= MIN_BANDS) {
+      return false;
+    }
+    
+    const bandIndex = this.equalizerBands.findIndex(b => b.id === id);
+    if (bandIndex === -1) {
+      return false;
+    }
+    
+    const bands = this.equalizerBands.filter(b => b.id !== id);
+    // Reassign IDs based on frequency order
+    bands.sort((a, b) => a.frequency - b.frequency);
+    bands.forEach((band, index) => {
+      band.id = index;
+    });
+    
+    this.persistedState.equalizerBands = bands;
+    this.audioEngine.rebuildEqualizer(bands);
+    
+    return true;
+  }
+
+  /**
+   * Check if a frequency can be used for a band (doesn't overlap with others).
+   */
+  canUseFrequency(frequency: number, excludeBandId?: number): boolean {
+    return !this.isFrequencyOverlapping(frequency, excludeBandId);
+  }
+
+  /**
+   * Get the maximum number of bands allowed.
+   */
+  get maxBands(): number {
+    return 8;
+  }
+
   toggleReverb() {
     this.reverbEnabled = !this.reverbEnabled;
     this.audioEngine.toggleReverb(this.reverbEnabled);
@@ -651,6 +831,10 @@ class PlayerState {
         "--primary",
         `oklch(${color.coords[0]} ${color.coords[1]} ${color.coords[2]})`
       );
+      document.body.style.setProperty(
+        "--ring",
+        `oklch(${color.coords[0]} ${color.coords[1]} ${color.coords[2]})`
+      );
 
       this.persistedState.trackColor = track.color;
       return;
@@ -670,6 +854,10 @@ class PlayerState {
 
     document.body.style.setProperty(
       "--primary",
+      `oklch(${brighter.coords[0]} ${brighter.coords[1]} ${brighter.coords[2]})`
+    );
+    document.body.style.setProperty(
+      "--ring",
       `oklch(${brighter.coords[0]} ${brighter.coords[1]} ${brighter.coords[2]})`
     );
     const brighterString = brighter.toString({ format: "hex" });

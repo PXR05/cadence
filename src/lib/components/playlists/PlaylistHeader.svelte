@@ -144,14 +144,16 @@
         />
       {/if}
     </div>
-    {#if playlist.coverImage}
-      <img
-        loading="lazy"
-        src={getPlaylistImageUrl(playlist.id)}
-        alt={playlist.name}
-        class="w-full h-full object-cover relative z-10"
-      />
-    {/if}
+    {#key playlist.coverImage}
+      {#if playlist.coverImage}
+        <img
+          loading="lazy"
+          src={getPlaylistImageUrl(playlist.id)}
+          alt={playlist.name}
+          class="w-full h-full object-cover relative z-10"
+        />
+      {/if}
+    {/key}
   </div>
 
   <div
@@ -182,7 +184,11 @@
         class="flex items-center gap-2 truncate transition-all duration-200
         {isScrolled ? 'pl-10 mb-0.5' : ''}"
       >
-        <h1 class="truncate font-semibold text-2xl">
+        <h1
+          class="truncate font-semibold {isScrolled
+            ? 'text-2xl'
+            : 'text-2xl md:text-4xl'}"
+        >
           {playlist.name}
         </h1>
         {#if offline.isOffline}

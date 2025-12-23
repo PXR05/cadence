@@ -45,11 +45,7 @@
     class="mx-auto w-full h-full grid place-items-center p-16 text-destructive text-center"
   >
     <div class="flex flex-col items-center text-destructive">
-      <TriangleAlertIcon
-        size={48}
-        strokeWidth={1.5}
-        class="mb-4"
-      />
+      <TriangleAlertIcon size={48} strokeWidth={1.5} class="mb-4" />
       <p class="text-center">
         Error loading tracks: {error}
       </p>
@@ -79,13 +75,13 @@
       <h2 class="px-4 pb-2 text-2xl font-semibold">Releases</h2>
 
       <Carousel.Root
-        class="w-dvw"
+        class="w-full"
         opts={{
           align: "start",
         }}
       >
         <Carousel.Content
-          class="w-[calc(100dvw-2rem)] md:w-[calc(50dvw-1rem)] lg:w-[calc(33dvw-0.5rem)] xl:w-[25dvw] ml-2"
+          class="w-[calc(100%-2rem)] md:w-[calc(50%-1rem)] lg:w-[calc(33%-0.5rem)] xl:w-[calc(25%-0.5rem)] ml-2"
         >
           {#each { length: COLUMNS }, i}
             <Carousel.Item class="grid gap-2 p-0">

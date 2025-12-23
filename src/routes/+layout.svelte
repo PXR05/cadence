@@ -4,9 +4,9 @@
   import {
     AuthDialog,
     BottomBar,
-    NavBar,
     SplashScreen,
     UpdateNotification,
+    AppSidebar,
   } from "$lib/components";
   import { TrackMenuDialog } from "$lib/components/tracks";
   import { PlaylistMenuDialog } from "$lib/components/playlists";
@@ -18,8 +18,8 @@
   import { onMount } from "svelte";
   import { innerWidth } from "svelte/reactivity/window";
   import { page } from "$app/state";
-  import { slide } from "svelte/transition";
   import { Toaster } from "$lib/components/ui/sonner";
+  import * as Sidebar from "$lib/components/ui/sidebar";
 
   let { children } = $props();
 
@@ -163,26 +163,18 @@
 {/if}
 
 {#if authStore.isAuthenticated}
-  <div
-    class="relative bg-background min-h-dvh flex flex-col"
-    style="--h: {navHeight}px;"
-  >
-    {#if !isMobile && isTopRoute}
-      <div
-        transition:slide={{
-          axis: "x",
-          duration: 200,
-        }}
-        class="fixed right-2 top-1/2 -translate-y-1/2 z-50"
-      >
-        <NavBar orientation="vertical" size={48} />
-      </div>
-    {/if}
-    <div
-      class="relative overflow-auto h-dvh w-full mx-auto bg-linear-to-t from-primary/5 via-transparent to-transparent"
+  <Sidebar.Provider>
+    <AppSidebar />
+    <Sidebar.Inset
+      class="relative bg-background min-h-dvh flex flex-col"
+      style="--h: {navHeight}px;"
     >
-      {@render children?.()}
-    </div>
-    <BottomBar />
-  </div>
+      <div
+        class="relative overflow-y-auto overflow-x-hidden h-dvh md:w-[calc(100dvw-256px)] bg-linear-to-t from-primary/5 via-transparent to-transparent"
+      >
+        {@render children?.()}
+      </div>
+      <BottomBar />
+    </Sidebar.Inset>
+  </Sidebar.Provider>
 {/if}

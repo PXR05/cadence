@@ -177,13 +177,16 @@ export class AudioEngine {
       const now = this.audioContext.currentTime;
       if (updates.type !== undefined) node.type = updates.type;
       if (updates.frequency !== undefined) {
-        node.frequency.setTargetAtTime(updates.frequency, now, 0.015);
+        node.frequency.cancelScheduledValues(now);
+        node.frequency.setValueAtTime(updates.frequency, now);
       }
       if (updates.gain !== undefined) {
-        node.gain.setTargetAtTime(updates.gain, now, 0.015);
+        node.gain.cancelScheduledValues(now);
+        node.gain.setValueAtTime(updates.gain, now);
       }
       if (updates.Q !== undefined) {
-        node.Q.setTargetAtTime(updates.Q, now, 0.015);
+        node.Q.cancelScheduledValues(now);
+        node.Q.setValueAtTime(updates.Q, now);
       }
     }
   }
@@ -199,6 +202,34 @@ export class AudioEngine {
     this.equalizerNodes.forEach((node) => {
       node.gain.setTargetAtTime(0, now, 0.015);
     });
+  }
+
+  /**
+   * Rebuild the entire equalizer chain with new bands.
+   * Used when adding or removing bands.
+   */
+  rebuildEqualizer(bands: EqualizerBand[]) {
+    if (!this.audioContext) return;
+
+    // Disconnect and remove old nodes
+    this.equalizerNodes.forEach((node) => node.disconnect());
+    this.equalizerNodes = [];
+
+    // Store the new bands configuration
+    this.equalizerBands = bands;
+
+    // Create new filter nodes
+    this.equalizerNodes = bands.map((band) => {
+      const filter = this.audioContext!.createBiquadFilter();
+      filter.type = band.type;
+      filter.frequency.value = band.frequency;
+      filter.gain.value = band.gain;
+      filter.Q.value = band.Q;
+      return filter;
+    });
+
+    // Reconnect the audio graph
+    this.reconnectAudioGraph();
   }
 
   toggleReverb(enabled: boolean) {

@@ -12,31 +12,36 @@ import {
 } from "$lib/utils/playlist";
 import type { PageLoad } from "./$types";
 
-export const load: PageLoad = async ({ params }) => {
+export const load: PageLoad = ({ params }) => {
   const playlistId = params.id;
 
   if (!browser) {
     return {
       playlistId,
+      playlist: Promise.resolve(undefined),
     };
   }
 
-  if (isSpecialPlaylist(playlistId)) {
-    playlistsStore.setPlaylistLoading(playlistId);
-    loadSpecialPlaylist(playlistId)
-      .then((playlist) => {
+  const playlistPromise = (async (): Promise<PlaylistDetail | undefined> => {
+    try {
+      if (isSpecialPlaylist(playlistId)) {
+        playlistsStore.setPlaylistLoading(playlistId);
+        const playlist = await loadSpecialPlaylist(playlistId);
         playlistsStore.setPlaylistDetail(playlistId, playlist);
-      })
-      .catch((err) => {
-        console.error("Failed to load special playlist:", err);
-        playlistsStore.clearPlaylistLoading(playlistId);
-      });
-  } else {
-    playlistsStore.loadPlaylistDetail(playlistId);
-  }
+        return playlist;
+      } else {
+        return await playlistsStore.loadPlaylistDetail(playlistId);
+      }
+    } catch (err) {
+      console.error("Failed to load playlist:", err);
+      playlistsStore.clearPlaylistLoading(playlistId);
+      return undefined;
+    }
+  })();
 
   return {
     playlistId,
+    playlist: playlistPromise,
   };
 };
 

@@ -1,0 +1,374 @@
+<script lang="ts">
+    import { goto } from "$app/navigation";
+    import { authStore } from "$lib/stores/auth.svelte";
+    import { Button } from "$lib/components/ui/button";
+    import { ScrollArea } from "$lib/components/ui/scroll-area";
+    import SettingCard from "$lib/components/SettingCard.svelte";
+    import { onMount } from "svelte";
+    import { mode, setMode, resetMode } from "mode-watcher";
+    import {
+        AudioWaveformIcon,
+        ChevronRightIcon,
+        EllipsisVerticalIcon,
+        LogOutIcon,
+        MoonIcon,
+        PaletteIcon,
+        ShieldIcon,
+        SunIcon,
+        UserIcon,
+        KeyRoundIcon,
+        MonitorIcon,
+    } from "@lucide/svelte";
+    import { Input } from "$lib/components/ui/input";
+    import { toast } from "svelte-sonner";
+    import * as Dialog from "$lib/components/ui/dialog";
+    import { slide } from "svelte/transition";
+    import MenuDialog from "$lib/components/ui/menu-dialog/MenuDialog.svelte";
+    import { playerStore } from "$lib/stores/player.svelte";
+
+    let isAdmin = $state(false);
+    let accountMenuOpen = $state(false);
+    let passwordDialogOpen = $state(false);
+
+    let currentPassword = $state("");
+    let newPassword = $state("");
+    let confirmPassword = $state("");
+    let isChangingPassword = $state(false);
+
+    onMount(async () => {
+        try {
+            if (authStore.token) {
+                await authStore.getCurrentUser();
+                isAdmin = authStore.isAdmin;
+            }
+        } catch (error) {
+            isAdmin = false;
+        }
+    });
+
+    async function handleLogout() {
+        accountMenuOpen = false;
+        await authStore.logout();
+        goto("/");
+    }
+
+    async function handleChangePassword() {
+        if (!currentPassword.trim()) {
+            toast.error("Current password is required");
+            return;
+        }
+        if (!newPassword.trim()) {
+            toast.error("New password is required");
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            toast.error("Passwords do not match");
+            return;
+        }
+        if (newPassword.length < 6) {
+            toast.error("Password must be at least 6 characters");
+            return;
+        }
+
+        isChangingPassword = true;
+        try {
+            await authStore.changePassword(currentPassword, newPassword);
+            toast.success("Password changed successfully");
+            currentPassword = "";
+            newPassword = "";
+            confirmPassword = "";
+            passwordDialogOpen = false;
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "Failed to change password",
+            );
+        } finally {
+            isChangingPassword = false;
+        }
+    }
+
+    function resetPasswordForm() {
+        currentPassword = "";
+        newPassword = "";
+        confirmPassword = "";
+    }
+
+    function openChangePasswordDialog() {
+        accountMenuOpen = false;
+        passwordDialogOpen = true;
+    }
+
+    const themeOptions = [
+        { value: "light", label: "Light", icon: SunIcon },
+        { value: "dark", label: "Dark", icon: MoonIcon },
+        { value: "system", label: "System", icon: MonitorIcon },
+    ] as const;
+</script>
+
+<svelte:head>
+    <title>Settings | Cadence</title>
+</svelte:head>
+
+<!-- Account header -->
+<div style="--h: 5rem;" class="p-2 absolute top-0 left-0 right-0 z-30">
+    <div class="_bg _blur absolute inset-0 -z-10"></div>
+    <div class="_bg _color absolute inset-0 -z-10"></div>
+    <h2 class="text-2xl font-semibold p-2">Settings</h2>
+</div>
+
+<ScrollArea class="h-dvh">
+    <div class="p-4 pt-16 h-full w-full space-y-4 mb-[50dvh]">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div
+                    class="size-14 rounded-xl bg-primary/10 flex items-center justify-center"
+                >
+                    <UserIcon class="size-5 text-primary" />
+                </div>
+                <div>
+                    <p class="font-medium">
+                        {authStore.user?.username ?? "Unknown"}
+                    </p>
+                    <p class="text-sm text-muted-foreground capitalize">
+                        {authStore.user?.role ?? "User"}
+                    </p>
+                </div>
+            </div>
+            <Button
+                variant="ghost"
+                size="icon"
+                class="size-11"
+                onclick={() => (accountMenuOpen = true)}
+                title="Account options"
+            >
+                <EllipsisVerticalIcon class="size-5" />
+            </Button>
+        </div>
+
+        <!-- Navigation Links -->
+        <button
+            class="flex items-center justify-between w-full p-4 rounded-xl border bg-background md:bg-card hover:bg-muted/50 transition-colors text-left"
+            onclick={() => goto("/settings/audio")}
+        >
+            <div class="flex items-center gap-3">
+                <AudioWaveformIcon class="size-5 text-muted-foreground" />
+                <div>
+                    <p class="font-medium">Audio Settings</p>
+                    <p class="text-sm text-muted-foreground">
+                        Equalizer, reverb, and audio processing
+                    </p>
+                </div>
+            </div>
+            <ChevronRightIcon class="size-5 text-muted-foreground" />
+        </button>
+
+        {#if isAdmin}
+            <button
+                transition:slide={{
+                    axis: "y",
+                    duration: 150,
+                }}
+                class="flex items-center justify-between w-full p-4 rounded-xl border bg-background md:bg-card hover:bg-muted/50 transition-colors text-left"
+                onclick={() => goto("/settings/admin")}
+            >
+                <div class="flex items-center gap-3">
+                    <ShieldIcon class="size-5 text-muted-foreground" />
+                    <div>
+                        <p class="font-medium">Admin Dashboard</p>
+                        <p class="text-sm text-muted-foreground">
+                            Manage users and tracks
+                        </p>
+                    </div>
+                </div>
+                <ChevronRightIcon class="size-5 text-muted-foreground" />
+            </button>
+        {/if}
+
+        <!-- Theme Settings -->
+        <SettingCard icon={PaletteIcon} title="Appearance">
+            <div class="p-3 space-y-3">
+                <p class="text-sm text-muted-foreground">
+                    Choose your preferred theme
+                </p>
+                <div class="grid grid-cols-3 gap-2">
+                    {#each themeOptions as option}
+                        {@const Icon = option.icon}
+                        <Button
+                            style="--primary: color-mix(
+                                in oklab,
+                                {playerStore.trackColor ??
+                                'var(--primary)'} 40%,
+                                var(--foreground)
+                            );"
+                            variant={mode.current === option.value ||
+                            (mode.current === undefined &&
+                                option.value === "system")
+                                ? "default"
+                                : "outline"}
+                            class="flex flex-col gap-1 h-auto py-3"
+                            onclick={() =>
+                                option.value === "system"
+                                    ? resetMode()
+                                    : setMode(option.value as "light" | "dark")}
+                        >
+                            <Icon class="size-5" />
+                            <span class="text-xs">{option.label}</span>
+                        </Button>
+                    {/each}
+                </div>
+            </div>
+        </SettingCard>
+    </div>
+</ScrollArea>
+
+<!-- Account Menu Dialog -->
+<MenuDialog
+    open={accountMenuOpen}
+    onOpenChange={(open) => (accountMenuOpen = open)}
+    title={authStore.user?.username ?? "Account"}
+    subtitle={authStore.user?.role ?? "User"}
+>
+    {#snippet imageFallback()}
+        <UserIcon class="size-8 text-muted-foreground" />
+    {/snippet}
+    {#snippet menuItems()}
+        <Button
+            variant="ghost"
+            class="w-full justify-start gap-3 h-12"
+            onclick={openChangePasswordDialog}
+        >
+            <KeyRoundIcon class="size-5" />
+            Change Password
+        </Button>
+        <Button
+            variant="ghost"
+            class="w-full justify-start gap-3 h-12 text-destructive hover:text-destructive"
+            onclick={handleLogout}
+        >
+            <LogOutIcon class="size-5" />
+            Sign Out
+        </Button>
+    {/snippet}
+</MenuDialog>
+
+<!-- Change Password Dialog -->
+<Dialog.Root
+    bind:open={passwordDialogOpen}
+    onOpenChange={(open) => {
+        if (!open) resetPasswordForm();
+    }}
+>
+    <Dialog.Content class="sm:max-w-md">
+        <Dialog.Header>
+            <Dialog.Title>Change Password</Dialog.Title>
+            <Dialog.Description>
+                Enter your current password and a new password.
+            </Dialog.Description>
+        </Dialog.Header>
+        <form
+            class="space-y-4"
+            onsubmit={(e) => {
+                e.preventDefault();
+                handleChangePassword();
+            }}
+        >
+            <div class="space-y-2">
+                <label for="current-password" class="text-sm font-medium">
+                    Current Password
+                </label>
+                <Input
+                    id="current-password"
+                    type="password"
+                    bind:value={currentPassword}
+                    placeholder="Enter current password"
+                    disabled={isChangingPassword}
+                />
+            </div>
+            <div class="space-y-2">
+                <label for="new-password" class="text-sm font-medium">
+                    New Password
+                </label>
+                <Input
+                    id="new-password"
+                    type="password"
+                    bind:value={newPassword}
+                    placeholder="Enter new password"
+                    disabled={isChangingPassword}
+                />
+            </div>
+            <div class="space-y-2">
+                <label for="confirm-password" class="text-sm font-medium">
+                    Confirm Password
+                </label>
+                <Input
+                    id="confirm-password"
+                    type="password"
+                    bind:value={confirmPassword}
+                    placeholder="Confirm new password"
+                    disabled={isChangingPassword}
+                />
+            </div>
+            <Dialog.Footer>
+                <Button
+                    type="button"
+                    variant="outline"
+                    onclick={() => (passwordDialogOpen = false)}
+                    disabled={isChangingPassword}
+                >
+                    Cancel
+                </Button>
+                <Button
+                    type="submit"
+                    disabled={isChangingPassword ||
+                        !currentPassword ||
+                        !newPassword ||
+                        !confirmPassword}
+                >
+                    {isChangingPassword ? "Changing..." : "Change Password"}
+                </Button>
+            </Dialog.Footer>
+        </form>
+    </Dialog.Content>
+</Dialog.Root>
+
+<style>
+    ._bg {
+        &::before,
+        &::after {
+            pointer-events: none;
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: -1;
+            mask: linear-gradient(to top, transparent, black);
+        }
+        &::before {
+            height: var(--h);
+        }
+        &::after {
+            height: calc(var(--h) - 1rem);
+        }
+    }
+
+    ._color {
+        &::before,
+        &::after {
+            background-color: color-mix(
+                in oklab,
+                var(--background) 50%,
+                transparent
+            );
+        }
+    }
+
+    ._blur {
+        &::before,
+        &::after {
+            backdrop-filter: blur(2rem);
+        }
+    }
+</style>

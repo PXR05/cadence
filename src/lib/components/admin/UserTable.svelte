@@ -32,7 +32,7 @@
 </script>
 
 <div
-  class="border rounded-xl relative flex flex-col h-[calc(100dvh-340px)] md:h-[calc(100dvh-286px)] overflow-hidden"
+  class="border rounded-xl relative flex flex-col h-[530px] overflow-hidden"
 >
   <div class="overflow-auto flex-1">
     <table class="w-full caption-bottom text-sm">
@@ -90,7 +90,7 @@
                   <Button
                     variant="link"
                     size="sm"
-                    class="!p-0"
+                    class="p-0!"
                     onclick={() => onChangePassword(user)}
                     disabled={loading}
                     title="Change password"
@@ -100,7 +100,7 @@
                   <Button
                     variant="link"
                     size="sm"
-                    class="!p-0"
+                    class="p-0!"
                     onclick={() => onResetPassword(user)}
                     disabled={loading}
                     title="Reset password (admin)"
@@ -110,7 +110,7 @@
                   <Button
                     variant="link"
                     size="sm"
-                    class="!p-0"
+                    class="p-0!"
                     onclick={() => onDelete(user)}
                     disabled={user.role === "admin" || loading}
                     title="Delete user"

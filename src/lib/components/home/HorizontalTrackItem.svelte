@@ -36,6 +36,7 @@
 
   function handleOpenMenu(e: MouseEvent) {
     e.stopPropagation();
+    e.preventDefault();
     trackMenuStore.open(track, isOffline, refreshOfflineStatus);
   }
 </script>

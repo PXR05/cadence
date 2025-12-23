@@ -16,6 +16,11 @@
     RotateCcwIcon,
     WavesIcon,
     AudioWaveformIcon,
+    PlusIcon,
+    Trash2Icon,
+    PowerIcon,
+    PowerOffIcon,
+    XIcon,
   } from "@lucide/svelte";
   import { ScrollArea } from "$lib/components/ui/scroll-area";
   import SettingCard from "$lib/components/SettingCard.svelte";
@@ -49,8 +54,7 @@
 
   const WIDTH = $derived.by(() => {
     const windowWidth = innerWidth.current ?? 0;
-    // return windowWidth < 768 ? windowWidth - 16 : 880;
-    return windowWidth - 16;
+    return windowWidth < 768 ? windowWidth - 16 : windowWidth - 256;
   });
   const HEIGHT = $derived(400);
   const PADDING = { top: 40, right: 40, bottom: 40, left: 50 };
@@ -92,24 +96,145 @@
     );
   }
 
+  function computeBiquadResponse(
+    band: (typeof playerStore.equalizerBands)[0],
+    frequencies: Float32Array,
+    sampleRate: number = 44100,
+  ): Float32Array {
+    const response = new Float32Array(frequencies.length);
+    const { frequency: f0, gain, Q, type } = band;
+
+    const A = Math.pow(10, gain / 40);
+    const omega0 = (2 * Math.PI * f0) / sampleRate;
+    const sinOmega = Math.sin(omega0);
+    const cosOmega = Math.cos(omega0);
+    const alpha = sinOmega / (2 * Q);
+
+    let b0: number, b1: number, b2: number, a0: number, a1: number, a2: number;
+
+    switch (type) {
+      case "lowpass":
+        b0 = (1 - cosOmega) / 2;
+        b1 = 1 - cosOmega;
+        b2 = (1 - cosOmega) / 2;
+        a0 = 1 + alpha;
+        a1 = -2 * cosOmega;
+        a2 = 1 - alpha;
+        break;
+      case "highpass":
+        b0 = (1 + cosOmega) / 2;
+        b1 = -(1 + cosOmega);
+        b2 = (1 + cosOmega) / 2;
+        a0 = 1 + alpha;
+        a1 = -2 * cosOmega;
+        a2 = 1 - alpha;
+        break;
+      case "bandpass":
+        b0 = alpha;
+        b1 = 0;
+        b2 = -alpha;
+        a0 = 1 + alpha;
+        a1 = -2 * cosOmega;
+        a2 = 1 - alpha;
+        break;
+      case "notch":
+        b0 = 1;
+        b1 = -2 * cosOmega;
+        b2 = 1;
+        a0 = 1 + alpha;
+        a1 = -2 * cosOmega;
+        a2 = 1 - alpha;
+        break;
+      case "allpass":
+        b0 = 1 - alpha;
+        b1 = -2 * cosOmega;
+        b2 = 1 + alpha;
+        a0 = 1 + alpha;
+        a1 = -2 * cosOmega;
+        a2 = 1 - alpha;
+        break;
+      case "peaking": {
+        const alphaA = sinOmega / (2 * Q);
+        b0 = 1 + alphaA * A;
+        b1 = -2 * cosOmega;
+        b2 = 1 - alphaA * A;
+        a0 = 1 + alphaA / A;
+        a1 = -2 * cosOmega;
+        a2 = 1 - alphaA / A;
+        break;
+      }
+      case "lowshelf": {
+        const sqrtA = Math.sqrt(A);
+        const alphaShelf =
+          (sinOmega / 2) * Math.sqrt((A + 1 / A) * (1 / Q - 1) + 2);
+        b0 = A * (A + 1 - (A - 1) * cosOmega + 2 * sqrtA * alphaShelf);
+        b1 = 2 * A * (A - 1 - (A + 1) * cosOmega);
+        b2 = A * (A + 1 - (A - 1) * cosOmega - 2 * sqrtA * alphaShelf);
+        a0 = A + 1 + (A - 1) * cosOmega + 2 * sqrtA * alphaShelf;
+        a1 = -2 * (A - 1 + (A + 1) * cosOmega);
+        a2 = A + 1 + (A - 1) * cosOmega - 2 * sqrtA * alphaShelf;
+        break;
+      }
+      case "highshelf": {
+        const sqrtA = Math.sqrt(A);
+        const alphaShelf =
+          (sinOmega / 2) * Math.sqrt((A + 1 / A) * (1 / Q - 1) + 2);
+        b0 = A * (A + 1 + (A - 1) * cosOmega + 2 * sqrtA * alphaShelf);
+        b1 = -2 * A * (A - 1 + (A + 1) * cosOmega);
+        b2 = A * (A + 1 + (A - 1) * cosOmega - 2 * sqrtA * alphaShelf);
+        a0 = A + 1 - (A - 1) * cosOmega + 2 * sqrtA * alphaShelf;
+        a1 = 2 * (A - 1 - (A + 1) * cosOmega);
+        a2 = A + 1 - (A - 1) * cosOmega - 2 * sqrtA * alphaShelf;
+        break;
+      }
+      default:
+        response.fill(1);
+        return response;
+    }
+
+    b0 /= a0;
+    b1 /= a0;
+    b2 /= a0;
+    a1 /= a0;
+    a2 /= a0;
+
+    for (let i = 0; i < frequencies.length; i++) {
+      const omega = (2 * Math.PI * frequencies[i]) / sampleRate;
+      const cosW = Math.cos(omega);
+      const cos2W = Math.cos(2 * omega);
+      const sinW = Math.sin(omega);
+      const sin2W = Math.sin(2 * omega);
+
+      const numReal = b0 + b1 * cosW + b2 * cos2W;
+      const numImag = -(b1 * sinW + b2 * sin2W);
+      const denReal = 1 + a1 * cosW + a2 * cos2W;
+      const denImag = -(a1 * sinW + a2 * sin2W);
+
+      const denMagSq = denReal * denReal + denImag * denImag;
+      const realPart = (numReal * denReal + numImag * denImag) / denMagSq;
+      const imagPart = (numImag * denReal - numReal * denImag) / denMagSq;
+
+      response[i] = Math.sqrt(realPart * realPart + imagPart * imagPart);
+    }
+
+    return response;
+  }
+
   function getFrequencyResponse(frequencies: Float32Array): Float32Array {
     const response = new Float32Array(frequencies.length);
     response.fill(1);
 
     if (!playerStore.equalizerEnabled) return response;
 
-    playerStore.equalizerBands.forEach((_, idx) => {
-      const node = playerStore.equalizerNodes[idx];
-      if (!node) return;
+    const sampleRate = playerStore.audioContext?.sampleRate ?? 44100;
 
-      const magResponse = new Float32Array(frequencies.length);
-      const phaseResponse = new Float32Array(frequencies.length);
+    playerStore.equalizerBands.forEach((band) => {
+      if (!band.enabled) return;
 
-      // @ts-ignore - Float32Array type mismatch
-      node.getFrequencyResponse(frequencies, magResponse, phaseResponse);
+      const bandResponse = computeBiquadResponse(band, frequencies, sampleRate);
 
       for (let i = 0; i < frequencies.length; i++) {
-        response[i] *= magResponse[i];
+        response[i] *= bandResponse[i];
       }
     });
 
@@ -310,10 +435,12 @@
   function handleMouseWheel(e: WheelEvent) {
     if (!isDragging || draggedBandId === null) return;
 
+    e.preventDefault();
+
     const Q = playerStore.equalizerBands[draggedBandId].Q;
 
     playerStore.updateEqualizerBand(draggedBandId, {
-      Q: Math.max(MIN_Q, Math.min(MAX_Q, e.deltaY > 0 ? Q + 0.1 : Q - 0.1)),
+      Q: Math.max(MIN_Q, Math.min(MAX_Q, e.deltaY > 0 ? Q - 0.1 : Q + 0.1)),
     });
   }
 
@@ -330,19 +457,18 @@
   onMount(() => {
     drawEqualizer();
 
+    window.addEventListener("wheel", handleMouseWheel, { passive: false });
+
     return () => {
       if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
       }
+      window.removeEventListener("wheel", handleMouseWheel);
     };
   });
 </script>
 
-<svelte:window
-  onmousemove={handleMouseMove}
-  onmouseup={handleMouseUp}
-  onwheel={handleMouseWheel}
-/>
+<svelte:window onmousemove={handleMouseMove} onmouseup={handleMouseUp} />
 
 <div class="absolute top-0 w-full p-1.5 md:p-2 z-50">
   <div
@@ -363,9 +489,7 @@
 </div>
 
 <ScrollArea class="h-dvh">
-  <div
-    class="px-2 pb-4 pt-17 md:pt-18.5 h-full w-full space-y-2 mb-[50dvh] border-x"
-  >
+  <div class="px-2 pb-4 pt-17 md:pt-18.5 h-full w-full space-y-2 mb-[50dvh]">
     <SettingCard
       icon={AudioWaveformIcon}
       title="Equalizer"
@@ -406,31 +530,52 @@
                   }}
                   variant={band.enabled ? "default" : "outline"}
                   size="sm"
-                  class="w-12 font-bold px-0 justify-center"
+                  class="size-8 p-0 shrink-0"
                   aria-pressed={band.enabled}
+                  title={band.enabled ? "Disable band" : "Enable band"}
                 >
-                  B{band.id + 1}
+                  {#if band.enabled}
+                    <PowerIcon class="size-4" />
+                  {:else}
+                    <PowerOffIcon class="size-4" />
+                  {/if}
                 </Button>
-                <SelectRoot
-                  type="single"
-                  value={band.type}
-                  onValueChange={(e) =>
-                    playerStore.updateEqualizerBand(band.id, {
-                      type: e as FilterType,
-                    })}
+                <span
+                  class="flex-1 font-medium text-sm flex items-center gap-1.5"
                 >
-                  <SelectTrigger class="w-full">
-                    {filterTypeLabels[band.type]}
-                  </SelectTrigger>
-                  <SelectContent>
-                    {#each filterTypes as type}
-                      <SelectItem value={type} class="capitalize">
-                        {type}
-                      </SelectItem>
-                    {/each}
-                  </SelectContent>
-                </SelectRoot>
+                  Band {band.id + 1}
+                  {#if playerStore.equalizerBands.length > 1}
+                    <button
+                      onclick={() => playerStore.removeEqualizerBand(band.id)}
+                      class="ml-auto opacity-50 hover:opacity-100 transition-opacity p-1"
+                      title="Remove band"
+                    >
+                      <XIcon class="size-4" />
+                    </button>
+                  {/if}
+                </span>
               </div>
+
+              <SelectRoot
+                type="single"
+                value={band.type}
+                onValueChange={(e) =>
+                  playerStore.updateEqualizerBand(band.id, {
+                    type: e as FilterType,
+                  })}
+              >
+                <SelectTrigger class="w-full capitalize">
+                  {filterTypeLabels[band.type]} - {band.type}
+                </SelectTrigger>
+                <SelectContent>
+                  {#each filterTypes as type}
+                    <SelectItem value={type} class="capitalize">
+                      {type}
+                    </SelectItem>
+                  {/each}
+                </SelectContent>
+              </SelectRoot>
+
               {#each controls as control}
                 <div class="flex flex-row items-center gap-2 w-full">
                   <span class="w-10">{control.label}</span>
@@ -456,6 +601,53 @@
               {/each}
             </div>
           {/each}
+
+          <!-- Add Band Button Card -->
+          {#if playerStore.equalizerBands.length < playerStore.maxBands}
+            <button
+              onclick={() => {
+                const result = playerStore.addEqualizerBand();
+                if (!result) {
+                  console.warn(
+                    "Could not add band: max bands reached or no available frequency slot",
+                  );
+                }
+              }}
+              class="border rounded-lg p-2 flex flex-col items-center justify-center gap-2 bg-background md:bg-card text-xs h-full min-h-[140px] border-dashed border-muted-foreground/50 hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer group"
+            >
+              <div
+                class="size-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/20 transition-colors"
+              >
+                <PlusIcon
+                  class="size-5 text-muted-foreground group-hover:text-primary transition-colors"
+                />
+              </div>
+              <span
+                class="text-muted-foreground group-hover:text-primary transition-colors font-medium"
+              >
+                Add Band
+              </span>
+              <span class="text-muted-foreground/70 text-[10px]">
+                {playerStore.equalizerBands.length}/{playerStore.maxBands} bands
+              </span>
+            </button>
+          {:else}
+            <div
+              class="border rounded-lg p-2 flex flex-col items-center justify-center gap-2 bg-muted/30 text-xs h-full min-h-[140px] border-dashed border-muted-foreground/30"
+            >
+              <div
+                class="size-10 rounded-full bg-muted/50 flex items-center justify-center"
+              >
+                <PlusIcon class="size-5 text-muted-foreground/50" />
+              </div>
+              <span class="text-muted-foreground/50 font-medium">
+                Max Bands
+              </span>
+              <span class="text-muted-foreground/50 text-[10px]">
+                {playerStore.maxBands}/{playerStore.maxBands} bands
+              </span>
+            </div>
+          {/if}
         </div>
       </div>
     </SettingCard>

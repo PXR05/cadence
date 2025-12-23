@@ -32,7 +32,7 @@
 </script>
 
 {#snippet header()}
-  <div class="flex gap-3 p-4">
+  <div class="truncate flex gap-3 p-4">
     <div
       class="rounded-md size-20 shrink-0 overflow-hidden bg-muted grid place-items-center"
     >

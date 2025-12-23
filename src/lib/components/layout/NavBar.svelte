@@ -2,16 +2,12 @@
   import { page } from "$app/state";
   import { goto } from "$app/navigation";
   import { authStore } from "$lib/stores/auth.svelte";
-  import {
-    HouseIcon,
-    ListMusicIcon,
-    SearchIcon,
-    ShieldIcon,
-  } from "@lucide/svelte";
   import { onMount } from "svelte";
   import { flip } from "svelte/animate";
   import { Tween } from "svelte/motion";
   import { playerStore } from "$lib/stores/player.svelte";
+  import { vaulEase } from "$lib/utils";
+  import { navItems } from "./navItems";
 
   const {
     orientation = "horizontal",
@@ -33,12 +29,7 @@
 
   const tabPosition = new Tween(0, {
     duration: 400,
-    easing: (t) => {
-      const c1 = 1.70158;
-      const c3 = c1 + 1;
-
-      return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
-    },
+    easing: (t) => vaulEase(t),
   });
 
   onMount(async () => {
@@ -52,12 +43,7 @@
     }
   });
 
-  const tabs = $derived([
-    { path: "/", label: "home", icon: HouseIcon },
-    { path: "/search", label: "search", icon: SearchIcon },
-    { path: "/library", label: "library", icon: ListMusicIcon },
-    ...(isAdmin ? [{ path: "/admin", label: "admin", icon: ShieldIcon }] : []),
-  ]);
+  const tabs = $derived(navItems);
 
   const isTopRoute = $derived(page.url.pathname.split("/").length <= 2);
 
@@ -150,9 +136,7 @@
 
     await tabPosition.set(clampedTab, {
       duration: adjustedDuration,
-      easing: (t) => {
-        return 1 - Math.pow(1 - t, 3);
-      },
+      easing: (t) => vaulEase(t),
     });
 
     isReleaseAnimating = false;

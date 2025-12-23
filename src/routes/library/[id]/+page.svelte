@@ -1,9 +1,7 @@
 <script lang="ts">
   import { SvelteSet } from "svelte/reactivity";
-  import { playlistsStore } from "$lib/stores/playlists.svelte";
   import { useDialogState } from "$lib/hooks";
   import {
-    getPlaylistDisplayName,
     isArtistPlaylist,
     isAlbumPlaylist,
     isSpecialPlaylist,
@@ -16,17 +14,26 @@
   import PlaylistSearch from "$lib/components/playlists/PlaylistSearch.svelte";
   import { innerWidth } from "svelte/reactivity/window";
   import { LoaderIcon } from "@lucide/svelte";
-  import type { PlaylistItem, Playlist } from "$lib/schemas";
+  import type { PlaylistDetail, PlaylistItem } from "$lib/schemas";
   import { fade } from "svelte/transition";
 
   let { data } = $props();
 
   const playlistId = $derived(data.playlistId);
-  const playlist = $derived(playlistsStore.getPlaylistDetail(playlistId));
-  const isLoading = $derived(playlistsStore.isPlaylistLoading(playlistId));
 
+  let playlist = $state<PlaylistDetail | undefined>(undefined);
   let searchQuery = $state("");
   let isScrolled = $state(false);
+
+  $effect(() => {
+    playlist = undefined;
+    searchQuery = "";
+    isScrolled = false;
+
+    data.playlist.then((resolved) => {
+      playlist = resolved;
+    });
+  });
 
   const addTracksDialog = useDialogState("add-tracks");
 
@@ -70,12 +77,12 @@
   <title>{playlist?.name ?? "Playlist"} | Cadence</title>
 </svelte:head>
 
-<div class="flex flex-col mx-auto w-full h-full border-x relative">
-  {#if isLoading && !playlist}
+<div class="flex flex-col mx-auto w-full h-full relative">
+  {#if !playlist}
     <div class="flex items-center justify-center h-full">
       <LoaderIcon class="animate-spin text-muted-foreground" />
     </div>
-  {:else if playlist}
+  {:else}
     <div
       transition:fade={{ duration: 150 }}
       style="--h: {isScrolled ? 10 : 16}rem;"
@@ -101,10 +108,6 @@
         }
       }}
     />
-  {:else}
-    <div class="flex items-center justify-center h-full">
-      <p class="text-muted-foreground">Playlist not found</p>
-    </div>
   {/if}
 </div>
 

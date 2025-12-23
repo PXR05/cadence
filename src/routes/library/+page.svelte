@@ -53,23 +53,14 @@
 </svelte:head>
 
 <div style="--h: 6rem;" class="p-2 absolute top-0 left-0 right-0 z-30">
+  <div class="_bg _blur absolute inset-0 -z-10"></div>
   <div class="_bg _color absolute inset-0 -z-10"></div>
-  <div class="flex items-start justify-between gap-2">
-    <h2 class="text-2xl font-semibold p-2">Playlists</h2>
-    <Button
-      href="/settings/audio"
-      variant="outline"
-      size="icon"
-      class="size-11"
-    >
-      <AudioWaveformIcon />
-    </Button>
-  </div>
+  <h2 class="text-2xl font-semibold p-2">Playlists</h2>
 </div>
 
 <ScrollArea class="h-dvh">
   <div
-    class="p-4 pt-16 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 pb-72"
+    class="p-4 pt-16 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 pb-72"
   >
     {#each allUserPlaylists as playlist, i (playlist.id)}
       <div
@@ -116,7 +107,7 @@
       height: var(--h);
     }
     &::after {
-      height: calc(var(--h) - 1rem);
+      height: calc(var(--h) - 2rem);
     }
   }
 
@@ -124,6 +115,13 @@
     &::before,
     &::after {
       background-color: color-mix(in oklab, var(--background) 50%, transparent);
+    }
+  }
+
+  ._blur {
+    &::before,
+    &::after {
+      backdrop-filter: blur(1rem);
     }
   }
 </style>

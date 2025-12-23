@@ -25,7 +25,7 @@
     type="text"
     bind:value={searchQuery}
     placeholder="Search in playlist..."
-    class="flex-1 text-base h-auto !bg-transparent border-0 transition-all p-3 outline-none font-mono placeholder:text-muted-foreground 
+    class="flex-1 text-base h-auto bg-transparent! border-0 transition-all p-3 outline-none font-mono placeholder:text-muted-foreground 
       {!isEmpty ? '' : 'pl-9'}"
   />
   <Button

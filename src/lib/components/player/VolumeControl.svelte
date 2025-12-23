@@ -43,7 +43,7 @@
         class="h-full rounded-lg"
         style="
           width: {playerStore.volume * 100}%;
-          background-color: color-mix(in oklab, {playerStore.trackColor} 80%, var(--foreground));"
+          background-color: color-mix(in oklab, {playerStore.trackColor} 40%, var(--foreground));"
       ></div>
       <div
         style="transform: translateX(calc({playerStore.volume * 100}% - 6px));"
