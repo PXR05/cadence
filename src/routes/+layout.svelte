@@ -23,6 +23,7 @@
   import { vaulEase } from "$lib/utils";
   import { fade, fly } from "svelte/transition";
   import { isActive, navItems } from "$lib/components/layout/navItems";
+  import { appearanceStore } from "$lib/stores/appearance.svelte";
 
   let { children } = $props();
 
@@ -193,13 +194,13 @@
         <div
           in:fly={{
             x: goingLeft ? -window.innerWidth : window.innerWidth,
-            duration: isMobile ? 200 : 0,
+            duration: isMobile && !appearanceStore.disableAnimations ? 200 : 0,
             easing: vaulEase,
-            delay: isMobile ? 25 : 0,
+            delay: isMobile && !appearanceStore.disableAnimations ? 25 : 0,
           }}
           out:fly={{
             x: goingLeft ? window.innerWidth : -window.innerWidth,
-            duration: isMobile ? 200 : 0,
+            duration: isMobile && !appearanceStore.disableAnimations ? 200 : 0,
             easing: vaulEase,
           }}
           class="row-start-1 col-start-1 relative overflow-y-auto overflow-x-hidden h-dvh md:w-[calc(100dvw-256px)] bg-linear-to-t from-primary/5 via-transparent to-transparent"
@@ -207,14 +208,16 @@
           <div
             class="flex flex-col h-full"
             in:fade={{
-              duration: isMobile ? 200 : 0,
+              duration:
+                isMobile && !appearanceStore.disableAnimations ? 200 : 0,
               easing: vaulEase,
-              delay: isMobile ? 50 : 0,
+              delay: isMobile && !appearanceStore.disableAnimations ? 50 : 0,
             }}
             out:fade={{
-              duration: isMobile ? 200 : 0,
+              duration:
+                isMobile && !appearanceStore.disableAnimations ? 200 : 0,
               easing: vaulEase,
-              delay: isMobile ? 100 : 0,
+              delay: isMobile && !appearanceStore.disableAnimations ? 100 : 0,
             }}
           >
             {@render children?.()}
