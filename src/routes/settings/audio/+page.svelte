@@ -1,30 +1,28 @@
 <script lang="ts">
-  import { playerStore } from "$lib/stores/player.svelte";
-  import type { FilterType } from "$lib/stores/player.svelte";
+  import SettingCard from "$lib/components/SettingCard.svelte";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
-  import { onMount } from "svelte";
+  import { ScrollArea } from "$lib/components/ui/scroll-area";
   import {
-    Select as SelectRoot,
-    SelectTrigger,
     SelectContent,
     SelectItem,
+    Select as SelectRoot,
+    SelectTrigger,
   } from "$lib/components/ui/select";
-  import { innerWidth } from "svelte/reactivity/window";
+  import { appearanceStore } from "$lib/stores/appearance.svelte";
+  import type { FilterType } from "$lib/stores/player.svelte";
+  import { playerStore } from "$lib/stores/player.svelte";
   import {
     ArrowLeftIcon,
-    RotateCcwIcon,
-    WavesIcon,
     AudioWaveformIcon,
     PlusIcon,
-    Trash2Icon,
     PowerIcon,
     PowerOffIcon,
-    XIcon,
+    WavesIcon,
+    XIcon
   } from "@lucide/svelte";
-  import { ScrollArea } from "$lib/components/ui/scroll-area";
-  import SettingCard from "$lib/components/SettingCard.svelte";
-  import { appearanceStore } from "$lib/stores/appearance.svelte";
+  import { onMount } from "svelte";
+  import { innerWidth } from "svelte/reactivity/window";
 
   const filterTypes: FilterType[] = [
     "lowshelf",

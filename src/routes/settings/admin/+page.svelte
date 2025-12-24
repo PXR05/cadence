@@ -3,7 +3,6 @@
   import { goto } from "$app/navigation";
   import { ArrowLeftIcon, LoaderIcon } from "@lucide/svelte";
   import { UserManagement, TrackManagement } from "$lib/components/admin";
-  import { authStore } from "$lib/stores/auth.svelte";
   import { getCurrentUser } from "$lib/remote";
   import { Button } from "$lib/components/ui/button";
   import { ScrollArea } from "$lib/components/ui/scroll-area";
