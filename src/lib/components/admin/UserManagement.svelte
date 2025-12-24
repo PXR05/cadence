@@ -7,7 +7,7 @@
     deleteUser,
     createUser,
     resetUserPassword,
-  } from "$lib/remote";
+  } from "$lib/api";
   import { authStore } from "$lib/stores/auth.svelte";
   import UserTable from "./UserTable.svelte";
   import DeleteUserDialog from "./DeleteUserDialog.svelte";

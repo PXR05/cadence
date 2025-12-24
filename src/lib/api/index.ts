@@ -5,7 +5,7 @@ export {
   fetchRandomTracks,
   deleteTrack,
   fetchAllTracks,
-} from "./audio.remote";
+} from "./audio";
 
 export {
   getCurrentUser,
@@ -13,7 +13,7 @@ export {
   createUser,
   resetUserPassword,
   deleteUser,
-} from "./auth.remote";
+} from "./auth";
 
 export {
   getUserPlaylists,
@@ -24,6 +24,7 @@ export {
   addItemToPlaylist,
   removeItemFromPlaylist,
   reorderPlaylistItem,
-} from "./playlist.remote";
+} from "./playlist";
 
-export { searchYoutube } from "./youtube.remote";
+export { searchYoutube } from "./youtube";
+

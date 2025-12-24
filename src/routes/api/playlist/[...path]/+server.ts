@@ -1,6 +1,6 @@
 import { error, json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
-import { API_URL as BACKEND_URL } from "$env/static/private";
+import { VITE_API_URL as BACKEND_URL } from "$env/static/private";
 
 async function proxyRequest(
   method: string,

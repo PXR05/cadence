@@ -1,4 +1,4 @@
-import { deleteTrack, fetchTracks } from "$lib/remote";
+import { deleteTrack, fetchTracks } from "$lib/api";
 import {
   getTracksCache,
   saveTracksCache,

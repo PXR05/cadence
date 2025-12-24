@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getImageUrl } from "$lib/stores/player.svelte";
+  import { getImageUrl } from "$lib/constants";
   import { playerStore } from "$lib/stores/player.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { downloadStore } from "$lib/stores/download.svelte";

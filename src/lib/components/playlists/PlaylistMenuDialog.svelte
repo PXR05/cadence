@@ -8,7 +8,7 @@
     useMenuDialogState,
     usePlaylistOffline,
   } from "$lib/hooks";
-  import { getPlaylistImageUrl } from "$lib/stores/player.svelte";
+  import { getPlaylistImageUrl } from "$lib/constants";
   import {
     getPlaylistDisplayName,
     isArtistPlaylist,
@@ -41,7 +41,7 @@
     if (playlistMenuStore.playlist?.id === playlistId) return;
 
     const foundPlaylist = playlistsStore.allPlaylists.find(
-      (p) => p.id === playlistId,
+      (p) => p.id === playlistId
     );
     if (foundPlaylist) {
       playlistMenuStore.setPlaylist(foundPlaylist, false, false);
@@ -52,7 +52,7 @@
 
   const playlist = $derived(playlistMenuStore.playlist);
   const displayName = $derived(
-    playlist ? getPlaylistDisplayName(playlist) : "Unknown",
+    playlist ? getPlaylistDisplayName(playlist) : "Unknown"
   );
   const playlistId = $derived(playlist?.id ?? "");
 
@@ -61,12 +61,12 @@
       ? isSpecialPlaylist(playlist.id) ||
           isArtistPlaylist(playlist.id) ||
           isAlbumPlaylist(playlist.id)
-      : true,
+      : true
   );
 
   const itemCount = $derived(playlist?.itemCount ?? 0);
   const imageUrl = $derived(
-    playlist?.coverImage ? getPlaylistImageUrl(playlist.id) : undefined,
+    playlist?.coverImage ? getPlaylistImageUrl(playlist.id) : undefined
   );
 
   const offline = usePlaylistOffline(() => playlistId);
@@ -120,7 +120,7 @@
     if (!playlist) return;
     try {
       await youtubeDownloadStore.downloadFromUrl(
-        `https://music.youtube.com/playlist?list=${playlist.id.replace("youtube_", "")}`,
+        `https://music.youtube.com/playlist?list=${playlist.id.replace("youtube_", "")}`
       );
       toast.success("Resynced from YouTube");
       handleClose();
@@ -147,7 +147,7 @@
 
   async function handlePlaylistDeleted() {
     if (!playlist) return;
-    await playlistsStore.invalidatePlaylistDetail(playlist.id);
+    await playlistsStore.invalidatePlaylist(playlist.id);
     playlistsStore.invalidate();
     playlistMenuStore.onPlaylistDeleted?.();
     editDialog.close();

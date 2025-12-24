@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getPlaylistImageUrl } from "$lib/stores/player.svelte";
+  import { getPlaylistImageUrl } from "$lib/constants";
   import { playlistMenuStore } from "$lib/stores/playlistMenu.svelte";
   import {
     getPlaylistDisplayName,

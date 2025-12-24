@@ -6,14 +6,14 @@
   import TrackItem from "./TrackItem.svelte";
   import YouTubeTrackItem from "./YouTubeTrackItem.svelte";
   import UploadTrackDialog from "../admin/UploadTrackDialog.svelte";
-  import { searchTracks } from "$lib/remote";
+  import { searchTracks } from "$lib/api";
   import { searchCachedTracks } from "$lib/db/cache";
   import { Input } from "../ui/input";
   import { Button } from "../ui/button";
   import { ScrollArea } from "../ui/scroll-area";
   import { playerStore } from "$lib/stores/player.svelte";
   import { youtubeDownloadStore } from "$lib/stores/youtubeDownload.svelte";
-  import { searchYoutube } from "$lib/remote/youtube.remote";
+  import { searchYoutube } from "$lib/api/youtube";
   import type { AudioFile, YouTubeSearchResult } from "$lib/schemas";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
   import { toast } from "svelte-sonner";

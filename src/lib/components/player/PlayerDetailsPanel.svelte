@@ -1,6 +1,7 @@
 <script lang="ts">
   import { downloadStore } from "$lib/stores/download.svelte";
-  import { getImageUrl, playerStore } from "$lib/stores/player.svelte";
+  import { getImageUrl } from "$lib/constants";
+  import { playerStore } from "$lib/stores/player.svelte";
   import { trackMenuStore } from "$lib/stores/trackMenu.svelte";
   import { shouldLoadItem } from "$lib/utils/queue";
   import {

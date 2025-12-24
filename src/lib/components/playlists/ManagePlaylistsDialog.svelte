@@ -6,7 +6,7 @@
     getPlaylistById,
     addItemToPlaylist,
     removeItemFromPlaylist,
-  } from "$lib/remote";
+  } from "$lib/api";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
   import { LoaderIcon, ChevronDown } from "@lucide/svelte";
   import { SvelteSet } from "svelte/reactivity";

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { updatePlaylist, deletePlaylist } from "$lib/remote";
+  import { updatePlaylist, deletePlaylist } from "$lib/api";
   import { Button } from "$lib/components/ui/button";
   import * as Dialog from "$lib/components/ui/dialog";
   import * as AlertDialog from "$lib/components/ui/alert-dialog";

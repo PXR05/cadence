@@ -1,3 +1,4 @@
+import { getStreamUrl } from "$lib/constants";
 import { getOfflineTrack } from "$lib/db/offline";
 
 export async function getAudioUrl(trackId: string): Promise<string> {
@@ -18,7 +19,7 @@ export async function getAudioUrl(trackId: string): Promise<string> {
     );
   }
 
-  return `/api/audio/${trackId}/stream`;
+  return getStreamUrl(trackId);
 }
 
 export function revokeAudioUrl(url: string): void {

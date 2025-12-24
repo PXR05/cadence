@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as Dialog from "$lib/components/ui/dialog";
   import { Button } from "$lib/components/ui/button";
-  import { createPlaylist } from "$lib/remote";
+  import { createPlaylist } from "$lib/api";
   import { Input } from "../ui/input";
   import { LoaderIcon, ListIcon, YoutubeIcon } from "@lucide/svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";

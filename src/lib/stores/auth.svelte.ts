@@ -1,7 +1,6 @@
 import { createLocalStorageState } from "./localStorage.svelte";
 import type { User, Session } from "$lib/schemas/auth";
-
-const AUTH_URL = "/api/auth";
+import { authFetch } from "$lib/api/fetch";
 
 interface JWTPayload {
   userId: string;
@@ -63,14 +62,14 @@ function isTokenExpired(token: string): boolean {
 class AuthStore {
   private tokenStore = createLocalStorageState<string | null>(
     "cadence.token",
-    null,
+    null
   );
 
   private sessionIdStore = createLocalStorageState<string | null>(
     "cadence.sessionId",
-    null,
+    null
   );
-  
+
   private isRefreshing = false;
   private refreshPromise: Promise<boolean> | null = null;
 
@@ -81,7 +80,6 @@ class AuthStore {
   constructor() {
     this.restoreUserFromToken();
 
-    
     if (typeof window !== "undefined") {
       this.setupBackgroundRefresh();
     }
@@ -91,7 +89,6 @@ class AuthStore {
     return this.tokenStore.value;
   }
 
-  
   get sessionId(): string | null {
     return this.sessionIdStore.value;
   }
@@ -106,7 +103,7 @@ class AuthStore {
 
   async login(username: string, password: string): Promise<void> {
     try {
-      const response = await fetch(`${AUTH_URL}/login`, {
+      const response = await authFetch("/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -121,7 +118,6 @@ class AuthStore {
 
       const data: LoginResponse = await response.json();
 
-      
       await this.setToken(data.token);
       this.sessionIdStore.value = data.sessionId;
       this.setSessionIdCookie(data.sessionId);
@@ -135,7 +131,7 @@ class AuthStore {
 
   async register(username: string, password: string): Promise<void> {
     try {
-      const response = await fetch(`${AUTH_URL}/register`, {
+      const response = await authFetch("/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -150,7 +146,6 @@ class AuthStore {
 
       const data: RegisterResponse = await response.json();
 
-      
       await this.setToken(data.token);
       this.sessionIdStore.value = data.sessionId;
       this.setSessionIdCookie(data.sessionId);
@@ -172,24 +167,22 @@ class AuthStore {
       return this.user;
     }
 
-    
     const isValid = await this.ensureValidToken();
     if (!isValid) {
       return null;
     }
 
     try {
-      const response = await fetch(`${AUTH_URL}/me`);
+      const response = await authFetch("/auth/me");
 
       if (!response.ok) {
         if (response.status === 401) {
-          
           const refreshed = await this.refreshToken();
           if (!refreshed) {
             await this.logout();
             return null;
           }
-          
+
           return this.getCurrentUser();
         }
         throw new Error("Failed to get current user");
@@ -213,21 +206,14 @@ class AuthStore {
       return;
     }
 
-    
-    
     if (isTokenExpired(token)) {
       if ("onLine" in navigator && navigator.onLine && this.sessionId) {
-        
         console.log("Token expired, will attempt refresh");
-        
-        
       } else if ("onLine" in navigator && navigator.onLine && !this.sessionId) {
-        
         console.warn("Token expired and no sessionId, clearing auth state");
         this.logout();
         return;
       }
-      
     }
 
     const payload = decodeJWT(token);
@@ -246,10 +232,10 @@ class AuthStore {
 
   async changePassword(
     currentPassword: string,
-    newPassword: string,
+    newPassword: string
   ): Promise<void> {
     try {
-      const response = await fetch(`${AUTH_URL}/change-password`, {
+      const response = await authFetch("/auth/change-password", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -272,9 +258,7 @@ class AuthStore {
       this.tokenStore.value = token;
 
       if (typeof document !== "undefined") {
-        
-        
-        document.cookie = `cadence.token=${token}; path=/; max-age=900; SameSite=Strict`;
+        document.cookie = `cadence.token=${token}; path=/; max-age=900; SameSite=Lax`;
       }
     } catch (error) {
       console.error("Failed to set token:", error);
@@ -282,11 +266,9 @@ class AuthStore {
     }
   }
 
-  
   private setSessionIdCookie(sessionId: string): void {
     if (typeof document !== "undefined") {
-      
-      document.cookie = `cadence.sessionId=${sessionId}; path=/; max-age=2592000; SameSite=Strict`;
+      document.cookie = `cadence.sessionId=${sessionId}; path=/; max-age=2592000; SameSite=Lax`;
     }
   }
 
@@ -314,7 +296,7 @@ class AuthStore {
 
   private async _doRefresh(sessionId: string): Promise<boolean> {
     try {
-      const response = await fetch(`${AUTH_URL}/refresh`, {
+      const response = await authFetch("/auth/refresh", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -324,7 +306,6 @@ class AuthStore {
 
       if (!response.ok) {
         if (response.status === 401) {
-          
           console.warn("Session expired, logging out");
           await this.logout();
           return false;
@@ -335,7 +316,6 @@ class AuthStore {
       const data: RefreshTokenResponse = await response.json();
       await this.setToken(data.token);
 
-      
       this.restoreUserFromToken();
 
       console.log("Token refreshed successfully");
@@ -353,9 +333,8 @@ class AuthStore {
     const payload = decodeJWT(token);
     if (!payload || !payload.exp) return true;
 
-    
     const expiresAt = payload.exp * 1000;
-    const refreshThreshold = 2 * 60 * 1000; 
+    const refreshThreshold = 2 * 60 * 1000;
 
     return expiresAt - Date.now() < refreshThreshold;
   }
@@ -375,12 +354,10 @@ class AuthStore {
   async logout(): Promise<void> {
     const token = this.token;
 
-    
     this.tokenStore.clear();
     this.sessionIdStore.clear();
     this.user = null;
 
-    
     this.clearBackgroundRefresh();
 
     if (typeof document !== "undefined") {
@@ -388,45 +365,34 @@ class AuthStore {
       document.cookie = "cadence.sessionId=; path=/; max-age=0";
     }
 
-    
     if (token && "onLine" in navigator && navigator.onLine) {
       try {
-        await fetch(`${AUTH_URL}/logout`, {
+        await authFetch("/auth/logout", {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
         });
       } catch (error) {
-        
         console.warn("Failed to revoke session on server:", error);
       }
     }
   }
 
-  
   async logoutAll(): Promise<void> {
     const token = this.token;
 
     if (token && "onLine" in navigator && navigator.onLine) {
       try {
-        await fetch(`${AUTH_URL}/logout-all`, {
+        await authFetch("/auth/logout-all", {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
         });
       } catch (error) {
         console.warn("Failed to revoke all sessions:", error);
       }
     }
 
-    
     this.tokenStore.clear();
     this.sessionIdStore.clear();
     this.user = null;
 
-    
     this.clearBackgroundRefresh();
 
     if (typeof document !== "undefined") {
@@ -442,11 +408,7 @@ class AuthStore {
     }
 
     try {
-      const response = await fetch(`${AUTH_URL}/sessions`, {
-        headers: {
-          Authorization: `Bearer ${this.token}`,
-        },
-      });
+      const response = await authFetch("/auth/sessions");
 
       if (!response.ok) {
         throw new Error("Failed to get sessions");
@@ -469,7 +431,6 @@ class AuthStore {
   }
 
   private setupBackgroundRefresh(): void {
-    
     this.refreshInterval = window.setInterval(() => {
       if (this.isAuthenticated && this.shouldRefreshToken()) {
         console.log("Background token refresh triggered");
@@ -477,7 +438,6 @@ class AuthStore {
       }
     }, 5 * 60 * 1000);
 
-    
     window.addEventListener("online", () => {
       if (this.isAuthenticated && this.shouldRefreshToken()) {
         console.log("Online event: refreshing token");
@@ -485,7 +445,6 @@ class AuthStore {
       }
     });
 
-    
     document.addEventListener("visibilitychange", () => {
       if (
         document.visibilityState === "visible" &&
@@ -498,7 +457,6 @@ class AuthStore {
     });
   }
 
-  
   private clearBackgroundRefresh(): void {
     if (this.refreshInterval) {
       clearInterval(this.refreshInterval);

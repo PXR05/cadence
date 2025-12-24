@@ -224,6 +224,10 @@ export async function deletePlaylistDetail(id: string): Promise<void> {
   await cacheDb.playlistDetails.delete(id);
 }
 
+export async function deletePlaylist(id: string): Promise<void> {
+  await cacheDb.playlists.delete(id);
+}
+
 export async function clearTracksCache(): Promise<void> {
   await cacheDb.transaction(
     "rw",

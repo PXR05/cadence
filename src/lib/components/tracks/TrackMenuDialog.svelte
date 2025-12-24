@@ -2,7 +2,7 @@
   import { MenuDialog } from "$lib/components/ui/menu-dialog";
   import { trackMenuStore } from "$lib/stores/trackMenu.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
-  import { getImageUrl, getStreamUrl } from "$lib/stores/player.svelte";
+  import { getImageUrl, getStreamUrl } from "$lib/constants";
   import { playerStore } from "$lib/stores/player.svelte";
   import { downloadStore } from "$lib/stores/download.svelte";
   import { useDialogState, useMenuDialogState } from "$lib/hooks";

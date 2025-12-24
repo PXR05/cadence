@@ -1,3 +1,4 @@
+import { getStreamUrl } from "$lib/constants";
 import {
   saveTrackOffline,
   savePlaylistOffline,
@@ -136,7 +137,7 @@ class DownloadStore {
   }
 
   private async downloadTrackBlob(audioId: string): Promise<Blob> {
-    const response = await fetch(`/api/audio/${audioId}/stream`);
+    const response = await fetch(getStreamUrl(audioId));
     if (!response.ok) throw new Error(`Failed to download track ${audioId}`);
     return response.blob();
   }

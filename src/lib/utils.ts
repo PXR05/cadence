@@ -16,11 +16,11 @@ export function vaulEase(x: number) {
   const x1 = 0.32, y1 = 0.72;
   const x2 = 0,    y2 = 1;
 
-  function getT(t, p1, p2) {
+  function getT(t: number, p1: number, p2: number) {
     return 3 * (1 - t) * (1 - t) * t * p1 + 3 * (1 - t) * t * t * p2 + t * t * t;
   }
 
-  function getSlope(t, p1, p2) {
+  function getSlope(t: number, p1: number, p2: number) {
     return 3 * (1 - t) * (1 - t) * p1 + 6 * (1 - t) * t * (p2 - p1) + 3 * t * t * (1 - p2);
   }
 

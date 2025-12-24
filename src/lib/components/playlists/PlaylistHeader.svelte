@@ -2,7 +2,8 @@
   import { goto, invalidateAll } from "$app/navigation";
   import { useDialogState, usePlaylistOffline } from "$lib/hooks";
   import type { PlaylistDetail } from "$lib/schemas";
-  import { getPlaylistImageUrl, playerStore } from "$lib/stores/player.svelte";
+  import { getPlaylistImageUrl } from "$lib/constants";
+  import { playerStore } from "$lib/stores/player.svelte";
   import { playlistMenuStore } from "$lib/stores/playlistMenu.svelte";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
   import {
@@ -61,7 +62,7 @@
   }
 
   async function handlePlaylistDeleted() {
-    await playlistsStore.invalidatePlaylistDetail(playlistId);
+    await playlistsStore.invalidatePlaylist(playlistId);
     playlistsStore.invalidate();
     goto("/library", { replaceState: true });
   }

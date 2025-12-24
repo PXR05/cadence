@@ -1,10 +1,11 @@
-import { getUserPlaylists, getPlaylistById } from "$lib/remote";
+import { getUserPlaylists, getPlaylistById } from "$lib/api";
 import {
   getPlaylistsCache,
   savePlaylistsCache,
   getPlaylistDetail as getCachedPlaylistDetail,
   savePlaylistDetail,
   deletePlaylistDetail,
+  deletePlaylist,
   clearPlaylistsCache,
 } from "$lib/db/cache";
 import type { Playlist, PlaylistDetail } from "$lib/schemas";
@@ -311,6 +312,13 @@ class PlaylistsStore {
   async invalidatePlaylistDetail(id: string): Promise<void> {
     this._playlistDetails.delete(id);
     await deletePlaylistDetail(id);
+  }
+
+  async invalidatePlaylist(id: string): Promise<void> {
+    this._playlistDetails.delete(id);
+    this._userPlaylists = this._userPlaylists.filter((p) => p.id !== id);
+    this._youtubePlaylists = this._youtubePlaylists.filter((p) => p.id !== id);
+    await deletePlaylist(id);
   }
 
   setPlaylistDetail(id: string, playlist: PlaylistDetail): void {

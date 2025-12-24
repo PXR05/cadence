@@ -9,8 +9,6 @@ import { AudioEngine } from "./audioEngine";
 import type { AudioFile, PlaylistDetail } from "$lib/schemas";
 import { historyStore } from "./history.svelte";
 
-export { getStreamUrl, getImageUrl, getPlaylistImageUrl };
-
 export type FilterType =
   | "lowshelf"
   | "peaking"
