@@ -70,7 +70,7 @@
         animate:flip={{ duration: appearanceStore.disableAnimations ? 0 : 150 }}
         transition:fade={{
           duration: appearanceStore.disableAnimations ? 0 : 150,
-          delay: appearanceStore.disableAnimations ? 0 : i * 25,
+          delay: appearanceStore.disableAnimations ? 0 : i * 25 + 200,
         }}
       >
         <PlaylistCard {playlist} size="large" />

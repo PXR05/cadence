@@ -392,7 +392,7 @@
             aria-posinset={actualIndex + 1}
             style="
               transition: {isDragging && !isBeingDragged
-              ? 'transform 150ms ease-out'
+              ? 'transform 150ms ease-vaul'
               : 'none'}; 
               transform: {dragTransform}; 
               {isBeingDragged ? 'z-index: 50; position: relative;' : ''}"

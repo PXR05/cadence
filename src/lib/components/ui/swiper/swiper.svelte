@@ -6,6 +6,7 @@
     onswipe?: (direction: "left" | "right") => void;
     threshold?: number;
     class?: string;
+    disabled?: boolean;
   }
 
   const {
@@ -13,6 +14,7 @@
     onswipe,
     threshold = 100,
     class: className = "",
+    disabled = false,
   }: Props = $props();
 
   let swipeContainer: HTMLDivElement;
@@ -27,8 +29,12 @@
     }
   });
 
-  function onSwipeEnd() {
-    if (!swipeContainer || isRemoving) return;
+  function onSwipeEnd(e: PointerEvent | TouchEvent) {
+    if (!swipeContainer || isRemoving || disabled) return;
+
+    // Don't trigger swipe if the event originated from a drag handle
+    const target = e.target as HTMLElement;
+    if (target?.closest("[data-vaul-no-drag]")) return;
 
     const scroll_center = swipeContainer.scrollWidth / 2;
     const viewport_center = swipeContainer.clientWidth / 2;
@@ -47,6 +53,14 @@
   export function reset() {
     isRemoving = false;
     removeDirection = null;
+  }
+
+  export function recenter() {
+    if (swipeContainer && !isRemoving) {
+      const centerPosition =
+        swipeContainer.scrollWidth / 2 - swipeContainer.clientWidth / 2;
+      swipeContainer.scrollLeft = centerPosition;
+    }
   }
 </script>
 
@@ -75,8 +89,8 @@
     grid-template-columns: auto 1fr auto;
     container-type: inline-size;
     transition:
-      opacity 200ms ease-out,
-      transform 200ms ease-out;
+      opacity 200ms cubic-bezier(0.32, 0.72, 0, 1),
+      transform 200ms cubic-bezier(0.32, 0.72, 0, 1);
 
     &.removing {
       opacity: 0;

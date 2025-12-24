@@ -62,9 +62,6 @@
 {:else}
   <ScrollArea class="h-dvh py-2">
     <div
-      transition:fade={{
-        duration: appearanceStore.disableAnimations ? 0 : 150,
-      }}
       class="pt-2 grid pb-72"
     >
       <HorizontalTrackList title="Recommended" tracks={recommendedTracks} />
@@ -74,7 +71,7 @@
           transition:slide={{
             axis: "y",
             duration: appearanceStore.disableAnimations ? 0 : 200,
-            delay: appearanceStore.disableAnimations ? 0 : 100,
+            delay: appearanceStore.disableAnimations ? 0 : 200,
           }}
         >
           <HorizontalTrackList

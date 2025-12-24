@@ -4,10 +4,8 @@
   import { authStore } from "$lib/stores/auth.svelte";
   import { onMount } from "svelte";
   import { flip } from "svelte/animate";
-  import { Tween } from "svelte/motion";
   import { playerStore } from "$lib/stores/player.svelte";
-  import { vaulEase } from "$lib/utils";
-  import { navItems } from "./navItems";
+  import { isActive, navItems } from "./navItems";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
 
   const {
@@ -17,13 +15,6 @@
     orientation?: "vertical" | "horizontal";
     size?: number;
   } = $props();
-
-  let navElement: HTMLElement | null = $state(null);
-
-  const tabPosition = new Tween(0, {
-    duration: appearanceStore.disableAnimations ? 0 : 400,
-    easing: vaulEase,
-  });
 
   onMount(async () => {
     try {
@@ -41,31 +32,16 @@
 
   const activeTabIndex = $derived(tabs.findIndex((tab) => isActive(tab.path)));
 
-  $effect(() => {
-    if (activeTabIndex >= 0) {
-      tabPosition.target = activeTabIndex;
-    }
-  });
-
-  function isActive(tabPath: string): boolean {
-    if (tabPath === "/") {
-      return page.url.pathname === "/";
-    }
-    return page.url.pathname.startsWith(tabPath);
-  }
-
   function handleTabClick(e: MouseEvent, tabIndex: number) {
     if (tabIndex === activeTabIndex) return;
 
     e.preventDefault();
-    tabPosition.target = tabIndex;
     goto(tabs[tabIndex].path);
   }
 </script>
 
 {#if isTopRoute}
   <nav
-    bind:this={navElement}
     class="overflow-clip mx-auto flex rounded-xl border border-input/15 relative p-1.5 gap-1.5 select-none
       {orientation === 'horizontal' ? 'flex-row w-full' : 'flex-col h-full'}
       {appearanceStore.disableBlur
@@ -78,7 +54,7 @@
         class="absolute rounded-lg pointer-events-none z-10
         {appearanceStore.disableAnimations
           ? ''
-          : 'transition-all duration-100 ease-out-back'}"
+          : 'transition-all duration-300 ease-vaul'}"
         style="
         background-color:
           color-mix(
@@ -92,21 +68,21 @@
             bottom: 0.375rem;
             left: 0.375rem;
             width: calc((100% - 0.75rem) / ${tabs.length} - 0.375rem);
-            transform: translate3d(calc(${tabPosition.current} * (100% + 0.5rem)), 0, 0);
+            transform: translate3d(calc(${activeTabIndex} * (100% + 0.5rem)), 0, 0);
             `
           : `
             left: 0.375rem;
             right: 0.375rem;
             top: 0.375rem;
             height: calc((100% - 0.75rem) / ${tabs.length} - 0.375rem);
-            transform: translate3d(0, calc(${tabPosition.current} * (100% + 0.5rem)), 0);
+            transform: translate3d(0, calc(${activeTabIndex} * (100% + 0.5rem)), 0);
             `}"
       ></div>
     {/if}
 
     {#each tabs as tab, i (tab.path)}
       {@const active = isActive(tab.path)}
-      {@const isUnderIndicator = Math.abs(tabPosition.current - i) < 0.5}
+        {@const isUnderIndicator = activeTabIndex === i}
       <button
         draggable="false"
         animate:flip={{ duration: appearanceStore.disableAnimations ? 0 : 200 }}

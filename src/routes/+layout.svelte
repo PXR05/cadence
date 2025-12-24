@@ -14,12 +14,15 @@
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
   import { authStore } from "$lib/stores/auth.svelte";
-  import { goto } from "$app/navigation";
+  import { beforeNavigate, goto } from "$app/navigation";
   import { onMount } from "svelte";
   import { innerWidth } from "svelte/reactivity/window";
   import { page } from "$app/state";
   import { Toaster } from "$lib/components/ui/sonner";
   import * as Sidebar from "$lib/components/ui/sidebar";
+  import { vaulEase } from "$lib/utils";
+  import { fade, fly } from "svelte/transition";
+  import { isActive, navItems } from "$lib/components/layout/navItems";
 
   let { children } = $props();
 
@@ -139,6 +142,21 @@
     }
   }
 
+  let goingLeft = $state(false);
+  beforeNavigate((e) => {
+    const oldIndex = navItems.findIndex((i) =>
+      isActive(i.path, e.from?.url.pathname || "")
+    );
+    const newIndex = navItems.findIndex((i) =>
+      isActive(i.path, e.to?.url.pathname || "")
+    );
+    if (newIndex < oldIndex) {
+      goingLeft = true;
+    } else {
+      goingLeft = false;
+    }
+  });
+
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
   const isTopRoute = $derived(page.url.pathname.split("/").length <= 2);
 
@@ -168,14 +186,41 @@
       <AppSidebar />
     {/if}
     <Sidebar.Inset
-      class="relative bg-background min-h-dvh flex flex-col"
+      class="relative bg-background min-h-dvh grid grid-rows-1 grid-cols-1 grow overflow-x-hidden"
       style="--h: {navHeight}px;"
     >
-      <div
-        class="relative overflow-y-auto overflow-x-hidden h-dvh md:w-[calc(100dvw-256px)] bg-linear-to-t from-primary/5 via-transparent to-transparent"
-      >
-        {@render children?.()}
-      </div>
+      {#key page.url.pathname}
+        <div
+          in:fly={{
+            x: goingLeft ? -window.innerWidth : window.innerWidth,
+            duration: isMobile ? 200 : 0,
+            easing: vaulEase,
+            delay: isMobile ? 25 : 0,
+          }}
+          out:fly={{
+            x: goingLeft ? window.innerWidth : -window.innerWidth,
+            duration: isMobile ? 200 : 0,
+            easing: vaulEase,
+          }}
+          class="row-start-1 col-start-1 relative overflow-y-auto overflow-x-hidden h-dvh md:w-[calc(100dvw-256px)] bg-linear-to-t from-primary/5 via-transparent to-transparent"
+        >
+          <div
+            class="flex flex-col h-full"
+            in:fade={{
+              duration: isMobile ? 200 : 0,
+              easing: vaulEase,
+              delay: isMobile ? 50 : 0,
+            }}
+            out:fade={{
+              duration: isMobile ? 200 : 0,
+              easing: vaulEase,
+              delay: isMobile ? 100 : 0,
+            }}
+          >
+            {@render children?.()}
+          </div>
+        </div>
+      {/key}
       <BottomBar />
     </Sidebar.Inset>
   </Sidebar.Provider>

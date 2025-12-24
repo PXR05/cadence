@@ -20,8 +20,16 @@
     };
   } = $props();
 
+  let swiperRef: Swiper | null = $state(null);
+
+  // Recenter swiper when index changes (after reorder)
+  $effect(() => {
+    index;
+    swiperRef?.recenter();
+  });
+
   const textColor = $derived(
-    `color-mix(in oklab, ${playerStore.trackColor} 80%, var(--foreground))`,
+    `color-mix(in oklab, ${playerStore.trackColor} 80%, var(--foreground))`
   );
 
   function handleSwipe() {
@@ -29,7 +37,7 @@
   }
 </script>
 
-<Swiper onswipe={handleSwipe}>
+<Swiper bind:this={swiperRef} onswipe={handleSwipe}>
   <div class="flex items-center justify-center gap-2">
     <Button
       variant="ghost"
@@ -82,10 +90,14 @@
           </button>
           <span
             class="text-muted-foreground px-2 cursor-grab active:cursor-grabbing touch-none"
-            onpointerdown={dragHandleProps.onpointerdown}
+            onpointerdown={(e) => {
+              e.stopPropagation();
+              dragHandleProps.onpointerdown(e);
+            }}
             style={dragHandleProps.style}
             role="button"
             aria-label="Drag to reorder"
+            data-vaul-no-drag
           >
             <GripHorizontalIcon />
           </span>
