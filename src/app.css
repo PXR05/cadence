@@ -215,6 +215,11 @@
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
+  [data-animation-disabled='true'] {
+		animation: none !important;
+		transition: none !important;
+	}
 }
 
 @media (prefers-reduced-motion: reduce) {

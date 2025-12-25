@@ -2,7 +2,7 @@
   import PlayerBar from "../player/PlayerBar.svelte";
   import NavBar from "./NavBar.svelte";
   import OfflineDownloadProgress from "./OfflineDownloadProgress.svelte";
-  import YoutubeDownloadProgress from "./youtubeDownloadProgress.svelte";
+  import YoutubeDownloadProgress from "./YoutubeDownloadProgress.svelte";
   import { innerWidth } from "svelte/reactivity/window";
   import { page } from "$app/state";
   import { useDialogState } from "$lib/hooks";

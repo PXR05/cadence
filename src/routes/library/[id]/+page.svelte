@@ -39,24 +39,24 @@
   const addTracksDialog = useDialogState("add-tracks");
 
   const existingTrackIds = $derived(
-    new SvelteSet(playlist?.items.map((item) => item.audio.id) ?? []),
+    new SvelteSet(playlist?.items.map((item) => item.audio.id) ?? [])
   );
 
   const isNonModifiable = $derived(
     playlist &&
       (isSpecialPlaylist(playlist.id) ||
         isArtistPlaylist(playlist.id) ||
-        isAlbumPlaylist(playlist.id)),
+        isAlbumPlaylist(playlist.id))
   );
 
   const hasAddButton = $derived(
-    !searchQuery.trim() && playlist && !isNonModifiable,
+    !searchQuery.trim() && playlist && !isNonModifiable
   );
 
   const filteredTracks = $derived(
     searchQuery.trim()
       ? filterTracks(playlist?.items ?? [], searchQuery)
-      : (playlist?.items ?? []),
+      : (playlist?.items ?? [])
   );
 
   function filterTracks(items: PlaylistItem[], query: string) {
@@ -95,9 +95,17 @@
         <div class="_bg _blur absolute inset-0 -z-10"></div>
       {/if}
       <div class="_bg _color absolute inset-0 -z-10"></div>
+
       <PlaylistHeader {playlist} {isScrolled} />
 
-      <PlaylistSearch bind:searchQuery />
+      <div
+        class="absolute w-[calc(100dvw-12px)] ease-vaul
+          {isScrolled ? 'top-[66px]' : 'top-[174px]'}
+          {appearanceStore.disableAnimations ? 'duration-0' : 'duration-200'}
+      "
+      >
+        <PlaylistSearch bind:searchQuery />
+      </div>
     </div>
 
     <PlaylistTrackList

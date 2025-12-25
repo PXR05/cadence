@@ -67,8 +67,8 @@
 </script>
 
 <button
-  class="truncate relative flex items-center gap-4 w-full rounded-xl hover:bg-muted/30 p-2 select-none text-left
-  {isCurrentTrack ? 'bg-muted/50' : ''}"
+  class="truncate relative flex items-center gap-4 w-full rounded-xl hover:bg-muted/50 p-2 select-none text-left
+  {isCurrentTrack ? 'bg-muted/80' : ''}"
   onclick={handlePlay}
   oncontextmenu={handleContextMenu}
 >

@@ -5,6 +5,7 @@
 	import { cn } from "$lib/utils.js";
 	import type { ComponentProps } from "svelte";
 	import type { WithoutChildrenOrChild } from "$lib/utils.js";
+  import { appearanceStore } from "$lib/stores/appearance.svelte";
 
 	let {
 		ref = $bindable(null),
@@ -23,6 +24,7 @@
 	<DrawerOverlay />
 	<DrawerPrimitive.Content
 		bind:ref
+		data-animation-disabled={appearanceStore.disableAnimations}
 		data-slot="drawer-content"
 		class={cn(
 			"group/drawer-content bg-background fixed z-50 flex h-auto flex-col",

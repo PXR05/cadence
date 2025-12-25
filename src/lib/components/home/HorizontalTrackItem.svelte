@@ -44,8 +44,8 @@
 <button
   onclick={handlePlay}
   oncontextmenu={handleOpenMenu}
-  class="flex flex-col gap-2 w-48 md:w-56 text-left hover:bg-muted/30 p-2 rounded-md transition-colors {isCurrentTrack
-    ? 'bg-muted/50'
+  class="flex flex-col gap-2 w-48 md:w-56 text-left hover:bg-muted/50 p-2 rounded-md transition-colors {isCurrentTrack
+    ? 'bg-muted/80'
     : ''}"
 >
   <div

@@ -51,6 +51,7 @@
 	<SheetPrimitive.Content
 		bind:ref
 		data-slot="sheet-content"
+		data-animation-disabled={appearanceStore.disableAnimations}
 		class={cn(sheetVariants({ side }), className)}
 		{...restProps}
 	>

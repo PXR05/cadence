@@ -1,6 +1,6 @@
 <script lang="ts">
   import TrackItem from "$lib/components/tracks/TrackItem.svelte";
-  import { PlusIcon } from "@lucide/svelte";
+  import { PlusIcon, SquareDashedIcon } from "@lucide/svelte";
   import { innerWidth } from "svelte/reactivity/window";
   import { VirtualScroll } from "../ui/virtual-scroll";
   import { playerStore } from "$lib/stores/player.svelte";
@@ -38,8 +38,36 @@
   });
 </script>
 
+{#snippet addButton()}
+  <button
+    onclick={onAddTracks}
+    class="w-full flex items-center gap-4 p-2 rounded-xl hover:bg-muted/50 transition-colors"
+  >
+    <div
+      class="size-16 border shrink-0 bg-muted grid place-items-center rounded-md"
+    >
+      <PlusIcon size={24} class="text-muted-foreground" />
+    </div>
+    <div class="flex-1 text-left">
+      <p class="font-medium">Add Tracks</p>
+      <p class="text-sm text-muted-foreground">Add tracks to this playlist</p>
+    </div>
+  </button>
+{/snippet}
+
 {#if items.length === 0}
-  <div class="h-24"></div>
+  <div class="h-dvh px-2" style="margin-top: {topOffset}px;">
+    {#if showAddButton && onAddTracks}
+      {@render addButton()}
+    {/if}
+    <div
+      class="px-2 flex flex-col items-center text-muted-foreground justify-center"
+      style="height: calc(100dvh - {topOffset + 80}px);"
+    >
+      <SquareDashedIcon size={48} strokeWidth={1.5} class="mb-4 rotate-45" />
+      <p>No tracks in this playlist</p>
+    </div>
+  </div>
 {:else}
   <VirtualScroll
     bind:this={virtualScrollRef}
@@ -51,22 +79,7 @@
   >
     {#snippet children({ item, visibleIndex, actualIndex })}
       {#if showAddButton && onAddTracks && visibleIndex === 0}
-        <button
-          onclick={onAddTracks}
-          class="w-full flex items-center gap-4 p-2 hover:bg-muted/50 transition-colors"
-        >
-          <div
-            class="size-16 border shrink-0 bg-muted grid place-items-center rounded-md"
-          >
-            <PlusIcon size={24} class="text-muted-foreground" />
-          </div>
-          <div class="flex-1 text-left">
-            <p class="font-medium">Add Tracks</p>
-            <p class="text-sm text-muted-foreground">
-              Add tracks to this playlist
-            </p>
-          </div>
-        </button>
+        {@render addButton()}
       {/if}
       <TrackItem
         index={actualIndex}

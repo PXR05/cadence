@@ -4,6 +4,7 @@
   import * as AlertDialog from "$lib/components/ui/alert-dialog";
   import { Button } from "../ui/button";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
+  import DownloadProgressBar from "./DownloadProgressBar.svelte";
 
   const progress = $derived(youtubeDownloadStore.progress);
   const queueCount = $derived(youtubeDownloadStore.queueCount);
@@ -48,13 +49,7 @@
             </span>
           {/if}
         </div>
-        <div class="w-full bg-muted border overflow-hidden h-1.5 rounded-sm">
-          <div
-            class="h-full bg-primary
-            {appearanceStore.disableAnimations ? '' : 'transition-all duration-200'}"
-            style="width: {percentage}%"
-          ></div>
-        </div>
+        <DownloadProgressBar {percentage} />
       </div>
       <Button
         variant="ghost"
