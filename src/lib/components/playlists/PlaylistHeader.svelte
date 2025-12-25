@@ -225,7 +225,7 @@
         </Button>
 
         <div class="flex max-md:flex-col gap-2 truncate md:items-end">
-          <div>
+          <div class="shrink truncate">
             <p class="text-sm text-muted-foreground h-5">
               {playlist.items.length} tracks
             </p>

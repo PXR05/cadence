@@ -99,8 +99,10 @@
       <PlaylistHeader {playlist} {isScrolled} />
 
       <div
-        class="absolute w-[calc(100dvw-12px)] ease-vaul
-          {isScrolled ? 'top-[66px]' : 'top-[174px]'}
+        class="absolute w-[calc(100dvw-12px)] md:w-[calc(100dvw-12px-256px)] ease-vaul
+          {isScrolled
+          ? 'translate-y-[60px]'
+          : 'translate-y-[168px] md:translate-y-[272px]'}
           {appearanceStore.disableAnimations ? 'duration-0' : 'duration-200'}
       "
       >
