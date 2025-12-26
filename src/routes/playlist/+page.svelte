@@ -13,7 +13,7 @@
   } from "$lib/components";
   import PlaylistSearch from "$lib/components/playlists/PlaylistSearch.svelte";
   import { innerWidth } from "svelte/reactivity/window";
-  import { LoaderIcon } from "@lucide/svelte";
+  import { LoaderIcon, TriangleAlertIcon } from "@lucide/svelte";
   import type { PlaylistDetail, PlaylistItem } from "$lib/schemas";
   import { fade } from "svelte/transition";
   import { appearanceStore } from "$lib/stores/appearance.svelte.js";
@@ -79,7 +79,18 @@
 </svelte:head>
 
 <div class="flex flex-col mx-auto w-full h-full relative">
-  {#if !playlist}
+  {#if !playlistId}
+    <div
+      class="flex flex-col items-center justify-center h-full text-muted-foreground gap-2"
+    >
+      <TriangleAlertIcon
+        size={48}
+        strokeWidth={1.5}
+        class="text-muted-foreground"
+      />
+      <p>Invalid playlist ID</p>
+    </div>
+  {:else if !playlist}
     <div class="flex items-center justify-center h-full">
       <LoaderIcon class="animate-spin text-muted-foreground" />
     </div>

@@ -16,7 +16,7 @@
 
   onMount(async () => {
     try {
-      if (authStore.token) {
+      if (authStore.sessionId) {
         await authStore.getCurrentUser();
       }
     } catch (error) {
@@ -25,7 +25,15 @@
   });
 
   function isActive(tabPath: string): boolean {
-    return page.url.pathname === tabPath;
+    if (tabPath === "/") return page.url.pathname === "/";
+    if (tabPath.startsWith("/playlist?id=")) {
+      const playlistId = tabPath.split("=")[1];
+      return (
+        page.url.pathname === "/playlist" &&
+        page.url.searchParams.get("id") === playlistId
+      );
+    }
+    return page.url.pathname.startsWith(tabPath);
   }
 
   let createDialogOpen = $state(false);
@@ -107,10 +115,12 @@
       <Sidebar.Menu>
         {#each allUserPlaylists as playlist (playlist.id)}
           <Sidebar.MenuItem>
-            <Sidebar.MenuButton isActive={isActive(`/library/${playlist.id}`)}>
+            <Sidebar.MenuButton
+              isActive={isActive(`/playlist?id=${playlist.id}`)}
+            >
               {#snippet child({ props })}
                 <a
-                  href="/library/{playlist.id}"
+                  href="/playlist?id={playlist.id}"
                   oncontextmenu={(e) => handleContextMenu(e, playlist)}
                   {...props}
                 >

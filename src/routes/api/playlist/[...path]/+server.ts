@@ -51,7 +51,7 @@ export const GET: RequestHandler = async ({
   request,
 }) => {
   const { path } = params;
-  const authHash = cookies.get("cadence.token");
+  const authHash = cookies.get("cadence.sessionId");
 
   if (!authHash) {
     throw error(401, "Unauthorized: No authentication provided");
@@ -141,7 +141,7 @@ export const POST: RequestHandler = async ({
   request,
 }) => {
   const { path } = params;
-  const authHash = cookies.get("cadence.token");
+  const authHash = cookies.get("cadence.sessionId");
 
   if (!authHash) {
     throw error(401, "Unauthorized: No authentication provided");
@@ -199,7 +199,7 @@ export const PATCH: RequestHandler = async ({
   request,
 }) => {
   const { path } = params;
-  const authHash = cookies.get("cadence.token");
+  const authHash = cookies.get("cadence.sessionId");
 
   if (!authHash) {
     throw error(401, "Unauthorized: No authentication provided");
@@ -252,7 +252,7 @@ export const PATCH: RequestHandler = async ({
 
 export const DELETE: RequestHandler = async ({ params, url, cookies }) => {
   const { path } = params;
-  const authHash = cookies.get("cadence.token");
+  const authHash = cookies.get("cadence.sessionId");
 
   if (!authHash) {
     throw error(401, "Unauthorized: No authentication provided");

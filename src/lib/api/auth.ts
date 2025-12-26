@@ -23,17 +23,6 @@ export interface ResetPasswordInput {
   newPassword: string;
 }
 
-export async function getCurrentUser() {
-  const response = await authFetch("/auth/me");
-
-  if (!response.ok) {
-    throw new Error(`Failed to get current user: ${response.statusText}`);
-  }
-
-  const data = await response.json();
-  return v.parse(GetCurrentUserResponseSchema, data);
-}
-
 export async function listUsers(options: ListUsersOptions = {}) {
   const { page = 1, limit = 10 } = options;
 

@@ -22,7 +22,6 @@
 
   let swiperRef: Swiper | null = $state(null);
 
-  // Recenter swiper when index changes (after reorder)
   $effect(() => {
     index;
     swiperRef?.recenter();

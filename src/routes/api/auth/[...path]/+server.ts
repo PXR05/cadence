@@ -49,14 +49,14 @@ async function proxyRequest(
 
 export const GET = async ({ params, url, cookies }) => {
   const { path } = params;
-  const authHash = cookies.get("cadence.token");
+  const authHash = cookies.get("cadence.sessionId");
 
   return proxyRequest("GET", path, authHash, url);
 };
 
 export const POST = async ({ params, url, cookies, request }) => {
   const { path } = params;
-  const authHash = cookies.get("cadence.token");
+  const authHash = cookies.get("cadence.sessionId");
 
   const body = await request.json().catch(() => ({}));
   return proxyRequest("POST", path, authHash, url, body);
@@ -64,7 +64,7 @@ export const POST = async ({ params, url, cookies, request }) => {
 
 export const PATCH = async ({ params, url, cookies, request }) => {
   const { path } = params;
-  const authHash = cookies.get("cadence.token");
+  const authHash = cookies.get("cadence.sessionId");
 
   const body = await request.json().catch(() => ({}));
   return proxyRequest("PATCH", path, authHash, url, body);
@@ -72,7 +72,7 @@ export const PATCH = async ({ params, url, cookies, request }) => {
 
 export const DELETE = async ({ params, url, cookies }) => {
   const { path } = params;
-  const authHash = cookies.get("cadence.token");
+  const authHash = cookies.get("cadence.sessionId");
 
   return proxyRequest("DELETE", path, authHash, url);
 };

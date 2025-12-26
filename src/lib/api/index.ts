@@ -8,7 +8,6 @@ export {
 } from "./audio";
 
 export {
-  getCurrentUser,
   listUsers,
   createUser,
   resetUserPassword,

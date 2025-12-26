@@ -51,7 +51,7 @@
 </script>
 
 <a
-  href="/library/{playlist.id}"
+  href="/playlist?id={playlist.id}"
   oncontextmenu={handleContextMenu}
   class="relative rounded-lg overflow-clip aspect-square border hover:bg-muted/20 transition-colors flex flex-col
   {size === 'large' ? 'w-full shrink-0' : 'w-40 shrink-0'}

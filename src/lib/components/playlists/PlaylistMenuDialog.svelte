@@ -94,8 +94,8 @@
   async function handleDownloadPlaylist() {
     const detail = await getPlaylistDetail();
     if (detail) {
-      await offline.downloadPlaylist(detail);
       handleClose();
+      await offline.downloadPlaylist(detail);
     } else {
       toast.error("Failed to load playlist details");
     }
@@ -104,8 +104,8 @@
   async function handleMakeOffline() {
     const detail = await getPlaylistDetail();
     if (detail) {
-      await offline.makeOffline(detail);
       handleClose();
+      await offline.makeOffline(detail);
     } else {
       toast.error("Failed to load playlist details");
     }
@@ -119,11 +119,11 @@
   async function handlePlaylistResync() {
     if (!playlist) return;
     try {
+      handleClose();
       await youtubeDownloadStore.downloadFromUrl(
         `https://music.youtube.com/playlist?list=${playlist.id.replace("youtube_", "")}`
       );
       toast.success("Resynced from YouTube");
-      handleClose();
     } catch (error) {
       const errorMessage =
         error instanceof Error

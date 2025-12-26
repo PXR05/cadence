@@ -37,7 +37,6 @@
   let confirmPassword = $state("");
   let isChangingPassword = $state(false);
 
-  // PWA install prompt
   let deferredPrompt: BeforeInstallPromptEvent | null = $state(null);
   let canInstall = $state(false);
   let isInstalled = $state(false);
@@ -49,7 +48,7 @@
 
   onMount(async () => {
     try {
-      if (authStore.token) {
+      if (authStore.sessionId) {
         await authStore.getCurrentUser();
         isAdmin = authStore.isAdmin;
       }

@@ -1,6 +1,6 @@
-export function getAuthToken(): string | null {
+export function getSessionId(): string | null {
   if (typeof document === "undefined") return null;
-  const match = document.cookie.match(/cadence\.token=([^;]+)/);
+  const match = document.cookie.match(/cadence\.sessionId=([^;]+)/);
   return match ? match[1] : null;
 }
 
@@ -9,11 +9,11 @@ export async function authFetch(
   init?: RequestInit
 ): Promise<Response> {
   const baseUrl = import.meta.env.VITE_API_URL;
-  const token = getAuthToken();
+  const sessionId = getSessionId();
 
   const headers = new Headers(init?.headers);
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
+  if (sessionId) {
+    headers.set("Authorization", `Bearer ${sessionId}`);
   }
 
   return fetch(`${baseUrl}${path}`, {

@@ -43,7 +43,7 @@
 
   const track = $derived(trackMenuStore.track);
   const title = $derived(
-    track?.metadata?.title ?? track?.filename ?? "Unknown",
+    track?.metadata?.title ?? track?.filename ?? "Unknown"
   );
   const artist = $derived(track?.metadata?.artist ?? "Unknown Artist");
   const imageUrl = $derived(track ? getImageUrl(track.id) : "");
@@ -79,6 +79,7 @@
 
   async function handleToggleOffline() {
     if (!track) return;
+    handleClose();
     if (trackMenuStore.isOffline) {
       await downloadStore.removeTrackOffline(track.id);
       toast.success("Removed from offline");
@@ -92,7 +93,7 @@
           duration: track.metadata?.duration,
         },
         track.filename,
-        track.size,
+        track.size
       );
       toast.success("Available offline");
     }
@@ -112,15 +113,15 @@
     if (!track) return;
     deleteTrackDialog.close();
     try {
+      handleClose();
       await tracksStore.deleteTrack(track.id);
       const queueIndex = playerStore.trackQueue.findIndex(
-        (queuedTrack) => queuedTrack.id === track.id,
+        (queuedTrack) => queuedTrack.id === track.id
       );
       if (queueIndex !== -1) {
         playerStore.removeFromQueue(queueIndex);
       }
       toast.success("Track deleted");
-      handleClose();
     } catch (e) {
       console.error("Failed to delete track", e);
       toast.error("Failed to delete track", {

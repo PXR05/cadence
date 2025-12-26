@@ -43,10 +43,14 @@
                   class="rounded-md size-12 shrink-0 object-cover text-transparent"
                 />
                 <div class="text-left flex-1 min-w-0">
-                  <p class="font-medium truncate">
+                  <p class="font-medium truncate"
+                  style="color: color-mix(in oklab, {playerStore.trackColor} 30%, var(--foreground));"
+                  >
                     {trackTitle}
                   </p>
-                  <p class="text-sm truncate font-light">
+                  <p class="text-sm truncate font-light"
+                  style="color: color-mix(in oklab, {playerStore.trackColor} 30%, var(--muted-foreground));"
+                  >
                     {trackArtist}
                   </p>
                 </div>
