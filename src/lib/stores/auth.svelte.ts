@@ -24,12 +24,29 @@ class AuthStore {
     null
   );
 
+  private userStore = createLocalStorageState<User | null>(
+    "cadence.user",
+    null
+  );
+
   user = $state<User | null>(null);
 
   constructor() {
     if (typeof window !== "undefined" && this.sessionId) {
+      this.restoreUserFromStorage();
       this.getCurrentUser();
     }
+  }
+
+  private restoreUserFromStorage(): void {
+    const cachedUser = this.userStore.value;
+    if (cachedUser) {
+      this.user = cachedUser;
+    }
+  }
+
+  private saveUserToStorage(user: User | null): void {
+    this.userStore.value = user;
   }
 
   get sessionId(): string | null {
@@ -65,6 +82,7 @@ class AuthStore {
       this.setSessionIdCookie(data.sessionId);
 
       this.user = data.user;
+      this.saveUserToStorage(data.user);
     } catch (error) {
       console.error("Login failed:", error);
       throw error;
@@ -92,6 +110,7 @@ class AuthStore {
       this.setSessionIdCookie(data.sessionId);
 
       this.user = data.user;
+      this.saveUserToStorage(data.user);
     } catch (error) {
       console.error("Registration failed:", error);
       throw error;
@@ -101,6 +120,11 @@ class AuthStore {
   async getCurrentUser(): Promise<User | null> {
     if (!this.sessionId) {
       return null;
+    }
+
+    if ("onLine" in navigator && !navigator.onLine) {
+      this.restoreUserFromStorage();
+      return this.user;
     }
 
     try {
@@ -116,13 +140,12 @@ class AuthStore {
 
       const data: GetCurrentUserResponse = await response.json();
       this.user = data.data;
+      this.saveUserToStorage(data.data);
       return data.data;
     } catch (error) {
       console.error("Failed to get current user:", error);
-      if ("onLine" in navigator && navigator.onLine) {
-        await this.logout();
-      }
-      return null;
+      this.restoreUserFromStorage();
+      return this.user;
     }
   }
 
@@ -165,6 +188,7 @@ class AuthStore {
     const hadSession = this.sessionId !== null;
 
     this.sessionIdStore.clear();
+    this.userStore.clear();
     this.user = null;
     this.clearSessionIdCookie();
 
@@ -193,6 +217,7 @@ class AuthStore {
     }
 
     this.sessionIdStore.clear();
+    this.userStore.clear();
     this.user = null;
     this.clearSessionIdCookie();
   }
