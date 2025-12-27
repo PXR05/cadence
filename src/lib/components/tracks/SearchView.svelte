@@ -108,21 +108,21 @@
       }
     }
 
-    // try {
-    //   const youtubeResult = await searchYoutube(searchQuery.trim());
+    try {
+      const youtubeResult = await searchYoutube(searchQuery.trim());
 
-    //   const existingYoutubeIds = new Set(
-    //     tracks.map((track) => track.youtubeId).filter(Boolean),
-    //   );
+      const existingYoutubeIds = new Set(
+        tracks.map((track) => track.youtubeId).filter(Boolean),
+      );
 
-    //   youtubeResults = youtubeResult.filter(
-    //     (result: YouTubeSearchResult) =>
-    //       !existingYoutubeIds.has(result.videoId),
-    //   );
-    // } catch (error) {
-    //   console.error("Error searching YouTube:", error);
-    //   youtubeResults = [];
-    // }
+      youtubeResults = youtubeResult.filter(
+        (result: YouTubeSearchResult) =>
+          !existingYoutubeIds.has(result.videoId),
+      );
+    } catch (error) {
+      console.error("Error searching YouTube:", error);
+      youtubeResults = [];
+    }
 
     loading = false;
   }
