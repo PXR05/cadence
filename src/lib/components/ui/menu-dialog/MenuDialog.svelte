@@ -47,9 +47,9 @@
       <p class="text-sm text-muted-foreground truncate">{subtitle}</p>
     </div>
     {#if isDesktop.current}
-      <Drawer.Close class={buttonVariants({ variant: "ghost", size: "icon" })}>
+      <Dialog.Close class={buttonVariants({ variant: "ghost", size: "icon" })}>
         <XIcon class="size-5" />
-      </Drawer.Close>
+      </Dialog.Close>
     {/if}
   </div>
 {/snippet}
