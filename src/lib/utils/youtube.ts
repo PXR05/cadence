@@ -24,7 +24,9 @@ export async function downloadYoutubeWithProgress(
   onProgress: (event: YouTubeProgressEvent) => void,
 ): Promise<void> {
   const params = new URLSearchParams({ url, stream });
-  const eventSource = new EventSource(`${BASE_URL}/youtube?${params}`);
+  const eventSource = new EventSource(`${BASE_URL}/youtube?${params}`, {
+    withCredentials: true,
+  });
 
   return new Promise((resolve, reject) => {
     eventSource.onmessage = (event) => {
