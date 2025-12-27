@@ -10,6 +10,7 @@ import {
 } from "$lib/db/offline";
 import type { PlaylistDetail } from "$lib/schemas";
 import zip from "jszip";
+import { authFetch } from "$lib/api/fetch";
 
 type DownloadProgress = {
   playlistId?: string;
@@ -137,7 +138,7 @@ class DownloadStore {
   }
 
   private async downloadTrackBlob(audioId: string): Promise<Blob> {
-    const response = await fetch(getStreamUrl(audioId));
+    const response = await authFetch(getStreamUrl(audioId));
     if (!response.ok) throw new Error(`Failed to download track ${audioId}`);
     return response.blob();
   }
@@ -266,13 +267,13 @@ class DownloadStore {
   private async processQueueItem(queueItem: QueueItem) {
     try {
       if (queueItem.type === "playlist-download" && queueItem.playlist) {
-        await this.downloadPlaylistInternal(queueItem.playlist);
+        await this._downloadPlaylist(queueItem.playlist);
       } else if (
         queueItem.type === "playlist-offline" &&
         queueItem.playlist &&
         queueItem.playlistId
       ) {
-        await this.makeOfflineInternal(
+        await this._makeOffline(
           queueItem.playlist,
           queueItem.playlistId,
         );
@@ -282,7 +283,7 @@ class DownloadStore {
         queueItem.metadata &&
         queueItem.filename
       ) {
-        await this.makeTrackOfflineInternal(
+        await this._makeTrackOffline(
           queueItem.trackId,
           queueItem.metadata,
           queueItem.filename,
@@ -299,7 +300,7 @@ class DownloadStore {
     await this.addPlaylistToDownloadQueue(playlist);
   }
 
-  private async downloadPlaylistInternal(
+  private async _downloadPlaylist(
     playlist: PlaylistDetail,
   ): Promise<void> {
     this._abortController = new AbortController();
@@ -370,7 +371,7 @@ class DownloadStore {
     await this.addPlaylistToOfflineQueue(playlist, playlistId);
   }
 
-  private async makeOfflineInternal(
+  private async _makeOffline(
     playlist: PlaylistDetail,
     playlistId: string,
   ): Promise<void> {
@@ -494,7 +495,7 @@ class DownloadStore {
     await this.addTrackToOfflineQueue(trackId, metadata, filename, size);
   }
 
-  private async makeTrackOfflineInternal(
+  private async _makeTrackOffline(
     trackId: string,
     metadata: {
       title?: string;

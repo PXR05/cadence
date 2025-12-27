@@ -8,7 +8,6 @@
   } from "../ui/dialog";
   import { Button } from "../ui/button";
   import { Input } from "../ui/input";
-  import { getSessionId } from "$lib/api/fetch";
 
   interface Props {
     open?: boolean;
@@ -76,10 +75,7 @@
       xhr.timeout = 300000;
 
       xhr.open("POST", `${import.meta.env.VITE_API_URL}/audio/upload`);
-      const sessionId = getSessionId();
-      if (sessionId) {
-        xhr.setRequestHeader("Authorization", `Bearer ${sessionId}`);
-      }
+      xhr.withCredentials = true;
       xhr.send(formData);
     });
   }

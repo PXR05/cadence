@@ -106,6 +106,7 @@
     {#if playlist.coverImage}
       <img
         loading="lazy"
+        crossorigin="use-credentials"
         src={getPlaylistImageUrl(playlist.id)}
         alt={playlist.name}
         class="w-full h-full object-cover relative z-10"

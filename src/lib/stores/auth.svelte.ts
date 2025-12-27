@@ -1,5 +1,5 @@
 import { createLocalStorageState } from "./localStorage.svelte";
-import type { User, Session } from "$lib/schemas/auth";
+import type { User } from "$lib/schemas/auth";
 import { authFetch } from "$lib/api/fetch";
 
 interface LoginResponse {
@@ -19,11 +19,6 @@ interface GetCurrentUserResponse {
 }
 
 class AuthStore {
-  private sessionIdStore = createLocalStorageState<string | null>(
-    "cadence.sessionId",
-    null
-  );
-
   private userStore = createLocalStorageState<User | null>(
     "cadence.user",
     null
@@ -32,7 +27,7 @@ class AuthStore {
   user = $state<User | null>(null);
 
   constructor() {
-    if (typeof window !== "undefined" && this.sessionId) {
+    if (typeof window !== "undefined" && this.user === null) {
       this.restoreUserFromStorage();
       this.getCurrentUser();
     }
@@ -49,12 +44,9 @@ class AuthStore {
     this.userStore.value = user;
   }
 
-  get sessionId(): string | null {
-    return this.sessionIdStore.value;
-  }
 
   get isAuthenticated(): boolean {
-    return this.sessionIdStore.value !== null && this.user !== null;
+    return this.user !== null;
   }
 
   get isAdmin(): boolean {
@@ -77,9 +69,6 @@ class AuthStore {
       }
 
       const data: LoginResponse = await response.json();
-
-      this.sessionIdStore.value = data.sessionId;
-      this.setSessionIdCookie(data.sessionId);
 
       this.user = data.user;
       this.saveUserToStorage(data.user);
@@ -106,8 +95,6 @@ class AuthStore {
 
       const data: RegisterResponse = await response.json();
 
-      this.sessionIdStore.value = data.sessionId;
-      this.setSessionIdCookie(data.sessionId);
 
       this.user = data.user;
       this.saveUserToStorage(data.user);
@@ -118,10 +105,6 @@ class AuthStore {
   }
 
   async getCurrentUser(): Promise<User | null> {
-    if (!this.sessionId) {
-      return null;
-    }
-
     if ("onLine" in navigator && !navigator.onLine) {
       this.restoreUserFromStorage();
       return this.user;
@@ -172,25 +155,11 @@ class AuthStore {
     }
   }
 
-  private setSessionIdCookie(sessionId: string): void {
-    if (typeof document !== "undefined") {
-      document.cookie = `cadence.sessionId=${sessionId}; path=/; max-age=2592000; SameSite=Lax`;
-    }
-  }
-
-  private clearSessionIdCookie(): void {
-    if (typeof document !== "undefined") {
-      document.cookie = "cadence.sessionId=; path=/; max-age=0";
-    }
-  }
-
   async logout(): Promise<void> {
-    const hadSession = this.sessionId !== null;
+    const hadSession = this.user !== null;
 
-    this.sessionIdStore.clear();
     this.userStore.clear();
     this.user = null;
-    this.clearSessionIdCookie();
 
     if (hadSession && "onLine" in navigator && navigator.onLine) {
       try {
@@ -201,53 +170,6 @@ class AuthStore {
         console.warn("Failed to revoke session on server:", error);
       }
     }
-  }
-
-  async logoutAll(): Promise<void> {
-    const hadSession = this.sessionId !== null;
-
-    if (hadSession && "onLine" in navigator && navigator.onLine) {
-      try {
-        await authFetch("/auth/logout-all", {
-          method: "POST",
-        });
-      } catch (error) {
-        console.warn("Failed to revoke all sessions:", error);
-      }
-    }
-
-    this.sessionIdStore.clear();
-    this.userStore.clear();
-    this.user = null;
-    this.clearSessionIdCookie();
-  }
-
-  async getSessions(): Promise<Session[]> {
-    if (!this.sessionId) {
-      return [];
-    }
-
-    try {
-      const response = await authFetch("/auth/sessions");
-
-      if (!response.ok) {
-        throw new Error("Failed to get sessions");
-      }
-
-      const data = await response.json();
-      return data.data;
-    } catch (error) {
-      console.error("Failed to get sessions:", error);
-      return [];
-    }
-  }
-
-  getCurrentSessionId(): string | null {
-    return this.sessionId;
-  }
-
-  clearToken(): void {
-    this.logout();
   }
 }
 

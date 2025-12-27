@@ -64,51 +64,17 @@ export type ResetPasswordInput = v.InferOutput<typeof ResetPasswordSchema>;
 export const LoginResponseSchema = v.object({
   message: v.string(),
   user: UserSchema,
-  token: v.string(),
-  sessionId: v.string(),
 });
 
 export const RegisterResponseSchema = v.object({
   message: v.string(),
   user: UserSchema,
-  token: v.string(),
-  sessionId: v.string(),
-});
-
-export const RefreshTokenResponseSchema = v.object({
-  token: v.string(),
-  expiresIn: v.number(),
 });
 
 export const LogoutResponseSchema = v.object({
   message: v.string(),
 });
 
-export const SessionSchema = v.object({
-  id: v.string(),
-  userId: v.string(),
-  createdAt: v.string(),
-  lastActivityAt: v.string(),
-  expiresAt: v.string(),
-  userAgent: v.optional(v.string()),
-});
-
-export const ListSessionsResponseSchema = v.object({
-  data: v.array(SessionSchema),
-});
-
-export const LogoutAllResponseSchema = v.object({
-  message: v.string(),
-});
-
 export type LoginResponse = v.InferOutput<typeof LoginResponseSchema>;
 export type RegisterResponse = v.InferOutput<typeof RegisterResponseSchema>;
-export type RefreshTokenResponse = v.InferOutput<
-  typeof RefreshTokenResponseSchema
->;
 export type LogoutResponse = v.InferOutput<typeof LogoutResponseSchema>;
-export type Session = v.InferOutput<typeof SessionSchema>;
-export type ListSessionsResponse = v.InferOutput<
-  typeof ListSessionsResponseSchema
->;
-export type LogoutAllResponse = v.InferOutput<typeof LogoutAllResponseSchema>;

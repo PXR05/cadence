@@ -75,6 +75,7 @@
   <div class="rounded-md size-16 shrink-0 overflow-hidden">
     <img
       loading="lazy"
+      crossorigin="use-credentials"
       src={getImageUrl(track.id)}
       alt={track.id}
       class="size-full object-cover"

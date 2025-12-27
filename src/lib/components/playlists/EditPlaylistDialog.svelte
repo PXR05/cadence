@@ -117,6 +117,7 @@
             class="relative w-full aspect-square border rounded-lg overflow-hidden"
           >
             <img
+              crossorigin="use-credentials"
               src={editCoverImagePreview}
               alt="Cover preview"
               class="w-full h-full object-cover"

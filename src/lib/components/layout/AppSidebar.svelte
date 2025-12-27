@@ -16,7 +16,7 @@
 
   onMount(async () => {
     try {
-      if (authStore.sessionId) {
+      if (authStore.user) {
         await authStore.getCurrentUser();
       }
     } catch (error) {

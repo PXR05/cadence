@@ -6,9 +6,8 @@
 
 import { build, files, prerendered, version } from "$service-worker";
 
-const BASE_URL = "/api/audio";
 const IMAGE_CACHE = "image-cache";
-const IMAGE_URL_PATTERN = new RegExp(`^${BASE_URL}/[^/]+/image$`);
+const IMAGE_URL_PATTERN = /\/audio\/[^/]+\/image$/;
 
 const self = /** @type {ServiceWorkerGlobalScope} */ (
   /** @type {unknown} */ (globalThis.self)
@@ -27,7 +26,7 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     addFilesToCache().then(() => {
       notifyClientsOfUpdate();
-    }),
+    })
   );
 });
 
@@ -48,7 +47,7 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     deleteOldCaches().then(() => {
       return self.clients.claim();
-    }),
+    })
   );
 });
 
@@ -61,16 +60,19 @@ self.addEventListener("fetch", (event) => {
 
     if (IMAGE_URL_PATTERN.test(url.pathname)) {
       const imageCache = await caches.open(IMAGE_CACHE);
-      const cachedImage = await imageCache.match(event.request);
+      const cachedImage = await imageCache.match(url.href);
 
       if (cachedImage) {
         return cachedImage;
       }
 
       try {
-        const response = await fetch(event.request);
-        if (response.status === 200) {
-          imageCache.put(event.request, response.clone());
+        const response = await fetch(event.request.url, {
+          credentials: "include",
+          mode: "cors",
+        });
+        if (response.status === 200 && response.type !== "opaque") {
+          imageCache.put(url.href, response.clone());
         }
         return response;
       } catch (err) {
@@ -133,8 +135,11 @@ self.addEventListener("message", (event) => {
         const existingResponse = await imageCache.match(imageUrl);
 
         if (!existingResponse) {
-          const response = await fetch(imageUrl);
-          if (response.status === 200) {
+          const response = await fetch(imageUrl, {
+            credentials: "include",
+            mode: "cors",
+          });
+          if (response.status === 200 && response.type !== "opaque") {
             await imageCache.put(imageUrl, response);
           }
         }

@@ -31,7 +31,7 @@
   let updateWorker = $state<ServiceWorker | null>(null);
 
   onMount(async () => {
-    if (authStore.sessionId) {
+    if (authStore.user) {
       await authStore.getCurrentUser();
       if (authStore.isAuthenticated) {
         loadInitialData();

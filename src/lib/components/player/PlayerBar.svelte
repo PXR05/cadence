@@ -475,7 +475,7 @@
       />
     </div>
 
-    <audio bind:this={audioEl}></audio>
+    <audio bind:this={audioEl} crossorigin="use-credentials"></audio>
 
     <QueueDialog />
   </div>

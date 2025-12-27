@@ -137,6 +137,7 @@
             {#if shouldLoadItem(i)}
               <img
                 loading="lazy"
+                crossorigin="use-credentials"
                 src={getImageUrl(queueTrack.id)}
                 alt={queueTrack.id}
                 class="size-[min(40dvh,90dvw)] object-cover mx-auto rounded-2xl text-transparent"

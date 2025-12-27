@@ -53,6 +53,7 @@
   >
     <img
       loading="lazy"
+      crossorigin="use-credentials"
       src={getImageUrl(track.id)}
       alt={title}
       class="size-full object-cover transition-transform"

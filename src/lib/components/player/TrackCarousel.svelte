@@ -38,6 +38,7 @@
               >
                 <img
                   loading="lazy"
+                  crossorigin="use-credentials"
                   src={getImageUrl(track.id)}
                   alt={track.id}
                   class="rounded-md size-12 shrink-0 object-cover text-transparent"
