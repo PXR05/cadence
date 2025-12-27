@@ -6,7 +6,7 @@
   import TrackItem from "./TrackItem.svelte";
   import YouTubeTrackItem from "./YouTubeTrackItem.svelte";
   import UploadTrackDialog from "../admin/UploadTrackDialog.svelte";
-  import { searchTracks } from "$lib/api";
+  import { searchTracks, searchYoutube } from "$lib/api";
   import { searchCachedTracks } from "$lib/db/cache";
   import { Input } from "../ui/input";
   import { Button } from "../ui/button";
