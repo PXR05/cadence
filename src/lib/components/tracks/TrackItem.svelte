@@ -15,6 +15,7 @@
     isCurrentTrack: boolean;
     playlist?: PlaylistDetail;
     fromQueue?: boolean;
+    showAlbum?: boolean;
   }
 
   let {
@@ -23,10 +24,14 @@
     isCurrentTrack,
     playlist,
     fromQueue = false,
+    showAlbum = false,
   }: Props = $props();
 
   const title = $derived(track.metadata?.title ?? track.filename);
   const artist = $derived(track.metadata?.artist ?? "Unknown");
+  const album = $derived(
+    track.metadata?.album ?? track.metadata?.title ?? "Unknown"
+  );
 
   let isOffline = $state(false);
 
@@ -81,8 +86,8 @@
       class="size-full object-cover"
     />
   </div>
-  <div class="flex flex-col text-left flex-1 min-w-0 ">
-    <div class="flex items-center gap-1.5 ">
+  <div class="flex flex-col text-left flex-1 min-w-0">
+    <div class="flex items-center gap-1.5">
       <p
         class="font-medium truncate {isCurrentTrack
           ? 'text-primary'
@@ -100,6 +105,10 @@
         : 'text-muted-foreground'}"
     >
       {artist}
+      {#if showAlbum}
+        &nbsp;•&nbsp;
+        {album}
+      {/if}
     </p>
   </div>
   <Button

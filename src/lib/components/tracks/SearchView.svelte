@@ -13,10 +13,10 @@
   import { ScrollArea } from "../ui/scroll-area";
   import { playerStore } from "$lib/stores/player.svelte";
   import { youtubeDownloadStore } from "$lib/stores/youtubeDownload.svelte";
-  import { searchYoutube } from "$lib/api/youtube";
   import type { AudioFile, YouTubeSearchResult } from "$lib/schemas";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
   import { toast } from "svelte-sonner";
+  import { browser } from "$app/environment";
 
   const LIMIT = 10;
   const DEBOUNCE_MS = 300;
@@ -54,7 +54,7 @@
   }
 
   $effect(() => {
-    const urlQuery = page.url.searchParams.get("q") || "";
+    const urlQuery = browser ? page.url.searchParams.get("q") || "" : "";
     if (!initialized && urlQuery) {
       searchQuery = urlQuery;
       performSearch();
@@ -108,21 +108,21 @@
       }
     }
 
-    try {
-      const youtubeResult = await searchYoutube(searchQuery.trim());
+    // try {
+    //   const youtubeResult = await searchYoutube(searchQuery.trim());
 
-      const existingYoutubeIds = new Set(
-        tracks.map((track) => track.youtubeId).filter(Boolean),
-      );
+    //   const existingYoutubeIds = new Set(
+    //     tracks.map((track) => track.youtubeId).filter(Boolean),
+    //   );
 
-      youtubeResults = youtubeResult.filter(
-        (result: YouTubeSearchResult) =>
-          !existingYoutubeIds.has(result.videoId),
-      );
-    } catch (error) {
-      console.error("Error searching YouTube:", error);
-      youtubeResults = [];
-    }
+    //   youtubeResults = youtubeResult.filter(
+    //     (result: YouTubeSearchResult) =>
+    //       !existingYoutubeIds.has(result.videoId),
+    //   );
+    // } catch (error) {
+    //   console.error("Error searching YouTube:", error);
+    //   youtubeResults = [];
+    // }
 
     loading = false;
   }
@@ -266,6 +266,7 @@
               <TrackItem
                 index={i}
                 isCurrentTrack={track.id === currentId}
+                showAlbum
                 {track}
               />
             {/each}

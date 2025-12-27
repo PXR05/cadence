@@ -1,12 +1,15 @@
 import { goto } from "$app/navigation";
 import { page } from "$app/state";
 import { untrack } from "svelte";
+import { browser } from "$app/environment";
 
 export function useDialogState(dialogName: string) {
-  let isOpen = $state(page.url.searchParams.has(dialogName));
+  let isOpen = $state(browser ? page.url.searchParams.has(dialogName) : false);
   let skipNextSync = false;
 
   $effect(() => {
+    if (!browser) return;
+
     const currentlyOpen = page.url.searchParams.has(dialogName);
     
     if (skipNextSync) {

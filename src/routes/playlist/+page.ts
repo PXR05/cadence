@@ -1,6 +1,3 @@
-export const ssr = false;
-export const prerender = true;
-
 import { browser } from "$app/environment";
 import { offlineDb } from "$lib/db/offline";
 import type { AudioFile, PlaylistDetail } from "$lib/schemas";
@@ -13,12 +10,19 @@ import {
 } from "$lib/utils/playlist";
 import type { PageLoad } from "./$types";
 
-export const load: PageLoad = ({ url: { searchParams } }) => {
-  const playlistId = searchParams.get("id");
-
-  if (!browser || !playlistId) {
+export const load: PageLoad = ({ url }) => {
+  if (!browser) {
     return {
-      playlistId,
+      playlistId: null,
+      playlist: Promise.resolve(undefined),
+    };
+  }
+
+  const playlistId = url.searchParams.get("id");
+
+  if (!playlistId) {
+    return {
+      playlistId: null,
       playlist: Promise.resolve(undefined),
     };
   }

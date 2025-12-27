@@ -1,21 +1,23 @@
 import { goto } from "$app/navigation";
 import { page } from "$app/state";
 import { untrack } from "svelte";
+import { browser } from "$app/environment";
 
-interface MenuDialogOptions<T> {
+interface MenuDialogOptions {
   paramName: string;
   onOpen?: (id: string) => void | Promise<void>;
   onClose?: () => void;
-  getIdFromItem?: (item: T) => string;
 }
 
-export function useMenuDialogState<T>(options: MenuDialogOptions<T>) {
-  const { paramName, onOpen, onClose, getIdFromItem } = options;
+export function useMenuDialogState(options: MenuDialogOptions) {
+  const { paramName, onOpen, onClose } = options;
 
-  let isOpen = $state(page.url.searchParams.has(paramName));
+  let isOpen = $state(browser ? page.url.searchParams.has(paramName) : false);
   let skipNextSync = false;
 
   $effect(() => {
+    if (!browser) return;
+
     const idFromUrl = page.url.searchParams.get(paramName);
     const currentlyOpen = idFromUrl !== null;
 

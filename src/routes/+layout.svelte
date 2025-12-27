@@ -193,13 +193,13 @@
       {#key page.url.pathname}
         <!-- in:fly={{
             x: goingLeft ? -window.innerWidth : window.innerWidth,
-            duration: isMobile && !appearanceStore.disableAnimations ? 200 : 0,
+            duration: isMobile && !appearanceStore.disableAnimations ? 150 : 0,
             easing: vaulEase,
             delay: isMobile && !appearanceStore.disableAnimations ? 25 : 0,
           }}
         out:fly={{
           x: goingLeft ? window.innerWidth : -window.innerWidth,
-          duration: isMobile && !appearanceStore.disableAnimations ? 200 : 0,
+          duration: isMobile && !appearanceStore.disableAnimations ? 150 : 0,
           easing: vaulEase,
         }} -->
         <div
@@ -209,13 +209,13 @@
             class="flex flex-col h-full"
             in:fade={{
               duration:
-                isMobile && !appearanceStore.disableAnimations ? 200 : 0,
+                isMobile && !appearanceStore.disableAnimations ? 150 : 0,
               easing: vaulEase,
               // delay: isMobile && !appearanceStore.disableAnimations ? 50 : 0,
             }}
             out:fade={{
               duration:
-                isMobile && !appearanceStore.disableAnimations ? 200 : 0,
+                isMobile && !appearanceStore.disableAnimations ? 150 : 0,
               easing: vaulEase,
               // delay: isMobile && !appearanceStore.disableAnimations ? 100 : 0,
             }}
