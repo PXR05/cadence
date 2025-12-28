@@ -322,12 +322,6 @@
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", handleMouseUp);
 
-    if (containerEl) {
-      const initialY = panelState.isOpen ? 0 : closedPosition;
-      gsap.set(containerEl, { y: initialY, force3D: true });
-      updateOpacity(initialY);
-    }
-
     if (barElement) {
       const touchStartHandler = (e: TouchEvent) => {
         handleTouchStart(e);
@@ -453,6 +447,7 @@
 <div
   bind:this={containerEl}
   class="absolute bottom-0 left-0 right-0 will-change-transform overscroll-none"
+  style="transform: translateY(100vh)"
 >
   <div class="relative select-none h-dvh">
     <div class="absolute top-0 left-0 right-0">

@@ -94,13 +94,13 @@
     <div
       in:fly={{
         y: -50,
-        duration: appearanceStore.disableAnimations ? 0 : 200,
+        duration: appearanceStore.disableAnimations ? 0 : 150,
         easing: vaulEase,
-        delay: appearanceStore.disableAnimations ? 0 : 150,
+        delay: appearanceStore.disableAnimations ? 0 : 100,
       }}
       out:fly={{
         y: -50,
-        duration: appearanceStore.disableAnimations ? 0 : 200,
+        duration: appearanceStore.disableAnimations ? 0 : 150,
         easing: vaulEase,
       }}
       class="row-start-1 col-start-1 h-fit flex items-center rounded-xl border relative w-full gap-2
@@ -140,13 +140,13 @@
     <div
       in:fly={{
         y: -160,
-        duration: appearanceStore.disableAnimations ? 0 : 200,
+        duration: appearanceStore.disableAnimations ? 0 : 150,
         easing: vaulEase,
-        delay: appearanceStore.disableAnimations ? 0 : 150,
+        delay: appearanceStore.disableAnimations ? 0 : 100,
       }}
       out:fly={{
         y: -160,
-        duration: appearanceStore.disableAnimations ? 0 : 200,
+        duration: appearanceStore.disableAnimations ? 0 : 150,
         easing: vaulEase,
       }}
       class="row-start-1 col-start-1 flex-1 flex items-end rounded-xl"

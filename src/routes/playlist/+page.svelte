@@ -92,7 +92,7 @@
     </div>
   {:else if !playlist}
     <div class="flex items-center justify-center h-full">
-      <LoaderIcon class="animate-spin text-muted-foreground" />
+      <LoaderIcon class="delayed-loader animate-spin text-muted-foreground" />
     </div>
   {:else}
     <div

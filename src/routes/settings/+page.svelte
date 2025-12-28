@@ -265,7 +265,7 @@
 
     <!-- Theme Settings -->
     <SettingCard icon={PaletteIcon} title="Appearance">
-      <div class="p-3 space-y-4">
+      <div class="p-3 pt-1 space-y-4">
         <div class="space-y-3">
           <p class="text-sm text-muted-foreground">
             Choose your preferred theme
@@ -276,8 +276,8 @@
               <Button
                 style="--primary: color-mix(
                                     in oklab,
-                                    {playerStore.trackColor ??
-                  'var(--primary)'} 40%,
+                                    {playerStore.trackColor ||
+                  'var(--color-primary)'} 40%,
                                     var(--foreground)
                                 );"
                 variant={mode.current === option.value ||

@@ -177,10 +177,10 @@
   --tracking-widest: calc(var(--tracking-normal) + 0.1em);
 
   --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease-vaul: cubic-bezier(0.32,0.72,0,1);
+  --ease-vaul: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-@supports(corner-shape: superellipse(1.2)) {
+@supports (corner-shape: superellipse(1.2)) {
   :root {
     --radius: 0.85rem;
   }
@@ -216,10 +216,21 @@
     display: none;
   }
 
-  [data-animation-disabled='true'] {
-		animation: none !important;
-		transition: none !important;
-	}
+  .delayed-loader {
+    opacity: 0;
+    animation: fade-in 150ms ease-out 200ms forwards;
+  }
+
+  @keyframes fade-in {
+    to {
+      opacity: 1;
+    }
+  }
+
+  [data-animation-disabled="true"] {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

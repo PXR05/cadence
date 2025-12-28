@@ -168,8 +168,6 @@
 
 <Toaster position="top-right" richColors />
 <ModeWatcher />
-<TrackMenuDialog />
-<PlaylistMenuDialog />
 
 {#if showSplash && !authStore.isAuthenticated}
   <SplashScreen onComplete={() => (showSplash = false)} />
@@ -182,6 +180,8 @@
 {/if}
 
 {#if authStore.isAuthenticated}
+  <TrackMenuDialog />
+  <PlaylistMenuDialog />
   <Sidebar.Provider>
     {#if innerWidth.current ?? window.innerWidth > 768}
       <AppSidebar />

@@ -37,7 +37,12 @@
       class="rounded-md size-20 shrink-0 overflow-hidden bg-muted grid place-items-center"
     >
       {#if imageUrl}
-        <img crossorigin="use-credentials" src={imageUrl} alt={title} class="size-full object-cover" />
+        <img
+          crossorigin="use-credentials"
+          src={imageUrl}
+          alt={title}
+          class="size-full object-cover"
+        />
       {:else if imageFallback}
         {@render imageFallback()}
       {/if}

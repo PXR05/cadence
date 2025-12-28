@@ -5,10 +5,10 @@
   import { trackMenuStore } from "$lib/stores/trackMenu.svelte";
   import { shouldLoadItem } from "$lib/utils/queue";
   import {
-      ChevronDown,
-      ChevronUpIcon,
-      EllipsisIcon,
-      ListMusicIcon,
+    ChevronDown,
+    ChevronUpIcon,
+    EllipsisIcon,
+    ListMusicIcon,
   } from "@lucide/svelte";
   import { onMount } from "svelte";
   import { PlaybackControls, ProgressBar } from ".";
@@ -112,6 +112,23 @@
       playerStore.initializeCarousel("detail", api);
     }
   }
+
+  async function openCarouselTrackMenu(queueTrack: typeof track) {
+    if (!queueTrack) return;
+    const trackIsOffline = await downloadStore.checkTrackOfflineStatus(
+      queueTrack.id
+    );
+    const refreshTrackOfflineStatus = async () => {
+      await downloadStore.checkTrackOfflineStatus(queueTrack.id);
+    };
+    trackMenuStore.open(queueTrack, trackIsOffline, refreshTrackOfflineStatus);
+  }
+
+  function handleCarouselContextMenu(e: MouseEvent, queueTrack: typeof track) {
+    e.preventDefault();
+    e.stopPropagation();
+    openCarouselTrackMenu(queueTrack);
+  }
 </script>
 
 {#snippet coverCarousel()}
@@ -127,13 +144,16 @@
     /> -->
     <Carousel.Root
       class="w-full z-20"
-      style="will-change: transform; transform: translateZ(0); contain: layout style;"
       opts={{ loop: true }}
       setApi={(emblaApi) => setDetailCarouselApi(emblaApi ?? null)}
     >
       <Carousel.Content>
         {#each playerStore.trackQueue as queueTrack, i}
-          <Carousel.Item onclick={() => playerStore.togglePlayPause()}>
+          <Carousel.Item
+            onclick={() => playerStore.togglePlayPause()}
+            oncontextmenu={(e) => handleCarouselContextMenu(e, queueTrack)}
+            onlongpress={() => openCarouselTrackMenu(queueTrack)}
+          >
             {#if shouldLoadItem(i)}
               <img
                 loading="lazy"

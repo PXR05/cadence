@@ -10,7 +10,7 @@
   import { historyStore } from "$lib/stores/history.svelte";
   import * as Carousel from "$lib/components/ui/carousel";
   import { playerStore } from "$lib/stores/player.svelte";
-  import { fade, slide } from "svelte/transition";
+  import { slide } from "svelte/transition";
   import { ScrollArea } from "$lib/components/ui/scroll-area";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
 
@@ -39,7 +39,7 @@
 
 {#if isInitialLoad}
   <div class="mx-auto w-full h-full grid place-items-center p-8">
-    <LoaderIcon class="animate-spin text-muted-foreground" />
+    <LoaderIcon class="delayed-loader animate-spin text-muted-foreground" />
   </div>
 {:else if error}
   <div
@@ -61,9 +61,7 @@
   </div>
 {:else}
   <ScrollArea class="h-dvh py-2">
-    <div
-      class="pt-2 grid pb-72"
-    >
+    <div class="pt-2 grid pb-72">
       <HorizontalTrackList title="Recommended" tracks={recommendedTracks} />
 
       {#if recentlyPlayed.length > 0}
@@ -111,7 +109,10 @@
         <div
           class="p-4 flex items-center justify-center gap-2 text-muted-foreground border-t sticky bottom-0 bg-background"
         >
-          <LoaderIcon class="animate-spin text-muted-foreground" size={16} />
+          <LoaderIcon
+            class="delayed-loader animate-spin text-muted-foreground"
+            size={16}
+          />
         </div>
       {/if}
     </div>

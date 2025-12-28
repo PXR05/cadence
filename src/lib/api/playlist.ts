@@ -118,6 +118,9 @@ export async function deletePlaylist(id: string) {
   });
 
   if (!response.ok) {
+    if (response.status === 404) {
+      return;
+    }
     throw new Error(`Failed to delete playlist: ${response.statusText}`);
   }
 
@@ -142,7 +145,9 @@ export async function addItemToPlaylist(input: AddItemToPlaylistInput) {
   return v.parse(AddItemToPlaylistResponseSchema, data);
 }
 
-export async function removeItemFromPlaylist(input: RemoveItemFromPlaylistInput) {
+export async function removeItemFromPlaylist(
+  input: RemoveItemFromPlaylistInput
+) {
   const response = await authFetch(
     `/playlist/${input.playlistId}/items/${input.itemId}`,
     {
@@ -151,7 +156,12 @@ export async function removeItemFromPlaylist(input: RemoveItemFromPlaylistInput)
   );
 
   if (!response.ok) {
-    throw new Error(`Failed to remove item from playlist: ${response.statusText}`);
+    if (response.status === 404) {
+      return;
+    }
+    throw new Error(
+      `Failed to remove item from playlist: ${response.statusText}`
+    );
   }
 
   const data = await response.json();

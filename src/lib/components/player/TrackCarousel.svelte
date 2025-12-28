@@ -1,9 +1,12 @@
 <script lang="ts">
   import { getImageUrl } from "$lib/constants";
   import { playerStore } from "$lib/stores/player.svelte";
+  import { downloadStore } from "$lib/stores/download.svelte";
+  import { trackMenuStore } from "$lib/stores/trackMenu.svelte";
   import * as Carousel from "$lib/components/ui/carousel";
   import type { CarouselAPI } from "$lib/components/ui/carousel/context";
   import { shouldLoadItem } from "$lib/utils/queue";
+  import type { AudioFile } from "$lib/schemas";
 
   interface Props {
     onTrackClick?: () => void;
@@ -12,6 +15,20 @@
   }
 
   let { onTrackClick, setApi, isDisabled = false }: Props = $props();
+
+  async function openTrackMenu(track: AudioFile) {
+    const isOffline = await downloadStore.checkTrackOfflineStatus(track.id);
+    const refreshOfflineStatus = async () => {
+      await downloadStore.checkTrackOfflineStatus(track.id);
+    };
+    trackMenuStore.open(track, isOffline, refreshOfflineStatus);
+  }
+
+  function handleContextMenu(e: MouseEvent, track: AudioFile) {
+    e.preventDefault();
+    e.stopPropagation();
+    openTrackMenu(track);
+  }
 </script>
 
 <div
@@ -20,7 +37,6 @@
 >
   <Carousel.Root
     class="w-full"
-    style="will-change: transform; transform: translateZ(0); contain: layout style;"
     opts={{ loop: true }}
     setApi={(emblaApi) => setApi(emblaApi ?? null)}
   >
@@ -31,7 +47,11 @@
         {#each playerStore.trackQueue as track, i}
           {@const trackTitle = track.metadata?.title ?? track.filename ?? ""}
           {@const trackArtist = track.metadata?.artist ?? "Unknown Artist"}
-          <Carousel.Item onclick={onTrackClick}>
+          <Carousel.Item
+            onclick={onTrackClick}
+            oncontextmenu={(e) => handleContextMenu(e, track)}
+            onlongpress={() => openTrackMenu(track)}
+          >
             {#if shouldLoadItem(i)}
               <div
                 class="md:pointer-events-none flex items-center flex-1 min-w-0 gap-2 text-left w-full pl-2"
@@ -44,13 +64,15 @@
                   class="rounded-md size-12 shrink-0 object-cover text-transparent"
                 />
                 <div class="text-left flex-1 min-w-0">
-                  <p class="font-medium truncate"
-                  style="color: color-mix(in oklab, {playerStore.trackColor} 30%, var(--foreground));"
+                  <p
+                    class="font-medium truncate"
+                    style="color: color-mix(in oklab, {playerStore.trackColor} 30%, var(--foreground));"
                   >
                     {trackTitle}
                   </p>
-                  <p class="text-sm truncate font-light"
-                  style="color: color-mix(in oklab, {playerStore.trackColor} 30%, var(--muted-foreground));"
+                  <p
+                    class="text-sm truncate font-light"
+                    style="color: color-mix(in oklab, {playerStore.trackColor} 30%, var(--muted-foreground));"
                   >
                     {trackArtist}
                   </p>
