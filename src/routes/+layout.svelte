@@ -169,7 +169,7 @@
 <Toaster position="top-right" richColors />
 <ModeWatcher />
 
-{#if showSplash && !authStore.isAuthenticated}
+{#if showSplash}
   <SplashScreen onComplete={() => (showSplash = false)} />
 {:else if !authStore.isAuthenticated}
   <AuthDialog onAuthenticated={loadInitialData} />
@@ -191,33 +191,18 @@
       style="--h: {navHeight}px;"
     >
       {#key page.url.pathname}
-        <!-- in:fly={{
-            x: goingLeft ? -window.innerWidth : window.innerWidth,
-            duration: isMobile && !appearanceStore.disableAnimations ? 150 : 0,
-            easing: vaulEase,
-            delay: isMobile && !appearanceStore.disableAnimations ? 25 : 0,
-          }}
-        out:fly={{
-          x: goingLeft ? window.innerWidth : -window.innerWidth,
-          duration: isMobile && !appearanceStore.disableAnimations ? 150 : 0,
-          easing: vaulEase,
-        }} -->
         <div
           class="row-start-1 col-start-1 relative overflow-y-auto overflow-x-hidden h-dvh md:w-[calc(100dvw-256px)] bg-linear-to-t from-primary/5 via-transparent to-transparent"
         >
           <div
             class="flex flex-col h-full"
             in:fade={{
-              duration:
-                isMobile && !appearanceStore.disableAnimations ? 150 : 0,
+              duration: !appearanceStore.disableAnimations ? 150 : 0,
               easing: vaulEase,
-              // delay: isMobile && !appearanceStore.disableAnimations ? 50 : 0,
             }}
             out:fade={{
-              duration:
-                isMobile && !appearanceStore.disableAnimations ? 150 : 0,
+              duration: !appearanceStore.disableAnimations ? 150 : 0,
               easing: vaulEase,
-              // delay: isMobile && !appearanceStore.disableAnimations ? 100 : 0,
             }}
           >
             {@render children?.()}

@@ -214,16 +214,50 @@
           </p>
         </div>
       </div>
-      <Button
-        variant="ghost"
-        size="icon"
-        class="size-11"
-        onclick={() => (accountMenuOpen = true)}
-        title="Account options"
-      >
-        <EllipsisVerticalIcon class="size-5" />
-      </Button>
+      <div>
+        {#if isAdmin}
+          <Button
+            variant="ghost"
+            size="icon"
+            class="size-11"
+            href="/settings/admin"
+          >
+            <ShieldIcon class="size-5" />
+          </Button>
+        {/if}
+        <Button
+          variant="ghost"
+          size="icon"
+          class="size-11"
+          onclick={() => (accountMenuOpen = true)}
+          title="Account options"
+        >
+          <EllipsisVerticalIcon class="size-5" />
+        </Button>
+      </div>
     </div>
+
+    {#if canInstall && !isInstalled}
+      <button
+        transition:slide={{
+          axis: "y",
+          duration: appearanceStore.disableAnimations ? 0 : 200,
+        }}
+        class="flex items-center justify-between w-full p-4 rounded-xl border bg-background md:bg-card hover:bg-muted/50 transition-colors text-left"
+        onclick={handleInstallPWA}
+      >
+        <div class="flex items-center gap-3">
+          <DownloadIcon class="size-5 text-muted-foreground" />
+          <div>
+            <p class="font-medium">Install App</p>
+            <p class="text-sm text-muted-foreground">
+              Install Cadence as an app on your device
+            </p>
+          </div>
+        </div>
+        <ChevronRightIcon class="size-5 text-muted-foreground" />
+      </button>
+    {/if}
 
     <!-- Navigation Links -->
     <button
@@ -241,28 +275,6 @@
       </div>
       <ChevronRightIcon class="size-5 text-muted-foreground" />
     </button>
-
-    {#if isAdmin}
-      <button
-        transition:slide={{
-          axis: "y",
-          duration: appearanceStore.disableAnimations ? 0 : 200,
-          delay: appearanceStore.disableAnimations ? 0 : 200,
-        }}
-        class="flex items-center justify-between w-full p-4 rounded-xl border bg-background md:bg-card hover:bg-muted/50 transition-colors text-left"
-        onclick={() => goto("/settings/admin")}
-      >
-        <div class="flex items-center gap-3">
-          <ShieldIcon class="size-5 text-muted-foreground" />
-          <div>
-            <p class="font-medium">Admin Dashboard</p>
-            <p class="text-sm text-muted-foreground">Manage users and tracks</p>
-          </div>
-        </div>
-        <ChevronRightIcon class="size-5 text-muted-foreground" />
-      </button>
-    {/if}
-
     <!-- Theme Settings -->
     <SettingCard icon={PaletteIcon} title="Appearance">
       <div class="p-3 pt-1 space-y-4">
@@ -314,28 +326,6 @@
         </div>
       </div>
     </SettingCard>
-
-    {#if canInstall && !isInstalled}
-      <button
-        transition:slide={{
-          axis: "y",
-          duration: appearanceStore.disableAnimations ? 0 : 200,
-        }}
-        class="flex items-center justify-between w-full p-4 rounded-xl border bg-background md:bg-card hover:bg-muted/50 transition-colors text-left"
-        onclick={handleInstallPWA}
-      >
-        <div class="flex items-center gap-3">
-          <DownloadIcon class="size-5 text-muted-foreground" />
-          <div>
-            <p class="font-medium">Install App</p>
-            <p class="text-sm text-muted-foreground">
-              Install Cadence as an app on your device
-            </p>
-          </div>
-        </div>
-        <ChevronRightIcon class="size-5 text-muted-foreground" />
-      </button>
-    {/if}
   </div>
 </ScrollArea>
 
