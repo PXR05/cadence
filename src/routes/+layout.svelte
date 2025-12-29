@@ -197,10 +197,10 @@
     >
       {#key page.url.pathname}
         <div
-          class="row-start-1 col-start-1 relative overflow-y-auto overflow-x-hidden h-dvh md:w-[calc(100dvw-256px)] bg-linear-to-t from-primary/5 via-transparent to-transparent"
+          class="row-start-1 col-start-1 relative overflow-y-auto overflow-x-hidden h-dvh md:w-[calc(100dvw-256px)]"
         >
           <div
-            class="flex flex-col h-full"
+            class="flex flex-col h-full bg-linear-to-t from-primary/5 via-transparent to-transparent"
             in:fade={{
               duration: !appearanceStore.disableAnimations ? 150 : 0,
               easing: vaulEase,

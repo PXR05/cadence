@@ -19,6 +19,7 @@
     UserIcon,
     KeyRoundIcon,
     MonitorIcon,
+    DatabaseIcon,
   } from "@lucide/svelte";
   import { Input } from "$lib/components/ui/input";
   import { toast } from "svelte-sonner";
@@ -188,7 +189,10 @@
 {/snippet}
 
 <!-- Account header -->
-<div style="--h: 5rem;" class="p-2 absolute top-0 left-0 right-0 z-30">
+<div
+  style="--h: 5rem;"
+  class="p-2 absolute top-0 left-0 right-0 z-30 flex items-end justify-between"
+>
   {#if !appearanceStore.disableBlur}
     <div class="_bg _blur absolute inset-0 -z-10"></div>
   {/if}
@@ -259,7 +263,7 @@
       </button>
     {/if}
 
-    <!-- Navigation Links -->
+    <!-- Audio Settings -->
     <button
       class="flex items-center justify-between w-full p-4 rounded-xl border bg-background md:bg-card hover:bg-muted/50 transition-colors text-left"
       onclick={() => goto("/settings/audio")}
@@ -275,6 +279,24 @@
       </div>
       <ChevronRightIcon class="size-5 text-muted-foreground" />
     </button>
+
+    <!-- Local Storage Settings -->
+    <button
+      class="flex items-center justify-between w-full p-4 rounded-xl border bg-background md:bg-card hover:bg-muted/50 transition-colors text-left"
+      onclick={() => goto("/settings/storage")}
+    >
+      <div class="flex items-center gap-3">
+        <DatabaseIcon class="size-5 text-muted-foreground" />
+        <div>
+          <p class="font-medium">Local Storage</p>
+          <p class="text-sm text-muted-foreground">
+            Manage cached data and offline content
+          </p>
+        </div>
+      </div>
+      <ChevronRightIcon class="size-5 text-muted-foreground" />
+    </button>
+
     <!-- Theme Settings -->
     <SettingCard icon={PaletteIcon} title="Appearance">
       <div class="p-3 pt-1 space-y-4">
@@ -326,6 +348,12 @@
         </div>
       </div>
     </SettingCard>
+
+    <p
+      class="w-fit text-xs text-muted-foreground bg-muted rounded-md px-2 py-1"
+    >
+      {import.meta.env.__COMMIT_HASH__}
+    </p>
   </div>
 </ScrollArea>
 

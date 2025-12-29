@@ -141,7 +141,9 @@
   collapsible="icon"
   class="border-r-0 select-none"
 >
-  <Sidebar.Header class="p-4 transition-all">
+  <Sidebar.Header
+    class="p-4 transition-all flex-row items-center justify-between"
+  >
     <a href="/" class="flex items-center gap-3">
       <div class="size-8 shrink-0">
         <img src="/favicon.svg" alt="Cadence Logo" class="size-8" />
