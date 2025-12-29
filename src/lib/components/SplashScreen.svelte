@@ -1,67 +1,90 @@
 <script lang="ts">
   import { appearanceStore } from "$lib/stores/appearance.svelte";
+  import { onMount } from "svelte";
 
-  let { onComplete = () => {} }: { onComplete?: () => void } = $props();
+  let {
+    onComplete = () => {},
+    isLoading = false,
+  }: { onComplete?: () => void; isLoading?: boolean } = $props();
 
-  let show = $state(true);
+  const noAnimation = appearanceStore.disableAnimations;
+  const minDuration = noAnimation ? 0 : 1000;
+  const fadeOutDuration = noAnimation ? 0 : 300;
 
-  function handleAnimationEnd() {
-    show = false;
-    onComplete();
-  }
+  let minTimeElapsed = $state(false);
+  let fadingOut = $state(false);
+
+  onMount(() => {
+    const timeout = setTimeout(() => {
+      minTimeElapsed = true;
+    }, minDuration);
+    return () => clearTimeout(timeout);
+  });
+
+  $effect(() => {
+    if (minTimeElapsed && !isLoading && !fadingOut) {
+      fadingOut = true;
+      setTimeout(onComplete, fadeOutDuration);
+    }
+  });
 </script>
 
-{#if show}
-  <div
-    class="splash-container fixed inset-0 z-9999 flex items-center justify-center bg-background"
-    style:animation-duration={appearanceStore.disableAnimations ? "0s" : "1s"}
-    onanimationend={handleAnimationEnd}
-  >
-    <img
-      src="/favicon.svg"
-      alt="Cadence Logo"
-      class="splash-logo w-32 h-32"
-      style:animation-duration={appearanceStore.disableAnimations ? "0s" : "1s"}
-    />
-  </div>
-{/if}
+<div
+  class="splash-container fixed inset-0 z-100 flex items-center justify-center bg-background"
+  class:fading-out={fadingOut}
+  class:no-animation={noAnimation}
+>
+  <img
+    src="/favicon.svg"
+    alt="Cadence Logo"
+    class="splash-logo w-32 h-32"
+    class:fading-out={fadingOut}
+    class:no-animation={noAnimation}
+  />
+</div>
 
 <style>
   .splash-container {
-    animation: container-fade 1s ease-out forwards;
+    opacity: 1;
+    transition: opacity 200ms ease-out 100ms;
   }
 
-  @keyframes container-fade {
-    0%,
-    85% {
-      opacity: 1;
-    }
-    100% {
-      opacity: 0;
-    }
+  .splash-container.fading-out {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .splash-container.no-animation {
+    transition: none;
   }
 
   .splash-logo {
     opacity: 0;
-    animation: splash-fade 1s var(--ease-vaul) forwards;
+    animation: fade-in 300ms var(--ease-vaul) forwards;
+    transition:
+      opacity 200ms ease-out,
+      transform 200ms ease-out;
   }
 
-  @keyframes splash-fade {
-    0% {
+  .splash-logo.fading-out {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  .splash-logo.no-animation {
+    opacity: 1;
+    animation: none;
+    transition: none;
+  }
+
+  @keyframes fade-in {
+    from {
       opacity: 0;
       transform: scale(0.9);
     }
-    15% {
+    to {
       opacity: 1;
       transform: scale(1);
-    }
-    75% {
-      opacity: 1;
-      transform: scale(1);
-    }
-    100% {
-      opacity: 0;
-      transform: scale(0.9);
     }
   }
 </style>

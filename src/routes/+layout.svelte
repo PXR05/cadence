@@ -21,13 +21,14 @@
   import { Toaster } from "$lib/components/ui/sonner";
   import * as Sidebar from "$lib/components/ui/sidebar";
   import { vaulEase } from "$lib/utils";
-  import { fade, fly } from "svelte/transition";
+  import { fade } from "svelte/transition";
   import { isActive, navItems } from "$lib/components/layout/navItems";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
 
   let { children } = $props();
 
   let showSplash = $state(true);
+  let authLoading = $state(true);
   let updateWorker = $state<ServiceWorker | null>(null);
 
   onMount(async () => {
@@ -37,6 +38,7 @@
         loadInitialData();
       }
     }
+    authLoading = false;
 
     if ("serviceWorker" in navigator) {
       const registration = await navigator.serviceWorker.ready;
@@ -170,7 +172,10 @@
 <ModeWatcher />
 
 {#if showSplash}
-  <SplashScreen onComplete={() => (showSplash = false)} />
+  <SplashScreen
+    onComplete={() => (showSplash = false)}
+    isLoading={authLoading}
+  />
 {:else if !authStore.isAuthenticated}
   <AuthDialog onAuthenticated={loadInitialData} />
 {/if}

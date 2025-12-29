@@ -367,16 +367,20 @@ class PlayerState {
     this.audioEngine.resetEqualizer();
   }
 
-  private isFrequencyOverlapping(frequency: number, excludeBandId?: number): boolean {
+  private isFrequencyOverlapping(
+    frequency: number,
+    excludeBandId?: number
+  ): boolean {
     const MIN_FREQUENCY_RATIO = 1.5;
-    
+
     for (const band of this.equalizerBands) {
       if (excludeBandId !== undefined && band.id === excludeBandId) continue;
-      
-      const ratio = frequency > band.frequency 
-        ? frequency / band.frequency 
-        : band.frequency / frequency;
-      
+
+      const ratio =
+        frequency > band.frequency
+          ? frequency / band.frequency
+          : band.frequency / frequency;
+
       if (ratio < MIN_FREQUENCY_RATIO) {
         return true;
       }
@@ -388,27 +392,29 @@ class PlayerState {
     const MIN_FREQ = 20;
     const MAX_FREQ = 20000;
     const candidateFrequencies = [
-      60, 150, 250, 400, 630, 1000, 1600, 2500, 4000, 6300, 10000, 16000
+      60, 150, 250, 400, 630, 1000, 1600, 2500, 4000, 6300, 10000, 16000,
     ];
-    
-    const sortedBands = [...this.equalizerBands].sort((a, b) => a.frequency - b.frequency);
-    
+
+    const sortedBands = [...this.equalizerBands].sort(
+      (a, b) => a.frequency - b.frequency
+    );
+
     for (const freq of candidateFrequencies) {
       if (!this.isFrequencyOverlapping(freq)) {
         return freq;
       }
     }
-    
+
     for (let i = 0; i < sortedBands.length - 1; i++) {
       const lowFreq = sortedBands[i].frequency;
       const highFreq = sortedBands[i + 1].frequency;
       const midFreq = Math.sqrt(lowFreq * highFreq);
-      
+
       if (!this.isFrequencyOverlapping(midFreq)) {
         return Math.round(midFreq);
       }
     }
-    
+
     if (sortedBands.length > 0) {
       const lowestFreq = sortedBands[0].frequency;
       const belowFreq = lowestFreq / 2;
@@ -416,7 +422,7 @@ class PlayerState {
         return Math.round(belowFreq);
       }
     }
-    
+
     if (sortedBands.length > 0) {
       const highestFreq = sortedBands[sortedBands.length - 1].frequency;
       const aboveFreq = highestFreq * 2;
@@ -424,42 +430,42 @@ class PlayerState {
         return Math.round(aboveFreq);
       }
     }
-    
+
     return null;
   }
 
-  addEqualizerBand(options?: { 
-    frequency?: number; 
+  addEqualizerBand(options?: {
+    frequency?: number;
     type?: FilterType;
     gain?: number;
     Q?: number;
   }): EqualizerBand | null {
     const MAX_BANDS = 8;
-    
+
     if (this.equalizerBands.length >= MAX_BANDS) {
       return null;
     }
-    
+
     let frequency = options?.frequency;
-    
+
     if (frequency === undefined) {
       frequency = this.findAvailableFrequency() ?? undefined;
     }
-    
+
     if (frequency === undefined) {
       return null;
     }
-    
+
     if (this.isFrequencyOverlapping(frequency)) {
       return null;
     }
-    
-    const existingIds = this.equalizerBands.map(b => b.id);
+
+    const existingIds = this.equalizerBands.map((b) => b.id);
     let newId = 0;
     while (existingIds.includes(newId)) {
       newId++;
     }
-    
+
     const newBand: EqualizerBand = {
       id: newId,
       type: options?.type ?? "peaking",
@@ -468,47 +474,46 @@ class PlayerState {
       Q: options?.Q ?? 1,
       enabled: true,
     };
-    
+
     const bands = [...this.equalizerBands, newBand];
     bands.sort((a, b) => a.frequency - b.frequency);
     bands.forEach((band, index) => {
       band.id = index;
     });
-    
+
     this.persistedState.equalizerBands = bands;
     this.audioEngine.rebuildEqualizer(bands);
-    
+
     return newBand;
   }
 
   removeEqualizerBand(id: number): boolean {
     const MIN_BANDS = 1;
-    
+
     if (this.equalizerBands.length <= MIN_BANDS) {
       return false;
     }
-    
-    const bandIndex = this.equalizerBands.findIndex(b => b.id === id);
+
+    const bandIndex = this.equalizerBands.findIndex((b) => b.id === id);
     if (bandIndex === -1) {
       return false;
     }
-    
-    const bands = this.equalizerBands.filter(b => b.id !== id);
+
+    const bands = this.equalizerBands.filter((b) => b.id !== id);
     bands.sort((a, b) => a.frequency - b.frequency);
     bands.forEach((band, index) => {
       band.id = index;
     });
-    
+
     this.persistedState.equalizerBands = bands;
     this.audioEngine.rebuildEqualizer(bands);
-    
+
     return true;
   }
 
   canUseFrequency(frequency: number, excludeBandId?: number): boolean {
     return !this.isFrequencyOverlapping(frequency, excludeBandId);
   }
-
 
   get maxBands(): number {
     return 8;
@@ -805,10 +810,18 @@ class PlayerState {
       return;
     }
 
-    const imageColor = (await average(getImageUrl(track.id), {
+    const imageResponse = await fetch(getImageUrl(track.id), {
+      credentials: "include",
+    });
+    const imageBlob = await imageResponse.blob();
+    const imageBlobUrl = URL.createObjectURL(imageBlob);
+
+    const imageColor = (await average(imageBlobUrl, {
       amount: 1,
       format: "hex",
     })) as string;
+
+    URL.revokeObjectURL(imageBlobUrl);
 
     const color = new Color(imageColor).to("oklch");
 
