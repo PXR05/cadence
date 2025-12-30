@@ -7,6 +7,7 @@
   import type { PlaylistDetail } from "$lib/schemas";
   import { Input } from "../ui/input";
   import { getPlaylistImageUrl } from "$lib/constants";
+  import { playlistsStore } from "$lib/stores/playlists.svelte";
 
   interface Props {
     open: boolean;
@@ -77,6 +78,8 @@
   async function handleDelete() {
     deleteLoading = true;
     try {
+      await playlistsStore.invalidatePlaylist(playlist.id);
+      await playlistsStore.invalidatePlaylistDetail(playlist.id);
       await deletePlaylist(playlist.id);
       deleteDialogOpen = false;
       onOpenChange(false);

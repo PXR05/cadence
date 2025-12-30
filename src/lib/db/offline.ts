@@ -116,12 +116,6 @@ export async function savePlaylistOffline(
   });
 }
 
-export async function getOfflinePlaylist(
-  playlistId: string,
-): Promise<OfflinePlaylist | undefined> {
-  return offlineDb.playlists.get(playlistId);
-}
-
 export async function isPlaylistOffline(playlistId: string): Promise<boolean> {
   const playlist = await offlineDb.playlists.get(playlistId);
   if (!playlist) return false;
@@ -139,10 +133,6 @@ export async function deleteOfflinePlaylist(playlistId: string): Promise<void> {
     await Promise.all(playlist.trackIds.map((id) => deleteOfflineTrack(id)));
     await offlineDb.playlists.delete(playlistId);
   }
-}
-
-export async function getAllOfflinePlaylists(): Promise<OfflinePlaylist[]> {
-  return offlineDb.playlists.toArray();
 }
 
 export async function getStorageEstimate(): Promise<{
