@@ -4,6 +4,8 @@ export async function authFetch(
 ): Promise<Response> {
   const baseUrl = import.meta.env.VITE_API_URL;
 
+  console.log(`Fetching: ${baseUrl}${path}`);
+
   return fetch(`${baseUrl}${path}`, {
     ...init,
     credentials: "include",
