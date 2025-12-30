@@ -8,7 +8,7 @@
   import { cacheDb } from "$lib/db/cache";
   import { offlineDb } from "$lib/db/offline";
   import { historyDb } from "$lib/db/history";
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import {
     ArrowLeftIcon,
     DatabaseIcon,
@@ -16,6 +16,9 @@
     RefreshCwIcon,
     HardDriveIcon,
     AlertTriangleIcon,
+    GlobeIcon,
+    ImageIcon,
+    PackageIcon,
   } from "@lucide/svelte";
 
   interface TableInfo {
@@ -35,12 +38,26 @@
   let isLoadingDatabases = $state(true);
   let clearDialogOpen = $state(false);
   let clearTarget = $state<{
-    type: "table" | "database" | "all";
+    type: "table" | "database" | "all" | "sw-cache";
     dbName?: string;
     tableName?: string;
     displayName: string;
+    swCacheName?: string;
   } | null>(null);
   let isClearing = $state(false);
+
+  interface SwCacheInfo {
+    name: string;
+    displayName: string;
+    count: number;
+    size: string;
+    icon: typeof GlobeIcon;
+  }
+
+  let swCaches: SwCacheInfo[] = $state([]);
+  let isLoadingSwCaches = $state(true);
+  let swTotalSize = $state("0 B");
+  let hasServiceWorker = $state(false);
 
   function formatBytes(bytes: number): string {
     if (bytes === 0) return "0 B";
@@ -57,6 +74,89 @@
       return new Blob([jsonString]).size;
     } catch {
       return 0;
+    }
+  }
+
+  function handleSwMessage(event: MessageEvent) {
+    if (event.data?.type === "CACHE_INFO_RESULT") {
+      const cacheData = event.data.caches as Array<{
+        name: string;
+        count: number;
+        size: number;
+      }>;
+
+      let total = 0;
+      const cacheInfos: SwCacheInfo[] = [];
+
+      for (const cache of cacheData) {
+        total += cache.size;
+        let displayName = cache.name;
+        let icon = PackageIcon;
+
+        if (cache.name === "image-cache") {
+          displayName = "Image Cache";
+          icon = ImageIcon;
+        } else if (cache.name.startsWith("cache-")) {
+          displayName = "App Assets";
+          icon = GlobeIcon;
+        }
+
+        cacheInfos.push({
+          name: cache.name,
+          displayName,
+          count: cache.count,
+          size: formatBytes(cache.size),
+          icon,
+        });
+      }
+
+      swCaches = cacheInfos;
+      swTotalSize = formatBytes(total);
+      isLoadingSwCaches = false;
+    } else if (event.data?.type === "CACHE_CLEARED") {
+      if (event.data.success) {
+        loadSwCacheInfo();
+      }
+    }
+  }
+
+  async function loadSwCacheInfo() {
+    if (!("serviceWorker" in navigator)) {
+      hasServiceWorker = false;
+      isLoadingSwCaches = false;
+      return;
+    }
+
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      if (registration.active) {
+        hasServiceWorker = true;
+        isLoadingSwCaches = true;
+        registration.active.postMessage({ type: "GET_CACHE_INFO" });
+      } else {
+        hasServiceWorker = false;
+        isLoadingSwCaches = false;
+      }
+    } catch {
+      hasServiceWorker = false;
+      isLoadingSwCaches = false;
+    }
+  }
+
+  async function clearSwCache(cacheName?: string) {
+    if (!("serviceWorker" in navigator)) return;
+
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      if (registration.active) {
+        registration.active.postMessage({
+          type: "CLEAR_CACHE",
+          cacheName,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to clear service worker cache:", error);
+      throw error;
     }
   }
 
@@ -160,20 +260,26 @@
   }
 
   function openClearDialog(
-    type: "table" | "database" | "all",
+    type: "table" | "database" | "sw-cache",
     dbName?: string,
-    tableName?: string
+    tableName?: string,
+    swCacheName?: string
   ) {
     let displayName = "";
-    if (type === "all") {
-      displayName = "all cached data";
-    } else if (type === "database") {
+    if (type === "database") {
       const db = databases.find((d) => d.name === dbName);
       displayName = db?.displayName || dbName || "";
+    } else if (type === "sw-cache") {
+      if (swCacheName) {
+        const cache = swCaches.find((c) => c.name === swCacheName);
+        displayName = cache?.displayName || swCacheName;
+      } else {
+        displayName = "all service worker caches";
+      }
     } else {
       displayName = tableName || "";
     }
-    clearTarget = { type, dbName, tableName, displayName };
+    clearTarget = { type, dbName, tableName, displayName, swCacheName };
     clearDialogOpen = true;
   }
 
@@ -223,6 +329,9 @@
             await historyDb.playHistory.clear();
         }
         toast.success(`${clearTarget.displayName} cleared`);
+      } else if (clearTarget.type === "sw-cache") {
+        await clearSwCache(clearTarget.swCacheName);
+        toast.success(`${clearTarget.displayName} cleared`);
       }
 
       await loadDatabaseInfo();
@@ -238,6 +347,17 @@
 
   onMount(() => {
     loadDatabaseInfo();
+    loadSwCacheInfo();
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.addEventListener("message", handleSwMessage);
+    }
+  });
+
+  onDestroy(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.removeEventListener("message", handleSwMessage);
+    }
   });
 </script>
 
@@ -359,21 +479,116 @@
               </div>
             {/each}
           </div>
-
-          <!-- Clear All Button -->
-          <div class="pt-2 border-t">
-            <Button
-              variant="outline"
-              class="w-full text-destructive hover:text-destructive hover:bg-destructive/10 hover:border-destructive/50"
-              onclick={() => openClearDialog("all")}
-            >
-              <Trash2Icon class="size-4 mr-2" />
-              Clear All Cached Data
-            </Button>
-          </div>
         {/if}
       </div>
     </SettingCard>
+
+    <!-- Service Worker Cache Management -->
+    {#if hasServiceWorker}
+      <SettingCard icon={GlobeIcon} title="Service Worker Cache">
+        {#snippet headerActions()}
+          <Button
+            variant="ghost"
+            size="icon"
+            class="size-10"
+            onclick={() => loadSwCacheInfo()}
+            disabled={isLoadingSwCaches}
+            title="Refresh"
+          >
+            <RefreshCwIcon
+              class="size-4 {isLoadingSwCaches ? 'animate-spin' : ''}"
+            />
+          </Button>
+        {/snippet}
+        <div class="p-3 pt-1 space-y-4">
+          <p class="text-sm text-muted-foreground">
+            Manage browser cache for app assets and images
+          </p>
+
+          {#if isLoadingSwCaches}
+            <div class="flex items-center justify-center py-8">
+              <RefreshCwIcon
+                class="size-5 animate-spin text-muted-foreground"
+              />
+            </div>
+          {:else}
+            <div class="rounded-lg border bg-muted/30 overflow-hidden">
+              <!-- Cache Header -->
+              <div
+                class="flex items-center justify-between p-3 bg-muted/50 border-b"
+              >
+                <div class="flex items-center gap-2">
+                  <GlobeIcon class="size-4 text-muted-foreground" />
+                  <span class="font-medium text-sm">Browser Cache</span>
+                  <span
+                    class="text-xs text-muted-foreground bg-background/50 px-1.5 py-0.5 rounded"
+                  >
+                    {swTotalSize}
+                  </span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  class="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                  onclick={() => openClearDialog("sw-cache")}
+                  disabled={swCaches.length === 0}
+                >
+                  <Trash2Icon class="size-3 mr-1" />
+                  Clear All
+                </Button>
+              </div>
+
+              <!-- Cache Items -->
+              <div class="divide-y divide-border/50">
+                {#each swCaches as cache}
+                  {@const IconComponent = cache.icon}
+                  <div
+                    class="flex items-center justify-between p-2.5 px-3 hover:bg-muted/30 transition-colors"
+                  >
+                    <div class="flex items-center gap-3">
+                      <IconComponent class="size-4 text-muted-foreground" />
+                      <div class="flex flex-col">
+                        <span class="text-sm">{cache.displayName}</span>
+                        <div class="flex items-center gap-2">
+                          <span class="text-xs text-muted-foreground">
+                            {cache.count}
+                            {cache.count === 1 ? "item" : "items"}
+                          </span>
+                          <span class="text-xs text-muted-foreground">•</span>
+                          <span class="text-xs text-muted-foreground">
+                            {cache.size}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      class="size-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      onclick={() =>
+                        openClearDialog(
+                          "sw-cache",
+                          undefined,
+                          undefined,
+                          cache.name
+                        )}
+                      disabled={cache.count === 0}
+                    >
+                      <Trash2Icon class="size-3.5" />
+                    </Button>
+                  </div>
+                {/each}
+                {#if swCaches.length === 0}
+                  <div class="p-4 text-center text-sm text-muted-foreground">
+                    No cached data
+                  </div>
+                {/if}
+              </div>
+            </div>
+          {/if}
+        </div>
+      </SettingCard>
+    {/if}
   </div>
 </ScrollArea>
 
@@ -404,6 +619,20 @@
             Cached data will be refreshed from the server on next use.
           {/if}
           This action cannot be undone.
+        {:else if clearTarget?.type === "sw-cache"}
+          {#if clearTarget?.swCacheName === "image-cache"}
+            This will clear all cached album artwork and images. Images will be
+            re-downloaded as needed.
+          {:else if clearTarget?.swCacheName?.startsWith("cache-")}
+            This will clear the app's cached assets. The page may reload to
+            fetch fresh assets.
+          {:else if !clearTarget?.swCacheName}
+            This will clear all browser caches including images and app assets.
+            Content will be re-downloaded as needed.
+          {:else}
+            This will clear the selected cache. Content will be re-downloaded as
+            needed.
+          {/if}
         {:else}
           This will permanently delete all items in this table. This action
           cannot be undone.
