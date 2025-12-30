@@ -58,15 +58,17 @@ export async function getUserPlaylists(options: GetUserPlaylistsOptions = {}) {
     throw new Error(`Failed to get playlists: ${response.statusText}`);
   }
 
+  const text = await response.text();
+
   try {
-    const data = await response.json();
+    const data = JSON.parse(text);
     const validated = v.parse(GetUserPlaylistsResponseSchema, data);
     return validated.playlists;
   } catch (err) {
     throw new Error(
       "Failed to parse playlists response" +
         (err instanceof Error ? `: ${err.message}` : JSON.stringify(err)) +
-        (await response.text())
+        `: ${text}`
     );
   }
 }
