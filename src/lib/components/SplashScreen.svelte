@@ -4,8 +4,7 @@
 
   let {
     onComplete = () => {},
-    isLoading = false,
-  }: { onComplete?: () => void; isLoading?: boolean } = $props();
+  }: { onComplete?: () => void } = $props();
 
   const noAnimation = appearanceStore.disableAnimations;
   const minDuration = noAnimation ? 0 : 1000;
@@ -22,7 +21,7 @@
   });
 
   $effect(() => {
-    if (minTimeElapsed && !isLoading && !fadingOut) {
+    if (minTimeElapsed && !fadingOut) {
       fadingOut = true;
       setTimeout(onComplete, fadeOutDuration);
     }

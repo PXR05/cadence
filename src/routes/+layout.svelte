@@ -28,7 +28,6 @@
   let { children } = $props();
 
   let showSplash = $state(true);
-  let authLoading = $state(true);
   let updateWorker = $state<ServiceWorker | null>(null);
 
   onMount(async () => {
@@ -38,7 +37,6 @@
         loadInitialData();
       }
     }
-    authLoading = false;
 
     if ("serviceWorker" in navigator) {
       const registration = await navigator.serviceWorker.ready;
@@ -174,7 +172,6 @@
 {#if showSplash}
   <SplashScreen
     onComplete={() => (showSplash = false)}
-    isLoading={authLoading}
   />
 {:else if !authStore.isAuthenticated}
   <AuthDialog onAuthenticated={loadInitialData} />
