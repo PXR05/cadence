@@ -7,7 +7,7 @@
 import { build, files, prerendered, version } from "$service-worker";
 
 const IMAGE_CACHE = "image-cache";
-const IMAGE_URL_PATTERN = /\/audio\/[^/]+\/image$/;
+const IMAGE_URL_PATTERN = /^\/(?:audio|playlist)\/[^/]+\/image$/;
 
 const self = /** @type {ServiceWorkerGlobalScope} */ (
   /** @type {unknown} */ (globalThis.self)
@@ -54,8 +54,15 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
+  const url = new URL(event.request.url);
+  const isCrossOrigin = url.origin !== self.location.origin;
+  const isImageRequest = IMAGE_URL_PATTERN.test(url.pathname);
+
+  if (isCrossOrigin && !isImageRequest) {
+    return;
+  }
+
   async function respond() {
-    const url = new URL(event.request.url);
     const cache = await caches.open(CACHE);
 
     if (IMAGE_URL_PATTERN.test(url.pathname)) {
@@ -170,8 +177,7 @@ self.addEventListener("message", (event) => {
                 const blob = await response.clone().blob();
                 totalSize += blob.size;
               }
-            } catch {
-            }
+            } catch {}
           }
 
           cacheInfo.push({
