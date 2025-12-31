@@ -352,7 +352,7 @@
     <p
       class="w-fit text-xs text-muted-foreground bg-muted rounded-md px-2 py-1"
     >
-      {import.meta.env.__COMMIT_HASH__}
+      {import.meta.env.COMMIT_HASH}
     </p>
   </div>
 </ScrollArea>

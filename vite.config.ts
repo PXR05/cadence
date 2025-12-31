@@ -13,6 +13,6 @@ try {
 export default defineConfig({
   plugins: [tailwindcss(), sveltekit()],
   define: {
-    "import.meta.env.__COMMIT_HASH__": JSON.stringify(commitHash),
+    "import.meta.env.COMMIT_HASH": JSON.stringify(commitHash)
   },
 });
