@@ -93,10 +93,7 @@
         let displayName = cache.name;
         let icon = PackageIcon;
 
-        if (cache.name === "image-cache") {
-          displayName = "Image Cache";
-          icon = ImageIcon;
-        } else if (cache.name.startsWith("cache-")) {
+        if (cache.name.startsWith("cache-")) {
           displayName = "App Assets";
           icon = GlobeIcon;
         }
@@ -208,9 +205,9 @@
           displayName: "Offline Tracks",
         },
         {
-          name: "playlists",
-          table: offlineDb.playlists,
-          displayName: "Offline Playlists",
+          name: "images",
+          table: offlineDb.images,
+          displayName: "Cached Images",
         },
       ];
 
@@ -294,7 +291,7 @@
         await cacheDb.playlistDetails.clear();
         await cacheDb.metadata.clear();
         await offlineDb.tracks.clear();
-        await offlineDb.playlists.clear();
+        await offlineDb.images.clear();
         await historyDb.playHistory.clear();
         toast.success("All cached data cleared");
       } else if (clearTarget.type === "database") {
@@ -305,7 +302,7 @@
           await cacheDb.metadata.clear();
         } else if (clearTarget.dbName === "CadenceOfflineDB") {
           await offlineDb.tracks.clear();
-          await offlineDb.playlists.clear();
+          await offlineDb.images.clear();
         } else if (clearTarget.dbName === "CadenceHistoryDB") {
           await historyDb.playHistory.clear();
         }
@@ -322,8 +319,8 @@
         } else if (clearTarget.dbName === "CadenceOfflineDB") {
           if (clearTarget.tableName === "tracks")
             await offlineDb.tracks.clear();
-          else if (clearTarget.tableName === "playlists")
-            await offlineDb.playlists.clear();
+          else if (clearTarget.tableName === "images")
+            await offlineDb.images.clear();
         } else if (clearTarget.dbName === "CadenceHistoryDB") {
           if (clearTarget.tableName === "playHistory")
             await historyDb.playHistory.clear();

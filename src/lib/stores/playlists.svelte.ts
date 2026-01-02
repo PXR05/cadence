@@ -8,6 +8,7 @@ import {
   deletePlaylist,
   clearPlaylistsCache,
 } from "$lib/db/cache";
+import { downloadStore } from "$lib/stores/download.svelte";
 import type { Playlist, PlaylistDetail } from "$lib/schemas";
 import { SvelteMap, SvelteSet } from "svelte/reactivity";
 
@@ -98,7 +99,7 @@ class PlaylistsStore {
       await savePlaylistsCache(
         userPlaylists,
         youtubePlaylists,
-        this._lastFetchedAt,
+        this._lastFetchedAt
       );
     } catch (err) {
       this.error =
@@ -127,7 +128,7 @@ class PlaylistsStore {
       await savePlaylistsCache(
         userPlaylists,
         this._youtubePlaylists,
-        this._lastFetchedAt,
+        this._lastFetchedAt
       );
     } catch (err) {
       this.error =
@@ -155,7 +156,7 @@ class PlaylistsStore {
       await savePlaylistsCache(
         this._userPlaylists,
         youtubePlaylists,
-        this._lastFetchedAt,
+        this._lastFetchedAt
       );
     } catch (err) {
       this.error =
@@ -184,7 +185,7 @@ class PlaylistsStore {
       if (latestUserPlaylists.length > 0) {
         const latestServerPlaylist = latestUserPlaylists[0];
         const latestCachedPlaylist = this.userPlaylists.find(
-          (p) => p.id === latestServerPlaylist.id,
+          (p) => p.id === latestServerPlaylist.id
         );
 
         if (latestCachedPlaylist) {
@@ -202,7 +203,7 @@ class PlaylistsStore {
       if (latestYoutubePlaylists.length > 0) {
         const latestServerPlaylist = latestYoutubePlaylists[0];
         const latestCachedPlaylist = this.youtubePlaylists.find(
-          (p) => p.id === latestServerPlaylist.id,
+          (p) => p.id === latestServerPlaylist.id
         );
 
         if (latestCachedPlaylist) {
@@ -248,7 +249,7 @@ class PlaylistsStore {
 
   async loadPlaylistDetail(
     id: string,
-    forceRefresh: boolean = false,
+    forceRefresh: boolean = false
   ): Promise<PlaylistDetail> {
     this._loadingPlaylistIds.add(id);
 
@@ -262,7 +263,7 @@ class PlaylistsStore {
         }
         const shouldRefresh = await this.shouldRefreshPlaylistDetail(
           id,
-          cached,
+          cached
         );
         if (!shouldRefresh) {
           this._loadingPlaylistIds.delete(id);
@@ -275,6 +276,8 @@ class PlaylistsStore {
 
       this._playlistDetails.set(id, playlistDetail);
       await savePlaylistDetail(playlistDetail);
+
+      await downloadStore.recalculatePlaylistOfflineStatus(id);
 
       this._loadingPlaylistIds.delete(id);
       return playlistDetail;
@@ -293,7 +296,7 @@ class PlaylistsStore {
 
   private async shouldRefreshPlaylistDetail(
     id: string,
-    cached: PlaylistDetail,
+    cached: PlaylistDetail
   ): Promise<boolean> {
     try {
       const basicPlaylist = this.getPlaylistById(id);

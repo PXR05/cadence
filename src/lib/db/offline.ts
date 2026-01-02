@@ -16,16 +16,17 @@ export interface OfflineTrack {
   downloadedAt: number;
 }
 
-export interface OfflinePlaylist {
+export interface OfflineImage {
   id: string;
-  name: string;
-  trackIds: string[];
+  imageBlob: Blob;
+  mimeType: string;
+  size: number;
   downloadedAt: number;
 }
 
 class OfflineDatabase extends Dexie {
   tracks!: Table<OfflineTrack, string>;
-  playlists!: Table<OfflinePlaylist, string>;
+  images!: Table<OfflineImage, string>;
 
   constructor() {
     super("CadenceOfflineDB");
@@ -49,6 +50,18 @@ class OfflineDatabase extends Dexie {
           }
         }
       });
+
+    this.version(3).stores({
+      tracks: "id, downloadedAt",
+      playlists: "id, downloadedAt",
+      images: "id, downloadedAt",
+    });
+
+    this.version(4).stores({
+      tracks: "id, downloadedAt",
+      playlists: null,
+      images: "id, downloadedAt",
+    });
   }
 }
 
@@ -59,7 +72,7 @@ export async function saveTrackOffline(
   audioBlob: Blob,
   metadata: OfflineTrack["metadata"],
   filename: string,
-  size?: number,
+  size?: number
 ): Promise<void> {
   await offlineDb.tracks.put({
     id: trackId,
@@ -80,7 +93,7 @@ export async function saveTrackOffline(
 }
 
 export async function getOfflineTrack(
-  trackId: string,
+  trackId: string
 ): Promise<OfflineTrack | undefined> {
   return offlineDb.tracks.get(trackId);
 }
@@ -92,7 +105,7 @@ export async function isTrackOffline(trackId: string): Promise<boolean> {
 
 export async function isTrackOfflineWithSize(
   trackId: string,
-  expectedSize: number,
+  expectedSize: number
 ): Promise<boolean> {
   const track = await offlineDb.tracks.get(trackId);
   if (!track) return false;
@@ -101,38 +114,7 @@ export async function isTrackOfflineWithSize(
 
 export async function deleteOfflineTrack(trackId: string): Promise<void> {
   await offlineDb.tracks.delete(trackId);
-}
-
-export async function savePlaylistOffline(
-  playlistId: string,
-  name: string,
-  trackIds: string[],
-): Promise<void> {
-  await offlineDb.playlists.put({
-    id: playlistId,
-    name,
-    trackIds,
-    downloadedAt: Date.now(),
-  });
-}
-
-export async function isPlaylistOffline(playlistId: string): Promise<boolean> {
-  const playlist = await offlineDb.playlists.get(playlistId);
-  if (!playlist) return false;
-
-  const trackStatuses = await Promise.all(
-    playlist.trackIds.map((id) => isTrackOffline(id)),
-  );
-
-  return trackStatuses.every((status) => status);
-}
-
-export async function deleteOfflinePlaylist(playlistId: string): Promise<void> {
-  const playlist = await offlineDb.playlists.get(playlistId);
-  if (playlist) {
-    await Promise.all(playlist.trackIds.map((id) => deleteOfflineTrack(id)));
-    await offlineDb.playlists.delete(playlistId);
-  }
+  await offlineDb.images.delete(trackId).catch(() => {});
 }
 
 export async function getStorageEstimate(): Promise<{
@@ -147,4 +129,27 @@ export async function getStorageEstimate(): Promise<{
     };
   }
   return null;
+}
+
+export async function saveImageOffline(
+  trackId: string,
+  imageBlob: Blob
+): Promise<void> {
+  await offlineDb.images.put({
+    id: trackId,
+    imageBlob,
+    mimeType: imageBlob.type || "image/jpeg",
+    size: imageBlob.size,
+    downloadedAt: Date.now(),
+  });
+}
+
+export async function getOfflineImage(
+  trackId: string
+): Promise<OfflineImage | undefined> {
+  return offlineDb.images.get(trackId);
+}
+
+export async function deleteOfflineImage(trackId: string): Promise<void> {
+  await offlineDb.images.delete(trackId);
 }

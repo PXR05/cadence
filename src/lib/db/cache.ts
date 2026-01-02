@@ -26,6 +26,7 @@ export interface CachedPlaylist {
   createdAt: Date;
   updatedAt: Date;
   itemCount?: number;
+  isOffline?: boolean;
   cachedAt: number;
 }
 
@@ -66,7 +67,7 @@ export const cacheDb = new CacheDatabase();
 
 export async function saveTracksCache(
   tracks: AudioFile[],
-  lastFetchedAt: string | null,
+  lastFetchedAt: string | null
 ): Promise<void> {
   const cachedTracks: CachedTrack[] = tracks.map((track) => ({
     ...track,
@@ -83,7 +84,7 @@ export async function saveTracksCache(
         key: "tracks_lastFetchedAt",
         value: lastFetchedAt,
       });
-    },
+    }
   );
 }
 
@@ -122,18 +123,28 @@ export async function deleteTrackFromCache(id: string): Promise<void> {
 export async function savePlaylistsCache(
   userPlaylists: Playlist[],
   youtubePlaylists: Playlist[],
-  lastFetchedAt: string | null,
+  lastFetchedAt: string | null
 ): Promise<void> {
+  const existingPlaylists = await cacheDb.playlists.toArray();
+  const offlineStatusMap = new Map<string, boolean>();
+  existingPlaylists.forEach((p) => {
+    if (p.isOffline !== undefined) {
+      offlineStatusMap.set(p.id, p.isOffline);
+    }
+  });
+
   const cachedUserPlaylists: CachedPlaylist[] = userPlaylists.map((p) => ({
     ...p,
+    isOffline: offlineStatusMap.get(p.id),
     cachedAt: Date.now(),
   }));
 
   const cachedYoutubePlaylists: CachedPlaylist[] = youtubePlaylists.map(
     (p) => ({
       ...p,
+      isOffline: offlineStatusMap.get(p.id),
       cachedAt: Date.now(),
-    }),
+    })
   );
 
   await cacheDb.transaction(
@@ -149,7 +160,7 @@ export async function savePlaylistsCache(
         key: "playlists_lastFetchedAt",
         value: lastFetchedAt,
       });
-    },
+    }
   );
 }
 
@@ -195,7 +206,7 @@ export async function getPlaylistsCache(): Promise<{
 }
 
 export async function savePlaylistDetail(
-  playlistDetail: PlaylistDetail,
+  playlistDetail: PlaylistDetail
 ): Promise<void> {
   await cacheDb.playlistDetails.put({
     ...playlistDetail,
@@ -204,7 +215,7 @@ export async function savePlaylistDetail(
 }
 
 export async function getPlaylistDetail(
-  id: string,
+  id: string
 ): Promise<PlaylistDetail | undefined> {
   const cached = await cacheDb.playlistDetails.get(id);
   if (!cached) return undefined;
@@ -235,7 +246,7 @@ export async function clearTracksCache(): Promise<void> {
     async () => {
       await cacheDb.tracks.clear();
       await cacheDb.metadata.delete("tracks_lastFetchedAt");
-    },
+    }
   );
 }
 
@@ -247,7 +258,7 @@ export async function clearPlaylistsCache(): Promise<void> {
       await cacheDb.playlists.clear();
       await cacheDb.playlistDetails.clear();
       await cacheDb.metadata.delete("playlists_lastFetchedAt");
-    },
+    }
   );
 }
 
@@ -265,13 +276,13 @@ export async function clearAllCache(): Promise<void> {
       await cacheDb.playlists.clear();
       await cacheDb.playlistDetails.clear();
       await cacheDb.metadata.clear();
-    },
+    }
   );
 }
 
 export async function updateTrackColor(
   trackId: string,
-  color: string,
+  color: string
 ): Promise<void> {
   const track = await cacheDb.tracks.get(trackId);
   if (track) {
@@ -284,7 +295,7 @@ export async function updateTrackColor(
 
 export async function searchCachedTracks(
   query: string,
-  limit: number = 20,
+  limit: number = 20
 ): Promise<AudioFile[]> {
   const tracks = await cacheDb.tracks.toArray();
   if (tracks.length === 0) return [];
@@ -325,4 +336,67 @@ export async function searchCachedTracks(
     imageFile: track.imageFile,
     color: track.color,
   }));
+}
+
+export async function updatePlaylistOfflineStatus(
+  playlistId: string,
+  isOffline: boolean
+): Promise<void> {
+  const playlist = await cacheDb.playlists.get(playlistId);
+  if (playlist) {
+    await cacheDb.playlists.put({
+      ...playlist,
+      isOffline,
+    });
+  }
+}
+
+export async function getPlaylistOfflineStatus(
+  playlistId: string
+): Promise<boolean> {
+  const playlist = await cacheDb.playlists.get(playlistId);
+  return playlist?.isOffline ?? false;
+}
+
+export async function checkAndUpdatePlaylistOfflineStatus(
+  playlistId: string,
+  checkTrackOffline: (trackId: string) => Promise<boolean>
+): Promise<boolean> {
+  const playlistDetail = await cacheDb.playlistDetails.get(playlistId);
+  if (!playlistDetail || playlistDetail.items.length === 0) {
+    await updatePlaylistOfflineStatus(playlistId, false);
+    return false;
+  }
+
+  const trackStatuses = await Promise.all(
+    playlistDetail.items.map((item) => checkTrackOffline(item.audio.id))
+  );
+
+  const isOffline = trackStatuses.every((status) => status);
+  await updatePlaylistOfflineStatus(playlistId, isOffline);
+  return isOffline;
+}
+
+export async function getTrackIdsUsedByOtherOfflinePlaylists(
+  excludePlaylistId: string,
+  trackIds: string[]
+): Promise<Set<string>> {
+  const offlinePlaylists = await cacheDb.playlists
+    .filter((p) => p.isOffline === true && p.id !== excludePlaylistId)
+    .toArray();
+
+  const usedTrackIds = new Set<string>();
+
+  for (const playlist of offlinePlaylists) {
+    const detail = await cacheDb.playlistDetails.get(playlist.id);
+    if (detail) {
+      for (const item of detail.items) {
+        if (trackIds.includes(item.audio.id)) {
+          usedTrackIds.add(item.audio.id);
+        }
+      }
+    }
+  }
+
+  return usedTrackIds;
 }

@@ -1,12 +1,17 @@
 import {
   saveTrackOffline,
-  savePlaylistOffline,
-  isPlaylistOffline as checkIsPlaylistOffline,
   isTrackOffline as checkIsTrackOffline,
   isTrackOfflineWithSize,
-  deleteOfflinePlaylist,
   deleteOfflineTrack,
+  saveImageOffline,
 } from "$lib/db/offline";
+import {
+  getPlaylistOfflineStatus,
+  updatePlaylistOfflineStatus,
+  checkAndUpdatePlaylistOfflineStatus,
+  getTrackIdsUsedByOtherOfflinePlaylists,
+  cacheDb,
+} from "$lib/db/cache";
 import type { PlaylistDetail } from "$lib/schemas";
 import zip from "jszip";
 import { authFetch } from "$lib/api/fetch";
@@ -126,8 +131,23 @@ class DownloadStore {
   }
 
   async checkOfflineStatus(playlistId: string): Promise<void> {
-    const isOffline = await checkIsPlaylistOffline(playlistId);
+    const isOffline = await getPlaylistOfflineStatus(playlistId);
     this._offlineStatus.set(playlistId, isOffline);
+  }
+
+  async recalculatePlaylistOfflineStatus(playlistId: string): Promise<void> {
+    const isOffline = await checkAndUpdatePlaylistOfflineStatus(
+      playlistId,
+      checkIsTrackOffline
+    );
+    this._offlineStatus.set(playlistId, isOffline);
+  }
+
+  async recalculateAllTrackedPlaylists(): Promise<void> {
+    const playlistIds = Array.from(this._offlineStatus.keys());
+    await Promise.all(
+      playlistIds.map((id) => this.recalculatePlaylistOfflineStatus(id))
+    );
   }
 
   async checkTrackOfflineStatus(trackId: string): Promise<boolean> {
@@ -140,6 +160,18 @@ class DownloadStore {
     const response = await authFetch(`/audio/${audioId}/stream`);
     if (!response.ok) throw new Error(`Failed to download track ${audioId}`);
     return response.blob();
+  }
+
+  private async downloadAndSaveImage(trackId: string): Promise<void> {
+    try {
+      const response = await authFetch(`/audio/${trackId}/image`);
+      if (response.ok) {
+        const imageBlob = await response.blob();
+        await saveImageOffline(trackId, imageBlob);
+      }
+    } catch (error) {
+      console.warn(`Failed to download image for track ${trackId}:`, error);
+    }
   }
 
   async addPlaylistToDownloadQueue(playlist: PlaylistDetail): Promise<void> {
@@ -171,7 +203,7 @@ class DownloadStore {
 
   async addPlaylistToOfflineQueue(
     playlist: PlaylistDetail,
-    playlistId: string,
+    playlistId: string
   ): Promise<void> {
     const queueItem: QueueItem = {
       id: `playlist-offline-${playlistId}`,
@@ -208,7 +240,7 @@ class DownloadStore {
       duration?: number;
     },
     filename: string,
-    size?: number,
+    size?: number
   ): Promise<void> {
     const queueItem: QueueItem = {
       id: `track-offline-${trackId}`,
@@ -272,10 +304,7 @@ class DownloadStore {
         queueItem.playlist &&
         queueItem.playlistId
       ) {
-        await this._makeOffline(
-          queueItem.playlist,
-          queueItem.playlistId,
-        );
+        await this._makeOffline(queueItem.playlist, queueItem.playlistId);
       } else if (
         queueItem.type === "track-offline" &&
         queueItem.trackId &&
@@ -286,7 +315,7 @@ class DownloadStore {
           queueItem.trackId,
           queueItem.metadata,
           queueItem.filename,
-          queueItem.size,
+          queueItem.size
         );
       }
     } catch (error) {
@@ -299,9 +328,7 @@ class DownloadStore {
     await this.addPlaylistToDownloadQueue(playlist);
   }
 
-  private async _downloadPlaylist(
-    playlist: PlaylistDetail,
-  ): Promise<void> {
+  private async _downloadPlaylist(playlist: PlaylistDetail): Promise<void> {
     this._abortController = new AbortController();
     this._isCancelled = false;
 
@@ -365,14 +392,14 @@ class DownloadStore {
 
   async makeOffline(
     playlist: PlaylistDetail,
-    playlistId: string,
+    playlistId: string
   ): Promise<void> {
     await this.addPlaylistToOfflineQueue(playlist, playlistId);
   }
 
   private async _makeOffline(
     playlist: PlaylistDetail,
-    playlistId: string,
+    playlistId: string
   ): Promise<void> {
     this._abortController = new AbortController();
     this._isCancelled = false;
@@ -400,7 +427,7 @@ class DownloadStore {
 
         const alreadyExists = await isTrackOfflineWithSize(
           item.audio.id,
-          item.audio.size,
+          item.audio.size
         );
 
         if (alreadyExists) {
@@ -416,7 +443,7 @@ class DownloadStore {
 
         try {
           const blob = await this.downloadTrackBlob(item.audio.id);
-    
+
           await saveTrackOffline(
             item.audio.id,
             blob,
@@ -427,8 +454,10 @@ class DownloadStore {
               duration: item.audio.metadata?.duration,
             },
             item.audio.filename,
-            item.audio.size,
+            item.audio.size
           );
+
+          await this.downloadAndSaveImage(item.audio.id);
 
           trackIds.push(item.audio.id);
           this._progress = {
@@ -447,7 +476,7 @@ class DownloadStore {
         return;
       }
 
-      await savePlaylistOffline(playlistId, playlist.name, trackIds);
+      await updatePlaylistOfflineStatus(playlistId, true);
       this._offlineStatus.set(playlistId, true);
 
       if (skippedCount > 0) {
@@ -473,7 +502,21 @@ class DownloadStore {
 
   async removeOffline(playlistId: string): Promise<void> {
     try {
-      await deleteOfflinePlaylist(playlistId);
+      const playlistDetail = await cacheDb.playlistDetails.get(playlistId);
+      if (playlistDetail) {
+        const trackIds = playlistDetail.items.map((item) => item.audio.id);
+
+        const tracksUsedByOthers = await getTrackIdsUsedByOtherOfflinePlaylists(
+          playlistId,
+          trackIds
+        );
+
+        const tracksToDelete = trackIds.filter(
+          (id) => !tracksUsedByOthers.has(id)
+        );
+        await Promise.all(tracksToDelete.map((id) => deleteOfflineTrack(id)));
+      }
+      await updatePlaylistOfflineStatus(playlistId, false);
       this._offlineStatus.set(playlistId, false);
     } catch (error) {
       console.error("Failed to remove offline playlist:", error);
@@ -489,7 +532,7 @@ class DownloadStore {
       duration?: number;
     },
     filename: string,
-    size?: number,
+    size?: number
   ): Promise<void> {
     await this.addTrackToOfflineQueue(trackId, metadata, filename, size);
   }
@@ -503,7 +546,7 @@ class DownloadStore {
       duration?: number;
     },
     filename: string,
-    size?: number,
+    size?: number
   ): Promise<void> {
     this._abortController = new AbortController();
     this._isCancelled = false;
@@ -539,8 +582,10 @@ class DownloadStore {
           duration: metadata.duration,
         },
         filename,
-        size,
+        size
       );
+
+      await this.downloadAndSaveImage(trackId);
 
       if (!this._isCancelled) {
         this._progress = {
@@ -549,6 +594,7 @@ class DownloadStore {
         };
         this.saveToStorage();
         this._trackOfflineStatus.set(trackId, true);
+        await this.recalculateAllTrackedPlaylists();
       }
     } catch (error) {
       if (this._isCancelled) {
@@ -568,6 +614,7 @@ class DownloadStore {
     try {
       await deleteOfflineTrack(trackId);
       this._trackOfflineStatus.set(trackId, false);
+      await this.recalculateAllTrackedPlaylists();
     } catch (error) {
       console.error("Failed to remove offline track:", error);
     }
