@@ -200,7 +200,7 @@
   <h2 class="text-2xl font-semibold p-2">Settings</h2>
 </div>
 
-<ScrollArea class="h-dvh">
+<div class="h-dvh">
   <div class="p-4 pt-16 h-full w-full space-y-4 mb-[50dvh]">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
@@ -355,7 +355,7 @@
       {import.meta.env.COMMIT_HASH}
     </p>
   </div>
-</ScrollArea>
+</div>
 
 <!-- Account Menu Dialog -->
 <MenuDialog

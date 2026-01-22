@@ -2,6 +2,7 @@
   import { page } from "$app/state";
   import { authStore } from "$lib/stores/auth.svelte";
   import * as Sidebar from "$lib/components/ui/sidebar";
+  import { ScrollArea } from "$lib/components/ui/scroll-area";
   import { ListMusicIcon, PlusIcon } from "@lucide/svelte";
   import { onMount } from "svelte";
   import { offlineDb } from "$lib/db/offline";
@@ -101,8 +102,10 @@
 {/snippet}
 
 {#snippet list()}
-  <Sidebar.Group class="pb-20">
-    <Sidebar.GroupLabel class="flex items-center justify-between pr-2">
+  <Sidebar.Group class="flex flex-col h-full overflow-hidden">
+    <Sidebar.GroupLabel
+      class="flex items-center justify-between pr-2 shrink-0"
+    >
       <span>Playlists</span>
       <button
         class="size-5 grid place-items-center rounded hover:bg-sidebar-accent transition-colors group-data-[collapsible=icon]:hidden"
@@ -111,27 +114,29 @@
         <PlusIcon class="size-4" />
       </button>
     </Sidebar.GroupLabel>
-    <Sidebar.GroupContent>
-      <Sidebar.Menu>
-        {#each allUserPlaylists as playlist (playlist.id)}
-          <Sidebar.MenuItem>
-            <Sidebar.MenuButton
-              isActive={isActive(`/playlist?id=${playlist.id}`)}
-            >
-              {#snippet child({ props })}
-                <a
-                  href="/playlist?id={playlist.id}"
-                  oncontextmenu={(e) => handleContextMenu(e, playlist)}
-                  {...props}
-                >
-                  <ListMusicIcon />
-                  <span>{playlist.name}</span>
-                </a>
-              {/snippet}
-            </Sidebar.MenuButton>
-          </Sidebar.MenuItem>
-        {/each}
-      </Sidebar.Menu>
+    <Sidebar.GroupContent class="flex-1 overflow-hidden">
+      <ScrollArea class="h-full">
+        <Sidebar.Menu class="pb-20">
+          {#each allUserPlaylists as playlist (playlist.id)}
+            <Sidebar.MenuItem>
+              <Sidebar.MenuButton
+                isActive={isActive(`/playlist?id=${playlist.id}`)}
+              >
+                {#snippet child({ props })}
+                  <a
+                    href="/playlist?id={playlist.id}"
+                    oncontextmenu={(e) => handleContextMenu(e, playlist)}
+                    {...props}
+                  >
+                    <ListMusicIcon />
+                    <span>{playlist.name}</span>
+                  </a>
+                {/snippet}
+              </Sidebar.MenuButton>
+            </Sidebar.MenuItem>
+          {/each}
+        </Sidebar.Menu>
+      </ScrollArea>
     </Sidebar.GroupContent>
   </Sidebar.Group>
 {/snippet}
@@ -152,12 +157,14 @@
     </a>
   </Sidebar.Header>
 
-  <Sidebar.Content class="relative">
+  <Sidebar.Content class="relative flex flex-col">
     {@render navigation()}
 
     <Sidebar.Separator />
 
-    {@render list()}
+    <div class="flex-1 min-h-0">
+      {@render list()}
+    </div>
   </Sidebar.Content>
 </Sidebar.Root>
 

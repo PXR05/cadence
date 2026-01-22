@@ -469,7 +469,7 @@
 
 <svelte:window onmousemove={handleMouseMove} onmouseup={handleMouseUp} />
 
-<div class="absolute top-0 w-full p-1.5 md:p-2 z-50">
+<div class="sticky top-0 w-full p-1.5 md:p-2 z-50">
   <div
     class="flex-1 flex items-center flex-row gap-1.5 md:gap-2 rounded-xl p-1.5 md:p-2 border-input/15 {appearanceStore.disableBlur
       ? 'bg-muted'
@@ -489,8 +489,8 @@
   </div>
 </div>
 
-<ScrollArea class="h-dvh">
-  <div class="px-2 pb-4 pt-17 md:pt-18.5 h-full w-full space-y-2 mb-[50dvh]">
+<div class="h-dvh">
+  <div class="px-2 pb-4 pt-0.5 md:pt-18.5 h-full w-full space-y-2 mb-[50dvh]">
     <SettingCard
       icon={AudioWaveformIcon}
       title="Equalizer"
@@ -691,4 +691,4 @@
       </div>
     </SettingCard>
   </div>
-</ScrollArea>
+</div>

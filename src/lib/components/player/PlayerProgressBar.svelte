@@ -1,6 +1,7 @@
 <script lang="ts">
   import { playerStore } from "$lib/stores/player.svelte";
   import { formatTime } from "$lib/utils/format";
+  import { IsMobile } from "$lib/hooks/is-mobile.svelte";
 
   const {
     height = 6,
@@ -15,6 +16,10 @@
   let progressBar: HTMLDivElement | null = $state(null);
   let isDragging = $state(false);
   let pendingSeekPosition = $state<number | null>(null);
+  let isHovering = $state(false);
+  let hoverPosition = $state<{ x: number; time: number } | null>(null);
+
+  const isMobile = new IsMobile();
 
   const currentProgress = $derived(
     pendingSeekPosition !== null
@@ -62,6 +67,28 @@
     updateSeek(e.clientX);
   }
 
+  function handleProgressMouseEnter() {
+    isHovering = true;
+  }
+
+  function handleProgressMouseLeave() {
+    isHovering = false;
+    hoverPosition = null;
+  }
+
+  function handleProgressMouseMove(e: MouseEvent) {
+    if (progressBar && playerStore.duration && !isMobile.current) {
+      const rect = progressBar.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const percentage = x / rect.width;
+      const time = Math.max(
+        0,
+        Math.min(percentage * playerStore.duration, playerStore.duration),
+      );
+      hoverPosition = { x: e.clientX - rect.left, time };
+    }
+  }
+
   function handleProgressTouchStart(e: TouchEvent) {
     if (e.touches.length > 0) {
       startSeek(e.touches[0].clientX);
@@ -91,6 +118,9 @@
   class="relative group cursor-pointer transition-colors flex items-center justify-between text-xs touch-none"
   onmousedown={handleProgressMouseDown}
   ontouchstart={handleProgressTouchStart}
+  onmouseenter={handleProgressMouseEnter}
+  onmouseleave={handleProgressMouseLeave}
+  onmousemove={handleProgressMouseMove}
   role="slider"
   tabindex="0"
   aria-label="Seek slider"
@@ -134,6 +164,7 @@
       ></div>
     </div>
   </div>
+
   {#if showTime}
     <div
       style="padding-top: {height * 3.5}px;"
@@ -145,6 +176,16 @@
       <span draggable={false}>
         {formatTime(playerStore.duration)}
       </span>
+    </div>
+  {/if}
+
+  {#if !isMobile.current && isHovering && hoverPosition && progressBar}
+    <div
+      style="left: {hoverPosition.x}px; transform: translateX(-50%); bottom: {height +
+        8}px;"
+      class="absolute pointer-events-none bg-popover text-popover-foreground px-2 py-1 rounded text-xs shadow-lg whitespace-nowrap tabular-nums"
+    >
+      {formatTime(hoverPosition.time)} / {formatTime(playerStore.duration)}
     </div>
   {/if}
 </div>

@@ -191,8 +191,8 @@
       </p>
     </div>
 
-    <div class="flex flex-col gap-6">
-      <ProgressBar height={10} {isPanelAnimating} />
+    <div class="flex flex-col gap-8">
+      <ProgressBar height={10} {isPanelAnimating} showTime />
 
       <PlaybackControls variant="large" />
     </div>

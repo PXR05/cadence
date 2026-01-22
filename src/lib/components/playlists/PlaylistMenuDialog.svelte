@@ -3,6 +3,7 @@
   import { playlistMenuStore } from "$lib/stores/playlistMenu.svelte";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
   import { youtubeDownloadStore } from "$lib/stores/youtubeDownload.svelte";
+  import { playerStore } from "$lib/stores/player.svelte";
   import {
     useDialogState,
     useMenuDialogState,
@@ -26,6 +27,7 @@
     RefreshCwIcon,
     DownloadIcon,
     MusicIcon,
+    ListPlusIcon,
   } from "@lucide/svelte";
   import { toast } from "svelte-sonner";
 
@@ -41,7 +43,7 @@
     if (playlistMenuStore.playlist?.id === playlistId) return;
 
     const foundPlaylist = playlistsStore.allPlaylists.find(
-      (p) => p.id === playlistId
+      (p) => p.id === playlistId,
     );
     if (foundPlaylist) {
       playlistMenuStore.setPlaylist(foundPlaylist, false, false);
@@ -52,7 +54,7 @@
 
   const playlist = $derived(playlistMenuStore.playlist);
   const displayName = $derived(
-    playlist ? getPlaylistDisplayName(playlist) : "Unknown"
+    playlist ? getPlaylistDisplayName(playlist) : "Unknown",
   );
   const playlistId = $derived(playlist?.id ?? "");
 
@@ -61,12 +63,12 @@
       ? isSpecialPlaylist(playlist.id) ||
           isArtistPlaylist(playlist.id) ||
           isAlbumPlaylist(playlist.id)
-      : true
+      : true,
   );
 
   const itemCount = $derived(playlist?.itemCount ?? 0);
   const imageUrl = $derived(
-    playlist?.coverImage ? getPlaylistImageUrl(playlist.id) : undefined
+    playlist?.coverImage ? getPlaylistImageUrl(playlist.id) : undefined,
   );
 
   const offline = usePlaylistOffline(() => playlistId);
@@ -116,12 +118,23 @@
     handleClose();
   }
 
+  async function handleAddToQueue() {
+    const detail = await getPlaylistDetail();
+    if (detail && detail.items.length > 0) {
+      playerStore.addPlaylistToQueue(detail.items.map((item) => item.audio));
+      handleClose();
+      toast.success(`Added ${detail.items.length} tracks to queue`);
+    } else {
+      toast.error("No tracks to add to queue");
+    }
+  }
+
   async function handlePlaylistResync() {
     if (!playlist) return;
     try {
       handleClose();
       await youtubeDownloadStore.downloadFromUrl(
-        `https://music.youtube.com/playlist?list=${playlist.id.replace("youtube_", "")}`
+        `https://music.youtube.com/playlist?list=${playlist.id.replace("youtube_", "")}`,
       );
       toast.success("Resynced from YouTube");
     } catch (error) {
@@ -178,6 +191,18 @@
 
     <div class="h-px bg-border my-1"></div>
   {/if}
+
+  <Button
+    variant="ghost"
+    class="justify-start gap-3 h-12"
+    onclick={handleAddToQueue}
+    disabled={itemCount === 0}
+  >
+    <ListPlusIcon class="size-5" />
+    Add to Queue
+  </Button>
+
+  <div class="h-px bg-border my-1"></div>
 
   <Button
     variant="ghost"

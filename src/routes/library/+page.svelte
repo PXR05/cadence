@@ -61,7 +61,7 @@
   <h2 class="text-2xl font-semibold p-2">Playlists</h2>
 </div>
 
-<ScrollArea class="h-dvh">
+<div class="h-dvh">
   <div
     class="p-4 pt-16 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 pb-72"
   >
@@ -88,7 +88,7 @@
       />
     </button>
   </div>
-</ScrollArea>
+</div>
 
 <CreatePlaylistDialog
   bind:open={createDialogOpen}

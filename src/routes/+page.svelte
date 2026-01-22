@@ -39,7 +39,7 @@
 </svelte:head>
 
 {#if isInitialLoad}
-  <ScrollArea class="h-dvh py-2">
+  <div class="h-dvh py-2">
     <div class="pt-2 grid pb-72 space-y-2">
       <div class="flex flex-col gap-2">
         <Skeleton class="h-7 w-44 mx-4" />
@@ -83,7 +83,7 @@
         {/each}
       </div>
     </div>
-  </ScrollArea>
+  </div>
 {:else if error}
   <div
     class="mx-auto w-full h-full grid place-items-center p-16 text-destructive text-center"
@@ -103,7 +103,7 @@
     </div>
   </div>
 {:else}
-  <ScrollArea class="h-dvh py-2">
+  <div class="h-dvh py-2">
     <div class="pt-2 grid pb-72">
       <HorizontalTrackList title="Recommended" tracks={recommendedTracks} />
 
@@ -158,5 +158,5 @@
         </div>
       {/if}
     </div>
-  </ScrollArea>
+  </div>
 {/if}

@@ -117,7 +117,7 @@ class PlayerState {
       equalizerEnabled: true,
       reverbEnabled: false,
       reverbPreset: "Small Hall 1",
-    }
+    },
   );
 
   get currentTrack() {
@@ -135,7 +135,7 @@ class PlayerState {
     if (this.isShuffled && this.shuffledIndices) {
       if (!this.cachedShuffledQueue) {
         this.cachedShuffledQueue = this.shuffledIndices.map(
-          (i) => this.persistedState.trackQueue[i]
+          (i) => this.persistedState.trackQueue[i],
         );
       }
       return this.cachedShuffledQueue;
@@ -281,7 +281,7 @@ class PlayerState {
       this.equalizerEnabled,
       this.reverbEnabled,
       this.reverbPreset,
-      this.volume
+      this.volume,
     );
 
     if (this.isMuted) {
@@ -329,7 +329,7 @@ class PlayerState {
   }
 
   setAnalyzerFFTSize(
-    size: 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 4096 | 8192 | 16384 | 32768
+    size: 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 4096 | 8192 | 16384 | 32768,
   ) {
     this.audioEngine.setAnalyzerFFTSize(size);
   }
@@ -369,7 +369,7 @@ class PlayerState {
 
   private isFrequencyOverlapping(
     frequency: number,
-    excludeBandId?: number
+    excludeBandId?: number,
   ): boolean {
     const MIN_FREQUENCY_RATIO = 1.5;
 
@@ -396,7 +396,7 @@ class PlayerState {
     ];
 
     const sortedBands = [...this.equalizerBands].sort(
-      (a, b) => a.frequency - b.frequency
+      (a, b) => a.frequency - b.frequency,
     );
 
     for (const freq of candidateFrequencies) {
@@ -586,13 +586,13 @@ class PlayerState {
       navigator.mediaSession.setActionHandler("play", () => this.play());
       navigator.mediaSession.setActionHandler("pause", () => this.pause());
       navigator.mediaSession.setActionHandler("seekto", (e) =>
-        this.seek(e.seekTime ?? 0)
+        this.seek(e.seekTime ?? 0),
       );
       navigator.mediaSession.setActionHandler("previoustrack", () =>
-        this.playPrevious()
+        this.playPrevious(),
       );
       navigator.mediaSession.setActionHandler("nexttrack", () =>
-        this.playNext()
+        this.playNext(),
       );
     }
 
@@ -715,12 +715,34 @@ class PlayerState {
 
   addToQueue(track: AudioFile) {
     this.cachedShuffledQueue = null;
-    this.trackQueue.push(track);
+
+    if (this.trackQueue.length === 0 || !this.currentTrack) {
+      this.setQueue([track], 0);
+    } else {
+      this.trackQueue.push(track);
+    }
+  }
+
+  addPlaylistToQueue(tracks: AudioFile[]) {
+    if (tracks.length === 0) return;
+
+    this.cachedShuffledQueue = null;
+
+    if (this.trackQueue.length === 0 || !this.currentTrack) {
+      this.setQueue(tracks, 0);
+    } else {
+      this.trackQueue.push(...tracks);
+    }
   }
 
   addNextInQueue(track: AudioFile) {
     this.cachedShuffledQueue = null;
-    this.trackQueue.splice(this.queueIndex + 1, 0, track);
+
+    if (this.trackQueue.length === 0 || !this.currentTrack) {
+      this.setQueue([track], 0);
+    } else {
+      this.trackQueue.splice(this.queueIndex + 1, 0, track);
+    }
   }
 
   removeFromQueue(index: number) {
@@ -799,11 +821,11 @@ class PlayerState {
       const color = new Color(track.color);
       document.body.style.setProperty(
         "--primary",
-        `oklch(${color.coords[0]} ${color.coords[1]} ${color.coords[2]})`
+        `oklch(${color.coords[0]} ${color.coords[1]} ${color.coords[2]})`,
       );
       document.body.style.setProperty(
         "--ring",
-        `oklch(${color.coords[0]} ${color.coords[1]} ${color.coords[2]})`
+        `oklch(${color.coords[0]} ${color.coords[1]} ${color.coords[2]})`,
       );
 
       this.persistedState.trackColor = track.color;
@@ -832,11 +854,11 @@ class PlayerState {
 
     document.body.style.setProperty(
       "--primary",
-      `oklch(${brighter.coords[0]} ${brighter.coords[1]} ${brighter.coords[2]})`
+      `oklch(${brighter.coords[0]} ${brighter.coords[1]} ${brighter.coords[2]})`,
     );
     document.body.style.setProperty(
       "--ring",
-      `oklch(${brighter.coords[0]} ${brighter.coords[1]} ${brighter.coords[2]})`
+      `oklch(${brighter.coords[0]} ${brighter.coords[1]} ${brighter.coords[2]})`,
     );
     const brighterString = brighter.toString({ format: "hex" });
 

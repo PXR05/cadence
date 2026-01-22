@@ -247,7 +247,7 @@
   onYoutubeUpload={handleYoutubeUpload}
 />
 
-<ScrollArea class="h-dvh">
+<div class="h-dvh">
   <div class="flex flex-col mx-auto w-full h-full overflow-auto">
     <div class="flex-1 pt-32 md:pt-30">
       {#if loading}
@@ -317,7 +317,7 @@
       {/if}
     </div>
   </div>
-</ScrollArea>
+</div>
 
 <style>
   ._bg {
