@@ -63,6 +63,8 @@
         coverImage: editCoverImageFile || undefined,
       });
 
+      console.log("Playlist updated:", response);
+
       onUpdated({
         name: response.playlist.name,
         coverImage: response.playlist.coverImage,

@@ -17,8 +17,13 @@
     CloudDownloadIcon,
     CloudOffIcon,
     Trash2Icon,
+    ListXIcon,
   } from "@lucide/svelte";
   import { toast } from "svelte-sonner";
+  import { page } from "$app/state";
+  import { getPlaylistById, removeItemFromPlaylist } from "$lib/api/playlist";
+  import { playlistsStore } from "$lib/stores/playlists.svelte";
+  import { invalidateAll } from "$app/navigation";
 
   const managePlaylistDialog = useDialogState("manage-playlists");
   const deleteTrackDialog = useDialogState("delete-track");
@@ -27,6 +32,14 @@
     paramName: "track-menu",
     onOpen: restoreTrackFromId,
     onClose: () => trackMenuStore.clear(),
+  });
+
+  const playlistId = $derived.by(() => {
+    if (page.url.pathname === "/playlist") {
+      return page.url.searchParams.get("id") ?? null;
+    } else {
+      return null;
+    }
   });
 
   async function restoreTrackFromId(trackId: string) {
@@ -43,7 +56,7 @@
 
   const track = $derived(trackMenuStore.track);
   const title = $derived(
-    track?.metadata?.title ?? track?.filename ?? "Unknown"
+    track?.metadata?.title ?? track?.filename ?? "Unknown",
   );
   const artist = $derived(track?.metadata?.artist ?? "Unknown Artist");
   const imageUrl = $derived(track ? getImageUrl(track.id) : "");
@@ -93,7 +106,7 @@
           duration: track.metadata?.duration,
         },
         track.filename,
-        track.size
+        track.size,
       );
       toast.success("Available offline");
     }
@@ -103,6 +116,21 @@
 
   function handleAddToPlaylist() {
     managePlaylistDialog.open();
+  }
+
+  async function handleRemoveFromPlaylist() {
+    if (!track || !playlistId) return;
+
+    const details = await getPlaylistById(playlistId);
+    const item = details.playlist.items.find((i) => i.audio.id === track.id);
+    if (item) {
+      await removeItemFromPlaylist({ playlistId, itemId: item.id });
+      await playlistsStore.invalidatePlaylistDetail(playlistId);
+      await invalidateAll();
+    }
+
+    handleClose();
+    toast.success("Track removed from playlist");
   }
 
   function handleDeleteTrack() {
@@ -116,7 +144,7 @@
       handleClose();
       await tracksStore.deleteTrack(track.id);
       const queueIndex = playerStore.trackQueue.findIndex(
-        (queuedTrack) => queuedTrack.id === track.id
+        (queuedTrack) => queuedTrack.id === track.id,
       );
       if (queueIndex !== -1) {
         playerStore.removeFromQueue(queueIndex);
@@ -172,6 +200,17 @@
     <ListMusicIcon class="size-5" />
     Add to Playlist
   </Button>
+
+  {#if playlistId}
+    <Button
+      variant="ghost"
+      class="justify-start gap-3 h-12"
+      onclick={handleRemoveFromPlaylist}
+    >
+      <ListXIcon class="size-5" />
+      Remove from Playlist
+    </Button>
+  {/if}
 
   <div class="h-px bg-border my-1"></div>
 
