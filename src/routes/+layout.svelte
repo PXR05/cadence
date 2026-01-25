@@ -146,10 +146,10 @@
   let goingLeft = $state(false);
   beforeNavigate((e) => {
     const oldIndex = navItems.findIndex((i) =>
-      isActive(i.path, e.from?.url.pathname || "")
+      isActive(i.path, e.from?.url.pathname || ""),
     );
     const newIndex = navItems.findIndex((i) =>
-      isActive(i.path, e.to?.url.pathname || "")
+      isActive(i.path, e.to?.url.pathname || ""),
     );
     if (newIndex < oldIndex) {
       goingLeft = true;
@@ -170,9 +170,7 @@
 <ModeWatcher />
 
 {#if showSplash}
-  <SplashScreen
-    onComplete={() => (showSplash = false)}
-  />
+  <SplashScreen onComplete={() => (showSplash = false)} />
 {:else if !authStore.isAuthenticated}
   <AuthDialog onAuthenticated={loadInitialData} />
 {/if}
@@ -194,10 +192,10 @@
     >
       {#key page.url.pathname}
         <div
-          class="row-start-1 col-start-1 relative overflow-y-auto overflow-x-hidden h-dvh md:w-[calc(100dvw-256px)]"
+          class="row-start-1 col-start-1 relative overflow-x-hidden h-dvh md:w-[calc(100dvw-256px)]"
         >
           <div
-            class="flex flex-col h-full bg-linear-to-t from-primary/5 via-transparent to-transparent"
+            class="flex flex-col h-full bg-linear-to-t from-primary/5 via-transparent to-transparent overflow-y-scroll"
             in:fade={{
               duration: !appearanceStore.disableAnimations ? 150 : 0,
               easing: vaulEase,
