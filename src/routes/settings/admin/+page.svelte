@@ -5,7 +5,6 @@
   import { UserManagement, TrackManagement } from "$lib/components/admin";
   import { authStore } from "$lib/stores/auth.svelte";
   import { Button } from "$lib/components/ui/button";
-  import { ScrollArea } from "$lib/components/ui/scroll-area";
 
   let isAdmin = $state(false);
   let loading = $state(true);
@@ -60,37 +59,35 @@
   </div>
 </div>
 
-<div class="h-dvh">
+<div
+  class="px-2 pb-4 pt-0.5 w-full space-y-2 mb-[50dvh] transition-opacity {loading
+    ? 'opacity-0'
+    : ''}"
+>
   <div
-    class="px-2 pb-4 pt-0.5 md:pt-18.5 h-full w-full space-y-2 mb-[50dvh] transition-opacity {loading
-      ? 'opacity-0'
-      : ''}"
+    class="flex gap-2 sticky top-0 z-40 py-2 bg-background/80 backdrop-blur-sm"
   >
-    <div
-      class="flex gap-2 sticky top-0 z-40 py-2 bg-background/80 backdrop-blur-sm"
+    <Button
+      variant={activeTab === "tracks" ? "default" : "outline"}
+      onclick={() => switchTab("tracks")}
+      class="flex-1 h-11"
     >
-      <Button
-        variant={activeTab === "tracks" ? "default" : "outline"}
-        onclick={() => switchTab("tracks")}
-        class="flex-1 h-11"
-      >
-        Tracks
-      </Button>
-      <Button
-        variant={activeTab === "users" ? "default" : "outline"}
-        onclick={() => switchTab("users")}
-        class="flex-1 h-11"
-      >
-        Users
-      </Button>
-    </div>
+      Tracks
+    </Button>
+    <Button
+      variant={activeTab === "users" ? "default" : "outline"}
+      onclick={() => switchTab("users")}
+      class="flex-1 h-11"
+    >
+      Users
+    </Button>
+  </div>
 
-    <div class="relative space-y-2">
-      {#if activeTab === "users"}
-        <UserManagement />
-      {:else}
-        <TrackManagement />
-      {/if}
-    </div>
+  <div class="relative space-y-2">
+    {#if activeTab === "users"}
+      <UserManagement />
+    {:else}
+      <TrackManagement />
+    {/if}
   </div>
 </div>

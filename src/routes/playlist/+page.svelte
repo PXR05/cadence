@@ -112,8 +112,8 @@
       <div
         class="absolute w-[calc(100dvw-12px)] md:w-[calc(100dvw-12px-256px)] ease-vaul
           {isScrolled
-          ? 'translate-y-[60px]'
-          : 'translate-y-[168px] md:translate-y-[272px]'}
+          ? 'translate-y-15'
+          : 'translate-y-42 md:translate-y-68'}
           {appearanceStore.disableAnimations ? 'duration-0' : 'duration-200'}
       "
       >

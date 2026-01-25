@@ -1,9 +1,7 @@
 <script lang="ts">
   import { CreatePlaylistDialog, PlaylistCard } from "$lib/components";
-  import { ScrollArea } from "$lib/components/ui/scroll-area";
-  import { AudioWaveformIcon, PlusIcon } from "@lucide/svelte";
+  import { PlusIcon } from "@lucide/svelte";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
-  import { Button } from "$lib/components/ui/button/index.js";
   import { SPECIAL_PLAYLIST_IDS } from "$lib/utils/playlist";
   import { flip } from "svelte/animate";
   import { fade } from "svelte/transition";
@@ -61,33 +59,31 @@
   <h2 class="text-2xl font-semibold p-2">Playlists</h2>
 </div>
 
-<div class="h-dvh">
-  <div
-    class="p-4 pt-16 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 pb-72"
-  >
-    {#each allUserPlaylists as playlist, i (playlist.id)}
-      <div
-        animate:flip={{ duration: appearanceStore.disableAnimations ? 0 : 150 }}
-        transition:fade={{
-          duration: appearanceStore.disableAnimations ? 0 : 150,
-          delay: appearanceStore.disableAnimations ? 0 : i * 25 + 200,
-        }}
-      >
-        <PlaylistCard {playlist} size="large" />
-      </div>
-    {/each}
-    <button
-      onclick={() => (createDialogOpen = true)}
-      class="rounded-lg aspect-square w-full shrink-0 border hover:bg-muted/50 transition-colors grid place-items-center"
+<div
+  class="p-4 pt-16 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 pb-72"
+>
+  {#each allUserPlaylists as playlist, i (playlist.id)}
+    <div
+      animate:flip={{ duration: appearanceStore.disableAnimations ? 0 : 150 }}
+      transition:fade={{
+        duration: appearanceStore.disableAnimations ? 0 : 150,
+        delay: appearanceStore.disableAnimations ? 0 : i * 25 + 200,
+      }}
     >
-      <PlusIcon
-        size={48}
-        absoluteStrokeWidth
-        strokeWidth={2}
-        class="text-muted-foreground"
-      />
-    </button>
-  </div>
+      <PlaylistCard {playlist} size="large" />
+    </div>
+  {/each}
+  <button
+    onclick={() => (createDialogOpen = true)}
+    class="rounded-lg aspect-square w-full shrink-0 border hover:bg-muted/50 transition-colors grid place-items-center"
+  >
+    <PlusIcon
+      size={48}
+      absoluteStrokeWidth
+      strokeWidth={2}
+      class="text-muted-foreground"
+    />
+  </button>
 </div>
 
 <CreatePlaylistDialog

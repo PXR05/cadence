@@ -1,7 +1,6 @@
 <script lang="ts">
   import SettingCard from "$lib/components/SettingCard.svelte";
   import { Button } from "$lib/components/ui/button";
-  import { ScrollArea } from "$lib/components/ui/scroll-area";
   import * as AlertDialog from "$lib/components/ui/alert-dialog";
   import { toast } from "svelte-sonner";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
@@ -383,177 +382,78 @@
   </div>
 </div>
 
-<div class="h-dvh">
-  <div class="px-2 pb-4 pt-0.5 md:pt-18.5 h-full w-full space-y-2 mb-[50dvh]">
-    <SettingCard icon={DatabaseIcon} title="Database Management">
-      {#snippet headerActions()}
-        <Button
-          variant="ghost"
-          size="icon"
-          class="size-10"
-          onclick={() => loadDatabaseInfo()}
-          disabled={isLoadingDatabases}
-          title="Refresh"
-        >
-          <RefreshCwIcon
-            class="size-4 {isLoadingDatabases ? 'animate-spin' : ''}"
-          />
-        </Button>
-      {/snippet}
-      <div class="p-3 pt-1 space-y-4">
-        <p class="text-sm text-muted-foreground">
-          Manage cached data stored locally on your device
-        </p>
+<div class="px-2 pb-4 pt-0.5 w-full space-y-2 mb-[50dvh]">
+  <SettingCard icon={DatabaseIcon} title="Database Management">
+    {#snippet headerActions()}
+      <Button
+        variant="ghost"
+        size="icon"
+        class="size-10"
+        onclick={() => loadDatabaseInfo()}
+        disabled={isLoadingDatabases}
+        title="Refresh"
+      >
+        <RefreshCwIcon
+          class="size-4 {isLoadingDatabases ? 'animate-spin' : ''}"
+        />
+      </Button>
+    {/snippet}
+    <div class="p-3 pt-1 space-y-4">
+      <p class="text-sm text-muted-foreground">
+        Manage cached data stored locally on your device
+      </p>
 
-        {#if isLoadingDatabases}
-          <div class="flex items-center justify-center py-8">
-            <RefreshCwIcon class="size-5 animate-spin text-muted-foreground" />
-          </div>
-        {:else}
-          <div class="space-y-3">
-            {#each databases as db}
-              <div class="rounded-lg border bg-muted/30 overflow-hidden">
-                <!-- Database Header -->
-                <div
-                  class="flex items-center justify-between p-3 bg-muted/50 border-b"
-                >
-                  <div class="flex items-center gap-2">
-                    <HardDriveIcon class="size-4 text-muted-foreground" />
-                    <span class="font-medium text-sm">{db.displayName}</span>
-                    <span
-                      class="text-xs text-muted-foreground bg-background/50 px-1.5 py-0.5 rounded"
-                    >
-                      {db.totalSize}
-                    </span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    class="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onclick={() => openClearDialog("database", db.name)}
-                  >
-                    <Trash2Icon class="size-3 mr-1" />
-                    Clear All
-                  </Button>
-                </div>
-
-                <!-- Tables -->
-                <div class="divide-y divide-border/50">
-                  {#each db.tables as table}
-                    <div
-                      class="flex items-center justify-between p-2.5 px-3 hover:bg-muted/30 transition-colors"
-                    >
-                      <div class="flex items-center gap-3">
-                        <div class="flex flex-col">
-                          <span class="text-sm capitalize">
-                            {table.name.replace(/([A-Z])/g, " $1").trim()}
-                          </span>
-                          <div class="flex items-center gap-2">
-                            <span class="text-xs text-muted-foreground">
-                              {table.count}
-                              {table.count === 1 ? "item" : "items"}
-                            </span>
-                            <span class="text-xs text-muted-foreground">•</span>
-                            <span class="text-xs text-muted-foreground">
-                              {table.estimatedSize}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        class="size-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                        onclick={() =>
-                          openClearDialog("table", db.name, table.name)}
-                        disabled={table.count === 0}
-                      >
-                        <Trash2Icon class="size-3.5" />
-                      </Button>
-                    </div>
-                  {/each}
-                </div>
-              </div>
-            {/each}
-          </div>
-        {/if}
-      </div>
-    </SettingCard>
-
-    <!-- Service Worker Cache Management -->
-    {#if hasServiceWorker}
-      <SettingCard icon={GlobeIcon} title="Service Worker Cache">
-        {#snippet headerActions()}
-          <Button
-            variant="ghost"
-            size="icon"
-            class="size-10"
-            onclick={() => loadSwCacheInfo()}
-            disabled={isLoadingSwCaches}
-            title="Refresh"
-          >
-            <RefreshCwIcon
-              class="size-4 {isLoadingSwCaches ? 'animate-spin' : ''}"
-            />
-          </Button>
-        {/snippet}
-        <div class="p-3 pt-1 space-y-4">
-          <p class="text-sm text-muted-foreground">
-            Manage browser cache for app assets and images
-          </p>
-
-          {#if isLoadingSwCaches}
-            <div class="flex items-center justify-center py-8">
-              <RefreshCwIcon
-                class="size-5 animate-spin text-muted-foreground"
-              />
-            </div>
-          {:else}
+      {#if isLoadingDatabases}
+        <div class="flex items-center justify-center py-8">
+          <RefreshCwIcon class="size-5 animate-spin text-muted-foreground" />
+        </div>
+      {:else}
+        <div class="space-y-3">
+          {#each databases as db}
             <div class="rounded-lg border bg-muted/30 overflow-hidden">
-              <!-- Cache Header -->
+              <!-- Database Header -->
               <div
                 class="flex items-center justify-between p-3 bg-muted/50 border-b"
               >
                 <div class="flex items-center gap-2">
-                  <GlobeIcon class="size-4 text-muted-foreground" />
-                  <span class="font-medium text-sm">Browser Cache</span>
+                  <HardDriveIcon class="size-4 text-muted-foreground" />
+                  <span class="font-medium text-sm">{db.displayName}</span>
                   <span
                     class="text-xs text-muted-foreground bg-background/50 px-1.5 py-0.5 rounded"
                   >
-                    {swTotalSize}
+                    {db.totalSize}
                   </span>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   class="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                  onclick={() => openClearDialog("sw-cache")}
-                  disabled={swCaches.length === 0}
+                  onclick={() => openClearDialog("database", db.name)}
                 >
                   <Trash2Icon class="size-3 mr-1" />
                   Clear All
                 </Button>
               </div>
 
-              <!-- Cache Items -->
+              <!-- Tables -->
               <div class="divide-y divide-border/50">
-                {#each swCaches as cache}
-                  {@const IconComponent = cache.icon}
+                {#each db.tables as table}
                   <div
                     class="flex items-center justify-between p-2.5 px-3 hover:bg-muted/30 transition-colors"
                   >
                     <div class="flex items-center gap-3">
-                      <IconComponent class="size-4 text-muted-foreground" />
                       <div class="flex flex-col">
-                        <span class="text-sm">{cache.displayName}</span>
+                        <span class="text-sm capitalize">
+                          {table.name.replace(/([A-Z])/g, " $1").trim()}
+                        </span>
                         <div class="flex items-center gap-2">
                           <span class="text-xs text-muted-foreground">
-                            {cache.count}
-                            {cache.count === 1 ? "item" : "items"}
+                            {table.count}
+                            {table.count === 1 ? "item" : "items"}
                           </span>
                           <span class="text-xs text-muted-foreground">•</span>
                           <span class="text-xs text-muted-foreground">
-                            {cache.size}
+                            {table.estimatedSize}
                           </span>
                         </div>
                       </div>
@@ -563,33 +463,129 @@
                       size="icon"
                       class="size-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                       onclick={() =>
-                        openClearDialog(
-                          "sw-cache",
-                          undefined,
-                          undefined,
-                          cache.name
-                        )}
-                      disabled={cache.count === 0}
+                        openClearDialog("table", db.name, table.name)}
+                      disabled={table.count === 0}
                     >
                       <Trash2Icon class="size-3.5" />
                     </Button>
                   </div>
                 {/each}
-                {#if swCaches.length === 0}
-                  <div class="p-4 text-center text-sm text-muted-foreground">
-                    No cached data
-                  </div>
-                {/if}
               </div>
             </div>
-          {/if}
+          {/each}
         </div>
-      </SettingCard>
-    {/if}
-  </div>
+      {/if}
+    </div>
+  </SettingCard>
+
+  <!-- Service Worker Cache Management -->
+  {#if hasServiceWorker}
+    <SettingCard icon={GlobeIcon} title="Service Worker Cache">
+      {#snippet headerActions()}
+        <Button
+          variant="ghost"
+          size="icon"
+          class="size-10"
+          onclick={() => loadSwCacheInfo()}
+          disabled={isLoadingSwCaches}
+          title="Refresh"
+        >
+          <RefreshCwIcon
+            class="size-4 {isLoadingSwCaches ? 'animate-spin' : ''}"
+          />
+        </Button>
+      {/snippet}
+      <div class="p-3 pt-1 space-y-4">
+        <p class="text-sm text-muted-foreground">
+          Manage browser cache for app assets and images
+        </p>
+
+        {#if isLoadingSwCaches}
+          <div class="flex items-center justify-center py-8">
+            <RefreshCwIcon
+              class="size-5 animate-spin text-muted-foreground"
+            />
+          </div>
+        {:else}
+          <div class="rounded-lg border bg-muted/30 overflow-hidden">
+            <!-- Cache Header -->
+            <div
+              class="flex items-center justify-between p-3 bg-muted/50 border-b"
+            >
+              <div class="flex items-center gap-2">
+                <GlobeIcon class="size-4 text-muted-foreground" />
+                <span class="font-medium text-sm">Browser Cache</span>
+                <span
+                  class="text-xs text-muted-foreground bg-background/50 px-1.5 py-0.5 rounded"
+                >
+                  {swTotalSize}
+                </span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                class="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                onclick={() => openClearDialog("sw-cache")}
+                disabled={swCaches.length === 0}
+              >
+                <Trash2Icon class="size-3 mr-1" />
+                Clear All
+              </Button>
+            </div>
+
+            <!-- Cache Items -->
+            <div class="divide-y divide-border/50">
+              {#each swCaches as cache}
+                {@const IconComponent = cache.icon}
+                <div
+                  class="flex items-center justify-between p-2.5 px-3 hover:bg-muted/30 transition-colors"
+                >
+                  <div class="flex items-center gap-3">
+                    <IconComponent class="size-4 text-muted-foreground" />
+                    <div class="flex flex-col">
+                      <span class="text-sm">{cache.displayName}</span>
+                      <div class="flex items-center gap-2">
+                        <span class="text-xs text-muted-foreground">
+                          {cache.count}
+                          {cache.count === 1 ? "item" : "items"}
+                        </span>
+                        <span class="text-xs text-muted-foreground">•</span>
+                        <span class="text-xs text-muted-foreground">
+                          {cache.size}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    class="size-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    onclick={() =>
+                      openClearDialog(
+                        "sw-cache",
+                        undefined,
+                        undefined,
+                        cache.name
+                      )}
+                    disabled={cache.count === 0}
+                  >
+                    <Trash2Icon class="size-3.5" />
+                  </Button>
+                </div>
+              {/each}
+              {#if swCaches.length === 0}
+                <div class="p-4 text-center text-sm text-muted-foreground">
+                  No cached data
+                </div>
+              {/if}
+            </div>
+          </div>
+        {/if}
+      </div>
+    </SettingCard>
+  {/if}
 </div>
 
-<!-- Clear Cache Confirmation Dialog -->
 <AlertDialog.Root bind:open={clearDialogOpen}>
   <AlertDialog.Content>
     <AlertDialog.Header>
