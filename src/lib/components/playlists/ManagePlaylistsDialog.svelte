@@ -119,9 +119,9 @@
         }),
       ]);
 
-      await invalidateAll();
-
       handleOpenChange(false);
+      
+      await invalidateAll();
     } catch (error) {
       console.error("Failed to update playlists:", error);
     } finally {

@@ -1,6 +1,7 @@
 import { getUserPlaylists, getPlaylistById } from "$lib/api";
 import {
   getPlaylistsCache,
+  savePlaylistCache,
   savePlaylistsCache,
   getPlaylistDetail as getCachedPlaylistDetail,
   savePlaylistDetail,
@@ -329,6 +330,22 @@ class PlaylistsStore {
     this._youtubePlaylists = this._youtubePlaylists.filter((p) => p.id !== id);
     await deletePlaylist(id);
   }
+
+  async updateCachedPlaylist(playlist: Playlist): Promise<void> { 
+    if (playlist.id.startsWith("youtube_")) {
+      const index = this._youtubePlaylists.findIndex((p) => p.id === playlist.id);
+      if (index !== -1) {
+        this._youtubePlaylists[index] = playlist;
+        await savePlaylistCache(playlist);
+      }
+    } else {
+      const index = this._userPlaylists.findIndex((p) => p.id === playlist.id);
+      if (index !== -1) {
+        this._userPlaylists[index] = playlist;
+        await savePlaylistCache(playlist);
+      }
+    }
+   }
 
   setPlaylistDetail(id: string, playlist: PlaylistDetail): void {
     this._playlistDetails.set(id, playlist);

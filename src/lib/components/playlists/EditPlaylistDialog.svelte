@@ -63,8 +63,6 @@
         coverImage: editCoverImageFile || undefined,
       });
 
-      console.log("Playlist updated:", response);
-
       onUpdated({
         name: response.playlist.name,
         coverImage: response.playlist.coverImage,
@@ -81,7 +79,6 @@
     deleteLoading = true;
     try {
       await playlistsStore.invalidatePlaylist(playlist.id);
-      await playlistsStore.invalidatePlaylistDetail(playlist.id);
       await deletePlaylist(playlist.id);
       deleteDialogOpen = false;
       onOpenChange(false);

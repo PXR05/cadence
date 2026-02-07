@@ -22,15 +22,11 @@
   interface Props {
     playlist: Playlist;
     size?: "small" | "large";
-    onPlaylistUpdated?: () => void;
-    onPlaylistDeleted?: () => void;
   }
 
   let {
     playlist,
     size = "small",
-    onPlaylistUpdated,
-    onPlaylistDeleted,
   }: Props = $props();
 
   const displayName = $derived(getPlaylistDisplayName(playlist));
@@ -43,9 +39,7 @@
     playlistMenuStore.open(
       playlist,
       false,
-      false,
-      onPlaylistUpdated,
-      onPlaylistDeleted,
+      false
     );
   }
 </script>

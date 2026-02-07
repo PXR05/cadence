@@ -205,6 +205,17 @@ export async function getPlaylistsCache(): Promise<{
   };
 }
 
+export async function savePlaylistCache(
+  playlist: Playlist
+): Promise<void> {
+  const existing = await cacheDb.playlists.get(playlist.id);
+  await cacheDb.playlists.put({
+    ...playlist,
+    isOffline: existing?.isOffline,
+    cachedAt: existing ? existing.cachedAt : Date.now(),
+  });
+}
+
 export async function savePlaylistDetail(
   playlistDetail: PlaylistDetail
 ): Promise<void> {

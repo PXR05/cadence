@@ -4,9 +4,7 @@ function createPlaylistMenuStore() {
   let playlist = $state<Playlist | null>(null);
   let isOffline = $state(false);
   let isDownloading = $state(false);
-  let onPlaylistUpdated = $state<(() => void) | undefined>(undefined);
-  let onPlaylistDeleted = $state<(() => void) | undefined>(undefined);
-
+  
   let openDialogFn = $state<((playlistId: string) => void) | undefined>(
     undefined,
   );
@@ -22,12 +20,6 @@ function createPlaylistMenuStore() {
     get isDownloading() {
       return isDownloading;
     },
-    get onPlaylistUpdated() {
-      return onPlaylistUpdated;
-    },
-    get onPlaylistDeleted() {
-      return onPlaylistDeleted;
-    },
 
     registerDialogHandlers(
       openFn: (playlistId: string) => void,
@@ -40,15 +32,11 @@ function createPlaylistMenuStore() {
     open(
       targetPlaylist: Playlist,
       offline: boolean,
-      downloading: boolean = false,
-      updatedCallback?: () => void,
-      deletedCallback?: () => void,
+      downloading: boolean = false
     ) {
       playlist = targetPlaylist;
       isOffline = offline;
       isDownloading = downloading;
-      onPlaylistUpdated = updatedCallback;
-      onPlaylistDeleted = deletedCallback;
       openDialogFn?.(targetPlaylist.id);
     },
 
@@ -78,8 +66,6 @@ function createPlaylistMenuStore() {
       playlist = null;
       isOffline = false;
       isDownloading = false;
-      onPlaylistUpdated = undefined;
-      onPlaylistDeleted = undefined;
     },
   };
 }

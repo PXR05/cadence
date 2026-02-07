@@ -64,10 +64,11 @@
       );
 
       await playlistsStore.invalidatePlaylistDetail(playlistId);
-      await invalidateAll();
-
+      
       resetDialog();
       onOpenChange(false);
+
+      await invalidateAll();
     } catch (error) {
       console.error("Failed to add tracks:", error);
     } finally {

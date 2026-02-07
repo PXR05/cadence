@@ -1,11 +1,9 @@
 <script lang="ts">
-  import { goto, invalidateAll } from "$app/navigation";
-  import { useDialogState, usePlaylistOffline } from "$lib/hooks";
+  import { usePlaylistOffline } from "$lib/hooks";
   import type { PlaylistDetail } from "$lib/schemas";
   import { getPlaylistImageUrl } from "$lib/constants";
   import { playerStore } from "$lib/stores/player.svelte";
   import { playlistMenuStore } from "$lib/stores/playlistMenu.svelte";
-  import { playlistsStore } from "$lib/stores/playlists.svelte";
   import {
     isAlbumPlaylist,
     isArtistPlaylist,
@@ -25,9 +23,8 @@
     YoutubeIcon,
   } from "@lucide/svelte";
   import { Button } from "../ui/button";
-  import EditPlaylistDialog from "./EditPlaylistDialog.svelte";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
-  import { fade, fly, slide } from "svelte/transition";
+  import { fly } from "svelte/transition";
   import { vaulEase } from "$lib/utils";
 
   interface Props {
@@ -38,14 +35,7 @@
   let { playlist, isScrolled }: Props = $props();
 
   const playlistId = $derived(playlist.id);
-  const editDialog = useDialogState("edit-playlist");
   const offline = usePlaylistOffline(() => playlistId);
-
-  const isNonModifiable = $derived(
-    isSpecialPlaylist(playlist.id) ||
-      isArtistPlaylist(playlist.id) ||
-      isAlbumPlaylist(playlist.id)
-  );
 
   $effect(() => {
     offline.checkOfflineStatus();
@@ -55,18 +45,6 @@
     if (playlist.items.length === 0) return;
     const tracks = playlist.items.map((item) => item.audio);
     playerStore.setQueue(tracks, 0);
-  }
-
-  async function handlePlaylistUpdated() {
-    await playlistsStore.invalidatePlaylistDetail(playlistId);
-    playlistsStore.invalidate();
-    invalidateAll();
-  }
-
-  async function handlePlaylistDeleted() {
-    await playlistsStore.invalidatePlaylist(playlistId);
-    playlistsStore.invalidate();
-    goto("/library", { replaceState: true });
   }
 
   function handleMenu(e: MouseEvent) {
@@ -82,9 +60,7 @@
         itemCount: playlist.items.length,
       },
       offline.isOffline,
-      offline.isDownloading,
-      () => invalidateAll(),
-      () => goto("/library", { replaceState: true })
+      offline.isDownloading
     );
   }
 </script>
@@ -264,13 +240,3 @@
     </div>
   {/if}
 </div>
-
-{#if !isNonModifiable}
-  <EditPlaylistDialog
-    open={editDialog.isOpen}
-    onOpenChange={(open) => !open && editDialog.close()}
-    {playlist}
-    onUpdated={handlePlaylistUpdated}
-    onDeleted={handlePlaylistDeleted}
-  />
-{/if}

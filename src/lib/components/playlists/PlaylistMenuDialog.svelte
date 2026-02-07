@@ -30,6 +30,7 @@
     ListPlusIcon,
   } from "@lucide/svelte";
   import { toast } from "svelte-sonner";
+  import { invalidateAll } from "$app/navigation";
 
   const editDialog = useDialogState("edit-playlist");
 
@@ -150,21 +151,30 @@
     editDialog.open();
   }
 
-  async function handlePlaylistUpdated() {
+  async function handlePlaylistUpdated(v: {
+    name: string;
+    coverImage?: string;
+  }) {
     if (!playlist) return;
     await playlistsStore.invalidatePlaylistDetail(playlist.id);
     playlistsStore.invalidate();
-    playlistMenuStore.onPlaylistUpdated?.();
+    await playlistsStore.updateCachedPlaylist({
+      ...playlist,
+      name: v.name,
+      coverImage: v.coverImage,
+    });
     editDialog.close();
+    handleClose();
+    invalidateAll();
   }
 
   async function handlePlaylistDeleted() {
     if (!playlist) return;
     await playlistsStore.invalidatePlaylist(playlist.id);
     playlistsStore.invalidate();
-    playlistMenuStore.onPlaylistDeleted?.();
     editDialog.close();
     handleClose();
+    invalidateAll();
   }
 
   function handleEditDialogOpenChange(open: boolean) {

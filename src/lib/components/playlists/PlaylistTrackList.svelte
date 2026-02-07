@@ -26,7 +26,7 @@
 
   const ROW_HEIGHT = 80;
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
-  const topOffset = $derived(isMobile ? 227 + 6 : 255 + 64 + 6);
+  const topOffset = $derived(isMobile ? 227 + 6 : 272 + 44 + 16);
 
   let virtualScrollRef: VirtualScroll<PlaylistItem> | null = $state(null);
 
