@@ -65,6 +65,7 @@ class TracksStore {
       console.error("Failed to load tracks from cache:", err);
     } finally {
       this._initialized = true;
+      this.isInitialLoad = false;
     }
   }
 
@@ -73,18 +74,15 @@ class TracksStore {
 
     if (!forceRefresh && this.tracks.length > 0 && this.lastFetchedAt) {
       if ("onLine" in navigator && !navigator.onLine) {
-        this.isInitialLoad = false;
         return;
       }
 
       const shouldRefresh = await this.shouldRefreshTracks();
       if (!shouldRefresh) {
-        this.isInitialLoad = false;
         return;
       }
     }
 
-    this.isInitialLoad = true;
     this.error = null;
 
     try {
@@ -112,14 +110,12 @@ class TracksStore {
 
       this._tracks = allTracks;
       this._lastFetchedAt = new Date().toISOString();
-      this.isInitialLoad = false;
       this.isLoadingMore = false;
       this.error = null;
 
       await saveTracksCache(allTracks, this._lastFetchedAt);
     } catch (err) {
       this.error = err instanceof Error ? err.message : "Failed to load tracks";
-      this.isInitialLoad = false;
       this.isLoadingMore = false;
       throw err;
     }

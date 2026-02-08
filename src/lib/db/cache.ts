@@ -169,7 +169,7 @@ export async function getPlaylistsCache(): Promise<{
   youtubePlaylists: Playlist[];
   lastFetchedAt: string | null;
 } | null> {
-  const playlists = await cacheDb.playlists.orderBy("createdAt").toArray();
+  const playlists = await cacheDb.playlists.orderBy("updatedAt").toArray();
   if (playlists.length === 0) {
     const metadata = await cacheDb.metadata.get("playlists_lastFetchedAt");
     if (!metadata) return null;

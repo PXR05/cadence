@@ -60,7 +60,7 @@
         itemCount: playlist.items.length,
       },
       offline.isOffline,
-      offline.isDownloading
+      offline.isDownloading,
     );
   }
 </script>
@@ -125,10 +125,12 @@
         duration: appearanceStore.disableAnimations ? 0 : 150,
         easing: vaulEase,
       }}
-      class="row-start-1 col-start-1 flex-1 flex items-end rounded-xl"
+      style="--h: 5rem"
+      class="row-start-1 col-start-1 flex-1 flex items-end rounded-xl bg-background"
     >
+      <div class="_bg _color absolute inset-0 top-38 md:top-64 -z-10"></div>
       <div
-        class="border shrink-0 overflow-hidden bg-muted relative grid place-items-center rounded-xl size-40 md:size-64"
+        class="shrink-0 bg-muted relative grid place-items-center rounded-xl size-40 md:size-64"
       >
         <div class="absolute inset-0 grid place-items-center">
           {#if isSpecialPlaylist(playlist.id)}
@@ -228,6 +230,7 @@
         </div>
       </div>
     </div>
+    
     <div class="top-1.5 md:top-2 right-1.5 md:right-2 absolute z-10">
       <Button
         variant="ghost"
@@ -240,3 +243,32 @@
     </div>
   {/if}
 </div>
+
+<style>
+  ._bg {
+    &::before,
+    &::after {
+      pointer-events: none;
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: -1;
+      mask: linear-gradient(to top, transparent, black 90%);
+    }
+    &::before {
+      height: var(--h);
+    }
+    &::after {
+      height: calc(var(--h) - 2rem);
+    }
+  }
+
+  ._color {
+    &::before,
+    &::after {
+      background-color: var(--background);
+    }
+  }
+</style>

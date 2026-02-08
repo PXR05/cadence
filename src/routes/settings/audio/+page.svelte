@@ -1,5 +1,6 @@
 <script lang="ts">
   import SettingCard from "$lib/components/SettingCard.svelte";
+  import SettingsHeader from "$lib/components/SettingsHeader.svelte";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import {
@@ -18,7 +19,7 @@
     PowerIcon,
     PowerOffIcon,
     WavesIcon,
-    XIcon
+    XIcon,
   } from "@lucide/svelte";
   import { onMount } from "svelte";
   import { innerWidth } from "svelte/reactivity/window";
@@ -468,25 +469,7 @@
 
 <svelte:window onmousemove={handleMouseMove} onmouseup={handleMouseUp} />
 
-<div class="sticky top-0 w-full p-1.5 md:p-2 z-50">
-  <div
-    class="flex-1 flex items-center flex-row gap-1.5 md:gap-2 rounded-xl p-1.5 md:p-2 border-input/15 {appearanceStore.disableBlur
-      ? 'bg-muted'
-      : 'bg-muted-foreground/10 dark:bg-muted/50 backdrop-blur-md'}"
-  >
-    <Button
-      variant="ghost"
-      size="icon"
-      class="size-10"
-      onclick={() => history.back()}
-    >
-      <ArrowLeftIcon />
-    </Button>
-    <h1 class="flex-1 flex items-center gap-2 font-semibold truncate text-2xl">
-      Audio Settings
-    </h1>
-  </div>
-</div>
+<SettingsHeader title="Audio Settings" />
 
 <div class="px-2 pb-4 pt-0.5 w-full space-y-2 mb-[50dvh]">
   <SettingCard

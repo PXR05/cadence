@@ -116,7 +116,7 @@
     </Sidebar.GroupLabel>
     <Sidebar.GroupContent class="flex-1 overflow-hidden">
       <ScrollArea class="h-full">
-        <Sidebar.Menu class="pb-20">
+        <Sidebar.Menu class="pb-40">
           {#each allUserPlaylists as playlist (playlist.id)}
             <Sidebar.MenuItem>
               <Sidebar.MenuButton

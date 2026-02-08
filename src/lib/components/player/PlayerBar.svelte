@@ -44,7 +44,7 @@
 
   const isPanelAnimating = $derived(
     isDragging ||
-      (gsapTween !== null ? (gsapTween as gsap.core.Tween).isActive() : false)
+      (gsapTween !== null ? (gsapTween as gsap.core.Tween).isActive() : false),
   );
 
   function updateOpacity(currentY: number) {
@@ -148,7 +148,7 @@
       "a",
       '[role="button"]',
       '[role="slider"]',
-      // Progress bar
+
       '[role="progressbar"]',
       'input[type="range"]',
       ".touch-none",
@@ -217,7 +217,7 @@
   function handleDragMove(
     clientX: number,
     clientY: number,
-    event?: TouchEvent | MouseEvent
+    event?: TouchEvent | MouseEvent,
   ) {
     handleGestureMove(clientX, clientY);
 
@@ -233,7 +233,7 @@
 
     const clampedTranslate = Math.max(
       0,
-      Math.min(closedPosition, newTranslate)
+      Math.min(closedPosition, newTranslate),
     );
 
     if (containerEl) {
@@ -416,7 +416,7 @@
 {#snippet bar()}
   <div
     bind:this={barElement}
-    class="mx-1.5 rounded-xl overflow-clip border border-input/15
+    class="mx-1.5 rounded-xl border border-input/15
         {appearanceStore.disableBlur
       ? 'bg-muted'
       : 'bg-muted-foreground/10 dark:bg-muted/50 backdrop-blur-md'}"
@@ -426,7 +426,7 @@
     onmousedown={handleMouseDown}
   >
     <div
-      class=" relative flex md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center max-md:justify-between py-2 min-h-16"
+      class=" relative flex md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center max-md:justify-between pt-2 min-h-14"
     >
       <TrackCarousel
         onTrackClick={() => (isMobile ? panelState.open() : {})}
@@ -438,7 +438,7 @@
         {@render barControls()}
       {/if}
     </div>
-    <div class="px-2 pb-2">
+    <div class="px-2">
       <ProgressBar {isPanelAnimating} />
     </div>
   </div>

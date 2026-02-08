@@ -175,7 +175,7 @@
 {/snippet}
 
 {#snippet controls()}
-  <div class="flex flex-col gap-10 px-6 my-auto z-20">
+  <div class="flex flex-col gap-8 px-6 my-auto z-20">
     <div class="text-center mb-2">
       <h2
         class="text-xl font-semibold truncate"
@@ -191,7 +191,7 @@
       </p>
     </div>
 
-    <div class="flex flex-col gap-8">
+    <div class="flex flex-col gap-6">
       <ProgressBar height={10} {isPanelAnimating} showTime />
 
       <PlaybackControls variant="large" />

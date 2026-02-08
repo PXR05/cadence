@@ -51,10 +51,7 @@
   <title>Library | Cadence</title>
 </svelte:head>
 
-<div style="--h: 6rem;" class="p-2 absolute top-0 left-0 right-0 z-30">
-  {#if !appearanceStore.disableBlur}
-    <div class="_bg _blur absolute inset-0 -z-10"></div>
-  {/if}
+<div style="--h: 5rem;" class="p-2 fixed top-0 left-0 md:left-64 right-0 z-30">
   <div class="_bg _color absolute inset-0 -z-10"></div>
   <h2 class="text-2xl font-semibold p-2">Playlists</h2>
 </div>
@@ -103,7 +100,7 @@
       left: 0;
       right: 0;
       z-index: -1;
-      mask: linear-gradient(to top, transparent, black);
+      mask: linear-gradient(to top, transparent, black 90%);
     }
     &::before {
       height: var(--h);
@@ -116,14 +113,7 @@
   ._color {
     &::before,
     &::after {
-      background-color: color-mix(in oklab, var(--background) 50%, transparent);
-    }
-  }
-
-  ._blur {
-    &::before,
-    &::after {
-      backdrop-filter: blur(1rem);
+      background-color: var(--background);
     }
   }
 </style>

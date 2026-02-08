@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
-  import { ArrowLeftIcon, LoaderIcon } from "@lucide/svelte";
+  import { LoaderIcon } from "@lucide/svelte";
+  import SettingsHeader from "$lib/components/SettingsHeader.svelte";
   import { UserManagement, TrackManagement } from "$lib/components/admin";
   import { authStore } from "$lib/stores/auth.svelte";
   import { Button } from "$lib/components/ui/button";
@@ -41,23 +42,7 @@
   </div>
 {/if}
 
-<div class="sticky top-0 w-full p-1.5 md:p-2 z-50">
-  <div
-    class="flex-1 flex items-center flex-row gap-1.5 md:gap-2 bg-muted-foreground/10 dark:bg-muted/50 rounded-xl p-1.5 md:p-2 backdrop-blur-md border border-input/15"
-  >
-    <Button
-      variant="ghost"
-      size="icon"
-      class="size-10"
-      onclick={() => history.back()}
-    >
-      <ArrowLeftIcon />
-    </Button>
-    <h1 class="flex-1 flex items-center gap-2 font-semibold truncate text-2xl">
-      Admin Dashboard
-    </h1>
-  </div>
-</div>
+<SettingsHeader title="Admin Dashboard" />
 
 <div
   class="px-2 pb-4 pt-0.5 w-full space-y-2 mb-[50dvh] transition-opacity {loading

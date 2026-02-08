@@ -20,7 +20,7 @@
 <button
   onclick={handleClick}
   disabled={isInQueue}
-  class="relative flex items-center gap-4 w-full hover:bg-muted/50 p-2 border select-none
+  class="relative flex items-center gap-4 w-full hover:bg-muted/50 rounded-xl p-2 select-none
     {isInQueue ? 'cursor-default' : 'cursor-pointer'}"
 >
   <div class="rounded-md size-16 shrink-0 overflow-hidden relative">

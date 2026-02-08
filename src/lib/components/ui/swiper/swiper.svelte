@@ -32,7 +32,6 @@
   function onSwipeEnd(e: PointerEvent | TouchEvent) {
     if (!swipeContainer || isRemoving || disabled) return;
 
-    // Don't trigger swipe if the event originated from a drag handle
     const target = e.target as HTMLElement;
     if (target?.closest("[data-vaul-no-drag]")) return;
 

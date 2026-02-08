@@ -19,7 +19,6 @@ class PlaylistsStore {
   private _playlistDetails = $state(new SvelteMap<string, PlaylistDetail>());
   private _loadingPlaylistIds = $state(new SvelteSet<string>());
   private _lastFetchedAt = $state<string | null>(null);
-  private _isInitialLoad = $state(false);
   private _error = $state<string | null>(null);
   private _initialized = false;
 
@@ -39,16 +38,8 @@ class PlaylistsStore {
     return this._lastFetchedAt;
   }
 
-  get isInitialLoad() {
-    return this._isInitialLoad;
-  }
-
   get error() {
     return this._error;
-  }
-
-  private set isInitialLoad(value: boolean) {
-    this._isInitialLoad = value;
   }
 
   private set error(value: string | null) {
@@ -77,18 +68,15 @@ class PlaylistsStore {
 
     if (!forceRefresh && this.allPlaylists.length > 0 && this.lastFetchedAt) {
       if ("onLine" in navigator && !navigator.onLine) {
-        this.isInitialLoad = false;
         return;
       }
 
       const shouldRefresh = await this.shouldRefreshPlaylists();
       if (!shouldRefresh) {
-        this.isInitialLoad = false;
         return;
       }
     }
 
-    this.isInitialLoad = true;
     this.error = null;
 
     try {
@@ -100,7 +88,6 @@ class PlaylistsStore {
       this._userPlaylists = userPlaylists;
       this._youtubePlaylists = youtubePlaylists;
       this._lastFetchedAt = new Date().toISOString();
-      this.isInitialLoad = false;
       this.error = null;
 
       await savePlaylistsCache(
@@ -111,7 +98,6 @@ class PlaylistsStore {
     } catch (err) {
       this.error =
         err instanceof Error ? err.message : "Failed to load playlists";
-      this.isInitialLoad = false;
       throw err;
     }
   }
@@ -331,9 +317,11 @@ class PlaylistsStore {
     await deletePlaylist(id);
   }
 
-  async updateCachedPlaylist(playlist: Playlist): Promise<void> { 
+  async updateCachedPlaylist(playlist: Playlist): Promise<void> {
     if (playlist.id.startsWith("youtube_")) {
-      const index = this._youtubePlaylists.findIndex((p) => p.id === playlist.id);
+      const index = this._youtubePlaylists.findIndex(
+        (p) => p.id === playlist.id,
+      );
       if (index !== -1) {
         this._youtubePlaylists[index] = playlist;
         await savePlaylistCache(playlist);
@@ -345,7 +333,7 @@ class PlaylistsStore {
         await savePlaylistCache(playlist);
       }
     }
-   }
+  }
 
   setPlaylistDetail(id: string, playlist: PlaylistDetail): void {
     this._playlistDetails.set(id, playlist);
@@ -367,7 +355,6 @@ class PlaylistsStore {
     this._loadingPlaylistIds.clear();
     this._lastFetchedAt = null;
     this._error = null;
-    this._isInitialLoad = false;
     await clearPlaylistsCache();
   }
 

@@ -80,7 +80,7 @@
     return () => {
       window.removeEventListener(
         "beforeinstallprompt",
-        handleBeforeInstallPrompt
+        handleBeforeInstallPrompt,
       );
       window.removeEventListener("appinstalled", handleAppInstalled);
     };
@@ -120,7 +120,7 @@
       passwordDialogOpen = false;
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to change password"
+        error instanceof Error ? error.message : "Failed to change password",
       );
     } finally {
       isChangingPassword = false;
@@ -191,11 +191,8 @@
 <!-- Account header -->
 <div
   style="--h: 5rem;"
-  class="p-2 absolute top-0 left-0 right-0 z-30 flex items-end justify-between"
+  class="p-2 fixed top-0 left-0 md:left-64 right-0 z-30 flex items-end justify-between"
 >
-  {#if !appearanceStore.disableBlur}
-    <div class="_bg _blur absolute inset-0 -z-10"></div>
-  {/if}
   <div class="_bg _color absolute inset-0 -z-10"></div>
   <h2 class="text-2xl font-semibold p-2">Settings</h2>
 </div>
@@ -337,12 +334,12 @@
             {@render toggleSwitch(
               "Disable Blur",
               appearanceStore.disableBlur,
-              () => appearanceStore.toggleBlur()
+              () => appearanceStore.toggleBlur(),
             )}
             {@render toggleSwitch(
               "Disable Animations",
               appearanceStore.disableAnimations,
-              () => appearanceStore.toggleAnimations()
+              () => appearanceStore.toggleAnimations(),
             )}
           </div>
         </div>
@@ -478,7 +475,7 @@
       left: 0;
       right: 0;
       z-index: -1;
-      mask: linear-gradient(to top, transparent, black);
+      mask: linear-gradient(to top, transparent, black 90%);
     }
     &::before {
       height: var(--h);
@@ -491,14 +488,7 @@
   ._color {
     &::before,
     &::after {
-      background-color: color-mix(in oklab, var(--background) 50%, transparent);
-    }
-  }
-
-  ._blur {
-    &::before,
-    &::after {
-      backdrop-filter: blur(2rem);
+      background-color: var(--background);
     }
   }
 </style>
