@@ -7,7 +7,7 @@
   }: { onComplete?: () => void } = $props();
 
   const noAnimation = appearanceStore.disableAnimations;
-  const minDuration = noAnimation ? 0 : 1000;
+  const minDuration = noAnimation ? 0 : 500;
   const fadeOutDuration = noAnimation ? 0 : 300;
 
   let minTimeElapsed = $state(false);

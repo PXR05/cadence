@@ -130,7 +130,7 @@
     >
       <div class="_bg _color absolute inset-0 top-38 md:top-64 -z-10"></div>
       <div
-        class="shrink-0 bg-muted relative grid place-items-center rounded-xl size-40 md:size-64"
+        class="border shrink-0 overflow-hidden bg-muted relative grid place-items-center rounded-xl size-40 md:size-64"
       >
         <div class="absolute inset-0 grid place-items-center">
           {#if isSpecialPlaylist(playlist.id)}
