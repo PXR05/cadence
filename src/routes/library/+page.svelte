@@ -9,6 +9,7 @@
   import { offlineDb } from "$lib/db/offline";
   import { liveQuery } from "dexie";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
+  import { playerStore } from "$lib/stores/player.svelte";
 
   let createDialogOpen = $state(false);
 
@@ -48,7 +49,11 @@
 </script>
 
 <svelte:head>
-  <title>Library | Cadence</title>
+  <title
+    >{playerStore.isPlaying && playerStore.currentTrack?.metadata?.title
+      ? playerStore.currentTrack.metadata?.title
+      : "Library"} | Cadence</title
+  >
 </svelte:head>
 
 <div style="--h: 5rem;" class="p-2 fixed top-0 left-0 md:left-64 right-0 z-30">

@@ -6,6 +6,7 @@
   import { UserManagement, TrackManagement } from "$lib/components/admin";
   import { authStore } from "$lib/stores/auth.svelte";
   import { Button } from "$lib/components/ui/button";
+  import { playerStore } from "$lib/stores/player.svelte";
 
   let isAdmin = $state(false);
   let loading = $state(true);
@@ -33,7 +34,9 @@
 </script>
 
 <svelte:head>
-  <title>Admin | Cadence</title>
+  <title>{playerStore.isPlaying && playerStore.currentTrack?.metadata?.title
+      ? playerStore.currentTrack.metadata?.title
+      : "Admin"} | Cadence</title>
 </svelte:head>
 
 {#if loading}

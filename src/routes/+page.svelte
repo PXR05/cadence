@@ -34,7 +34,11 @@
 </script>
 
 <svelte:head>
-  <title>Cadence</title>
+  <title
+    >{playerStore.isPlaying && playerStore.currentTrack?.metadata?.title
+      ? `${playerStore.currentTrack.metadata?.title} | `
+      : ""}Cadence</title
+  >
 </svelte:head>
 
 {#if isInitialLoad}

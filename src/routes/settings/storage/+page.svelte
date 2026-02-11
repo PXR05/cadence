@@ -20,6 +20,7 @@
     ImageIcon,
     PackageIcon,
   } from "@lucide/svelte";
+  import { playerStore } from "$lib/stores/player.svelte";
 
   interface TableInfo {
     name: string;
@@ -359,7 +360,11 @@
 </script>
 
 <svelte:head>
-  <title>Local Storage | Settings | Cadence</title>
+  <title
+    >{playerStore.isPlaying && playerStore.currentTrack?.metadata?.title
+      ? playerStore.currentTrack.metadata?.title
+      : "Local Storage"} | Cadence</title
+  >
 </svelte:head>
 
 <SettingsHeader title="Local Storage" />

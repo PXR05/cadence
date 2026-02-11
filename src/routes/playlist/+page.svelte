@@ -17,6 +17,7 @@
   import type { PlaylistDetail, PlaylistItem } from "$lib/schemas";
   import { fade } from "svelte/transition";
   import { appearanceStore } from "$lib/stores/appearance.svelte.js";
+  import { playerStore } from "$lib/stores/player.svelte.js";
 
   let { data } = $props();
 
@@ -75,7 +76,9 @@
 </script>
 
 <svelte:head>
-  <title>{playlist?.name ?? "Playlist"} | Cadence</title>
+  <title>{playerStore.isPlaying && playerStore.currentTrack?.metadata?.title
+      ? playerStore.currentTrack.metadata?.title
+      : playlist?.name ?? "Playlist"} | Cadence</title>
 </svelte:head>
 
 <div class="flex flex-col mx-auto w-full h-full relative">

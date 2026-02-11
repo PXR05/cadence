@@ -165,7 +165,9 @@
 </script>
 
 <svelte:head>
-  <title>Settings | Cadence</title>
+  <title>{playerStore.isPlaying && playerStore.currentTrack?.metadata?.title
+      ? playerStore.currentTrack.metadata?.title
+      : "Settings"} | Cadence</title>
 </svelte:head>
 
 {#snippet toggleSwitch(label: string, checked: boolean, onclick: () => void)}
