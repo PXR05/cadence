@@ -21,7 +21,7 @@ interface GetCurrentUserResponse {
 class AuthStore {
   private userStore = createLocalStorageState<User | null>(
     "cadence.user",
-    null
+    null,
   );
 
   user = $state<User | null>(null);
@@ -42,7 +42,6 @@ class AuthStore {
   private saveUserToStorage(user: User | null): void {
     this.userStore.value = user;
   }
-
 
   get isAuthenticated(): boolean {
     return this.user !== null;
@@ -94,7 +93,6 @@ class AuthStore {
 
       const data: RegisterResponse = await response.json();
 
-
       this.user = data.user;
       this.saveUserToStorage(data.user);
     } catch (error) {
@@ -105,6 +103,11 @@ class AuthStore {
 
   async getCurrentUser(): Promise<User | null> {
     this.restoreUserFromStorage();
+
+    console.log(
+      this.user ? "User restored from storage:" : "No user in storage",
+      this.user,
+    );
 
     if ("onLine" in navigator && !navigator.onLine) {
       return this.user;
@@ -133,7 +136,7 @@ class AuthStore {
 
   async changePassword(
     currentPassword: string,
-    newPassword: string
+    newPassword: string,
   ): Promise<void> {
     try {
       const response = await authFetch("/auth/change-password", {

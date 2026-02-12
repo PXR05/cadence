@@ -81,12 +81,19 @@
   }
 
   function loadInitialData() {
-    tracksStore.loadAllTracks().catch((error) => {
-      console.error("Failed to load tracks on app initialization:", error);
-    });
-    playlistsStore.loadAllPlaylists().catch((error) => {
-      console.error("Failed to load playlists on app initialization:", error);
-    });
+    console.log("Loading initial data...");
+    tracksStore
+      .loadAllTracks()
+      .then(() => console.log("Tracks loaded"))
+      .catch((error) => {
+        console.error("Failed to load tracks on app initialization:", error);
+      });
+    playlistsStore
+      .loadAllPlaylists()
+      .then(() => console.log("Playlists loaded"))
+      .catch((error) => {
+        console.error("Failed to load playlists on app initialization:", error);
+      });
   }
 
   function handleKeyboardEvent(e: KeyboardEvent) {
