@@ -8,16 +8,12 @@
   import { Button } from "$lib/components/ui/button";
   import { playerStore } from "$lib/stores/player.svelte";
 
-  let isAdmin = $state(false);
+  const isAdmin = $derived(authStore.isAdmin);
   let loading = $state(true);
   let activeTab = $state<"users" | "tracks">("tracks");
 
   onMount(async () => {
     try {
-      if (authStore.user) {
-        await authStore.getCurrentUser();
-        isAdmin = authStore.isAdmin;
-      }
       if (!isAdmin) {
         goto("/settings");
         return;

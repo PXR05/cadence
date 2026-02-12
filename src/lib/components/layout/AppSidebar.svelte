@@ -1,10 +1,8 @@
 <script lang="ts">
   import { page } from "$app/state";
-  import { authStore } from "$lib/stores/auth.svelte";
   import * as Sidebar from "$lib/components/ui/sidebar";
   import { ScrollArea } from "$lib/components/ui/scroll-area";
   import { ListMusicIcon, PlusIcon } from "@lucide/svelte";
-  import { onMount } from "svelte";
   import { offlineDb } from "$lib/db/offline";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
@@ -14,16 +12,6 @@
   import { playlistMenuStore } from "$lib/stores/playlistMenu.svelte";
   import type { Playlist } from "$lib/schemas";
   import { navItems } from "./navItems";
-
-  onMount(async () => {
-    try {
-      if (authStore.user) {
-        await authStore.getCurrentUser();
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  });
 
   function isActive(tabPath: string): boolean {
     if (tabPath === "/") return page.url.pathname === "/";

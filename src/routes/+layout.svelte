@@ -31,10 +31,6 @@
   let updateWorker = $state<ServiceWorker | null>(null);
 
   onMount(async () => {
-    console.log(authStore.user);
-    console.log(tracksStore.tracksCount);
-
-    await authStore.getCurrentUser();
     if (authStore.isAuthenticated) {
       loadInitialData();
     }
@@ -82,7 +78,7 @@
   }
 
   function loadInitialData() {
-    console.log("Loading initial data...");
+    console.log("Loading data...");
     tracksStore
       .loadAllTracks()
       .then(() => console.log("Tracks loaded"))

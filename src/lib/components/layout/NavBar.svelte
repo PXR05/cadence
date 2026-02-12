@@ -1,8 +1,6 @@
 <script lang="ts">
   import { page } from "$app/state";
   import { goto } from "$app/navigation";
-  import { authStore } from "$lib/stores/auth.svelte";
-  import { onMount } from "svelte";
   import { flip } from "svelte/animate";
   import { playerStore } from "$lib/stores/player.svelte";
   import { isActive, navItems } from "./navItems";
@@ -15,16 +13,6 @@
     orientation?: "vertical" | "horizontal";
     size?: number;
   } = $props();
-
-  onMount(async () => {
-    try {
-      if (authStore.user) {
-        await authStore.getCurrentUser();
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  });
 
   const tabs = $derived(navItems);
 

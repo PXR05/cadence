@@ -29,7 +29,7 @@
   import { playerStore } from "$lib/stores/player.svelte";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
 
-  let isAdmin = $state(false);
+  const isAdmin = $derived(authStore.isAdmin);
   let accountMenuOpen = $state(false);
   let passwordDialogOpen = $state(false);
 
@@ -46,17 +46,6 @@
     prompt(): Promise<void>;
     userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
   }
-
-  onMount(async () => {
-    try {
-      if (authStore.user) {
-        await authStore.getCurrentUser();
-        isAdmin = authStore.isAdmin;
-      }
-    } catch (error) {
-      isAdmin = false;
-    }
-  });
 
   onMount(() => {
     if (window.matchMedia("(display-mode: standalone)").matches) {
