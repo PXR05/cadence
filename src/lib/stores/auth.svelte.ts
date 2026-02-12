@@ -28,7 +28,6 @@ class AuthStore {
 
   constructor() {
     if (typeof window !== "undefined" && this.user === null) {
-      this.restoreUserFromStorage();
       this.getCurrentUser();
     }
   }
@@ -105,8 +104,9 @@ class AuthStore {
   }
 
   async getCurrentUser(): Promise<User | null> {
+    this.restoreUserFromStorage();
+
     if ("onLine" in navigator && !navigator.onLine) {
-      this.restoreUserFromStorage();
       return this.user;
     }
 
@@ -127,7 +127,6 @@ class AuthStore {
       return data.data;
     } catch (error) {
       console.error("Failed to get current user:", error);
-      this.restoreUserFromStorage();
       return this.user;
     }
   }
