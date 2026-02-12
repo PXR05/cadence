@@ -31,11 +31,12 @@
   let updateWorker = $state<ServiceWorker | null>(null);
 
   onMount(async () => {
-    if (authStore.user) {
-      await authStore.getCurrentUser();
-      if (authStore.isAuthenticated) {
-        loadInitialData();
-      }
+    console.log(authStore.user);
+    console.log(tracksStore.tracksCount);
+
+    await authStore.getCurrentUser();
+    if (authStore.isAuthenticated) {
+      loadInitialData();
     }
 
     if ("serviceWorker" in navigator) {

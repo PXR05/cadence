@@ -104,11 +104,6 @@ class AuthStore {
   async getCurrentUser(): Promise<User | null> {
     this.restoreUserFromStorage();
 
-    console.log(
-      this.user ? "User restored from storage:" : "No user in storage",
-      this.user,
-    );
-
     if ("onLine" in navigator && !navigator.onLine) {
       return this.user;
     }
