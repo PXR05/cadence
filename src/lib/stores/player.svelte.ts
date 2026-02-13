@@ -43,6 +43,7 @@ interface PersistedPlayerState {
   currentTime: number;
   equalizerBands: EqualizerBand[];
   equalizerEnabled: boolean;
+  pureBypassEnabled: boolean;
   reverbEnabled: boolean;
   reverbPreset: string;
 }
@@ -115,6 +116,7 @@ class PlayerState {
         },
       ],
       equalizerEnabled: true,
+      pureBypassEnabled: false,
       reverbEnabled: false,
       reverbPreset: "Small Hall 1",
     },
@@ -258,6 +260,13 @@ class PlayerState {
     this.persistedState.equalizerEnabled = value;
   }
 
+  get pureBypassEnabled() {
+    return this.persistedState.pureBypassEnabled;
+  }
+  set pureBypassEnabled(value: boolean) {
+    this.persistedState.pureBypassEnabled = value;
+  }
+
   get reverbEnabled() {
     return this.persistedState.reverbEnabled;
   }
@@ -281,6 +290,7 @@ class PlayerState {
       this.equalizerEnabled,
       this.reverbEnabled,
       this.reverbPreset,
+      this.pureBypassEnabled,
       this.volume,
     );
 
@@ -354,6 +364,11 @@ class PlayerState {
   toggleEqualizer() {
     this.equalizerEnabled = !this.equalizerEnabled;
     this.audioEngine.toggleEqualizer(this.equalizerEnabled);
+  }
+
+  togglePureBypass() {
+    this.pureBypassEnabled = !this.pureBypassEnabled;
+    this.audioEngine.togglePureBypass(this.pureBypassEnabled);
   }
 
   resetEqualizer() {

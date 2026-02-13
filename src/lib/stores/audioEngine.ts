@@ -16,6 +16,7 @@ export class AudioEngine {
   private equalizerEnabled: boolean = true;
   private reverbEnabled: boolean = false;
   private reverbPreset: string = "Small Hall 1";
+  private pureBypassEnabled: boolean = false;
 
   private frequencyDataBuffer: Uint8Array | null = null;
   private timeDomainDataBuffer: Uint8Array | null = null;
@@ -39,12 +40,14 @@ export class AudioEngine {
     eqEnabled: boolean,
     reverbEnabled: boolean,
     reverbPreset: string,
+    pureBypassEnabled: boolean,
     volume: number,
   ) {
     this.equalizerBands = bands;
     this.equalizerEnabled = eqEnabled;
     this.reverbEnabled = reverbEnabled;
     this.reverbPreset = reverbPreset;
+    this.pureBypassEnabled = pureBypassEnabled;
 
     this.audioContext = new AudioContext({ latencyHint: "playback" });
 
@@ -54,6 +57,8 @@ export class AudioEngine {
 
     this.analyzerNode.fftSize = 1024;
     this.analyzerNode.smoothingTimeConstant = 0.8;
+    this.analyzerNode.minDecibels = -90;
+    this.analyzerNode.maxDecibels = -10;
 
     this.frequencyDataBuffer = new Uint8Array(
       this.analyzerNode.frequencyBinCount,
@@ -72,6 +77,7 @@ export class AudioEngine {
     });
 
     this.convolverNode = this.audioContext.createConvolver();
+    this.convolverNode.normalize = true;
     this.reverbDryGainNode = this.audioContext.createGain();
     this.reverbWetGainNode = this.audioContext.createGain();
     this.reverbDryGainNode.gain.value = 0.6;
@@ -80,7 +86,6 @@ export class AudioEngine {
     this.loadImpulseResponse(this.reverbPreset);
 
     this.sourceNode.connect(this.gainNode);
-    this.analyzerNode.connect(this.audioContext.destination);
     this.reconnectAudioGraph();
 
     this.gainNode.gain.value = volume;
@@ -126,7 +131,13 @@ export class AudioEngine {
   }
 
   getFrequencyData(): Uint8Array | null {
-    if (!this.analyzerNode || !this.frequencyDataBuffer) return null;
+    if (
+      this.pureBypassEnabled ||
+      !this.analyzerNode ||
+      !this.frequencyDataBuffer
+    ) {
+      return null;
+    }
 
     const now = performance.now();
     if (now - this.lastFrequencyDataTime < this.analyzerThrottleMs) {
@@ -141,7 +152,13 @@ export class AudioEngine {
   }
 
   getTimeDomainData(): Uint8Array | null {
-    if (!this.analyzerNode || !this.timeDomainDataBuffer) return null;
+    if (
+      this.pureBypassEnabled ||
+      !this.analyzerNode ||
+      !this.timeDomainDataBuffer
+    ) {
+      return null;
+    }
 
     const now = performance.now();
     if (now - this.lastTimeDomainDataTime < this.analyzerThrottleMs) {
@@ -182,7 +199,15 @@ export class AudioEngine {
   setVolume(volume: number) {
     if (this.gainNode && this.audioContext) {
       const now = this.audioContext.currentTime;
-      this.gainNode.gain.setTargetAtTime(volume, now, 0.015);
+      this.gainNode.gain.cancelScheduledValues(now);
+      this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
+
+      if (volume <= 0) {
+        this.gainNode.gain.linearRampToValueAtTime(0, now + 0.03);
+        return;
+      }
+
+      this.gainNode.gain.exponentialRampToValueAtTime(volume, now + 0.03);
     }
   }
 
@@ -204,18 +229,24 @@ export class AudioEngine {
     const node = this.equalizerNodes[bandIndex];
     if (node && this.audioContext) {
       const now = this.audioContext.currentTime;
+      const rampTime = now + 0.02;
+
       if (updates.type !== undefined) node.type = updates.type;
+
       if (updates.frequency !== undefined) {
         node.frequency.cancelScheduledValues(now);
-        node.frequency.setValueAtTime(updates.frequency, now);
+        node.frequency.setValueAtTime(node.frequency.value, now);
+        node.frequency.linearRampToValueAtTime(updates.frequency, rampTime);
       }
       if (updates.gain !== undefined) {
         node.gain.cancelScheduledValues(now);
-        node.gain.setValueAtTime(updates.gain, now);
+        node.gain.setValueAtTime(node.gain.value, now);
+        node.gain.linearRampToValueAtTime(updates.gain, rampTime);
       }
       if (updates.Q !== undefined) {
         node.Q.cancelScheduledValues(now);
-        node.Q.setValueAtTime(updates.Q, now);
+        node.Q.setValueAtTime(node.Q.value, now);
+        node.Q.linearRampToValueAtTime(updates.Q, rampTime);
       }
     }
   }
@@ -228,8 +259,11 @@ export class AudioEngine {
   resetEqualizer() {
     if (!this.audioContext) return;
     const now = this.audioContext.currentTime;
+    const rampTime = now + 0.05;
     this.equalizerNodes.forEach((node) => {
-      node.gain.setTargetAtTime(0, now, 0.015);
+      node.gain.cancelScheduledValues(now);
+      node.gain.setValueAtTime(node.gain.value, now);
+      node.gain.linearRampToValueAtTime(0, rampTime);
     });
   }
 
@@ -255,6 +289,11 @@ export class AudioEngine {
 
   toggleReverb(enabled: boolean) {
     this.reverbEnabled = enabled;
+    this.reconnectAudioGraph();
+  }
+
+  togglePureBypass(enabled: boolean) {
+    this.pureBypassEnabled = enabled;
     this.reconnectAudioGraph();
   }
 
@@ -332,7 +371,32 @@ export class AudioEngine {
       }
     }
 
+    this.normalizeImpulseResponse(impulse, 0.35);
+
     return impulse;
+  }
+
+  private normalizeImpulseResponse(impulse: AudioBuffer, targetPeak: number) {
+    const left = impulse.getChannelData(0);
+    const right = impulse.getChannelData(1);
+
+    let peak = 0;
+    for (let i = 0; i < left.length; i++) {
+      const l = Math.abs(left[i]);
+      const r = Math.abs(right[i]);
+      if (l > peak) peak = l;
+      if (r > peak) peak = r;
+    }
+
+    if (peak <= 0) return;
+
+    const scale = Math.min(1, targetPeak / peak);
+    if (scale === 1) return;
+
+    for (let i = 0; i < left.length; i++) {
+      left[i] *= scale;
+      right[i] *= scale;
+    }
   }
 
   private buildReflectionMap(
@@ -478,7 +542,12 @@ export class AudioEngine {
     return new Promise((resolve) => {
       if (
         "scheduler" in globalThis &&
-        "yield" in (globalThis as unknown as { scheduler: { yield: () => Promise<void> } }).scheduler
+        "yield" in
+          (
+            globalThis as unknown as {
+              scheduler: { yield: () => Promise<void> };
+            }
+          ).scheduler
       ) {
         (
           globalThis as unknown as { scheduler: { yield: () => Promise<void> } }
@@ -701,15 +770,35 @@ export class AudioEngine {
   }
 
   private reconnectAudioGraph() {
-    if (!this.gainNode || !this.analyzerNode) return;
+    if (!this.gainNode || !this.analyzerNode || !this.audioContext) return;
 
-    this.gainNode.disconnect();
-    this.equalizerNodes.forEach((node) => node.disconnect());
-    this.convolverNode?.disconnect();
-    this.reverbDryGainNode?.disconnect();
-    this.reverbWetGainNode?.disconnect();
+    try {
+      this.gainNode.disconnect();
+    } catch {}
+    this.equalizerNodes.forEach((node) => {
+      try {
+        node.disconnect();
+      } catch {}
+    });
+    try {
+      this.convolverNode?.disconnect();
+    } catch {}
+    try {
+      this.reverbDryGainNode?.disconnect();
+    } catch {}
+    try {
+      this.reverbWetGainNode?.disconnect();
+    } catch {}
+    try {
+      this.analyzerNode.disconnect();
+    } catch {}
 
     let currentNode: AudioNode = this.gainNode;
+
+    if (this.pureBypassEnabled) {
+      currentNode.connect(this.audioContext.destination);
+      return;
+    }
 
     if (this.equalizerEnabled && this.equalizerNodes.length > 0) {
       currentNode.connect(this.equalizerNodes[0]);
@@ -728,10 +817,15 @@ export class AudioEngine {
       currentNode.connect(this.reverbDryGainNode);
       currentNode.connect(this.convolverNode);
       this.convolverNode.connect(this.reverbWetGainNode);
+
+      this.reverbDryGainNode.connect(this.audioContext.destination);
+      this.reverbWetGainNode.connect(this.audioContext.destination);
+
       this.reverbDryGainNode.connect(this.analyzerNode);
-      this.reverbWetGainNode.connect(this.analyzerNode);
       return;
     }
+
+    currentNode.connect(this.audioContext.destination);
 
     currentNode.connect(this.analyzerNode);
   }

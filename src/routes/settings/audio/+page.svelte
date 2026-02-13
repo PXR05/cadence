@@ -474,201 +474,229 @@
 <div class="px-2 pb-4 pt-0.5 w-full space-y-2 mb-[50dvh]">
   <SettingCard
     icon={AudioWaveformIcon}
-    title="Equalizer"
-    enabled={playerStore.equalizerEnabled}
-    onToggle={() => playerStore.toggleEqualizer()}
+    title="Bypass"
+    enabled={playerStore.pureBypassEnabled}
+    onToggle={() => playerStore.togglePureBypass()}
   >
-    <canvas
-      bind:this={canvasRef}
-      onmousedown={handleMouseDown}
-      class="border rounded-lg cursor-crosshair"
-      style="width: {WIDTH}px; height: {HEIGHT}px; max-width: 100%;"
-    ></canvas>
+    <p class="text-sm text-muted-foreground px-2 pb-1">
+      Routes audio directly from source to output. EQ, reverb, and analyzer
+      processing are bypassed while enabled.
+    </p>
+  </SettingCard>
 
-    <div class="w-full">
-      <div
-        class="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2 w-full"
-      >
-        {#each playerStore.equalizerBands as band (band.id)}
-          <div
-            class="border rounded-lg p-2 flex flex-col gap-2 bg-background md:bg-card text-xs h-full"
-          >
-            <div class="flex flex-row items-center gap-2 w-full">
-              <Button
-                onclick={() => {
-                  if (band.enabled) {
-                    playerStore.updateEqualizerBand(band.id, {
-                      enabled: false,
-                      prevGain: band.gain,
-                      gain: 0,
-                    });
-                  } else {
-                    playerStore.updateEqualizerBand(band.id, {
-                      enabled: true,
-                      gain: band.prevGain ?? 0,
-                      prevGain: undefined,
-                    });
-                  }
-                }}
-                variant={band.enabled ? "default" : "outline"}
-                size="sm"
-                class="size-8 p-0 shrink-0"
-                aria-pressed={band.enabled}
-                title={band.enabled ? "Disable band" : "Enable band"}
-              >
-                {#if band.enabled}
-                  <PowerIcon class="size-4" />
-                {:else}
-                  <PowerOffIcon class="size-4" />
-                {/if}
-              </Button>
-              <span
-                class="flex-1 font-medium text-sm flex items-center gap-1.5"
-              >
-                Band {band.id + 1}
-                {#if playerStore.equalizerBands.length > 1}
-                  <button
-                    onclick={() => playerStore.removeEqualizerBand(band.id)}
-                    class="ml-auto opacity-50 hover:opacity-100 transition-opacity p-1"
-                    title="Remove band"
-                  >
-                    <XIcon class="size-4" />
-                  </button>
-                {/if}
-              </span>
-            </div>
+  <div
+    class:opacity-50={playerStore.pureBypassEnabled}
+    class:pointer-events-none={playerStore.pureBypassEnabled}
+    aria-disabled={playerStore.pureBypassEnabled}
+  >
+    <SettingCard
+      icon={AudioWaveformIcon}
+      title="Equalizer"
+      enabled={playerStore.equalizerEnabled}
+      onToggle={playerStore.pureBypassEnabled
+        ? undefined
+        : () => playerStore.toggleEqualizer()}
+    >
+      <canvas
+        bind:this={canvasRef}
+        onmousedown={handleMouseDown}
+        class="border rounded-lg cursor-crosshair"
+        style="width: {WIDTH}px; height: {HEIGHT}px; max-width: 100%;"
+      ></canvas>
 
-            <SelectRoot
-              type="single"
-              value={band.type}
-              onValueChange={(e) =>
-                playerStore.updateEqualizerBand(band.id, {
-                  type: e as FilterType,
-                })}
+      <div class="w-full">
+        <div
+          class="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2 w-full"
+        >
+          {#each playerStore.equalizerBands as band (band.id)}
+            <div
+              class="border rounded-lg p-2 flex flex-col gap-2 bg-background md:bg-card text-xs h-full"
             >
-              <SelectTrigger class="w-full capitalize">
-                {filterTypeLabels[band.type]} - {band.type}
-              </SelectTrigger>
-              <SelectContent>
-                {#each filterTypes as type}
-                  <SelectItem value={type} class="capitalize">
-                    {type}
-                  </SelectItem>
-                {/each}
-              </SelectContent>
-            </SelectRoot>
-
-            {#each controls as control}
               <div class="flex flex-row items-center gap-2 w-full">
-                <span class="w-10">{control.label}</span>
-                <Input
-                  type="number"
-                  value={band[control.key as keyof typeof band]}
-                  oninput={(e) => {
-                    const val = parseFloat(
-                      (e.target as HTMLInputElement).value,
-                    );
-                    if (!isNaN(val)) {
+                <Button
+                  onclick={() => {
+                    if (band.enabled) {
                       playerStore.updateEqualizerBand(band.id, {
-                        [control.key as keyof typeof band]: val,
+                        enabled: false,
+                        prevGain: band.gain,
+                        gain: 0,
+                      });
+                    } else {
+                      playerStore.updateEqualizerBand(band.id, {
+                        enabled: true,
+                        gain: band.prevGain ?? 0,
+                        prevGain: undefined,
                       });
                     }
                   }}
-                  min={control.min}
-                  max={control.max}
-                  step={control.step}
-                  class="text-xs w-full"
+                  variant={band.enabled ? "default" : "outline"}
+                  size="sm"
+                  class="size-8 p-0 shrink-0"
+                  aria-pressed={band.enabled}
+                  title={band.enabled ? "Disable band" : "Enable band"}
+                >
+                  {#if band.enabled}
+                    <PowerIcon class="size-4" />
+                  {:else}
+                    <PowerOffIcon class="size-4" />
+                  {/if}
+                </Button>
+                <span
+                  class="flex-1 font-medium text-sm flex items-center gap-1.5"
+                >
+                  Band {band.id + 1}
+                  {#if playerStore.equalizerBands.length > 1}
+                    <button
+                      onclick={() => playerStore.removeEqualizerBand(band.id)}
+                      class="ml-auto opacity-50 hover:opacity-100 transition-opacity p-1"
+                      title="Remove band"
+                    >
+                      <XIcon class="size-4" />
+                    </button>
+                  {/if}
+                </span>
+              </div>
+
+              <SelectRoot
+                type="single"
+                value={band.type}
+                onValueChange={(e) =>
+                  playerStore.updateEqualizerBand(band.id, {
+                    type: e as FilterType,
+                  })}
+              >
+                <SelectTrigger class="w-full capitalize">
+                  {filterTypeLabels[band.type]} - {band.type}
+                </SelectTrigger>
+                <SelectContent>
+                  {#each filterTypes as type}
+                    <SelectItem value={type} class="capitalize">
+                      {type}
+                    </SelectItem>
+                  {/each}
+                </SelectContent>
+              </SelectRoot>
+
+              {#each controls as control}
+                <div class="flex flex-row items-center gap-2 w-full">
+                  <span class="w-10">{control.label}</span>
+                  <Input
+                    type="number"
+                    value={band[control.key as keyof typeof band]}
+                    oninput={(e) => {
+                      const val = parseFloat(
+                        (e.target as HTMLInputElement).value,
+                      );
+                      if (!isNaN(val)) {
+                        playerStore.updateEqualizerBand(band.id, {
+                          [control.key as keyof typeof band]: val,
+                        });
+                      }
+                    }}
+                    min={control.min}
+                    max={control.max}
+                    step={control.step}
+                    class="text-xs w-full"
+                  />
+                </div>
+              {/each}
+            </div>
+          {/each}
+
+          <!-- Add Band Button Card -->
+          {#if playerStore.equalizerBands.length < playerStore.maxBands}
+            <button
+              onclick={() => {
+                const result = playerStore.addEqualizerBand();
+                if (!result) {
+                  console.warn(
+                    "Could not add band: max bands reached or no available frequency slot",
+                  );
+                }
+              }}
+              class="border rounded-lg p-2 flex flex-col items-center justify-center gap-2 bg-background md:bg-card text-xs h-full min-h-35 border-dashed border-muted-foreground/50 hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer group"
+            >
+              <div
+                class="size-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/20 transition-colors"
+              >
+                <PlusIcon
+                  class="size-5 text-muted-foreground group-hover:text-primary transition-colors"
                 />
               </div>
-            {/each}
-          </div>
-        {/each}
-
-        <!-- Add Band Button Card -->
-        {#if playerStore.equalizerBands.length < playerStore.maxBands}
-          <button
-            onclick={() => {
-              const result = playerStore.addEqualizerBand();
-              if (!result) {
-                console.warn(
-                  "Could not add band: max bands reached or no available frequency slot",
-                );
-              }
-            }}
-            class="border rounded-lg p-2 flex flex-col items-center justify-center gap-2 bg-background md:bg-card text-xs h-full min-h-35 border-dashed border-muted-foreground/50 hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer group"
-          >
+              <span
+                class="text-muted-foreground group-hover:text-primary transition-colors font-medium"
+              >
+                Add Band
+              </span>
+              <span class="text-muted-foreground/70 text-[10px]">
+                {playerStore.equalizerBands.length}/{playerStore.maxBands} bands
+              </span>
+            </button>
+          {:else}
             <div
-              class="size-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/20 transition-colors"
+              class="border rounded-lg p-2 flex flex-col items-center justify-center gap-2 bg-muted/30 text-xs h-full min-h-35 border-dashed border-muted-foreground/30"
             >
-              <PlusIcon
-                class="size-5 text-muted-foreground group-hover:text-primary transition-colors"
-              />
+              <div
+                class="size-10 rounded-full bg-muted/50 flex items-center justify-center"
+              >
+                <PlusIcon class="size-5 text-muted-foreground/50" />
+              </div>
+              <span class="text-muted-foreground/50 font-medium">
+                Max Bands
+              </span>
+              <span class="text-muted-foreground/50 text-[10px]">
+                {playerStore.maxBands}/{playerStore.maxBands} bands
+              </span>
             </div>
-            <span
-              class="text-muted-foreground group-hover:text-primary transition-colors font-medium"
-            >
-              Add Band
-            </span>
-            <span class="text-muted-foreground/70 text-[10px]">
-              {playerStore.equalizerBands.length}/{playerStore.maxBands} bands
-            </span>
-          </button>
-        {:else}
-          <div
-            class="border rounded-lg p-2 flex flex-col items-center justify-center gap-2 bg-muted/30 text-xs h-full min-h-35 border-dashed border-muted-foreground/30"
-          >
-            <div
-              class="size-10 rounded-full bg-muted/50 flex items-center justify-center"
-            >
-              <PlusIcon class="size-5 text-muted-foreground/50" />
-            </div>
-            <span class="text-muted-foreground/50 font-medium">
-              Max Bands
-            </span>
-            <span class="text-muted-foreground/50 text-[10px]">
-              {playerStore.maxBands}/{playerStore.maxBands} bands
-            </span>
-          </div>
-        {/if}
+          {/if}
+        </div>
       </div>
-    </div>
-  </SettingCard>
+    </SettingCard>
+  </div>
 
-  <SettingCard
-    icon={WavesIcon}
-    title="Reverb"
-    enabled={playerStore.reverbEnabled}
-    onToggle={() => playerStore.toggleReverb()}
+  <div
+    class:opacity-50={playerStore.pureBypassEnabled}
+    class:pointer-events-none={playerStore.pureBypassEnabled}
+    aria-disabled={playerStore.pureBypassEnabled}
   >
-    <div class="flex flex-col gap-2">
-      <label for="reverb-preset" class="text-sm font-medium pl-2">
-        Preset
-      </label>
-      <SelectRoot
-        type="single"
-        value={playerStore.reverbPreset}
-        onValueChange={(preset) => playerStore.setReverbPreset(preset)}
-      >
-        <SelectTrigger id="reverb-preset" class="w-full">
-          {playerStore.reverbPreset}
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="Small Hall 1">Small Hall 1</SelectItem>
-          <SelectItem value="Small Hall 2">Small Hall 2</SelectItem>
-          <SelectItem value="Medium Hall 1">Medium Hall 1</SelectItem>
-          <SelectItem value="Medium Hall 2">Medium Hall 2</SelectItem>
-          <SelectItem value="Large Hall 1">Large Hall 1</SelectItem>
-          <SelectItem value="Large Hall 2">Large Hall 2</SelectItem>
-          <SelectItem value="Small Room 1">Small Room 1</SelectItem>
-          <SelectItem value="Small Room 2">Small Room 2</SelectItem>
-          <SelectItem value="Medium Room 1">Medium Room 1</SelectItem>
-          <SelectItem value="Medium Room 2">Medium Room 2</SelectItem>
-          <SelectItem value="Large Room 1">Large Room 1</SelectItem>
-          <SelectItem value="Large Room 2">Large Room 2</SelectItem>
-          <SelectItem value="Plate High">Plate High</SelectItem>
-          <SelectItem value="Plate Low">Plate Low</SelectItem>
-        </SelectContent>
-      </SelectRoot>
-    </div>
-  </SettingCard>
+    <SettingCard
+      icon={WavesIcon}
+      title="Reverb"
+      enabled={playerStore.reverbEnabled}
+      onToggle={playerStore.pureBypassEnabled
+        ? undefined
+        : () => playerStore.toggleReverb()}
+    >
+      <div class="flex flex-col gap-2">
+        <label for="reverb-preset" class="text-sm font-medium pl-2">
+          Preset
+        </label>
+        <SelectRoot
+          type="single"
+          value={playerStore.reverbPreset}
+          onValueChange={(preset) => playerStore.setReverbPreset(preset)}
+        >
+          <SelectTrigger id="reverb-preset" class="w-full">
+            {playerStore.reverbPreset}
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Small Hall 1">Small Hall 1</SelectItem>
+            <SelectItem value="Small Hall 2">Small Hall 2</SelectItem>
+            <SelectItem value="Medium Hall 1">Medium Hall 1</SelectItem>
+            <SelectItem value="Medium Hall 2">Medium Hall 2</SelectItem>
+            <SelectItem value="Large Hall 1">Large Hall 1</SelectItem>
+            <SelectItem value="Large Hall 2">Large Hall 2</SelectItem>
+            <SelectItem value="Small Room 1">Small Room 1</SelectItem>
+            <SelectItem value="Small Room 2">Small Room 2</SelectItem>
+            <SelectItem value="Medium Room 1">Medium Room 1</SelectItem>
+            <SelectItem value="Medium Room 2">Medium Room 2</SelectItem>
+            <SelectItem value="Large Room 1">Large Room 1</SelectItem>
+            <SelectItem value="Large Room 2">Large Room 2</SelectItem>
+            <SelectItem value="Plate High">Plate High</SelectItem>
+            <SelectItem value="Plate Low">Plate Low</SelectItem>
+          </SelectContent>
+        </SelectRoot>
+      </div>
+    </SettingCard>
+  </div>
 </div>
