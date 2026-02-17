@@ -10,7 +10,7 @@ export async function searchYoutube(
 ): Promise<YouTubeSearchResult[]> {
   const params = new URLSearchParams({ q: query });
 
-  const response = await authFetch(`/audio/youtube/search?${params}`);
+  const response = await authFetch(`/audio/search/youtube?${params}`);
 
   if (!response.ok) {
     throw new Error(`Failed to search YouTube: ${await response.text()}`);

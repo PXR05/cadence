@@ -17,6 +17,7 @@
   let virtualScroll: any = $state(null);
   const ROW_HEIGHT = 52;
   let previousOpen = $state(false);
+  let previousQueueIndex = $state(-1);
 
   let touchStartY = 0;
   let isTouchActive = false;
@@ -76,18 +77,22 @@
   });
 
   $effect(() => {
-    if (!dialogState.isOpen) {
-      return;
+    const isOpening = dialogState.isOpen && !previousOpen;
+    const queueIndexChanged =
+      playerStore.queueIndex !== previousQueueIndex &&
+      playerStore.queueIndex >= 0;
+    const shouldScroll = dialogState.isOpen && (isOpening || queueIndexChanged);
+
+    if (shouldScroll && virtualScroll) {
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          virtualScroll?.scrollToIndex(playerStore.queueIndex, false);
+        }, 0);
+      });
     }
-    if (
-      dialogState.isOpen &&
-      !previousOpen &&
-      virtualScroll &&
-      playerStore.queueIndex >= 0
-    ) {
-      virtualScroll?.scrollToIndex(playerStore.queueIndex, false);
-    }
+
     previousOpen = dialogState.isOpen;
+    previousQueueIndex = playerStore.queueIndex;
   });
 </script>
 
