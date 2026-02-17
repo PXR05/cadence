@@ -11,8 +11,7 @@
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
   const isTopRoute = $derived(
     page.url.pathname.split("/").length <= 2 &&
-      page.url.pathname === "/playlist" &&
-      !page.url.searchParams.has("id"),
+      !page.url.pathname.includes("/playlist"),
   );
 
   const panelState = useDialogState("player-detail");
