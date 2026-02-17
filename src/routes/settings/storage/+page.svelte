@@ -39,11 +39,12 @@
   let isLoadingDatabases = $state(true);
   let clearDialogOpen = $state(false);
   let clearTarget = $state<{
-    type: "table" | "database" | "all" | "sw-cache";
+    type: "table" | "database" | "all" | "sw-cache" | "localstorage";
     dbName?: string;
     tableName?: string;
     displayName: string;
     swCacheName?: string;
+    localStorageKey?: string;
   } | null>(null);
   let isClearing = $state(false);
 
@@ -59,6 +60,16 @@
   let isLoadingSwCaches = $state(true);
   let swTotalSize = $state("0 B");
   let hasServiceWorker = $state(false);
+
+  interface LocalStorageInfo {
+    key: string;
+    size: string;
+    sizeBytes: number;
+  }
+
+  let localStorageItems: LocalStorageInfo[] = $state([]);
+  let isLoadingLocalStorage = $state(true);
+  let localStorageTotalSize = $state("0 B");
 
   function formatBytes(bytes: number): string {
     if (bytes === 0) return "0 B";
@@ -155,6 +166,38 @@
     } catch (error) {
       console.error("Failed to clear service worker cache:", error);
       throw error;
+    }
+  }
+
+  async function loadLocalStorageInfo() {
+    isLoadingLocalStorage = true;
+    try {
+      const items: LocalStorageInfo[] = [];
+      let totalBytes = 0;
+
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key) {
+          const value = localStorage.getItem(key) || "";
+          const sizeBytes = new Blob([key + value]).size;
+          totalBytes += sizeBytes;
+          items.push({
+            key,
+            size: formatBytes(sizeBytes),
+            sizeBytes,
+          });
+        }
+      }
+
+      items.sort((a, b) => b.sizeBytes - a.sizeBytes);
+
+      localStorageItems = items;
+      localStorageTotalSize = formatBytes(totalBytes);
+    } catch (error) {
+      console.error("Failed to load localStorage info:", error);
+      toast.error("Failed to load localStorage information");
+    } finally {
+      isLoadingLocalStorage = false;
     }
   }
 
@@ -258,10 +301,11 @@
   }
 
   function openClearDialog(
-    type: "table" | "database" | "sw-cache",
+    type: "table" | "database" | "sw-cache" | "localstorage",
     dbName?: string,
     tableName?: string,
     swCacheName?: string,
+    localStorageKey?: string,
   ) {
     let displayName = "";
     if (type === "database") {
@@ -274,10 +318,23 @@
       } else {
         displayName = "all service worker caches";
       }
+    } else if (type === "localstorage") {
+      if (localStorageKey) {
+        displayName = localStorageKey;
+      } else {
+        displayName = "all local storage";
+      }
     } else {
       displayName = tableName || "";
     }
-    clearTarget = { type, dbName, tableName, displayName, swCacheName };
+    clearTarget = {
+      type,
+      dbName,
+      tableName,
+      displayName,
+      swCacheName,
+      localStorageKey,
+    };
     clearDialogOpen = true;
   }
 
@@ -330,9 +387,17 @@
       } else if (clearTarget.type === "sw-cache") {
         await clearSwCache(clearTarget.swCacheName);
         toast.success(`${clearTarget.displayName} cleared`);
+      } else if (clearTarget.type === "localstorage") {
+        if (clearTarget.localStorageKey) {
+          localStorage.removeItem(clearTarget.localStorageKey);
+        } else {
+          localStorage.clear();
+        }
+        toast.success(`${clearTarget.displayName} cleared`);
       }
 
       await loadDatabaseInfo();
+      await loadLocalStorageInfo();
     } catch (error) {
       console.error("Failed to clear data:", error);
       toast.error("Failed to clear data");
@@ -346,6 +411,7 @@
   onMount(() => {
     loadDatabaseInfo();
     loadSwCacheInfo();
+    loadLocalStorageInfo();
 
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.addEventListener("message", handleSwMessage);
@@ -569,6 +635,102 @@
       </div>
     </SettingCard>
   {/if}
+
+  <!-- Local Storage Management -->
+  <SettingCard icon={PackageIcon} title="Local Storage">
+    {#snippet headerActions()}
+      <Button
+        variant="ghost"
+        size="icon"
+        class="size-10"
+        onclick={() => loadLocalStorageInfo()}
+        disabled={isLoadingLocalStorage}
+        title="Refresh"
+      >
+        <RefreshCwIcon
+          class="size-4 {isLoadingLocalStorage ? 'animate-spin' : ''}"
+        />
+      </Button>
+    {/snippet}
+    <div class="p-3 pt-1 space-y-4">
+      <p class="text-sm text-muted-foreground">
+        Manage browser local storage data and application settings
+      </p>
+
+      {#if isLoadingLocalStorage}
+        <div class="flex items-center justify-center py-8">
+          <RefreshCwIcon class="size-5 animate-spin text-muted-foreground" />
+        </div>
+      {:else}
+        <div class="rounded-lg border bg-muted/30 overflow-hidden">
+          <!-- Local Storage Header -->
+          <div
+            class="flex items-center justify-between p-3 bg-muted/50 border-b"
+          >
+            <div class="flex items-center gap-2">
+              <PackageIcon class="size-4 text-muted-foreground" />
+              <span class="font-medium text-sm">Local Storage</span>
+              <span
+                class="text-xs text-muted-foreground bg-background/50 px-1.5 py-0.5 rounded"
+              >
+                {localStorageTotalSize}
+              </span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              class="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+              onclick={() => openClearDialog("localstorage")}
+              disabled={localStorageItems.length === 0}
+            >
+              <Trash2Icon class="size-3 mr-1" />
+              Clear All
+            </Button>
+          </div>
+
+          <!-- Local Storage Items -->
+          <div class="divide-y divide-border/50">
+            {#each localStorageItems as item}
+              <div
+                class="flex items-center justify-between p-2.5 px-3 hover:bg-muted/30 transition-colors"
+              >
+                <div class="flex items-center gap-3 flex-1 min-w-0">
+                  <div class="flex flex-col flex-1 min-w-0">
+                    <span class="text-sm truncate" title={item.key}>
+                      {item.key}
+                    </span>
+                    <span class="text-xs text-muted-foreground">
+                      {item.size}
+                    </span>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="size-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                  onclick={() =>
+                    openClearDialog(
+                      "localstorage",
+                      undefined,
+                      undefined,
+                      undefined,
+                      item.key,
+                    )}
+                >
+                  <Trash2Icon class="size-3.5" />
+                </Button>
+              </div>
+            {/each}
+            {#if localStorageItems.length === 0}
+              <div class="p-4 text-center text-sm text-muted-foreground">
+                No local storage data
+              </div>
+            {/if}
+          </div>
+        </div>
+      {/if}
+    </div>
+  </SettingCard>
 </div>
 
 <AlertDialog.Root bind:open={clearDialogOpen}>
@@ -610,6 +772,14 @@
           {:else}
             This will clear the selected cache. Content will be re-downloaded as
             needed.
+          {/if}
+        {:else if clearTarget?.type === "localstorage"}
+          {#if clearTarget?.localStorageKey}
+            This will permanently delete the "{clearTarget?.localStorageKey}"
+            setting from local storage. Some app preferences may be reset.
+          {:else}
+            This will permanently delete all local storage data, including app
+            settings and preferences. This action cannot be undone.
           {/if}
         {:else}
           This will permanently delete all items in this table. This action
