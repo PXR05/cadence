@@ -9,7 +9,11 @@
   import { appearanceStore } from "$lib/stores/appearance.svelte";
 
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
-  const isTopRoute = $derived(page.url.pathname.split("/").length <= 2);
+  const isTopRoute = $derived(
+    page.url.pathname.split("/").length <= 2 &&
+      page.url.pathname === "/playlist" &&
+      !page.url.searchParams.has("id"),
+  );
 
   const panelState = useDialogState("player-detail");
 
