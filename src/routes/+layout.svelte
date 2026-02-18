@@ -78,7 +78,6 @@
   }
 
   function loadInitialData() {
-    console.log("Loading data...");
     tracksStore
       .loadAllTracks()
       .then(() => console.log("Tracks loaded"))

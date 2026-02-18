@@ -1,8 +1,8 @@
-import type { YouTubeSearchResult } from "$lib/schemas";
-import {
-  downloadYoutubeWithProgress,
-  type YouTubeProgressEvent,
-} from "$lib/utils/youtube";
+import { BASE_URL } from "$lib/constants";
+import type {
+  YouTubeSearchResult,
+  YoutubeDownloadResponse,
+} from "$lib/schemas";
 import { tracksStore } from "./tracks.svelte";
 
 interface DownloadProgress {
@@ -26,12 +26,30 @@ interface PersistentState {
   progress: DownloadProgress | null;
 }
 
+interface YouTubeProgressEvent {
+  type: "progress" | "complete" | "error" | "info" | "cancelled";
+  message: string;
+  data?: {
+    percent?: number;
+    speed?: string;
+    eta?: string;
+    downloaded?: string;
+    totalSize?: string;
+  };
+  playlistTitle?: string;
+  playlistTotal?: number;
+  playlistCurrent?: number;
+  videoTitle?: string;
+  result?: YoutubeDownloadResponse;
+}
+
 class YouTubeDownloadStore {
   private _currentDownload = $state<QueueItem | null>(null);
   private _queue = $state<QueueItem[]>([]);
   private _progress = $state<DownloadProgress | null>(null);
   private _isProcessing = false;
   private _completedVideoId = $state<string | null>(null);
+  private _activeEventSource: EventSource | null = null;
 
   constructor() {
     if (typeof window !== "undefined") {
@@ -215,9 +233,10 @@ class YouTubeDownloadStore {
 
     let playlistTotal = 0;
     let playlistCurrent = 0;
+    let wasCancelled = false;
 
     try {
-      await downloadYoutubeWithProgress(
+      await this.downloadYoutube(
         downloadUrl,
         streamId,
         (event: YouTubeProgressEvent) => {
@@ -257,13 +276,27 @@ class YouTubeDownloadStore {
               message: infoMessage,
             };
             this.saveToStorage();
+          } else if (event.type === "cancelled") {
+            wasCancelled = true;
+            this._progress = {
+              videoId,
+              title: this._progress?.title || initialTitle,
+              percent: this._progress?.percent ?? 0,
+              message: event.message || "Download cancelled",
+            };
+            this.saveToStorage();
           }
         },
       );
 
-      this._completedVideoId = videoId;
       this._progress = null;
       this.saveToStorage();
+
+      if (wasCancelled) {
+        return;
+      }
+
+      this._completedVideoId = videoId;
 
       setTimeout(() => {
         if (this._completedVideoId === videoId) {
@@ -280,11 +313,84 @@ class YouTubeDownloadStore {
     }
   }
 
+  private async downloadYoutube(
+    url: string,
+    stream: string,
+    onProgress: (event: YouTubeProgressEvent) => void,
+  ): Promise<void> {
+    const params = new URLSearchParams({ url, stream });
+    const eventSource = new EventSource(
+      `${BASE_URL}/upload/youtube?${params}`,
+      {
+        withCredentials: true,
+      },
+    );
+    this._activeEventSource = eventSource;
+
+    return new Promise((resolve, reject) => {
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data) as YouTubeProgressEvent;
+          onProgress(data);
+
+          if (data.type === "complete") {
+            eventSource.close();
+            this._activeEventSource = null;
+            resolve();
+          } else if (data.type === "cancelled") {
+            eventSource.close();
+            this._activeEventSource = null;
+            resolve();
+          } else if (data.type === "error") {
+            eventSource.close();
+            this._activeEventSource = null;
+            reject(new Error(data.message));
+          }
+        } catch (error) {
+          console.error("Error parsing SSE data:", error);
+        }
+      };
+
+      eventSource.onerror = (event) => {
+        console.error("SSE connection error:", event);
+        eventSource.close();
+        this._activeEventSource = null;
+        reject(
+          new Error(
+            "Connection to server lost" +
+              (event ? `: ${JSON.stringify(event)}` : ""),
+          ),
+        );
+      };
+    });
+  }
+
   async cancelCurrent() {
-    if (this._currentDownload) {
-      this._currentDownload = null;
-      this._progress = null;
-      this.saveToStorage();
+    if (!this._currentDownload) return;
+
+    const streamId = this._currentDownload.streamId;
+
+    try {
+      const response = await fetch(`${BASE_URL}/upload/youtube/${streamId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to cancel download: ${await response.text()}`);
+      }
+
+      const data = (await response.json()) as {
+        success: boolean;
+        message: string;
+      };
+
+      if (!data.success) {
+        throw new Error(data.message || "Failed to cancel download");
+      }
+    } catch (error) {
+      console.error("Error requesting YouTube download cancellation:", error);
+      throw error;
     }
   }
 
@@ -297,6 +403,8 @@ class YouTubeDownloadStore {
     this._queue = [];
     this._currentDownload = null;
     this._progress = null;
+    this._activeEventSource?.close();
+    this._activeEventSource = null;
     this.saveToStorage();
   }
 
