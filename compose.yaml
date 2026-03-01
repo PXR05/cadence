@@ -1,7 +1,6 @@
 services:
   web:
-    build: .
-    command: ["bun", "--bun", "run", "."]
+    image: ghcr.io/pxr05/cadence:latest
     restart: always
     environment:
       BODY_SIZE_LIMIT: Infinity
