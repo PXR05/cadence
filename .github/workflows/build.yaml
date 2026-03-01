@@ -4,6 +4,15 @@ on:
   push:
     branches:
       - main
+    paths:
+      - "src/**"
+      - "package.json"
+      - "bun.lock"
+      - "Dockerfile"
+      - ".dockerignore"
+      - ".gitignore"
+      - "vite.config.ts"
+      - "svelte.config.js"
   workflow_dispatch:
 
 jobs:
