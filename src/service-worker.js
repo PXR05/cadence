@@ -72,7 +72,7 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     addFilesToCache().then(() => {
       notifyClientsOfUpdate();
-    })
+    }),
   );
 });
 
@@ -93,7 +93,7 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     deleteOldCaches().then(() => {
       return self.clients.claim();
-    })
+    }),
   );
 });
 
@@ -161,16 +161,19 @@ self.addEventListener("fetch", (event) => {
         throw new Error("invalid response from fetch");
       }
 
-      if (response.status === 200) {
+      const isAsset = ASSETS.includes(url.pathname);
+      if (response.status === 200 && isAsset) {
         cache.put(event.request, response.clone());
       }
 
       return response;
     } catch (err) {
-      const response = await cache.match(event.request);
-
-      if (response) {
-        return response;
+      const isAsset = ASSETS.includes(url.pathname);
+      if (isAsset) {
+        const response = await cache.match(event.request);
+        if (response) {
+          return response;
+        }
       }
 
       throw err;

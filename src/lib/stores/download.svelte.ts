@@ -138,7 +138,7 @@ class DownloadStore {
   async recalculatePlaylistOfflineStatus(playlistId: string): Promise<void> {
     const isOffline = await checkAndUpdatePlaylistOfflineStatus(
       playlistId,
-      checkIsTrackOffline
+      checkIsTrackOffline,
     );
     this._offlineStatus.set(playlistId, isOffline);
   }
@@ -146,7 +146,7 @@ class DownloadStore {
   async recalculateAllTrackedPlaylists(): Promise<void> {
     const playlistIds = Array.from(this._offlineStatus.keys());
     await Promise.all(
-      playlistIds.map((id) => this.recalculatePlaylistOfflineStatus(id))
+      playlistIds.map((id) => this.recalculatePlaylistOfflineStatus(id)),
     );
   }
 
@@ -156,8 +156,11 @@ class DownloadStore {
     return isOffline;
   }
 
-  private async downloadTrackBlob(audioId: string): Promise<Blob> {
-    const response = await authFetch(`/audio/${audioId}/stream`);
+  private async downloadTrackBlob(
+    audioId: string,
+    signal?: AbortSignal,
+  ): Promise<Blob> {
+    const response = await authFetch(`/audio/${audioId}/stream`, { signal });
     if (!response.ok) throw new Error(`Failed to download track ${audioId}`);
     return response.blob();
   }
@@ -203,7 +206,7 @@ class DownloadStore {
 
   async addPlaylistToOfflineQueue(
     playlist: PlaylistDetail,
-    playlistId: string
+    playlistId: string,
   ): Promise<void> {
     const queueItem: QueueItem = {
       id: `playlist-offline-${playlistId}`,
@@ -240,7 +243,7 @@ class DownloadStore {
       duration?: number;
     },
     filename: string,
-    size?: number
+    size?: number,
   ): Promise<void> {
     const queueItem: QueueItem = {
       id: `track-offline-${trackId}`,
@@ -278,6 +281,8 @@ class DownloadStore {
 
     try {
       while (this._currentDownload || this._queue.length > 0) {
+        if (this._isCancelled) break;
+
         if (!this._currentDownload) {
           this._currentDownload = this._queue.shift() || null;
           this.saveToStorage();
@@ -285,7 +290,11 @@ class DownloadStore {
 
         if (!this._currentDownload) break;
 
-        await this.processQueueItem(this._currentDownload);
+        try {
+          await this.processQueueItem(this._currentDownload);
+        } catch (error) {
+          console.error("Queue item failed, skipping to next:", error);
+        }
 
         this._currentDownload = null;
         this.saveToStorage();
@@ -315,12 +324,11 @@ class DownloadStore {
           queueItem.trackId,
           queueItem.metadata,
           queueItem.filename,
-          queueItem.size
+          queueItem.size,
         );
       }
     } catch (error) {
       console.error("Error processing queue item:", error);
-      throw error;
     }
   }
 
@@ -350,7 +358,10 @@ class DownloadStore {
         }
 
         const item = playlist.items[i];
-        const blob = await this.downloadTrackBlob(item.audio.id);
+        const blob = await this.downloadTrackBlob(
+          item.audio.id,
+          this._abortController?.signal,
+        );
         const filename = item.audio.metadata?.title
           ? `${item.audio.metadata.artist || "Unknown"} - ${
               item.audio.metadata.title
@@ -392,14 +403,14 @@ class DownloadStore {
 
   async makeOffline(
     playlist: PlaylistDetail,
-    playlistId: string
+    playlistId: string,
   ): Promise<void> {
     await this.addPlaylistToOfflineQueue(playlist, playlistId);
   }
 
   private async _makeOffline(
     playlist: PlaylistDetail,
-    playlistId: string
+    playlistId: string,
   ): Promise<void> {
     this._abortController = new AbortController();
     this._isCancelled = false;
@@ -427,7 +438,7 @@ class DownloadStore {
 
         const alreadyExists = await isTrackOfflineWithSize(
           item.audio.id,
-          item.audio.size
+          item.audio.size,
         );
 
         if (alreadyExists) {
@@ -442,7 +453,10 @@ class DownloadStore {
         }
 
         try {
-          const blob = await this.downloadTrackBlob(item.audio.id);
+          const blob = await this.downloadTrackBlob(
+            item.audio.id,
+            this._abortController?.signal,
+          );
 
           await saveTrackOffline(
             item.audio.id,
@@ -454,7 +468,7 @@ class DownloadStore {
               duration: item.audio.metadata?.duration,
             },
             item.audio.filename,
-            item.audio.size
+            item.audio.size,
           );
 
           await this.downloadAndSaveImage(item.audio.id);
@@ -508,11 +522,11 @@ class DownloadStore {
 
         const tracksUsedByOthers = await getTrackIdsUsedByOtherOfflinePlaylists(
           playlistId,
-          trackIds
+          trackIds,
         );
 
         const tracksToDelete = trackIds.filter(
-          (id) => !tracksUsedByOthers.has(id)
+          (id) => !tracksUsedByOthers.has(id),
         );
         await Promise.all(tracksToDelete.map((id) => deleteOfflineTrack(id)));
       }
@@ -532,7 +546,7 @@ class DownloadStore {
       duration?: number;
     },
     filename: string,
-    size?: number
+    size?: number,
   ): Promise<void> {
     await this.addTrackToOfflineQueue(trackId, metadata, filename, size);
   }
@@ -546,7 +560,7 @@ class DownloadStore {
       duration?: number;
     },
     filename: string,
-    size?: number
+    size?: number,
   ): Promise<void> {
     this._abortController = new AbortController();
     this._isCancelled = false;
@@ -570,7 +584,10 @@ class DownloadStore {
       };
       this.saveToStorage();
 
-      const blob = await this.downloadTrackBlob(trackId);
+      const blob = await this.downloadTrackBlob(
+        trackId,
+        this._abortController?.signal,
+      );
 
       await saveTrackOffline(
         trackId,
@@ -582,7 +599,7 @@ class DownloadStore {
           duration: metadata.duration,
         },
         filename,
-        size
+        size,
       );
 
       await this.downloadAndSaveImage(trackId);
