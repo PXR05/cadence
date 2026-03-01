@@ -76,7 +76,8 @@
     }
 
     if (appearanceStore.disableAnimations) {
-      gsap.set(containerEl, { y: targetY, force3D: true });
+      gsap.killTweensOf(containerEl);
+      gsap.set(containerEl, { y: targetY, force3D: true, overwrite: "auto" });
       updateOpacity(targetY);
       return;
     }
@@ -94,6 +95,7 @@
       duration: animDuration,
       ease: vaulEase,
       onUpdate: () => {
+        if (gsapTween === null) return;
         if (containerEl) {
           gsap.set(containerEl, { y: proxy.y, force3D: true });
         }
