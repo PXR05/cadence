@@ -37,6 +37,7 @@
   let barElement: HTMLDivElement | null = $state(null);
   let detailsPanelElement: HTMLDivElement | null = $state(null);
   let gsapTween: gsap.core.Tween | null = null;
+  let animationVersion = 0;
 
   const closedPosition = $derived.by(() => {
     const height = innerHeight.current || window.innerHeight;
@@ -70,6 +71,8 @@
   function animateToPosition(targetY: number, duration?: number) {
     if (!containerEl) return;
 
+    const version = ++animationVersion;
+
     if (gsapTween) {
       gsapTween.kill();
       gsapTween = null;
@@ -77,7 +80,7 @@
 
     if (appearanceStore.disableAnimations) {
       gsap.killTweensOf(containerEl);
-      gsap.set(containerEl, { y: targetY, force3D: true, overwrite: "auto" });
+      gsap.set(containerEl, { y: targetY, force3D: true, overwrite: true });
       updateOpacity(targetY);
       return;
     }
@@ -95,13 +98,14 @@
       duration: animDuration,
       ease: vaulEase,
       onUpdate: () => {
-        if (gsapTween === null) return;
+        if (animationVersion !== version) return;
         if (containerEl) {
           gsap.set(containerEl, { y: proxy.y, force3D: true });
         }
         updateOpacity(proxy.y);
       },
       onComplete: () => {
+        if (animationVersion !== version) return;
         if (containerEl) {
           gsap.set(containerEl, { y: targetY, force3D: true });
         }
