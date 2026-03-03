@@ -309,7 +309,6 @@ class YouTubeDownloadStore {
       console.error("Error downloading YouTube track:", error);
       this._progress = null;
       this.saveToStorage();
-      throw error;
     }
   }
 

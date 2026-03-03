@@ -5,6 +5,7 @@
   import { Button } from "../ui/button";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
   import DownloadProgressBar from "./DownloadProgressBar.svelte";
+  import { toast } from "svelte-sonner";
 
   const progress = $derived(youtubeDownloadStore.progress);
   const queueCount = $derived(youtubeDownloadStore.queueCount);
@@ -17,7 +18,11 @@
   }
 
   async function handleConfirmCancel() {
-    await youtubeDownloadStore.cancelCurrent();
+    try {
+      await youtubeDownloadStore.cancelCurrent();
+    } catch (error) {
+      toast.error("Failed to cancel download: " + JSON.stringify(error));
+    }
     showCancelDialog = false;
   }
 </script>
