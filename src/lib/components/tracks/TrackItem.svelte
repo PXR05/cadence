@@ -48,7 +48,7 @@
   }
 
   async function handlePlay() {
-    trigger([{ duration: 8 }], { intensity: 0.3 });
+    trigger([{ duration: 8 }]);
 
     if (fromQueue) {
       playerStore.queueIndex = index;

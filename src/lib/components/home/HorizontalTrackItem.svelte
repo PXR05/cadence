@@ -24,7 +24,7 @@
   const isCurrentTrack = $derived(playerStore.currentTrack?.id === track.id);
 
   function handlePlay() {
-    trigger([{ duration: 8 }], { intensity: 0.3 });
+    trigger([{ duration: 8 }]);
 
     const shuffledTracks = tracksStore.getShuffledTracks(track);
     playerStore.setQueue(shuffledTracks, 0);

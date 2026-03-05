@@ -26,7 +26,7 @@
   const activeTabIndex = $derived(tabs.findIndex((tab) => isActive(tab.path)));
 
   function handleTabClick(e: MouseEvent, tabIndex: number) {
-    trigger([{ duration: 10 }], { intensity: 1 });
+    trigger([{ duration: 8 }]);
 
     if (tabIndex === activeTabIndex) return;
 

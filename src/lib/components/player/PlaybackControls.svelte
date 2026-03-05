@@ -40,7 +40,7 @@
   <Button
     variant="ghost"
     onclick={() => {
-      trigger([{ duration: 8 }], { intensity: 0.3 });
+      trigger([{ duration: 8 }]);
       playerStore.isShuffled = !playerStore.isShuffled;
     }}
     class="size-{size.button} grid place-items-center mx-auto
@@ -58,7 +58,7 @@
   <Button
     variant="ghost"
     onclick={() => {
-      trigger([{ duration: 10 }], { intensity: 1 });
+      trigger([{ duration: 10 }]);
       playerStore.playPrevious();
     }}
     class="size-{size.button} grid place-items-center"
@@ -76,7 +76,7 @@
   <Button
     variant="ghost"
     onclick={() => {
-      trigger([{ duration: 10 }], { intensity: 1 });
+      trigger([{ duration: 10 }]);
       playerStore.togglePlayPause();
     }}
     class="size-{size.primary} grid place-items-center"
@@ -103,7 +103,7 @@
   <Button
     variant="ghost"
     onclick={() => {
-      trigger([{ duration: 10 }], { intensity: 1 });
+      trigger([{ duration: 10 }]);
       playerStore.playNext();
     }}
     class="size-{size.button} grid place-items-center"
@@ -121,7 +121,7 @@
   <Button
     variant="ghost"
     onclick={() => {
-      trigger([{ duration: 8 }], { intensity: 0.3 });
+      trigger([{ duration: 8 }]);
       playerStore.isRepeated = !playerStore.isRepeated;
     }}
     class="size-{size.button} grid place-items-center mx-auto

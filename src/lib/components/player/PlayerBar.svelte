@@ -82,7 +82,6 @@
       gsap.killTweensOf(containerEl);
       gsap.set(containerEl, { y: targetY, force3D: true, overwrite: "auto" });
       updateOpacity(targetY);
-      trigger([{ duration: 8 }], { intensity: 0.4 });
       return;
     }
 
@@ -111,7 +110,6 @@
         }
         updateOpacity(targetY);
         gsapTween = null;
-        trigger([{ duration: 8 }], { intensity: 0.4 });
       },
     });
   }
@@ -403,7 +401,7 @@
   <Button
     variant="ghost"
     onclick={() => {
-      trigger([{ duration: 10 }], { intensity: 1 });
+      trigger([{ duration: 10 }]);
       playerStore.togglePlayPause();
     }}
     class="md:hidden size-12 grid place-items-center shrink-0 mr-2 p-0"
