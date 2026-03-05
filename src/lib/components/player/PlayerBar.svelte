@@ -18,6 +18,9 @@
   import { vaulEase } from "$lib/utils";
   import { useMenuDialogState } from "$lib/hooks";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
+  import { createWebHaptics } from "web-haptics/svelte";
+
+  const { trigger, destroy } = createWebHaptics();
 
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
   const isTopRoute = $derived(
@@ -79,6 +82,7 @@
       gsap.killTweensOf(containerEl);
       gsap.set(containerEl, { y: targetY, force3D: true, overwrite: "auto" });
       updateOpacity(targetY);
+      trigger([{ duration: 8 }], { intensity: 0.4 });
       return;
     }
 
@@ -107,6 +111,7 @@
         }
         updateOpacity(targetY);
         gsapTween = null;
+        trigger([{ duration: 8 }], { intensity: 0.4 });
       },
     });
   }
@@ -362,6 +367,7 @@
       gsapTween.kill();
     }
     playerStore.cleanup();
+    destroy();
   });
 
   function setCarouselApi(api: CarouselAPI | null) {
@@ -396,7 +402,10 @@
 
   <Button
     variant="ghost"
-    onclick={() => playerStore.togglePlayPause()}
+    onclick={() => {
+      trigger([{ duration: 10 }], { intensity: 1 });
+      playerStore.togglePlayPause();
+    }}
     class="md:hidden size-12 grid place-items-center shrink-0 mr-2 p-0"
     aria-label={playerStore.isPlaying ? "Pause" : "Play"}
   >
@@ -462,7 +471,7 @@
     <div
       bind:this={detailsPanelElement}
       class="overscroll-none contain-layout contain-style contain-paint"
-      style:pointer-events={panelState.isOpen ? 'auto' : 'none'}
+      style:pointer-events={panelState.isOpen ? "auto" : "none"}
     >
       <PlayerDetailsPanel
         onOpenChange={(v) => (v ? panelState.open() : panelState.close())}

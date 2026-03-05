@@ -22,23 +22,22 @@
   {#if tracks.length === 0 && emptyState}
     {@render emptyState()}
   {:else}
-    <ScrollArea
-      orientation="horizontal"
-      class="w-dvw md:w-[calc(100dvw-256px)] pb-4"
+    <div
+      class="flex overflow-x-auto scroll-smooth w-dvw md:w-[calc(100dvw-256px)] pb-4 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
-      <div class="flex pr-4">
-        {#each tracks as track, i (track.id)}
-          <div
-            animate:flip={{
-              duration: appearanceStore.disableAnimations ? 0 : 150,
-              easing: vaulEase,
-            }}
-            class={i === 0 ? "ml-2" : ""}
-          >
-            <HorizontalTrackItem {track} />
-          </div>
-        {/each}
-      </div>
-    </ScrollArea>
+      {#each tracks as track, i (track.id)}
+        <div
+          animate:flip={{
+            duration: appearanceStore.disableAnimations ? 0 : 150,
+            easing: vaulEase,
+          }}
+          class="w-48 md:w-56
+          {i === 0 ? 'ml-2 snap-end' : 'snap-start'}
+          {i === tracks.length - 1 ? 'mr-2' : ''}"
+        >
+          <HorizontalTrackItem {track} />
+        </div>
+      {/each}
+    </div>
   {/if}
 </div>

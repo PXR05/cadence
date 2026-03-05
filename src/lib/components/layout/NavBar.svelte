@@ -5,6 +5,11 @@
   import { playerStore } from "$lib/stores/player.svelte";
   import { isActive, navItems } from "./navItems";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
+  import { createWebHaptics } from "web-haptics/svelte";
+  import { onDestroy } from "svelte";
+
+  const { trigger, destroy } = createWebHaptics();
+  onDestroy(destroy);
 
   const {
     orientation = "horizontal",
@@ -21,6 +26,8 @@
   const activeTabIndex = $derived(tabs.findIndex((tab) => isActive(tab.path)));
 
   function handleTabClick(e: MouseEvent, tabIndex: number) {
+    trigger([{ duration: 10 }], { intensity: 1 });
+
     if (tabIndex === activeTabIndex) return;
 
     e.preventDefault();
@@ -70,7 +77,7 @@
 
     {#each tabs as tab, i (tab.path)}
       {@const active = isActive(tab.path)}
-        {@const isUnderIndicator = activeTabIndex === i}
+      {@const isUnderIndicator = activeTabIndex === i}
       <button
         draggable="false"
         animate:flip={{ duration: appearanceStore.disableAnimations ? 0 : 200 }}

@@ -9,6 +9,11 @@
     SkipForwardIcon,
   } from "@lucide/svelte";
   import { Button } from "../ui/button";
+  import { createWebHaptics } from "web-haptics/svelte";
+  import { onDestroy } from "svelte";
+
+  const { trigger, destroy } = createWebHaptics();
+  onDestroy(destroy);
 
   interface Props {
     variant?: "compact" | "large";
@@ -34,7 +39,10 @@
 >
   <Button
     variant="ghost"
-    onclick={() => (playerStore.isShuffled = !playerStore.isShuffled)}
+    onclick={() => {
+      trigger([{ duration: 8 }], { intensity: 0.3 });
+      playerStore.isShuffled = !playerStore.isShuffled;
+    }}
     class="size-{size.button} grid place-items-center mx-auto
     {playerStore.isShuffled ? '' : 'opacity-50'}"
     style="color: {textColor};"
@@ -49,7 +57,10 @@
 
   <Button
     variant="ghost"
-    onclick={() => playerStore.playPrevious()}
+    onclick={() => {
+      trigger([{ duration: 10 }], { intensity: 1 });
+      playerStore.playPrevious();
+    }}
     class="size-{size.button} grid place-items-center"
     style="color: {textColor};"
     aria-label="Previous track"
@@ -64,7 +75,10 @@
 
   <Button
     variant="ghost"
-    onclick={() => playerStore.togglePlayPause()}
+    onclick={() => {
+      trigger([{ duration: 10 }], { intensity: 1 });
+      playerStore.togglePlayPause();
+    }}
     class="size-{size.primary} grid place-items-center"
     style="color: {textColor};"
     aria-label={playerStore.isPlaying ? "Pause" : "Play"}
@@ -88,7 +102,10 @@
 
   <Button
     variant="ghost"
-    onclick={() => playerStore.playNext()}
+    onclick={() => {
+      trigger([{ duration: 10 }], { intensity: 1 });
+      playerStore.playNext();
+    }}
     class="size-{size.button} grid place-items-center"
     style="color: {textColor};"
     aria-label="Next track"
@@ -103,7 +120,10 @@
 
   <Button
     variant="ghost"
-    onclick={() => (playerStore.isRepeated = !playerStore.isRepeated)}
+    onclick={() => {
+      trigger([{ duration: 8 }], { intensity: 0.3 });
+      playerStore.isRepeated = !playerStore.isRepeated;
+    }}
     class="size-{size.button} grid place-items-center mx-auto
     {playerStore.isRepeated ? '' : 'opacity-50'}"
     style="color: {textColor};"

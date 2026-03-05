@@ -5,9 +5,13 @@
   import { downloadStore } from "$lib/stores/download.svelte";
   import { trackMenuStore } from "$lib/stores/trackMenu.svelte";
   import { CloudCheckIcon, EllipsisVerticalIcon } from "@lucide/svelte";
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import type { AudioFile, PlaylistDetail } from "$lib/schemas";
   import { Button } from "../ui/button";
+  import { createWebHaptics } from "web-haptics/svelte";
+
+  const { trigger, destroy } = createWebHaptics();
+  onDestroy(destroy);
 
   interface Props {
     index: number;
@@ -30,7 +34,7 @@
   const title = $derived(track.metadata?.title ?? track.filename);
   const artist = $derived(track.metadata?.artist ?? "Unknown");
   const album = $derived(
-    track.metadata?.album ?? track.metadata?.title ?? "Unknown"
+    track.metadata?.album ?? track.metadata?.title ?? "Unknown",
   );
 
   let isOffline = $state(false);
@@ -44,6 +48,8 @@
   }
 
   async function handlePlay() {
+    trigger([{ duration: 8 }], { intensity: 0.3 });
+
     if (fromQueue) {
       playerStore.queueIndex = index;
       playerStore.play({ index });

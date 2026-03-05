@@ -8,7 +8,6 @@
   import { HorizontalTrackList } from "$lib/components/home";
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { historyStore } from "$lib/stores/history.svelte";
-  import * as Carousel from "$lib/components/ui/carousel";
   import { playerStore } from "$lib/stores/player.svelte";
   import { slide } from "svelte/transition";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
@@ -120,29 +119,24 @@
 
     <h2 class="px-4 pb-2 text-2xl font-semibold">Releases</h2>
 
-    <Carousel.Root
-      class="w-full"
-      opts={{
-        align: "start",
-      }}
+    <div
+      class="flex overflow-x-auto scroll-smooth snap-x snap-mandatory ml-2 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
-      <Carousel.Content
-        class="w-[calc(100%-2rem)] md:w-[calc(50%-1rem)] lg:w-[calc(33%-0.5rem)] xl:w-[calc(25%-0.5rem)] ml-2"
-      >
-        {#each { length: COLUMNS }, i}
-          <Carousel.Item class="grid gap-2 p-0">
-            {#each tracks.slice(ROWS * i, ROWS * i + ROWS) as item, i (item)}
-              {@const index = ROWS * i + i}
-              <TrackItem
-                {index}
-                isCurrentTrack={item.id === currentId}
-                track={item}
-              />
-            {/each}
-          </Carousel.Item>
-        {/each}
-      </Carousel.Content>
-    </Carousel.Root>
+      {#each { length: COLUMNS } as _, i}
+        <div
+          class="snap-start shrink-0 w-[calc(100%-2rem)] md:w-[calc(50%-1rem)] lg:w-[calc(33%-0.5rem)] xl:w-[calc(25%-0.5rem)] grid gap-2 pr-2"
+        >
+          {#each tracks.slice(ROWS * i, ROWS * i + ROWS) as item, j (item)}
+            {@const index = ROWS * i + j}
+            <TrackItem
+              {index}
+              isCurrentTrack={item.id === currentId}
+              track={item}
+            />
+          {/each}
+        </div>
+      {/each}
+    </div>
 
     {#if isLoadingMore}
       <div

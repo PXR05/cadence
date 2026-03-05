@@ -6,8 +6,12 @@
   import type { AudioFile } from "$lib/schemas";
   import { CloudCheckIcon, EllipsisVerticalIcon } from "@lucide/svelte";
   import { downloadStore } from "$lib/stores/download.svelte";
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import { Button } from "../ui/button";
+  import { createWebHaptics } from "web-haptics/svelte";
+
+  const { trigger, destroy } = createWebHaptics();
+  onDestroy(destroy);
 
   interface Props {
     track: AudioFile;
@@ -20,6 +24,8 @@
   const isCurrentTrack = $derived(playerStore.currentTrack?.id === track.id);
 
   function handlePlay() {
+    trigger([{ duration: 8 }], { intensity: 0.3 });
+
     const shuffledTracks = tracksStore.getShuffledTracks(track);
     playerStore.setQueue(shuffledTracks, 0);
   }
