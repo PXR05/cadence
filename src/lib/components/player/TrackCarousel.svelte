@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { goto } from "$app/navigation";
   import { getImageUrl } from "$lib/constants";
   import { playerStore } from "$lib/stores/player.svelte";
   import { downloadStore } from "$lib/stores/download.svelte";
@@ -54,7 +55,7 @@
           >
             {#if shouldLoadItem(i)}
               <div
-                class="md:pointer-events-none flex items-center flex-1 min-w-0 gap-2 text-left w-full pl-2"
+                class="flex items-center flex-1 min-w-0 gap-2 text-left w-full pl-2"
               >
                 <img
                   loading="lazy"
@@ -74,7 +75,19 @@
                     class="text-sm truncate font-light"
                     style="color: color-mix(in oklab, {playerStore.trackColor} 30%, var(--muted-foreground));"
                   >
-                    {trackArtist}
+                    <span
+                      role="link"
+                      tabindex="0"
+                      class="hover:underline cursor-pointer"
+                      onclick={(e) => {
+                        e.stopPropagation();
+                        goto(`/playlist?id=artist_${trackArtist}`);
+                      }}
+                      onkeydown={(e) =>
+                        e.key === "Enter" &&
+                        goto(`/playlist?id=artist_${trackArtist}`)}
+                      >{trackArtist}</span
+                    >
                   </p>
                 </div>
               </div>

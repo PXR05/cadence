@@ -7,6 +7,7 @@ import {
   isSpecialPlaylist,
   getSpecialPlaylist,
   SPECIAL_PLAYLIST_IDS,
+  isArtistPlaylist,
 } from "$lib/utils/playlist";
 import type { PageLoad } from "./$types";
 
@@ -24,6 +25,13 @@ export const load: PageLoad = ({ url }) => {
     return {
       playlistId: null,
       playlist: Promise.resolve(undefined),
+    };
+  }
+
+  if (isArtistPlaylist(playlistId)) {
+    return {
+      playlistId,
+      playlist: loadArtistPlaylist(playlistId),
     };
   }
 
@@ -49,6 +57,33 @@ export const load: PageLoad = ({ url }) => {
     playlist: playlistPromise,
   };
 };
+
+async function loadArtistPlaylist(playlistId: string): Promise<PlaylistDetail> {
+  const now = new Date();
+  const artistName = playlistId.replace("artist_", "");
+
+  await tracksStore.loadAllTracks();
+
+  const items = tracksStore.tracks
+    .filter((track) => track.metadata?.artist === artistName)
+    .map((track, index) => ({
+      id: `${track.id}_${index}`,
+      position: index,
+      addedAt: now,
+      audio: track,
+    }));
+
+  const playlist: PlaylistDetail = {
+    id: playlistId,
+    name: artistName,
+    userId: "system",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    items,
+  };
+
+  return playlist;
+}
 
 async function loadSpecialPlaylist(id: string): Promise<PlaylistDetail> {
   const specialPlaylist = getSpecialPlaylist(id);
@@ -77,7 +112,7 @@ async function loadSpecialPlaylist(id: string): Promise<PlaylistDetail> {
     }));
   } else if (id === SPECIAL_PLAYLIST_IDS.DOWNLOADED) {
     const offlineTracks = (await offlineDb.tracks.toArray()).toSorted(
-      (a, b) => a.downloadedAt - b.downloadedAt
+      (a, b) => a.downloadedAt - b.downloadedAt,
     );
     const tracks = offlineTracks.map(
       (track) =>
@@ -92,7 +127,7 @@ async function loadSpecialPlaylist(id: string): Promise<PlaylistDetail> {
           },
           size: track.size,
           uploadedAt: new Date(track.downloadedAt),
-        } as AudioFile)
+        }) as AudioFile,
     );
 
     playlist.items = tracks.map((track, index) => ({

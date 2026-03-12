@@ -1,5 +1,4 @@
 import type { Playlist } from "$lib/schemas";
-import { tracksStore } from "$lib/stores/tracks.svelte";
 
 export function getPlaylistDisplayName(playlist: Playlist): string {
   if (playlist.name.startsWith("artist:")) {

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { goto } from "$app/navigation";
   import { getImageUrl } from "$lib/constants";
   import { playerStore } from "$lib/stores/player.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
@@ -84,7 +85,18 @@
           ? 'text-primary/50'
           : 'text-muted-foreground'}"
       >
-        {artist}
+        <span
+          role="link"
+          tabindex="0"
+          class="hover:underline cursor-pointer"
+          onclick={(e) => {
+            e.stopPropagation();
+            goto(`/playlist?id=artist_${artist}`);
+          }}
+          onkeydown={(e) =>
+            e.key === "Enter" && goto(`/playlist?id=artist_${artist}`)}
+          >{artist}</span
+        >
       </p>
     </div>
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { goto } from "$app/navigation";
   import { downloadStore } from "$lib/stores/download.svelte";
   import { getImageUrl } from "$lib/constants";
   import { playerStore } from "$lib/stores/player.svelte";
@@ -116,7 +117,7 @@
   async function openCarouselTrackMenu(queueTrack: typeof track) {
     if (!queueTrack) return;
     const trackIsOffline = await downloadStore.checkTrackOfflineStatus(
-      queueTrack.id
+      queueTrack.id,
     );
     const refreshTrackOfflineStatus = async () => {
       await downloadStore.checkTrackOfflineStatus(queueTrack.id);
@@ -176,7 +177,7 @@
 
 {#snippet controls()}
   <div class="flex flex-col gap-8 px-6 my-auto z-20">
-    <div class="text-center mb-2">
+    <div class="text-center mb-2 grid gap-1">
       <h2
         class="text-xl font-semibold truncate"
         style="color: color-mix(in oklab, {playerStore.trackColor} 30%, var(--foreground));"
@@ -187,7 +188,18 @@
         class="text-muted-foreground truncate"
         style="color: color-mix(in oklab, {playerStore.trackColor} 30%, var(--muted-foreground));"
       >
-        {artist}
+        <span
+          role="link"
+          tabindex="0"
+          class="hover:underline cursor-pointer"
+          onclick={(e) => {
+            e.stopPropagation();
+            goto(`/playlist?id=artist_${artist}`);
+          }}
+          onkeydown={(e) =>
+            e.key === "Enter" && goto(`/playlist?id=artist_${artist}`)}
+          >{artist}</span
+        >
       </p>
     </div>
 
