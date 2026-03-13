@@ -30,8 +30,6 @@
 
   let virtualScrollRef: VirtualScroll<PlaylistItem> | null = $state(null);
 
-  const currentId = $derived(playerStore.currentTrack?.id);
-
   $effect(() => {
     items;
     virtualScrollRef?.scrollToTop();
@@ -78,13 +76,19 @@
     {onScroll}
   >
     {#snippet children({ item, visibleIndex, actualIndex })}
+      {console.log({
+        item,
+        visibleIndex,
+        actualIndex,
+        id: playerStore.currentTrack?.id,
+      })}
       {#if showAddButton && onAddTracks && visibleIndex === 0}
         {@render addButton()}
       {/if}
       <TrackItem
         index={actualIndex}
         {playlist}
-        isCurrentTrack={item.id === currentId}
+        isCurrentTrack={item.audio.id === playerStore.currentTrack?.id}
         track={item.audio}
         fromQueue={false}
       />

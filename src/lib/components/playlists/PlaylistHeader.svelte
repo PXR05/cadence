@@ -44,7 +44,7 @@
   function handlePlay() {
     if (playlist.items.length === 0) return;
     const tracks = playlist.items.map((item) => item.audio);
-    playerStore.setQueue(tracks, 0);
+    playerStore.setQueue(tracks, 0, playlist);
   }
 
   function handleMenu(e: MouseEvent) {

@@ -1,6 +1,8 @@
 <script lang="ts">
+  import { page } from "$app/state";
   import { getPlaylistImageUrl } from "$lib/constants";
   import { playlistMenuStore } from "$lib/stores/playlistMenu.svelte";
+  import { playerStore } from "$lib/stores/player.svelte";
   import {
     getPlaylistDisplayName,
     isArtistPlaylist,
@@ -14,6 +16,7 @@
     LibraryIcon,
     CloudCheckIcon,
     YoutubeIcon,
+    Volume2Icon,
   } from "@lucide/svelte";
   import { SPECIAL_PLAYLIST_IDS } from "$lib/utils/playlist";
   import type { Playlist } from "$lib/schemas";
@@ -24,10 +27,7 @@
     size?: "small" | "large";
   }
 
-  let {
-    playlist,
-    size = "small",
-  }: Props = $props();
+  let { playlist, size = "small" }: Props = $props();
 
   const displayName = $derived(getPlaylistDisplayName(playlist));
   const isYoutube = $derived(isYoutubePlaylist(playlist.id));
@@ -36,10 +36,21 @@
 
   function handleContextMenu(e: MouseEvent) {
     e.preventDefault();
-    playlistMenuStore.open(
-      playlist,
-      false,
-      false
+    playlistMenuStore.open(playlist, false, false);
+  }
+
+  function isPlaylistPlaying(playlistId: string): boolean {
+    return (
+      playerStore.isPlaying &&
+      playerStore.currentTrack !== null &&
+      playerStore.currentPlaylist?.id === playlistId
+    );
+  }
+
+  function isPlaylistActive(playlistId: string): boolean {
+    return (
+      page.url.pathname === "/playlist" &&
+      page.url.searchParams.get("id") === playlistId
     );
   }
 </script>
@@ -109,17 +120,30 @@
   </div>
   <div class="absolute bottom-0 w-full z-10 p-1">
     <div
-      class="py-1 px-2 border border-input/15 rounded-md
+      class="flex items-center justify-between py-1 px-2 border border-input/15 rounded-md
       {appearanceStore.disableBlur
         ? 'bg-muted'
         : 'bg-muted/80 dark:bg-muted/50 backdrop-blur-md'}"
     >
-      <p class="text-sm font-medium truncate leading-tight">
-        {displayName}
-      </p>
-      <p class="text-xs leading-tight">
-        {playlist.itemCount ?? 0} tracks
-      </p>
+      <div class="flex flex-col">
+        <div class="flex items-center gap-1.5">
+          <p class="text-sm font-medium truncate leading-tight flex-1">
+            {displayName}
+          </p>
+        </div>
+        <p class="text-xs leading-tight">
+          {playlist.itemCount ?? 0} tracks
+        </p>
+      </div>
+      {#if isPlaylistPlaying(playlist.id)}
+        <Volume2Icon
+        strokeWidth={1.5}
+        absoluteStrokeWidth
+          class="size-5 shrink-0 {isPlaylistActive(playlist.id)
+            ? 'text-background'
+            : 'text-primary'}"
+        />
+      {/if}
     </div>
   </div>
 </a>

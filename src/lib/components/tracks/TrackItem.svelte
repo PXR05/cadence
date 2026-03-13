@@ -60,7 +60,7 @@
       const tracks = playlist.items.map((item) => item.audio);
       const actualIndex =
         playlist.items.findIndex((item) => item.audio.id === track.id) ?? index;
-      playerStore.setQueue(tracks, actualIndex);
+      playerStore.setQueue(tracks, actualIndex, playlist);
     } else {
       const shuffledTracks = tracksStore.getShuffledTracks(track);
       playerStore.setQueue(shuffledTracks, 0);

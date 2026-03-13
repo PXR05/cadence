@@ -719,7 +719,12 @@ class PlayerState {
     }
   }
 
-  setQueue(tracks: AudioFile[], startIndex: number = 0) {
+  setQueue(
+    tracks: AudioFile[],
+    startIndex: number = 0,
+    playlist: PlaylistDetail | null = null,
+  ) {
+    this.currentPlaylist = playlist;
     this.isShuffled = false;
     this.trackQueue = tracks;
     this.queueIndex = startIndex;
@@ -772,6 +777,7 @@ class PlayerState {
       } else {
         this.pause();
         this.currentTrack = null;
+        this.currentPlaylist = null;
       }
     } else {
       this.trackQueue.splice(index, 1);
@@ -810,6 +816,7 @@ class PlayerState {
   clearQueue() {
     this.trackQueue = [];
     this.queueIndex = -1;
+    this.currentPlaylist = null;
   }
 
   shuffleQueue() {
