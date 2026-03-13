@@ -1,18 +1,18 @@
 <script lang="ts">
-  import type { YouTubeSearchResult } from "$lib/schemas";
+  import type { RemoteSearchResult } from "$lib/schemas";
   import { CheckIcon, ClockIcon } from "@lucide/svelte";
 
   interface Props {
-    result: YouTubeSearchResult;
+    result: RemoteSearchResult;
     isInQueue: boolean;
-    onDownload: (videoId: string) => void;
+    onDownload: (result: RemoteSearchResult) => void;
   }
 
   let { result, isInQueue, onDownload }: Props = $props();
 
   function handleClick() {
     if (!isInQueue) {
-      onDownload(result.videoId);
+      onDownload(result);
     }
   }
 </script>

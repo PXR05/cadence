@@ -16,6 +16,7 @@ import { SvelteMap, SvelteSet } from "svelte/reactivity";
 class PlaylistsStore {
   private _userPlaylists = $state<Playlist[]>([]);
   private _youtubePlaylists = $state<Playlist[]>([]);
+  private _tidalPlaylists = $state<Playlist[]>([]);
   private _playlistDetails = $state(new SvelteMap<string, PlaylistDetail>());
   private _loadingPlaylistIds = $state(new SvelteSet<string>());
   private _lastFetchedAt = $state<string | null>(null);
@@ -30,8 +31,16 @@ class PlaylistsStore {
     return this._youtubePlaylists;
   }
 
+  get tidalPlaylists() {
+    return this._tidalPlaylists;
+  }
+
   get allPlaylists() {
-    return [...this._userPlaylists, ...this._youtubePlaylists];
+    return [
+      ...this._userPlaylists,
+      ...this._youtubePlaylists,
+      ...this._tidalPlaylists,
+    ];
   }
 
   get lastFetchedAt() {
@@ -54,6 +63,7 @@ class PlaylistsStore {
       if (cache) {
         this._userPlaylists = cache.userPlaylists;
         this._youtubePlaylists = cache.youtubePlaylists;
+        this._tidalPlaylists = cache.tidalPlaylists;
         this._lastFetchedAt = cache.lastFetchedAt;
       }
     } catch (err) {
@@ -80,19 +90,23 @@ class PlaylistsStore {
     this.error = null;
 
     try {
-      const [userPlaylists, youtubePlaylists] = await Promise.all([
-        getUserPlaylists({ type: "user" }),
-        getUserPlaylists({ type: "youtube" }),
-      ]);
+      const [userPlaylists, youtubePlaylists, tidalPlaylists] =
+        await Promise.all([
+          getUserPlaylists({ type: "user" }),
+          getUserPlaylists({ type: "youtube" }),
+          getUserPlaylists({ type: "tidal" }),
+        ]);
 
       this._userPlaylists = userPlaylists;
       this._youtubePlaylists = youtubePlaylists;
+      this._tidalPlaylists = tidalPlaylists;
       this._lastFetchedAt = new Date().toISOString();
       this.error = null;
 
       await savePlaylistsCache(
         userPlaylists,
         youtubePlaylists,
+        tidalPlaylists,
         this._lastFetchedAt,
       );
     } catch (err) {
@@ -121,6 +135,7 @@ class PlaylistsStore {
       await savePlaylistsCache(
         userPlaylists,
         this._youtubePlaylists,
+        this._tidalPlaylists,
         this._lastFetchedAt,
       );
     } catch (err) {
@@ -149,6 +164,7 @@ class PlaylistsStore {
       await savePlaylistsCache(
         this._userPlaylists,
         youtubePlaylists,
+        this._tidalPlaylists,
         this._lastFetchedAt,
       );
     } catch (err) {
@@ -158,19 +174,55 @@ class PlaylistsStore {
     }
   }
 
+  async loadTidalPlaylists(forceRefresh: boolean = false): Promise<void> {
+    await this.initializeFromCache();
+
+    if (!forceRefresh && this.tidalPlaylists.length > 0) {
+      return;
+    }
+
+    this.error = null;
+
+    try {
+      const tidalPlaylists = await getUserPlaylists({ type: "tidal" });
+
+      this._tidalPlaylists = tidalPlaylists;
+      this._lastFetchedAt = new Date().toISOString();
+      this.error = null;
+
+      await savePlaylistsCache(
+        this._userPlaylists,
+        this._youtubePlaylists,
+        tidalPlaylists,
+        this._lastFetchedAt,
+      );
+    } catch (err) {
+      this.error =
+        err instanceof Error ? err.message : "Failed to load tidal playlists";
+      throw err;
+    }
+  }
+
   private async shouldRefreshPlaylists(): Promise<boolean> {
     try {
-      const [latestUserPlaylists, latestYoutubePlaylists] = await Promise.all([
+      const [
+        latestUserPlaylists,
+        latestYoutubePlaylists,
+        latestTidalPlaylists,
+      ] = await Promise.all([
         getUserPlaylists({ type: "user", limit: 1 }),
         getUserPlaylists({ type: "youtube", limit: 1 }),
+        getUserPlaylists({ type: "tidal", limit: 1 }),
       ]);
 
       const currentUserCount = this.userPlaylists.length;
       const currentYoutubeCount = this.youtubePlaylists.length;
+      const currentTidalCount = this.tidalPlaylists.length;
 
       if (
         (currentUserCount === 0 && latestUserPlaylists.length > 0) ||
-        (currentYoutubeCount === 0 && latestYoutubePlaylists.length > 0)
+        (currentYoutubeCount === 0 && latestYoutubePlaylists.length > 0) ||
+        (currentTidalCount === 0 && latestTidalPlaylists.length > 0)
       ) {
         return true;
       }
@@ -211,6 +263,24 @@ class PlaylistsStore {
         }
       }
 
+      if (latestTidalPlaylists.length > 0) {
+        const latestServerPlaylist = latestTidalPlaylists[0];
+        const latestCachedPlaylist = this.tidalPlaylists.find(
+          (p) => p.id === latestServerPlaylist.id,
+        );
+
+        if (latestCachedPlaylist) {
+          const serverDate = new Date(latestServerPlaylist.updatedAt);
+          const cachedDate = new Date(latestCachedPlaylist.updatedAt);
+
+          if (serverDate > cachedDate) {
+            return true;
+          }
+        } else {
+          return true;
+        }
+      }
+
       return false;
     } catch (err) {
       console.error("Error checking for playlist updates:", err);
@@ -225,6 +295,11 @@ class PlaylistsStore {
 
   getYoutubePlaylistsFiltered(limit?: number): Playlist[] {
     const playlists = this.youtubePlaylists;
+    return limit ? playlists.slice(0, limit) : playlists;
+  }
+
+  getTidalPlaylistsFiltered(limit?: number): Playlist[] {
+    const playlists = this.tidalPlaylists;
     return limit ? playlists.slice(0, limit) : playlists;
   }
 
@@ -314,6 +389,7 @@ class PlaylistsStore {
     this._playlistDetails.delete(id);
     this._userPlaylists = this._userPlaylists.filter((p) => p.id !== id);
     this._youtubePlaylists = this._youtubePlaylists.filter((p) => p.id !== id);
+    this._tidalPlaylists = this._tidalPlaylists.filter((p) => p.id !== id);
     await deletePlaylist(id);
   }
 
@@ -324,6 +400,12 @@ class PlaylistsStore {
       );
       if (index !== -1) {
         this._youtubePlaylists[index] = playlist;
+        await savePlaylistCache(playlist);
+      }
+    } else if (playlist.id.startsWith("tidal_")) {
+      const index = this._tidalPlaylists.findIndex((p) => p.id === playlist.id);
+      if (index !== -1) {
+        this._tidalPlaylists[index] = playlist;
         await savePlaylistCache(playlist);
       }
     } else {
@@ -351,6 +433,7 @@ class PlaylistsStore {
   async clear(): Promise<void> {
     this._userPlaylists = [];
     this._youtubePlaylists = [];
+    this._tidalPlaylists = [];
     this._playlistDetails.clear();
     this._loadingPlaylistIds.clear();
     this._lastFetchedAt = null;

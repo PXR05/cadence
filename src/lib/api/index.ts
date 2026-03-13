@@ -7,12 +7,7 @@ export {
   fetchAllTracks,
 } from "./audio";
 
-export {
-  listUsers,
-  createUser,
-  resetUserPassword,
-  deleteUser,
-} from "./auth";
+export { listUsers, createUser, resetUserPassword, deleteUser } from "./auth";
 
 export {
   getUserPlaylists,
@@ -25,5 +20,4 @@ export {
   reorderPlaylistItem,
 } from "./playlist";
 
-export { searchYoutube } from "./youtube";
-
+export { searchRemote } from "./remote";

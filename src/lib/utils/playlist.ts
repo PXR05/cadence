@@ -29,6 +29,38 @@ export function isYoutubePlaylist(playlistId: string): boolean {
   return playlistId.startsWith("youtube_");
 }
 
+export function isTidalPlaylist(playlistId: string): boolean {
+  return playlistId.startsWith("tidal_playlist");
+}
+
+export function isTidalAlbumPlaylist(playlistId: string): boolean {
+  return playlistId.startsWith("tidal_album");
+}
+
+export function isTidalCollectionPlaylist(playlistId: string): boolean {
+  return (
+    isTidalPlaylist(playlistId) ||
+    isTidalAlbumPlaylist(playlistId) ||
+    playlistId.startsWith("tidal_")
+  );
+}
+
+export function getTidalCollectionId(playlistId: string): string {
+  if (isTidalPlaylist(playlistId)) {
+    return playlistId.replace(/^tidal_playlist_?/, "");
+  }
+
+  if (isTidalAlbumPlaylist(playlistId)) {
+    return playlistId.replace(/^tidal_album_?/, "");
+  }
+
+  if (playlistId.startsWith("tidal_")) {
+    return playlistId.replace(/^tidal_/, "");
+  }
+
+  return playlistId;
+}
+
 export const SPECIAL_PLAYLIST_IDS = {
   ALL_SONGS: "special_all_songs",
   DOWNLOADED: "special_downloaded",

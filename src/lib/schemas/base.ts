@@ -19,12 +19,13 @@ export const AudioFileSchema = v.object({
   size: v.number(),
   uploadedAt: v.pipe(
     v.string(),
-    v.transform((s) => new Date(s))
+    v.transform((s) => new Date(s)),
   ),
   metadata: v.optional(AudioMetadataSchema),
   imageFile: v.optional(v.string()),
   color: v.optional(v.string()),
   youtubeId: v.optional(v.string()),
+  tidalId: v.optional(v.string()),
 });
 
 export type AudioMetadata = v.InferOutput<typeof AudioMetadataSchema>;

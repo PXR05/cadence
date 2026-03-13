@@ -6,4 +6,4 @@ export * from "./auth";
 
 export * from "./playlist";
 
-export * from "./youtube";
+export * from "./remote";

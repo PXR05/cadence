@@ -2,7 +2,7 @@
   import PlayerBar from "../player/PlayerBar.svelte";
   import NavBar from "./NavBar.svelte";
   import OfflineDownloadProgress from "./OfflineDownloadProgress.svelte";
-  import YoutubeDownloadProgress from "./YoutubeDownloadProgress.svelte";
+  import RemoteDownloadProgress from "./RemoteDownloadProgress.svelte";
   import { innerWidth } from "svelte/reactivity/window";
   import { page } from "$app/state";
   import { useDialogState } from "$lib/hooks";
@@ -40,7 +40,7 @@
       transform: translate3d(0, {downloadTranslate}, 0);
       will-change: transform;"
   >
-    <YoutubeDownloadProgress />
+    <RemoteDownloadProgress />
     <OfflineDownloadProgress />
   </div>
   <PlayerBar />

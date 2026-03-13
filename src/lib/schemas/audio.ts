@@ -46,7 +46,7 @@ export const MultiUploadResponseSchema = v.object({
         filename: v.string(),
         error: v.string(),
       }),
-    ])
+    ]),
   ),
   totalFiles: v.number(),
   successfulUploads: v.number(),
@@ -59,7 +59,7 @@ export const DeleteTrackResponseSchema = v.object({
   message: v.string(),
 });
 
-export const YoutubeDownloadResponseSchema = v.object({
+export const RemoteDownloadResponseSchema = v.object({
   success: v.boolean(),
   id: v.string(),
   filename: v.string(),
@@ -103,8 +103,8 @@ export type MultiUploadResponse = v.InferOutput<
 export type DeleteTrackResponse = v.InferOutput<
   typeof DeleteTrackResponseSchema
 >;
-export type YoutubeDownloadResponse = v.InferOutput<
-  typeof YoutubeDownloadResponseSchema
+export type RemoteDownloadResponse = v.InferOutput<
+  typeof RemoteDownloadResponseSchema
 >;
 export type FetchTracksOptions = v.InferOutput<typeof FetchTracksOptionsSchema>;
 export type SearchTracksOptions = v.InferOutput<

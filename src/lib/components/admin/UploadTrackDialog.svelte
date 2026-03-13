@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { LoaderIcon, UploadIcon, YoutubeIcon } from "@lucide/svelte";
+  import { LoaderIcon, LinkIcon, UploadIcon } from "@lucide/svelte";
   import {
     Dialog,
     DialogContent,
@@ -8,13 +8,15 @@
   } from "../ui/dialog";
   import { Button } from "../ui/button";
   import { Input } from "../ui/input";
+  import type { RemoteProvider } from "$lib/schemas";
+  import { detectRemoteProviderFromUrl } from "$lib/utils/remote";
 
   interface Props {
     open?: boolean;
     loading?: boolean;
     onUploadComplete: (successCount: number, totalCount: number) => void;
     onUploadError: (error: string) => void;
-    onYoutubeUpload: (url: string) => void;
+    onRemoteUpload: (provider: RemoteProvider, url: string) => void;
   }
 
   let {
@@ -22,17 +24,20 @@
     loading = false,
     onUploadComplete,
     onUploadError,
-    onYoutubeUpload,
+    onRemoteUpload,
   }: Props = $props();
 
-  let youtubeUrl = $state("");
+  const SUPPORTED_REMOTE_SOURCES =
+    "Supported sources:\n- YouTube links (youtube.com, youtu.be)\n- Tidal links (tidal.com)";
+
+  let remoteUrl = $state("");
   let isUploading = $state(false);
   let currentFileIndex = $state(0);
   let totalFiles = $state(0);
   let currentFileName = $state("");
   let currentFileProgress = $state(0);
   let activeXHRUploads = new Map<string, XMLHttpRequest>();
-  let uploadMode = $state<"file" | "youtube">("file");
+  let uploadMode = $state<"file" | "remote">("file");
 
   async function uploadSingleFile(file: File): Promise<boolean> {
     return new Promise((resolve) => {
@@ -119,17 +124,27 @@
     }
   }
 
-  function handleYoutubeSubmit(e: Event) {
+  function handleRemoteSubmit(e: Event) {
     e.preventDefault();
-    if (!youtubeUrl.trim()) return;
-    onYoutubeUpload(youtubeUrl.trim());
-    youtubeUrl = "";
+    const url = remoteUrl.trim();
+    if (!url) return;
+
+    const provider = detectRemoteProviderFromUrl(url);
+    if (!provider) {
+      onUploadError(
+        "Unsupported remote URL. Supported sources: YouTube and Tidal.",
+      );
+      return;
+    }
+
+    onRemoteUpload(provider, url);
+    remoteUrl = "";
     open = false;
   }
 
   function handleCancel() {
     open = false;
-    youtubeUrl = "";
+    remoteUrl = "";
     uploadMode = "file";
   }
 </script>
@@ -151,12 +166,12 @@
           Upload File
         </Button>
         <Button
-          variant={uploadMode === "youtube" ? "default" : "outline"}
-          onclick={() => (uploadMode = "youtube")}
+          variant={uploadMode === "remote" ? "default" : "outline"}
+          onclick={() => (uploadMode = "remote")}
           class="flex-1 gap-2"
         >
-          <YoutubeIcon size={16} />
-          YouTube
+          <LinkIcon size={16} />
+          Remote
         </Button>
       </div>
 
@@ -185,9 +200,9 @@
                     {Math.min(
                       Math.round(
                         ((currentFileIndex - 1) / totalFiles) * 100 +
-                          currentFileProgress / totalFiles
+                          currentFileProgress / totalFiles,
                       ),
-                      100
+                      100,
                     )}%
                   </span>
                 </div>
@@ -197,7 +212,7 @@
                     style="width: {Math.min(
                       ((currentFileIndex - 1) / totalFiles) * 100 +
                         currentFileProgress / totalFiles,
-                      100
+                      100,
                     )}%"
                   ></div>
                 </div>
@@ -206,16 +221,25 @@
           {/if}
         </div>
       {:else}
-        <form onsubmit={handleYoutubeSubmit} class="space-y-4">
+        <form onsubmit={handleRemoteSubmit} class="space-y-4">
           <div class="space-y-2">
-            <label for="youtube-url" class="text-sm font-medium"
-              >YouTube URL</label
-            >
+            <div class="flex items-center gap-2">
+              <label for="remote-url" class="text-sm font-medium"
+                >Remote URL</label
+              >
+              <span
+                title={SUPPORTED_REMOTE_SOURCES}
+                class="inline-flex items-center justify-center size-4 rounded-full border border-muted-foreground/40 text-[10px] font-semibold text-muted-foreground cursor-help"
+                aria-label="Supported remote sources"
+              >
+                i
+              </span>
+            </div>
             <Input
-              id="youtube-url"
+              id="remote-url"
               type="url"
-              bind:value={youtubeUrl}
-              placeholder="https://youtube.com/watch?v=..."
+              bind:value={remoteUrl}
+              placeholder="https://youtube.com/... or https://tidal.com/..."
               disabled={loading || isUploading}
             />
           </div>
@@ -230,7 +254,7 @@
             </Button>
             <Button
               type="submit"
-              disabled={loading || isUploading || !youtubeUrl.trim()}
+              disabled={loading || isUploading || !remoteUrl.trim()}
             >
               {#if loading || isUploading}
                 <LoaderIcon class="animate-spin" size={16} />

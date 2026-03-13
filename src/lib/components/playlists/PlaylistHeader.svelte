@@ -9,6 +9,7 @@
     isArtistPlaylist,
     isSpecialPlaylist,
     isYoutubePlaylist,
+    isTidalCollectionPlaylist,
     SPECIAL_PLAYLIST_IDS,
   } from "$lib/utils/playlist";
   import {
@@ -169,6 +170,13 @@
               absoluteStrokeWidth
               strokeWidth={2}
               class="text-muted-foreground"
+            />
+          {:else if isTidalCollectionPlaylist(playlist.id)}
+            <MusicIcon
+              size={64}
+              absoluteStrokeWidth
+              strokeWidth={2}
+              class="text-cyan-500"
             />
           {:else}
             <MusicIcon

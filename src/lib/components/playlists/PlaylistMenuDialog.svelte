@@ -2,7 +2,7 @@
   import { MenuDialog } from "$lib/components/ui/menu-dialog";
   import { playlistMenuStore } from "$lib/stores/playlistMenu.svelte";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
-  import { youtubeDownloadStore } from "$lib/stores/youtubeDownload.svelte";
+  import { remoteDownloadStore } from "$lib/stores/remoteDownload.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
   import {
     useDialogState,
@@ -11,13 +11,17 @@
   } from "$lib/hooks";
   import { getPlaylistImageUrl } from "$lib/constants";
   import {
+    getTidalCollectionId,
     getPlaylistDisplayName,
     isArtistPlaylist,
     isAlbumPlaylist,
     isSpecialPlaylist,
     isYoutubePlaylist,
+    isTidalAlbumPlaylist,
+    isTidalCollectionPlaylist,
     SPECIAL_PLAYLIST_IDS,
   } from "$lib/utils/playlist";
+  import { buildRemoteCollectionUrl } from "$lib/utils/remote";
   import EditPlaylistDialog from "./EditPlaylistDialog.svelte";
   import { Button } from "../ui/button";
   import {
@@ -134,15 +138,33 @@
     if (!playlist) return;
     try {
       handleClose();
-      await youtubeDownloadStore.downloadFromUrl(
-        `https://music.youtube.com/playlist?list=${playlist.id.replace("youtube_", "")}`,
-      );
-      toast.success("Resynced from YouTube");
+      if (isYoutubePlaylist(playlist.id)) {
+        await remoteDownloadStore.downloadFromUrl(
+          "youtube",
+          buildRemoteCollectionUrl(
+            "youtube",
+            "playlist",
+            playlist.id.replace("youtube_", ""),
+          ),
+        );
+        toast.success("Resynced from YouTube");
+      } else if (isTidalCollectionPlaylist(playlist.id)) {
+        const isTidalAlbum = isTidalAlbumPlaylist(playlist.id);
+        const tidalType = isTidalAlbum ? "album" : "playlist";
+        const tidalId = getTidalCollectionId(playlist.id);
+        await remoteDownloadStore.downloadFromUrl(
+          "tidal",
+          buildRemoteCollectionUrl("tidal", tidalType, tidalId),
+        );
+        toast.success(`Resynced from Tidal ${tidalType}`);
+      }
     } catch (error) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
+      const providerError =
+        playlist && isTidalCollectionPlaylist(playlist.id)
+          ? "Failed to download from Tidal"
           : "Failed to download from YouTube";
+      const errorMessage =
+        error instanceof Error ? error.message : providerError;
       toast.error(errorMessage);
     }
   }
@@ -224,7 +246,7 @@
     Download as ZIP
   </Button>
 
-  {#if playlist && isYoutubePlaylist(playlist.id)}
+  {#if playlist && (isYoutubePlaylist(playlist.id) || isTidalCollectionPlaylist(playlist.id))}
     <Button
       variant="ghost"
       class="justify-start gap-3 h-12"
@@ -232,7 +254,11 @@
       disabled={itemCount === 0}
     >
       <RefreshCwIcon class="size-5" />
-      Resync Playlist
+      {#if playlist && isTidalAlbumPlaylist(playlist.id)}
+        Resync Album
+      {:else}
+        Resync Playlist
+      {/if}
     </Button>
   {/if}
 

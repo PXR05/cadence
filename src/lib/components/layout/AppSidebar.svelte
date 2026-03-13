@@ -65,11 +65,13 @@
   ]);
   const userPlaylists = $derived(playlistsStore.userPlaylists);
   const youtubePlaylists = $derived(playlistsStore.youtubePlaylists);
+  const tidalPlaylists = $derived(playlistsStore.tidalPlaylists);
 
   const allUserPlaylists = $derived([
     ...specialPlaylists,
     ...userPlaylists,
     ...youtubePlaylists,
+    ...tidalPlaylists,
   ]);
 
   async function handlePlaylistCreated() {

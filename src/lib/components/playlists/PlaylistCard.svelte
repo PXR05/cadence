@@ -8,6 +8,7 @@
     isArtistPlaylist,
     isAlbumPlaylist,
     isYoutubePlaylist,
+    isTidalCollectionPlaylist,
   } from "$lib/utils/playlist";
   import {
     MusicIcon,
@@ -31,6 +32,7 @@
 
   const displayName = $derived(getPlaylistDisplayName(playlist));
   const isYoutube = $derived(isYoutubePlaylist(playlist.id));
+  const isTidal = $derived(isTidalCollectionPlaylist(playlist.id));
   const isArtist = $derived(isArtistPlaylist(playlist.id));
   const isAlbum = $derived(isAlbumPlaylist(playlist.id));
 
@@ -99,6 +101,13 @@
           strokeWidth={2}
           class="text-muted-foreground"
         />
+      {:else if isTidal}
+        <MusicIcon
+          size={48}
+          absoluteStrokeWidth
+          strokeWidth={2}
+          class="text-cyan-500"
+        />
       {:else}
         <MusicIcon
           size={48}
@@ -137,8 +146,8 @@
       </div>
       {#if isPlaylistPlaying(playlist.id)}
         <Volume2Icon
-        strokeWidth={1.5}
-        absoluteStrokeWidth
+          strokeWidth={1.5}
+          absoluteStrokeWidth
           class="size-5 shrink-0 {isPlaylistActive(playlist.id)
             ? 'text-background'
             : 'text-primary'}"

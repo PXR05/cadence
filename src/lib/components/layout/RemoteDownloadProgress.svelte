@@ -1,15 +1,19 @@
 <script lang="ts">
-  import { youtubeDownloadStore } from "$lib/stores/youtubeDownload.svelte";
+  import { remoteDownloadStore } from "$lib/stores/remoteDownload.svelte";
   import { XIcon } from "@lucide/svelte";
   import * as AlertDialog from "$lib/components/ui/alert-dialog";
   import { Button } from "../ui/button";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
   import DownloadProgressBar from "./DownloadProgressBar.svelte";
+  import { getRemoteProviderLabel } from "$lib/utils/remote";
   import { toast } from "svelte-sonner";
 
-  const progress = $derived(youtubeDownloadStore.progress);
-  const queueCount = $derived(youtubeDownloadStore.queueCount);
+  const progress = $derived(remoteDownloadStore.progress);
+  const queueCount = $derived(remoteDownloadStore.queueCount);
   const percentage = $derived(progress ? Math.round(progress.percent) : 0);
+  const providerLabel = $derived(
+    progress ? getRemoteProviderLabel(progress.provider) : "Remote",
+  );
 
   let showCancelDialog = $state(false);
 
@@ -19,7 +23,7 @@
 
   async function handleConfirmCancel() {
     try {
-      await youtubeDownloadStore.cancelCurrent();
+      await remoteDownloadStore.cancelCurrent();
     } catch (error) {
       toast.error("Failed to cancel download: " + JSON.stringify(error));
     }
@@ -72,12 +76,12 @@
 <AlertDialog.Root bind:open={showCancelDialog}>
   <AlertDialog.Content>
     <AlertDialog.Header>
-      <AlertDialog.Title>Cancel YouTube Download?</AlertDialog.Title>
+      <AlertDialog.Title>Cancel {providerLabel} Download?</AlertDialog.Title>
       <AlertDialog.Description>
         Are you sure you want to cancel this download?
         {#if queueCount > 0}
           There {queueCount === 1 ? "is" : "are"}
-          {queueCount} more {queueCount === 1 ? "video" : "videos"} in the queue.
+          {queueCount} more {queueCount === 1 ? "item" : "items"} in the queue.
         {/if}
       </AlertDialog.Description>
     </AlertDialog.Header>

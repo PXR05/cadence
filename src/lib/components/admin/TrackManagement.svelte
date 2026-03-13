@@ -4,12 +4,13 @@
   import { Button } from "$lib/components/ui/button";
   import { fetchTracks, deleteTrack } from "$lib/api";
   import { tracksStore } from "$lib/stores/tracks.svelte";
-  import { youtubeDownloadStore } from "$lib/stores/youtubeDownload.svelte";
+  import { remoteDownloadStore } from "$lib/stores/remoteDownload.svelte";
   import TrackTable from "./TrackTable.svelte";
   import DeleteTrackDialog from "./DeleteTrackDialog.svelte";
   import UploadTrackDialog from "./UploadTrackDialog.svelte";
   import TrackPagination from "./TrackPagination.svelte";
-  import type { AudioFile } from "$lib/schemas";
+  import type { AudioFile, RemoteProvider } from "$lib/schemas";
+  import { getRemoteProviderLabel } from "$lib/utils/remote";
   import { onMount } from "svelte";
 
   let tracksLoading = $state(false);
@@ -89,17 +90,19 @@
     setMessage("error", error);
   }
 
-  async function handleYoutubeUpload(url: string) {
+  async function handleRemoteUpload(provider: RemoteProvider, url: string) {
+    const providerLabel = getRemoteProviderLabel(provider);
+
     try {
-      await youtubeDownloadStore.downloadFromUrl(url);
-      setMessage("success", "Downloaded from YouTube");
+      await remoteDownloadStore.downloadFromUrl(provider, url);
+      setMessage("success", `Downloaded from ${providerLabel}`);
       await loadTracks(tracksCurrentPage);
       tracksStore.loadAllTracks(true);
     } catch (error) {
       const errorMessage =
         error instanceof Error
           ? error.message
-          : "Failed to download from YouTube";
+          : `Failed to download from ${providerLabel}`;
       setMessage("error", errorMessage);
     }
   }
@@ -134,7 +137,7 @@
   loading={tracksLoading}
   onUploadComplete={handleUploadComplete}
   onUploadError={handleUploadError}
-  onYoutubeUpload={handleYoutubeUpload}
+  onRemoteUpload={handleRemoteUpload}
 />
 
 <DeleteTrackDialog

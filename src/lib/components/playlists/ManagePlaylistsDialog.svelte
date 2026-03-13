@@ -40,6 +40,7 @@
       await playlistsStore.loadUserPlaylists();
       playlists = playlistsStore.userPlaylists.concat(
         playlistsStore.youtubePlaylists,
+        playlistsStore.tidalPlaylists,
       );
 
       const trackInPlaylists = new SvelteSet<string>();
@@ -120,7 +121,7 @@
       ]);
 
       handleOpenChange(false);
-      
+
       await invalidateAll();
     } catch (error) {
       console.error("Failed to update playlists:", error);

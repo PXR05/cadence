@@ -76,12 +76,6 @@
     {onScroll}
   >
     {#snippet children({ item, visibleIndex, actualIndex })}
-      {console.log({
-        item,
-        visibleIndex,
-        actualIndex,
-        id: playerStore.currentTrack?.id,
-      })}
       {#if showAddButton && onAddTracks && visibleIndex === 0}
         {@render addButton()}
       {/if}

@@ -6,7 +6,7 @@ export const PlaylistItemSchema = v.object({
   position: v.number(),
   addedAt: v.pipe(
     v.string(),
-    v.transform((s) => new Date(s))
+    v.transform((s) => new Date(s)),
   ),
   audio: AudioFileSchema,
 });
@@ -18,11 +18,11 @@ export const PlaylistSchema = v.object({
   coverImage: v.optional(v.string()),
   createdAt: v.pipe(
     v.string(),
-    v.transform((s) => new Date(s))
+    v.transform((s) => new Date(s)),
   ),
   updatedAt: v.pipe(
     v.string(),
-    v.transform((s) => new Date(s))
+    v.transform((s) => new Date(s)),
   ),
   itemCount: v.optional(v.number()),
 });
@@ -52,11 +52,11 @@ export const GetPlaylistResponseSchema = v.object({
     coverImage: v.optional(v.string()),
     createdAt: v.pipe(
       v.string(),
-      v.transform((s) => new Date(s))
+      v.transform((s) => new Date(s)),
     ),
     updatedAt: v.pipe(
       v.string(),
-      v.transform((s) => new Date(s))
+      v.transform((s) => new Date(s)),
     ),
     itemCount: v.optional(v.number()),
     items: v.array(PlaylistItemSchema),
@@ -79,7 +79,9 @@ export const GetUserPlaylistsResponseSchema = v.object({
 });
 
 export const GetUserPlaylistsOptionsSchema = v.object({
-  type: v.optional(v.picklist(["user", "artist", "album", "auto", "youtube"])),
+  type: v.optional(
+    v.picklist(["user", "artist", "album", "auto", "youtube", "tidal"]),
+  ),
   limit: v.optional(v.number()),
 });
 

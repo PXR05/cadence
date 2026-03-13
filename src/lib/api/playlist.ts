@@ -11,7 +11,7 @@ import {
 import { authFetch } from "./fetch";
 
 export interface GetUserPlaylistsOptions {
-  type?: "user" | "artist" | "album" | "auto" | "youtube";
+  type?: "user" | "artist" | "album" | "auto" | "youtube" | "tidal";
   limit?: number;
 }
 
@@ -68,7 +68,7 @@ export async function getUserPlaylists(options: GetUserPlaylistsOptions = {}) {
     throw new Error(
       "Failed to parse playlists response" +
         (err instanceof Error ? `: ${err.message}` : JSON.stringify(err)) +
-        `: ${text}`
+        `: ${text}`,
     );
   }
 }
@@ -156,13 +156,13 @@ export async function addItemToPlaylist(input: AddItemToPlaylistInput) {
 }
 
 export async function removeItemFromPlaylist(
-  input: RemoveItemFromPlaylistInput
+  input: RemoveItemFromPlaylistInput,
 ) {
   const response = await authFetch(
     `/playlist/${input.playlistId}/items/${input.itemId}`,
     {
       method: "DELETE",
-    }
+    },
   );
 
   if (!response.ok) {
@@ -170,7 +170,7 @@ export async function removeItemFromPlaylist(
       return;
     }
     throw new Error(
-      `Failed to remove item from playlist: ${response.statusText}`
+      `Failed to remove item from playlist: ${response.statusText}`,
     );
   }
 
@@ -187,7 +187,7 @@ export async function reorderPlaylistItem(input: ReorderPlaylistItemInput) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ position: input.position }),
-    }
+    },
   );
 
   if (!response.ok) {

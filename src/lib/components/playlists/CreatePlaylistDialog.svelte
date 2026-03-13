@@ -3,9 +3,14 @@
   import { Button } from "$lib/components/ui/button";
   import { createPlaylist } from "$lib/api";
   import { Input } from "../ui/input";
-  import { LoaderIcon, ListIcon, YoutubeIcon } from "@lucide/svelte";
+  import { LinkIcon, LoaderIcon, ListIcon } from "@lucide/svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
-  import { youtubeDownloadStore } from "$lib/stores/youtubeDownload.svelte";
+  import { remoteDownloadStore } from "$lib/stores/remoteDownload.svelte";
+  import {
+    detectRemoteProviderFromUrl,
+    getRemoteProviderLabel,
+    isValidRemoteImportUrl,
+  } from "$lib/utils/remote";
 
   interface Props {
     open: boolean;
@@ -16,10 +21,13 @@
   let { open = $bindable(), onOpenChange, onCreated }: Props = $props();
 
   let playlistName = $state("");
-  let youtubeUrl = $state("");
+  let remoteUrl = $state("");
   let loading = $state(false);
   let error = $state("");
-  let mode = $state<"manual" | "youtube">("manual");
+  let mode = $state<"manual" | "remote">("manual");
+
+  const SUPPORTED_IMPORT_SOURCES =
+    "Supported sources:\n- YouTube playlist links\n- Tidal playlist or album links";
 
   async function handleCreateManual() {
     if (!playlistName.trim()) return;
@@ -40,18 +48,34 @@
     }
   }
 
-  async function handleCreateFromYoutube(e: Event) {
+  async function handleCreateFromRemote(e: Event) {
     e.preventDefault();
-    if (!youtubeUrl.trim()) return;
-    if (!youtubeUrl.trim().includes("/playlist?list=")) {
-      error = "Please enter a valid YouTube playlist URL.";
+    const url = remoteUrl.trim();
+
+    if (!url) return;
+
+    const provider = detectRemoteProviderFromUrl(url);
+
+    if (!provider) {
+      error =
+        "Unsupported URL. Supported sources are YouTube playlists and Tidal playlists/albums.";
       return;
     }
 
+    if (!isValidRemoteImportUrl(provider, url)) {
+      const providerLabel = getRemoteProviderLabel(provider);
+      error =
+        provider === "youtube"
+          ? `Please enter a valid ${providerLabel} playlist URL.`
+          : `Please enter a valid ${providerLabel} playlist or album URL.`;
+      return;
+    }
+
+    loading = true;
     error = "";
 
     try {
-      await youtubeDownloadStore.downloadFromUrl(youtubeUrl.trim());
+      await remoteDownloadStore.downloadFromUrl(provider, url);
       tracksStore.loadAllTracks(true);
       resetDialog();
       onOpenChange(false);
@@ -59,12 +83,14 @@
     } catch (err) {
       error = err instanceof Error ? err.message : "Failed to import playlist";
       console.error("Failed to import playlist:", err);
+    } finally {
+      loading = false;
     }
   }
 
   function resetDialog() {
     playlistName = "";
-    youtubeUrl = "";
+    remoteUrl = "";
     error = "";
     mode = "manual";
   }
@@ -77,7 +103,7 @@
   }
 
   const isManualValid = $derived(playlistName.trim() && !loading);
-  const isYoutubeValid = $derived(youtubeUrl.trim() && !loading);
+  const isRemoteValid = $derived(remoteUrl.trim() && !loading);
 </script>
 
 <Dialog.Root bind:open onOpenChange={handleOpenChange}>
@@ -101,16 +127,16 @@
           Manual
         </Button>
         <Button
-          variant={mode === "youtube" ? "default" : "outline"}
+          variant={mode === "remote" ? "default" : "outline"}
           onclick={() => {
-            mode = "youtube";
+            mode = "remote";
             error = "";
           }}
           class="flex-1 gap-2"
           disabled={loading}
         >
-          <YoutubeIcon size={16} />
-          YouTube
+          <LinkIcon size={16} />
+          Remote
         </Button>
       </div>
 
@@ -135,19 +161,28 @@
         </div>
       {:else}
         <div>
-          <label for="youtube-url" class="text-sm font-medium block mb-2">
-            YouTube Playlist URL
-          </label>
+          <div class="flex items-center gap-2 mb-2">
+            <label for="remote-url" class="text-sm font-medium block">
+              Remote Playlist URL
+            </label>
+            <span
+              title={SUPPORTED_IMPORT_SOURCES}
+              class="inline-flex items-center justify-center size-4 rounded-full border border-muted-foreground/40 text-[10px] font-semibold text-muted-foreground cursor-help"
+              aria-label="Supported import sources"
+            >
+              i
+            </span>
+          </div>
           <Input
-            id="youtube-url"
+            id="remote-url"
             type="url"
-            bind:value={youtubeUrl}
-            placeholder="https://youtube.com/playlist?list=..."
+            bind:value={remoteUrl}
+            placeholder="https://youtube.com/playlist?... or https://tidal.com/..."
             class="w-full px-3 py-2 text-sm"
             disabled={loading}
             onkeydown={(e) => {
-              if (e.key === "Enter" && isYoutubeValid) {
-                handleCreateFromYoutube(e);
+              if (e.key === "Enter" && isRemoteValid) {
+                handleCreateFromRemote(e);
               }
             }}
           />
@@ -175,7 +210,7 @@
           {loading ? "Creating..." : "Create"}
         </Button>
       {:else}
-        <Button onclick={handleCreateFromYoutube} disabled={!isYoutubeValid}>
+        <Button onclick={handleCreateFromRemote} disabled={!isRemoteValid}>
           {#if loading}
             <LoaderIcon class="animate-spin mr-2" size={16} />
           {/if}
