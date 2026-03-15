@@ -1,5 +1,5 @@
 import { average } from "color.js";
-import { getStreamUrl, getImageUrl, getPlaylistImageUrl } from "$lib/constants";
+import { getStreamUrl, getImageUrl } from "$lib/constants";
 import type { CarouselAPI } from "$lib/components/ui/carousel/context";
 import { createNestedLocalStorageState } from "./localStorage.svelte";
 import { getAudioUrl, revokeAudioUrl } from "$lib/utils/offline";
@@ -7,7 +7,9 @@ import Color from "colorjs.io";
 import { updateTrackColor } from "$lib/db/cache";
 import { AudioEngine } from "./audioEngine";
 import type { AudioFile, PlaylistDetail } from "$lib/schemas";
+import { resolvePlaybackSource } from "$lib/utils/trackSources";
 import { historyStore } from "./history.svelte";
+import { tracksStore } from "./tracks.svelte";
 
 export type FilterType =
   | "lowshelf"
@@ -571,12 +573,17 @@ class PlayerState {
   async updateMetadata(track: AudioFile) {
     if (!this.playerRef) return;
 
+    const sourceTrack = await resolvePlaybackSource(
+      track,
+      tracksStore.getSourcesForTrack(track),
+    );
+
     if (this.currentBlobUrl) {
       revokeAudioUrl(this.currentBlobUrl);
       this.currentBlobUrl = null;
     }
 
-    const audioUrl = await getAudioUrl(track.id);
+    const audioUrl = await getAudioUrl(sourceTrack.id);
     this.playerRef.src = audioUrl;
     this.playerRef.load();
 

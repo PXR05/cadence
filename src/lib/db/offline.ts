@@ -14,6 +14,7 @@ export interface OfflineTrack {
   };
   filename: string;
   downloadedAt: number;
+  isrc?: string;
 }
 
 export interface OfflineImage {

@@ -6,10 +6,12 @@ import {
   deleteTrackFromCache,
 } from "$lib/db/cache";
 import type { AudioFile } from "$lib/schemas";
+import { deduplicateByIsrc } from "$lib/utils/trackSources";
 import { downloadStore } from "./download.svelte";
 
 class TracksStore {
   private _tracks = $state<AudioFile[]>([]);
+  private _sourcesByIsrc = new Map<string, AudioFile[]>();
   private _lastFetchedAt = $state<string | null>(null);
   private _isInitialLoad = $state(true);
   private _isLoadingMore = $state(false);
@@ -52,13 +54,24 @@ class TracksStore {
     this._error = value;
   }
 
+  getSourcesForTrack(track: AudioFile): AudioFile[] {
+    if (!track.isrc) return [track];
+    return this._sourcesByIsrc.get(track.isrc) ?? [track];
+  }
+
+  private applyDeduplication(rawTracks: AudioFile[]): AudioFile[] {
+    const { deduplicated, sourcesByIsrc } = deduplicateByIsrc(rawTracks);
+    this._sourcesByIsrc = sourcesByIsrc;
+    return deduplicated;
+  }
+
   private async initializeFromCache(): Promise<void> {
     if (this._initialized) return;
 
     try {
       const cache = await getTracksCache();
       if (cache) {
-        this._tracks = cache.tracks;
+        this._tracks = this.applyDeduplication(cache.tracks);
         this._lastFetchedAt = cache.lastFetchedAt;
       }
     } catch (err) {
@@ -108,7 +121,7 @@ class TracksStore {
         }
       }
 
-      this._tracks = allTracks;
+      this._tracks = this.applyDeduplication(allTracks);
       this._lastFetchedAt = new Date().toISOString();
       this.isLoadingMore = false;
       this.error = null;
@@ -197,10 +210,23 @@ class TracksStore {
   }
 
   async deleteTrack(trackId: string): Promise<void> {
-    await deleteTrackFromCache(trackId);
-    await downloadStore.removeTrackOffline(trackId);
-    await deleteTrack(trackId);
-    this._tracks = this.tracks.filter((track) => track.id !== trackId);
+    const track = this._tracks.find((t) => t.id === trackId);
+    const allVariants = track ? this.getSourcesForTrack(track) : [{ id: trackId }];
+
+    await Promise.all(
+      allVariants.map(async (variant) => {
+        await deleteTrackFromCache(variant.id);
+        await downloadStore.removeTrackOffline(variant.id);
+        await deleteTrack(variant.id);
+      }),
+    );
+
+    if (track?.isrc) {
+      this._sourcesByIsrc.delete(track.isrc);
+    }
+
+    const variantIds = new Set(allVariants.map((v) => v.id));
+    this._tracks = this._tracks.filter((t) => !variantIds.has(t.id));
   }
 
   async clear(): Promise<void> {

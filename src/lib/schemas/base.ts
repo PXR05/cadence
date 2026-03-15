@@ -26,6 +26,7 @@ export const AudioFileSchema = v.object({
   color: v.optional(v.string()),
   youtubeId: v.optional(v.string()),
   tidalId: v.optional(v.string()),
+  isrc: v.optional(v.string()),
 });
 
 export type AudioMetadata = v.InferOutput<typeof AudioMetadataSchema>;

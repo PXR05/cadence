@@ -17,6 +17,7 @@ export interface CachedTrack {
   color?: string;
   youtubeId?: string;
   tidalId?: string;
+  isrc?: string;
   cachedAt: number;
 }
 
@@ -112,6 +113,7 @@ export async function getTracksCache(): Promise<{
     color: track.color,
     youtubeId: track.youtubeId,
     tidalId: track.tidalId,
+    isrc: track.isrc,
   }));
 
   return {
@@ -363,6 +365,7 @@ export async function searchCachedTracks(
     color: track.color,
     youtubeId: track.youtubeId,
     tidalId: track.tidalId,
+    isrc: track.isrc,
   }));
 }
 

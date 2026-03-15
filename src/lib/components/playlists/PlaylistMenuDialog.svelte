@@ -282,7 +282,7 @@
       disabled={offline.isDownloading || itemCount === 0}
     >
       <CloudDownloadIcon class="size-5" />
-      Make Offline
+      Make Available Offline
     </Button>
   {/if}
 {/snippet}

@@ -15,6 +15,7 @@
   import {
     ArrowLeftIcon,
     AudioWaveformIcon,
+    CableIcon,
     PlusIcon,
     PowerIcon,
     PowerOffIcon,
@@ -473,7 +474,7 @@
 
 <div class="px-2 pb-4 pt-0.5 w-full space-y-2 mb-[50dvh]">
   <SettingCard
-    icon={AudioWaveformIcon}
+    icon={CableIcon}
     title="Bypass"
     enabled={playerStore.pureBypassEnabled}
     onToggle={() => playerStore.togglePureBypass()}
