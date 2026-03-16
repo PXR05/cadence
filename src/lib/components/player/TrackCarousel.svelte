@@ -47,7 +47,9 @@
       <Carousel.Content>
         {#each playerStore.trackQueue as track, i}
           {@const trackTitle = track.metadata?.title ?? track.filename ?? ""}
-          {@const trackArtist = track.metadata?.artist ?? "Unknown Artist"}
+          {@const trackArtists = (track.metadata?.artist ?? "Unknown").split(
+            track.metadata?.artist?.includes(",") ? ", " : "、",
+          )}
           <Carousel.Item
             onclick={onTrackClick}
             oncontextmenu={(e) => handleContextMenu(e, track)}
@@ -75,19 +77,20 @@
                     class="text-sm truncate font-light"
                     style="color: color-mix(in oklab, {playerStore.trackColor} 30%, var(--muted-foreground));"
                   >
-                    <span
-                      role="link"
-                      tabindex="0"
-                      class="hover:underline cursor-pointer"
-                      onclick={(e) => {
-                        e.stopPropagation();
-                        goto(`/playlist?id=artist_${trackArtist}`);
-                      }}
-                      onkeydown={(e) =>
-                        e.key === "Enter" &&
-                        goto(`/playlist?id=artist_${trackArtist}`)}
-                      >{trackArtist}</span
-                    >
+                    {#each trackArtists as a, artistIndex}
+                      <span
+                        role="link"
+                        tabindex="0"
+                        class="hover:underline cursor-pointer"
+                        onclick={(e) => {
+                          e.stopPropagation();
+                          goto(`/playlist?id=artist_${a}`);
+                        }}
+                        onkeydown={(e) =>
+                          e.key === "Enter" && goto(`/playlist?id=artist_${a}`)}
+                        >{a}</span
+                      >{#if artistIndex < trackArtists.length - 1},&nbsp;{/if}
+                    {/each}
                   </p>
                 </div>
               </div>

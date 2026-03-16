@@ -33,7 +33,11 @@
   }: Props = $props();
 
   const title = $derived(track.metadata?.title ?? track.filename);
-  const artist = $derived(track.metadata?.artist ?? "Unknown");
+  const artists = $derived(
+    (track.metadata?.artist ?? "Unknown").split(
+      track.metadata?.artist?.includes(",") ? ", " : "、",
+    ),
+  );
   const album = $derived(
     track.metadata?.album ?? track.metadata?.title ?? "Unknown",
   );
@@ -111,18 +115,19 @@
         ? 'text-primary/50'
         : 'text-muted-foreground'}"
     >
-      <span
-        role="link"
-        tabindex="0"
-        class="hover:underline cursor-pointer"
-        onclick={(e) => {
-          e.stopPropagation();
-          goto(`/playlist?id=artist_${artist}`);
-        }}
-        onkeydown={(e) =>
-          e.key === "Enter" && goto(`/playlist?id=artist_${artist}`)}
-        >{artist}</span
-      >
+      {#each artists as a, i}
+        <span
+          role="link"
+          tabindex="0"
+          class="hover:underline cursor-pointer"
+          onclick={(e) => {
+            e.stopPropagation();
+            goto(`/playlist?id=artist_${a}`);
+          }}
+          onkeydown={(e) =>
+            e.key === "Enter" && goto(`/playlist?id=artist_${a}`)}>{a}</span
+        >{#if i < artists.length - 1},&nbsp;{/if}
+      {/each}
       {#if showAlbum}
         &nbsp;•&nbsp;
         {album}

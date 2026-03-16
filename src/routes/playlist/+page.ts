@@ -65,7 +65,7 @@ async function loadArtistPlaylist(playlistId: string): Promise<PlaylistDetail> {
   await tracksStore.loadAllTracks();
 
   const items = tracksStore.tracks
-    .filter((track) => track.metadata?.artist === artistName)
+    .filter((track) => track.metadata?.artist?.includes(artistName))
     .map((track, index) => ({
       id: `${track.id}_${index}`,
       position: index,
