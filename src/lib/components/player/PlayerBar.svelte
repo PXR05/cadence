@@ -3,7 +3,12 @@
   import type { CarouselAPI } from "$lib/components/ui/carousel/context";
   import { useDialogState } from "$lib/hooks/useDialogState.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
-  import { ListMusicIcon, PauseIcon, PlayIcon } from "@lucide/svelte";
+  import {
+    EllipsisIcon,
+    ListMusicIcon,
+    PauseIcon,
+    PlayIcon,
+  } from "@lucide/svelte";
   import gsap from "gsap";
   import { onDestroy, onMount } from "svelte";
   import { cubicOut } from "svelte/easing";
@@ -19,6 +24,9 @@
   import { useMenuDialogState } from "$lib/hooks";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
   import { createWebHaptics } from "web-haptics/svelte";
+  import { downloadStore } from "$lib/stores/download.svelte";
+  import { trackMenuStore } from "$lib/stores/trackMenu.svelte";
+  import type { AudioFile } from "$lib/schemas";
 
   const { trigger, destroy } = createWebHaptics();
 
@@ -377,6 +385,17 @@
   const queueDialog = useMenuDialogState({
     paramName: "queue-dialog",
   });
+
+  async function openTrackMenu(track?: AudioFile) {
+    if (!track) {
+      return;
+    }
+    const isOffline = await downloadStore.checkTrackOfflineStatus(track.id);
+    const refreshOfflineStatus = async () => {
+      await downloadStore.checkTrackOfflineStatus(track.id);
+    };
+    trackMenuStore.open(track, isOffline, refreshOfflineStatus);
+  }
 </script>
 
 {#snippet barControls()}
@@ -387,6 +406,8 @@
   <div
     class="hidden md:flex items-center gap-2 shrink-0 self-center justify-self-end pr-3"
   >
+    <VolumeControl />
+
     <Button
       variant="ghost"
       onclick={() => queueDialog.open("")}
@@ -395,7 +416,15 @@
     >
       <ListMusicIcon size={18} />
     </Button>
-    <VolumeControl />
+
+    <Button
+      variant="ghost"
+      onclick={() => openTrackMenu(playerStore.currentTrack ?? undefined)}
+      class="size-8 grid place-items-center"
+      aria-label="Open menu"
+    >
+      <EllipsisIcon size={18} />
+    </Button>
   </div>
 
   <Button

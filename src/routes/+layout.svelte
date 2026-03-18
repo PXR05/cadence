@@ -190,8 +190,14 @@
       <AppSidebar />
     {/if}
     <Sidebar.Inset
-      class="relative bg-background min-h-dvh grid grid-rows-1 grid-cols-1 grow overflow-x-hidden"
-      style="--h: {navHeight}px;"
+      class="relative min-h-dvh grid grid-rows-1 grid-cols-1 grow overflow-x-hidden"
+      style="--h: {navHeight}px;
+        background: linear-gradient(
+        to top,
+        color-mix(in oklab, {playerStore.trackColor} 5%, var(--background)) 0%,
+        var(--background) 100%
+      );
+      "
     >
       {#key page.url.pathname}
         <div

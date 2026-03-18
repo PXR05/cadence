@@ -182,30 +182,46 @@
 {#snippet controls()}
   <div class="flex flex-col gap-8 px-6 my-auto z-20">
     <div class="text-center mb-2 grid gap-1">
-      <h2
-        class="text-xl font-semibold truncate"
-        style="color: color-mix(in oklab, {playerStore.trackColor} 30%, var(--foreground));"
+      <div
+        class="hide-scrollbar overflow-x-auto px-1"
+        role="group"
+        aria-label="Scrollable track title"
+        ontouchstart={(e) => e.stopPropagation()}
+        ontouchmove={(e) => e.stopPropagation()}
       >
-        {title}
-      </h2>
-      <p
-        class="text-muted-foreground truncate"
-        style="color: color-mix(in oklab, {playerStore.trackColor} 30%, var(--muted-foreground));"
+        <h2
+          class="text-xl font-semibold whitespace-nowrap w-max mx-auto"
+          style="color: color-mix(in oklab, {playerStore.trackColor} 30%, var(--foreground));"
+        >
+          {title}
+        </h2>
+      </div>
+      <div
+        class="hide-scrollbar overflow-x-auto px-1"
+        role="group"
+        aria-label="Scrollable artists"
+        ontouchstart={(e) => e.stopPropagation()}
+        ontouchmove={(e) => e.stopPropagation()}
       >
-        {#each artists as a, i}
-          <span
-            role="link"
-            tabindex="0"
-            class="hover:underline cursor-pointer"
-            onclick={(e) => {
-              e.stopPropagation();
-              goto(`/playlist?id=artist_${a}`);
-            }}
-            onkeydown={(e) =>
-              e.key === "Enter" && goto(`/playlist?id=artist_${a}`)}>{a}</span
-          >{#if i < artists.length - 1},&nbsp;{/if}
-        {/each}
-      </p>
+        <p
+          class="text-muted-foreground whitespace-nowrap w-max mx-auto"
+          style="color: color-mix(in oklab, {playerStore.trackColor} 30%, var(--muted-foreground));"
+        >
+          {#each artists as a, i}
+            <span
+              role="link"
+              tabindex="0"
+              class="hover:underline cursor-pointer"
+              onclick={(e) => {
+                e.stopPropagation();
+                goto(`/playlist?id=artist_${a}`);
+              }}
+              onkeydown={(e) =>
+                e.key === "Enter" && goto(`/playlist?id=artist_${a}`)}>{a}</span
+            >{#if i < artists.length - 1},&nbsp;{/if}
+          {/each}
+        </p>
+      </div>
     </div>
 
     <div class="flex flex-col gap-6">

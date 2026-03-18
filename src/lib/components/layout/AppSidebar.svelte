@@ -2,16 +2,14 @@
   import { page } from "$app/state";
   import * as Sidebar from "$lib/components/ui/sidebar";
   import { ScrollArea } from "$lib/components/ui/scroll-area";
-  import { ListMusicIcon, PlusIcon, Volume2Icon } from "@lucide/svelte";
+  import { PlusIcon } from "@lucide/svelte";
   import { offlineDb } from "$lib/db/offline";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { liveQuery } from "dexie";
   import { SPECIAL_PLAYLIST_IDS } from "$lib/utils/playlist";
   import { CreatePlaylistDialog } from "../playlists";
-  import { playlistMenuStore } from "$lib/stores/playlistMenu.svelte";
-  import { playerStore } from "$lib/stores/player.svelte";
-  import type { Playlist } from "$lib/schemas";
+  import SidebarPlaylistItem from "./SidebarPlaylistItem.svelte";
   import { navItems } from "./navItems";
 
   function isActive(tabPath: string): boolean {
@@ -24,21 +22,6 @@
       );
     }
     return page.url.pathname.startsWith(tabPath);
-  }
-
-  function isPlaylistActive(playlistId: string): boolean {
-    return (
-      page.url.pathname === "/playlist" &&
-      page.url.searchParams.get("id") === playlistId
-    );
-  }
-
-  function isPlaylistPlaying(playlistId: string): boolean {
-    return (
-      playerStore.isPlaying &&
-      playerStore.currentTrack !== null &&
-      playerStore.currentPlaylist?.id === playlistId
-    );
   }
 
   let createDialogOpen = $state(false);
@@ -78,25 +61,19 @@
     playlistsStore.invalidate();
     await playlistsStore.loadAllPlaylists(true);
   }
-
-  function handleContextMenu(e: MouseEvent, playlist: Playlist) {
-    e.preventDefault();
-    playlistMenuStore.open(playlist, false, false);
-  }
 </script>
 
 {#snippet navigation()}
   <Sidebar.Group>
-    <Sidebar.GroupLabel>Navigation</Sidebar.GroupLabel>
     <Sidebar.GroupContent>
       <Sidebar.Menu>
         {#each navItems as item (item.path)}
           <Sidebar.MenuItem>
-            <Sidebar.MenuButton isActive={isActive(item.path)}>
+            <Sidebar.MenuButton class="h-10 px-3" isActive={isActive(item.path)}>
               {#snippet child({ props })}
                 <a href={item.path} {...props}>
-                  <item.icon />
-                  <span>{item.label}</span>
+                  <item.icon strokeWidth={2} absoluteStrokeWidth />
+                  <span class="font-medium">{item.label}</span>
                 </a>
               {/snippet}
             </Sidebar.MenuButton>
@@ -108,11 +85,11 @@
 {/snippet}
 
 {#snippet list()}
-  <Sidebar.Group class="flex flex-col h-full overflow-hidden">
-    <Sidebar.GroupLabel class="flex items-center justify-between pr-2 shrink-0">
-      <span>Playlists</span>
+  <Sidebar.Group class="flex flex-col h-full overflow-hidden gap-1">
+    <Sidebar.GroupLabel class="flex items-center justify-between shrink-0">
+      <span class="text-sm">Playlists</span>
       <button
-        class="size-5 grid place-items-center rounded hover:bg-sidebar-accent transition-colors group-data-[collapsible=icon]:hidden"
+        class="size-6 grid place-items-center rounded-sm hover:bg-sidebar-accent transition-colors group-data-[collapsible=icon]:hidden"
         onclick={() => (createDialogOpen = true)}
       >
         <PlusIcon class="size-4" />
@@ -120,31 +97,9 @@
     </Sidebar.GroupLabel>
     <Sidebar.GroupContent class="flex-1 overflow-hidden">
       <ScrollArea class="h-full">
-        <Sidebar.Menu class="pb-40">
+        <Sidebar.Menu class="pb-40 gap-1">
           {#each allUserPlaylists as playlist (playlist.id)}
-            <Sidebar.MenuItem>
-              <Sidebar.MenuButton isActive={isPlaylistActive(playlist.id)}>
-                {#snippet child({ props })}
-                  <a
-                    href="/playlist?id={playlist.id}"
-                    oncontextmenu={(e) => handleContextMenu(e, playlist)}
-                    {...props}
-                  >
-                    <ListMusicIcon />
-                    <span class="flex-1 truncate">{playlist.name}</span>
-                    {#if isPlaylistPlaying(playlist.id)}
-                      <Volume2Icon
-                        class="ml-auto size-4 shrink-0 group-data-[collapsible=icon]:hidden {isPlaylistActive(
-                          playlist.id,
-                        )
-                          ? 'text-background'
-                          : 'text-primary'}"
-                      />
-                    {/if}
-                  </a>
-                {/snippet}
-              </Sidebar.MenuButton>
-            </Sidebar.MenuItem>
+            <SidebarPlaylistItem {playlist} />
           {/each}
         </Sidebar.Menu>
       </ScrollArea>

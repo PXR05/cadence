@@ -18,51 +18,56 @@
   const isMuted = $derived(playerStore.isMuted || playerStore.volume === 0);
 </script>
 
-<div class="flex items-center gap-2">
-  <Button
-    variant="ghost"
-    onclick={toggleMute}
-    class="size-8 grid place-items-center hover:bg-background/50 transition-colors"
-    aria-label={isMuted ? "Unmute" : "Mute"}
-  >
-    {#if isMuted}
-      <VolumeXIcon size={18} />
-    {:else}
-      <Volume2Icon size={18} />
-    {/if}
-  </Button>
+<div class="flex items-center">
+  <div class="group/volume relative">
+    <Button
+      variant="ghost"
+      onclick={toggleMute}
+      class="size-8 grid place-items-center hover:bg-background/50 transition-colors"
+      aria-label={isMuted ? "Unmute" : "Mute"}
+    >
+      {#if isMuted}
+        <VolumeXIcon size={18} />
+      {:else}
+        <Volume2Icon size={18} />
+      {/if}
+    </Button>
 
-  <div
-    class="rounded-lg overflow-clip group relative w-24 h-1.5 flex items-center"
-  >
     <div
-      class="absolute inset-0 pointer-events-none"
-      style="background-color: color-mix(in oklab, {playerStore.trackColor} 20%, transparent);"
+      class="pointer-events-none absolute left-1/2 bottom-full -translate-x-1/2 h-40 w-20 flex items-end justify-center opacity-0 translate-y-2 transition-all duration-150 ease-out group-hover/volume:pointer-events-auto group-hover/volume:opacity-100 group-hover/volume:translate-y-0 group-focus-within/volume:pointer-events-auto group-focus-within/volume:opacity-100 group-focus-within/volume:translate-y-0"
     >
       <div
-        class="h-full rounded-lg"
-        style="
-          width: {playerStore.volume * 100}%;
-          background-color: color-mix(in oklab, {playerStore.trackColor} 40%, var(--foreground));"
-      ></div>
-      <div
-        style="transform: translateX(calc({playerStore.volume * 100}% - 6px));"
-        class="w-full h-full absolute inset-0"
+        class="relative mb-2 h-32 w-8 rounded-lg border bg-muted grid place-items-center"
       >
         <div
-          class="rounded-full dark:bg-white bg-black group-hover:opacity-100 opacity-0 w-3 h-1.5"
-        ></div>
+          class="absolute inset-y-3 left-1/2 -translate-x-1/2 w-1.5 rounded-lg overflow-clip pointer-events-none"
+          style="background-color: color-mix(in oklab, {playerStore.trackColor} 20%, transparent);"
+        >
+          <div
+            class="absolute bottom-0 w-full rounded-lg"
+            style="
+              height: {playerStore.volume * 100}%;
+              background-color: color-mix(in oklab, {playerStore.trackColor} 40%, var(--foreground));"
+          ></div>
+          <div
+            class="absolute left-1/2 -translate-x-1/2 transition-opacity duration-150 opacity-80 group-hover/volume:opacity-100 group-focus-within/volume:opacity-100"
+            style="bottom: calc({playerStore.volume * 100}% - 3px);"
+          >
+            <div class="rounded-full dark:bg-white bg-black w-1.5 h-3"></div>
+          </div>
+        </div>
+
+        <input
+          type="range"
+          min="0"
+          max="100"
+          step="0.01"
+          value={playerStore.volume * 100}
+          oninput={handleVolumeChange}
+          class="absolute inset-0 z-10 cursor-pointer opacity-0 [writing-mode:vertical-lr] [direction:rtl]"
+          aria-label="Volume"
+        />
       </div>
     </div>
-    <input
-      type="range"
-      min="0"
-      max="100"
-      step="0.01"
-      value={playerStore.volume * 100}
-      oninput={handleVolumeChange}
-      class="relative w-full h-full opacity-0 cursor-pointer z-10"
-      aria-label="Volume"
-    />
   </div>
 </div>

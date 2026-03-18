@@ -127,7 +127,7 @@
         easing: vaulEase,
       }}
       style="--h: 5rem"
-      class="row-start-1 col-start-1 flex-1 flex items-end rounded-xl bg-background"
+      class="relative row-start-1 col-start-1 flex-1 flex items-end rounded-xl bg-background"
     >
       <div class="_bg _color absolute inset-0 top-38 md:top-64 -z-10"></div>
       <div
@@ -230,24 +230,24 @@
           <Button
             onclick={handlePlay}
             disabled={playlist.items.length === 0}
-            class="md:ml-auto border bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 px-6 max-sm:w-full max-md:justify-center max-md:text-sm"
+            class="font-medium h-10 rounded-lg md:ml-auto border bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 px-6 max-sm:w-full max-md:justify-center max-md:text-sm"
           >
             <PlayIcon size={16} />
             Play
           </Button>
         </div>
       </div>
-    </div>
-
-    <div class="top-1.5 md:top-2 right-1.5 md:right-2 absolute z-10">
-      <Button
-        variant="ghost"
-        size="icon"
-        class="md:p-2 bg-background"
-        onclick={handleMenu}
-      >
-        <EllipsisIcon size={20} />
-      </Button>
+      
+      <div class="top-1.5 md:top-2 right-1.5 md:right-2 absolute z-10">
+        <Button
+          variant="ghost"
+          size="icon"
+          class="md:p-2 bg-background"
+          onclick={handleMenu}
+        >
+          <EllipsisIcon size={20} />
+        </Button>
+      </div>
     </div>
   {/if}
 </div>
