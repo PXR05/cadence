@@ -11,6 +11,8 @@
   import { CreatePlaylistDialog } from "../playlists";
   import SidebarPlaylistItem from "./SidebarPlaylistItem.svelte";
   import { navItems } from "./navItems";
+  import { getImageUrl } from "$lib/constants";
+  import { playerStore } from "$lib/stores/player.svelte";
 
   function isActive(tabPath: string): boolean {
     if (tabPath === "/") return page.url.pathname === "/";
@@ -69,7 +71,10 @@
       <Sidebar.Menu>
         {#each navItems as item (item.path)}
           <Sidebar.MenuItem>
-            <Sidebar.MenuButton class="h-10 px-3" isActive={isActive(item.path)}>
+            <Sidebar.MenuButton
+              class="h-10 px-3"
+              isActive={isActive(item.path)}
+            >
               {#snippet child({ props })}
                 <a href={item.path} {...props}>
                   <item.icon strokeWidth={2} absoluteStrokeWidth />
@@ -85,7 +90,7 @@
 {/snippet}
 
 {#snippet list()}
-  <Sidebar.Group class="flex flex-col h-full overflow-hidden gap-1">
+  <Sidebar.Group class="flex flex-col h-full overflow-hidden gap-1 py-0">
     <Sidebar.GroupLabel class="flex items-center justify-between shrink-0">
       <span class="text-sm">Playlists</span>
       <button
@@ -107,11 +112,7 @@
   </Sidebar.Group>
 {/snippet}
 
-<Sidebar.Root
-  variant="floating"
-  collapsible="icon"
-  class="border-r-0 select-none"
->
+<Sidebar.Root variant="sidebar" collapsible="icon" class="select-none">
   <Sidebar.Header
     class="p-4 transition-all flex-row items-center justify-between"
   >
@@ -123,10 +124,8 @@
     </a>
   </Sidebar.Header>
 
-  <Sidebar.Content class="relative flex flex-col">
+  <Sidebar.Content class="relative flex flex-col gap-0">
     {@render navigation()}
-
-    <Sidebar.Separator />
 
     <div class="flex-1 min-h-0">
       {@render list()}

@@ -53,7 +53,7 @@
     const height = innerHeight.current || window.innerHeight;
     if (height === 0) return 0;
     if (isTopRoute && isMobile) return height - 62 - 80; // 3.875rem = 62px
-    return height - 6 - 80; // 0.375rem = 6px
+    return height - (isMobile ? 6 : 24) - 80; // 0.375rem = 6px
   });
 
   const isPanelAnimating = $derived(
@@ -457,17 +457,17 @@
 {#snippet bar()}
   <div
     bind:this={barElement}
-    class="mx-1.5 rounded-xl border border-input/15
+    class="max-md:mx-1.5 md:p-1 max-md:rounded-xl max-md:border border-t max-md:border-input/15
         {appearanceStore.disableBlur
-      ? 'bg-muted'
-      : 'bg-muted-foreground/10 dark:bg-muted/50 backdrop-blur-md'}"
+      ? 'max-md:bg-muted'
+      : 'bg-muted max-md:bg-muted-foreground/10 max-md:dark:bg-muted/50 max-md:backdrop-blur-md'}"
     role="button"
     tabindex="0"
     ontouchend={handleTouchEnd}
     onmousedown={handleMouseDown}
   >
     <div
-      class=" relative flex md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center max-md:justify-between pt-2 min-h-14"
+      class=" relative flex md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center max-md:justify-between pt-2 min-h-14 md:min-h-18"
     >
       <TrackCarousel
         onTrackClick={() => (isMobile ? panelState.open() : {})}

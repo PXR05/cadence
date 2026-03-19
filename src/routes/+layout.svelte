@@ -191,17 +191,11 @@
     {/if}
     <Sidebar.Inset
       class="relative min-h-dvh grid grid-rows-1 grid-cols-1 grow overflow-x-hidden"
-      style="--h: {navHeight}px;
-        background: linear-gradient(
-        to top,
-        color-mix(in oklab, {playerStore.trackColor} 5%, var(--background)) 0%,
-        var(--background) 100%
-      );
-      "
+      style="--h: {navHeight}px;"
     >
       {#key page.url.pathname}
         <div
-          class="row-start-1 col-start-1 relative overflow-x-hidden overflow-y-scroll h-dvh md:w-[calc(100dvw-256px)] flex flex-col"
+          class="row-start-1 col-start-1 relative overflow-x-hidden overflow-y-scroll h-dvh md:h-[calc(100dvh-88px)] md:w-[calc(100dvw-256px)] flex flex-col"
           in:fade={{
             duration: !appearanceStore.disableAnimations ? 150 : 0,
             easing: vaulEase,

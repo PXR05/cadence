@@ -64,7 +64,7 @@
                   crossorigin="use-credentials"
                   src={getImageUrl(track.id)}
                   alt={track.id}
-                  class="rounded-md size-12 shrink-0 object-cover text-transparent"
+                  class="rounded-md size-12 md:size-16 shrink-0 object-cover text-transparent"
                 />
                 <div class="text-left flex-1 min-w-0">
                   <p
