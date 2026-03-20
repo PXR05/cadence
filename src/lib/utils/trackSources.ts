@@ -49,7 +49,7 @@ export function deduplicateByIsrc(tracks: AudioFile[]): {
   const sourcesByIsrc = new Map<string, AudioFile[]>();
 
   for (const track of tracks) {
-    if (!track.isrc) continue;
+    if (!track.isrc || track.isrc === "NO_ISRC") continue;
     const existing = sourcesByIsrc.get(track.isrc);
     if (existing) {
       existing.push(track);
