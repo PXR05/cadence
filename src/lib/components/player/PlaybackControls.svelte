@@ -43,7 +43,7 @@
       trigger([{ duration: 8 }]);
       playerStore.isShuffled = !playerStore.isShuffled;
     }}
-    class="size-{size.button} grid place-items-center mx-auto
+    class="size-{size.button} grid place-items-center ml-auto
     {playerStore.isShuffled ? '' : 'opacity-50'}"
     style="color: {textColor};"
     aria-label="Shuffle tracks"
@@ -124,7 +124,7 @@
       trigger([{ duration: 8 }]);
       playerStore.isRepeated = !playerStore.isRepeated;
     }}
-    class="size-{size.button} grid place-items-center mx-auto
+    class="size-{size.button} grid place-items-center mr-auto
     {playerStore.isRepeated ? '' : 'opacity-50'}"
     style="color: {textColor};"
     aria-label="Repeat track"

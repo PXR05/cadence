@@ -6,10 +6,12 @@
   const {
     height = 6,
     showTime,
+    timeSide,
     isPanelAnimating = false,
   }: {
     height?: number;
     showTime?: boolean;
+    timeSide?: "side" | "bottom";
     isPanelAnimating?: boolean;
   } = $props();
 
@@ -112,84 +114,96 @@
   ontouchcancel={endSeek}
 />
 
-<div
-  bind:this={progressBar}
-  onmousedown={handleProgressMouseDown}
-  ontouchstart={handleProgressTouchStart}
-  onmouseenter={handleProgressMouseEnter}
-  onmouseleave={handleProgressMouseLeave}
-  onmousemove={handleProgressMouseMove}
-  role="slider"
-  tabindex="0"
-  aria-label="Seek slider"
-  aria-valuemin={0}
-  aria-valuemax={playerStore.duration}
-  aria-valuenow={displayTime}
-  class="group py-2"
->
+<div class="flex gap-2 items-center">
+  {#if showTime && timeSide === "side"}
+    <span class="text-xs text-muted-foreground tabular-nums">
+      {formatTime(displayTime)}
+    </span>
+  {/if}
   <div
-    style="height: {height}px;"
-    class="relative cursor-pointer transition-colors flex items-center justify-between text-xs touch-none"
+    bind:this={progressBar}
+    onmousedown={handleProgressMouseDown}
+    ontouchstart={handleProgressTouchStart}
+    onmouseenter={handleProgressMouseEnter}
+    onmouseleave={handleProgressMouseLeave}
+    onmousemove={handleProgressMouseMove}
+    role="slider"
+    tabindex="0"
+    aria-label="Seek slider"
+    aria-valuemin={0}
+    aria-valuemax={playerStore.duration}
+    aria-valuenow={displayTime}
+    class="group py-2 w-full"
   >
     <div
-      class="absolute inset-0 pointer-events-none rounded-full overflow-clip"
-      style="background-color:
-        color-mix(
-          in oklab,
-          {primaryColor} 20%,
-          transparent
-        );"
+      style="height: {height}px;"
+      class="relative cursor-pointer transition-colors flex items-center justify-between text-xs touch-none"
     >
       <div
-        style="
-        transform: translate3d({-100 + currentProgress}%, 0, 0);
-        transition: {isDragging || isPanelAnimating
-          ? 'none'
-          : 'transform 100ms linear'};
-        background-color:
+        class="absolute inset-0 pointer-events-none rounded-full overflow-clip"
+        style="background-color:
           color-mix(
             in oklab,
-            {primaryColor} 40%,
-            var(--foreground)
+            {primaryColor} 20%,
+            transparent
           );"
-        class="w-full h-full rounded-full"
-      ></div>
-      <div
-        style="transform: translate3d(calc({currentProgress}% - {height}px), 0, 0);
-        transition: {isDragging || isPanelAnimating
-          ? 'none'
-          : 'transform 100ms linear'};"
-        class="w-full h-full absolute inset-0"
       >
         <div
-          style="width: {height * 2}px; height: {height}px;"
-          class="rounded-full dark:bg-white bg-black group-hover:opacity-100 opacity-0"
+          style="
+          transform: translate3d({-100 + currentProgress}%, 0, 0);
+          transition: {isDragging || isPanelAnimating
+            ? 'none'
+            : 'transform 100ms linear'};
+          background-color:
+            color-mix(
+              in oklab,
+              {primaryColor} 40%,
+              var(--foreground)
+            );"
+          class="w-full h-full rounded-full"
         ></div>
+        <div
+          style="transform: translate3d(calc({currentProgress}% - {height}px), 0, 0);
+          transition: {isDragging || isPanelAnimating
+            ? 'none'
+            : 'transform 100ms linear'};"
+          class="w-full h-full absolute inset-0"
+        >
+          <div
+            style="width: {height * 2}px; height: {height}px;"
+            class="rounded-full dark:bg-white bg-black group-hover:opacity-100 opacity-0"
+          ></div>
+        </div>
       </div>
+
+      {#if showTime && timeSide === "bottom"}
+        <div
+          style="padding-top: {height * 3.5}px;"
+          class="w-full flex justify-between gap-2 text-muted-foreground select-none pointer-events-none tabular-nums"
+        >
+          <span draggable={false}>
+            {formatTime(displayTime)}
+          </span>
+          <span draggable={false}>
+            {formatTime(playerStore.duration)}
+          </span>
+        </div>
+      {/if}
+
+      {#if !isMobile.current && isHovering && hoverPosition && progressBar}
+        <div
+          style="left: {hoverPosition.x}px; transform: translateX(-50%); bottom: {height +
+            6}px;"
+          class="absolute pointer-events-none bg-popover text-popover-foreground px-2 py-1 rounded-lg text-xs shadow-lg whitespace-nowrap tabular-nums"
+        >
+          {formatTime(hoverPosition.time)}
+        </div>
+      {/if}
     </div>
-
-    {#if showTime}
-      <div
-        style="padding-top: {height * 3.5}px;"
-        class="w-full flex justify-between gap-2 text-muted-foreground select-none pointer-events-none tabular-nums"
-      >
-        <span draggable={false}>
-          {formatTime(displayTime)}
-        </span>
-        <span draggable={false}>
-          {formatTime(playerStore.duration)}
-        </span>
-      </div>
-    {/if}
-
-    {#if !isMobile.current && isHovering && hoverPosition && progressBar}
-      <div
-        style="left: {hoverPosition.x}px; transform: translateX(-50%); bottom: {height +
-          6}px;"
-        class="absolute pointer-events-none bg-popover text-popover-foreground px-2 py-1 rounded-lg text-xs shadow-lg whitespace-nowrap tabular-nums"
-      >
-        {formatTime(hoverPosition.time)}
-      </div>
-    {/if}
   </div>
+  {#if showTime && timeSide === "side"}
+    <span class="text-xs text-muted-foreground tabular-nums">
+      {formatTime(playerStore.duration)}
+    </span>
+  {/if}
 </div>

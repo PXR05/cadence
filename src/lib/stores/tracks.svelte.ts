@@ -211,7 +211,9 @@ class TracksStore {
 
   async deleteTrack(trackId: string): Promise<void> {
     const track = this._tracks.find((t) => t.id === trackId);
-    const allVariants = track ? this.getSourcesForTrack(track) : [{ id: trackId }];
+    const allVariants = track
+      ? this.getSourcesForTrack(track)
+      : [{ id: trackId }];
 
     await Promise.all(
       allVariants.map(async (variant) => {

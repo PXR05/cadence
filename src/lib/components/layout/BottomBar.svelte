@@ -20,7 +20,7 @@
     if (isTopRoute && isMobile) {
       return `-9.3rem`;
     }
-    return `-5.775rem`;
+    return `-6rem`;
   });
 
   const navTranslate = $derived.by(() => {

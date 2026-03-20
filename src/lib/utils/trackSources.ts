@@ -47,33 +47,32 @@ export function deduplicateByIsrc(tracks: AudioFile[]): {
   sourcesByIsrc: Map<string, AudioFile[]>;
 } {
   const sourcesByIsrc = new Map<string, AudioFile[]>();
-
-  for (const track of tracks) {
-    if (!track.isrc || track.isrc === "NO_ISRC") continue;
-    const existing = sourcesByIsrc.get(track.isrc);
-    if (existing) {
-      existing.push(track);
-    } else {
-      sourcesByIsrc.set(track.isrc, [track]);
-    }
-  }
-
-  const primaryByIsrc = new Map<string, AudioFile>();
-  for (const [isrc, sources] of sourcesByIsrc) {
-    primaryByIsrc.set(isrc, sources.find((t) => t.tidalId) ?? sources[0]);
-  }
-
-  const placedIsrcs = new Set<string>();
+  const primaryIndexByIsrc = new Map<string, number>();
   const deduplicated: AudioFile[] = [];
 
   for (const track of tracks) {
-    if (!track.isrc) {
+    const isrc = track.isrc;
+    if (!isrc || isrc === "NO_ISRC") {
       deduplicated.push(track);
       continue;
     }
-    if (placedIsrcs.has(track.isrc)) continue;
-    placedIsrcs.add(track.isrc);
-    deduplicated.push(primaryByIsrc.get(track.isrc)!);
+
+    const sources = sourcesByIsrc.get(isrc);
+    if (!sources) {
+      sourcesByIsrc.set(isrc, [track]);
+      primaryIndexByIsrc.set(isrc, deduplicated.length);
+      deduplicated.push(track);
+      continue;
+    }
+
+    sources.push(track);
+    const primaryIndex = primaryIndexByIsrc.get(isrc);
+    if (primaryIndex === undefined) continue;
+
+    const currentPrimary = deduplicated[primaryIndex];
+    if (!currentPrimary.tidalId && track.tidalId) {
+      deduplicated[primaryIndex] = track;
+    }
   }
 
   return { deduplicated, sourcesByIsrc };

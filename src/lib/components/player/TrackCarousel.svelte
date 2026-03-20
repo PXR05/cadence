@@ -57,7 +57,7 @@
           >
             {#if shouldLoadItem(i)}
               <div
-                class="flex items-center flex-1 min-w-0 gap-2 text-left w-full pl-2"
+                class="flex items-center flex-1 min-w-0 gap-2 md:gap-3 text-left w-full pl-2"
               >
                 <img
                   loading="lazy"

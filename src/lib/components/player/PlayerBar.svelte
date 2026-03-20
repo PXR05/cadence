@@ -53,7 +53,7 @@
     const height = innerHeight.current || window.innerHeight;
     if (height === 0) return 0;
     if (isTopRoute && isMobile) return height - 62 - 80; // 3.875rem = 62px
-    return height - (isMobile ? 6 : 24) - 80; // 0.375rem = 6px
+    return height - (isMobile ? 6 : 9) - 80; // 0.375rem = 6px
   });
 
   const isPanelAnimating = $derived(
@@ -399,8 +399,11 @@
 </script>
 
 {#snippet barControls()}
-  <div class="hidden md:flex place-self-center">
+  <div class="hidden w-full md:flex flex-col place-self-center">
     <PlaybackControls />
+    <div class="max-md:hidden">
+      <ProgressBar {isPanelAnimating} timeSide="side" showTime />
+    </div>
   </div>
 
   <div
@@ -467,7 +470,7 @@
     onmousedown={handleMouseDown}
   >
     <div
-      class=" relative flex md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center max-md:justify-between pt-2 min-h-14 md:min-h-18"
+      class=" relative flex md:grid md:grid-cols-3 items-center max-md:justify-between py-2 min-h-14 md:min-h-18"
     >
       <TrackCarousel
         onTrackClick={() => (isMobile ? panelState.open() : {})}
@@ -479,7 +482,7 @@
         {@render barControls()}
       {/if}
     </div>
-    <div class="px-2">
+    <div class="px-2 md:hidden">
       <ProgressBar {isPanelAnimating} />
     </div>
   </div>
