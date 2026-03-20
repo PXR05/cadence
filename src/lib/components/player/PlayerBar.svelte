@@ -470,7 +470,7 @@
     onmousedown={handleMouseDown}
   >
     <div
-      class=" relative flex md:grid md:grid-cols-3 items-center max-md:justify-between py-2 min-h-14 md:min-h-18"
+      class=" relative flex md:grid md:grid-cols-3 items-center max-md:justify-between pt-2 md:pb-2 min-h-14 md:min-h-18"
     >
       <TrackCarousel
         onTrackClick={() => (isMobile ? panelState.open() : {})}
