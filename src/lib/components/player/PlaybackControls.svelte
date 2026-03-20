@@ -28,15 +28,10 @@
 
   const size = $derived(sizes[variant]);
 
-  const textColor = $derived(
-    `color-mix(in oklab, ${playerStore.trackColor} 30%, var(--foreground))`,
-  );
+  const textColor = $derived(playerStore.lightTrackColor);
 </script>
 
-<div
-  class="flex items-center gap-4
-  {variant === 'large' ? 'justify-center' : ''}"
->
+<div class="flex items-center gap-4">
   <Button
     variant="ghost"
     onclick={() => {

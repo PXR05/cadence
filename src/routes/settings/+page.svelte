@@ -154,9 +154,11 @@
 </script>
 
 <svelte:head>
-  <title>{playerStore.isPlaying && playerStore.currentTrack?.metadata?.title
+  <title
+    >{playerStore.isPlaying && playerStore.currentTrack?.metadata?.title
       ? playerStore.currentTrack.metadata?.title
-      : "Settings"} | Cadence</title>
+      : "Settings"} | Cadence</title
+  >
 </svelte:head>
 
 {#snippet toggleSwitch(label: string, checked: boolean, onclick: () => void)}
@@ -296,12 +298,7 @@
             {#each themeOptions as option}
               {@const Icon = option.icon}
               <Button
-                style="--primary: color-mix(
-                                    in oklab,
-                                    {playerStore.trackColor ||
-                  'var(--color-primary)'} 40%,
-                                    var(--foreground)
-                                );"
+                style="--primary: {playerStore.lightTrackColor};"
                 variant={mode.current === option.value ||
                 (mode.current === undefined && option.value === "system")
                   ? "default"
@@ -340,8 +337,10 @@
     <p
       class="w-fit text-xs text-muted-foreground bg-muted rounded-md px-2 py-1"
     >
-      {import.meta.env.COMMIT_HASH}
+      {import.meta.env.COMMIT_HASH} - {import.meta.env.BUILD_DATE}
     </p>
+
+    <div class="h-32"></div>
   </div>
 </div>
 

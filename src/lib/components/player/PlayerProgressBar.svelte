@@ -102,8 +102,6 @@
       updateSeek(e.touches[0].clientX);
     }
   }
-
-  const primaryColor = $derived(playerStore.trackColor ?? "var(--primary)");
 </script>
 
 <svelte:window
@@ -141,12 +139,7 @@
     >
       <div
         class="absolute inset-0 pointer-events-none rounded-full overflow-clip"
-        style="background-color:
-          color-mix(
-            in oklab,
-            {primaryColor} 20%,
-            transparent
-          );"
+        style="background-color: {playerStore.mutedLightTrackColor};"
       >
         <div
           style="
@@ -154,12 +147,7 @@
           transition: {isDragging || isPanelAnimating
             ? 'none'
             : 'transform 100ms linear'};
-          background-color:
-            color-mix(
-              in oklab,
-              {primaryColor} 40%,
-              var(--foreground)
-            );"
+          background-color: {playerStore.lightTrackColor};"
           class="w-full h-full rounded-full"
         ></div>
         <div

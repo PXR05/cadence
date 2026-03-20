@@ -24,5 +24,8 @@ export default defineConfig({
   plugins: [tailwindcss(), sveltekit()],
   define: {
     "import.meta.env.COMMIT_HASH": JSON.stringify(commitHash),
+    "import.meta.env.BUILD_DATE": JSON.stringify(
+      new Date().toLocaleString("en-DE"),
+    ),
   },
 });

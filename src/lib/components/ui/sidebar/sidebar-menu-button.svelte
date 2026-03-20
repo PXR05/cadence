@@ -80,22 +80,12 @@
 {#snippet Button({ props }: { props?: Record<string, unknown> })}
   {@const mergedProps = mergeProps(buttonProps, props)}
   {#if child}
-    <div
-      style="--light-primary: color-mix(
-                        in oklab,
-                        {playerStore.trackColor ?? 'var(--primary)'} 40%,
-                        var(--foreground)
-                    )"
-    >
+    <div style="--light-primary: {playerStore.lightTrackColor};">
       {@render child({ props: mergedProps })}
     </div>
   {:else}
     <button
-      style="--light-primary: color-mix(
-                        in oklab,
-                        {playerStore.trackColor ?? 'var(--primary)'} 40%,
-                        var(--foreground)
-                    )"
+      style="--light-primary: {playerStore.lightTrackColor};"
       bind:this={ref}
       {...mergedProps}
     >

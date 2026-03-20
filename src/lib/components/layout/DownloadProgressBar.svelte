@@ -1,14 +1,13 @@
 <script lang="ts">
   import { appearanceStore } from "$lib/stores/appearance.svelte";
+  import { playerStore } from "$lib/stores/player.svelte";
 
   const {
     percentage = 0,
     height = 6,
-    color = "var(--primary)",
   }: {
     percentage?: number;
     height?: number;
-    color?: string;
   } = $props();
 
   const clampedPercentage = $derived(Math.max(0, Math.min(100, percentage)));
@@ -20,12 +19,7 @@
 >
   <div
     class="absolute inset-0"
-    style="background-color:
-      color-mix(
-        in oklab,
-        {color} 20%,
-        transparent
-      );"
+    style="background-color: {playerStore.mutedLightTrackColor};"
   ></div>
   <div
     style="
@@ -33,12 +27,7 @@
       transition: {appearanceStore.disableAnimations
       ? 'none'
       : 'transform 150ms ease-out'};
-      background-color:
-        color-mix(
-          in oklab,
-          {color} 40%,
-          var(--foreground)
-        );"
+      background-color: {playerStore.lightTrackColor};"
     class="w-full h-full rounded-full"
   ></div>
 </div>

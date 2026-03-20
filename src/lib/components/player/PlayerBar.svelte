@@ -400,7 +400,7 @@
 
 {#snippet barControls()}
   <div class="hidden w-full md:flex flex-col place-self-center">
-    <PlaybackControls />
+    <PlaybackControls variant="compact" />
     <div class="max-md:hidden">
       <ProgressBar {isPanelAnimating} timeSide="side" showTime />
     </div>

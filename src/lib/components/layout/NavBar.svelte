@@ -51,12 +51,7 @@
           ? ''
           : 'transition-all duration-300 ease-vaul'}"
         style="
-        background-color:
-          color-mix(
-            in oklab,
-            {playerStore.trackColor ?? 'var(--primary)'} 40%,
-            var(--foreground)
-          );
+        background-color: {playerStore.lightTrackColor};
         {orientation === 'horizontal'
           ? `
             top: 0.375rem;
@@ -92,12 +87,12 @@
           <tab.icon
             absoluteStrokeWidth
             strokeWidth={2}
-            class="size-5 m-auto
-            {isUnderIndicator
-              ? 'text-primary-foreground'
+            class="size-5 m-auto"
+            style="color: {isUnderIndicator
+              ? 'var(--primary-foreground)'
               : active
-                ? 'text-[color-mix(in_oklab,var(--primary)_40%,var(--foreground))]'
-                : 'text-muted-foreground hover:text-accent-foreground'}"
+                ? playerStore.lightTrackColor
+                : 'var(--muted-foreground)'} !important;"
           />
         </div>
       </button>

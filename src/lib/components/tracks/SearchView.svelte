@@ -299,7 +299,7 @@
         onValueChange={handleProviderChange}
       >
         <SelectTrigger
-          class="px-3 absolute left-1 top-1 bottom-1 z-10 border-input"
+          class="px-3 absolute left-1 top-1 bottom-1 h-10! z-10 border-input rounded-r-[6px]"
           aria-label="Search provider"
         >
           {#if searchProvider === "local"}

@@ -41,13 +41,13 @@
       >
         <div
           class="absolute inset-y-3 left-1/2 -translate-x-1/2 w-1.5 rounded-lg overflow-clip pointer-events-none"
-          style="background-color: color-mix(in oklab, {playerStore.trackColor} 20%, transparent);"
+          style="background-color: {playerStore.mutedLightTrackColor};"
         >
           <div
             class="absolute bottom-0 w-full rounded-lg"
             style="
               height: {playerStore.volume * 100}%;
-              background-color: color-mix(in oklab, {playerStore.trackColor} 40%, var(--foreground));"
+              background-color: {playerStore.lightTrackColor};"
           ></div>
           <div
             class="absolute left-1/2 -translate-x-1/2 transition-opacity duration-150 opacity-80 group-hover/volume:opacity-100 group-focus-within/volume:opacity-100"

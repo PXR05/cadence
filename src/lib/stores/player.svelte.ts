@@ -136,6 +136,14 @@ class PlayerState {
     return this.persistedState.trackColor;
   }
 
+  get lightTrackColor() {
+    return `color-mix(in oklab, ${playerStore.trackColor} 40%, var(--foreground))`;
+  }
+
+  get mutedLightTrackColor() {
+    return `color-mix(in oklab, ${playerStore.trackColor} 20%, transparent)`;
+  }
+
   get trackQueue() {
     if (this.isShuffled && this.shuffledIndices) {
       if (!this.cachedShuffledQueue) {
@@ -883,15 +891,19 @@ class PlayerState {
 
   async loadTrackColor(track: AudioFile) {
     if (track.color) {
-      const color = new Color(track.color);
+      const color = new Color(track.color).to("oklch");
       document.body.style.setProperty(
         "--primary",
-        `oklch(${color.coords[0]} ${color.coords[1]} ${color.coords[2]})`,
+        `oklch(${color.coords[0]?.toFixed(3)} ${color.coords[1]?.toFixed(3)} ${color.coords[2]?.toFixed(3)})`,
       );
       document.body.style.setProperty(
         "--ring",
-        `oklch(${color.coords[0]} ${color.coords[1]} ${color.coords[2]})`,
+        `oklch(${color.coords[0]?.toFixed(3)} ${color.coords[1]?.toFixed(3)} ${color.coords[2]?.toFixed(3)})`,
       );
+
+      console.log(track.color);
+      console.log(color);
+      console.log(document.body.style.getPropertyValue("--primary"));
 
       this.persistedState.trackColor = track.color;
       return;

@@ -69,13 +69,13 @@
                 <div class="text-left flex-1 min-w-0">
                   <p
                     class="font-medium truncate"
-                    style="color: color-mix(in oklab, {playerStore.trackColor} 30%, var(--foreground));"
+                    style="color: {playerStore.lightTrackColor};"
                   >
                     {trackTitle}
                   </p>
                   <p
-                    class="text-sm truncate font-light"
-                    style="color: color-mix(in oklab, {playerStore.trackColor} 30%, var(--muted-foreground));"
+                    class="text-sm truncate opacity-70"
+                    style="color: {playerStore.lightTrackColor};"
                   >
                     {#each trackArtists as a, artistIndex}
                       <span

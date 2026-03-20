@@ -138,15 +138,6 @@
 
 {#snippet coverCarousel()}
   <div class="relative shrink-0 my-auto w-full z-20">
-    <!-- <img
-      loading="lazy"
-      src={playerStore.currentImageUrl}
-      alt={playerStore.currentTrack?.id ?? ""}
-      draggable="false"
-      onauxclick={() => false}
-      oncontextmenu={() => false}
-      class="h-[min(42.5dvh,90dvw)] scale-200 aspect-square object-cover absolute inset-0 m-auto pointer-events-none blur-3xl -z-1 saturate-75 brightness-150 dark:saturate-100 dark:brightness-100"
-    /> -->
     <Carousel.Root
       class="w-full z-20"
       opts={{ loop: true }}
@@ -191,7 +182,7 @@
       >
         <h2
           class="text-xl font-semibold whitespace-nowrap w-max mx-auto"
-          style="color: color-mix(in oklab, {playerStore.trackColor} 30%, var(--foreground));"
+          style="color: {playerStore.lightTrackColor};"
         >
           {title}
         </h2>
@@ -205,7 +196,7 @@
       >
         <p
           class="text-muted-foreground whitespace-nowrap w-max mx-auto"
-          style="color: color-mix(in oklab, {playerStore.trackColor} 30%, var(--muted-foreground));"
+          style="color: {playerStore.lightTrackColor};"
         >
           {#each artists as a, i}
             <span
@@ -224,8 +215,8 @@
       </div>
     </div>
 
-    <div class="flex flex-col gap-6">
-      <ProgressBar height={10} {isPanelAnimating} showTime />
+    <div class="flex flex-col gap-8">
+      <ProgressBar height={10} {isPanelAnimating} showTime timeSide="bottom" />
 
       <PlaybackControls variant="large" />
     </div>
