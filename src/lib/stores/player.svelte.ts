@@ -61,6 +61,7 @@ class PlayerState {
   >();
   private currentBlobUrl: string | null = null;
   private cachedShuffledQueue: AudioFile[] | null = null;
+  private mediaSessionHandlersInitialized = false;
 
   private persistedState = createNestedLocalStorageState<PersistedPlayerState>(
     "cadence.player_state",
@@ -285,6 +286,7 @@ class PlayerState {
 
   initialize(player: HTMLAudioElement) {
     this.playerRef = player;
+    this.initializeMediaSessionHandlers();
 
     this.audioEngine.initialize(
       player,
@@ -301,6 +303,7 @@ class PlayerState {
     }
 
     if (this.currentTrack) {
+      this.updateMediaSessionMetadata(this.currentTrack);
       this.updateMetadata(this.currentTrack);
     }
 
@@ -321,6 +324,8 @@ class PlayerState {
       this.isPlaying = false;
       this.playNext();
     });
+
+    this.setMediaSessionPlaybackState(this.isPlaying ? "playing" : "paused");
   }
 
   cleanup() {
@@ -546,6 +551,53 @@ class PlayerState {
     await this.audioEngine.setReverbPreset(preset);
   }
 
+  private isMediaSessionSupported() {
+    return typeof navigator !== "undefined" && "mediaSession" in navigator;
+  }
+
+  private setMediaSessionPlaybackState(state: MediaSessionPlaybackState) {
+    if (!this.isMediaSessionSupported()) return;
+
+    navigator.mediaSession.playbackState = state;
+  }
+
+  private updateMediaSessionMetadata(track: AudioFile) {
+    if (!this.isMediaSessionSupported()) return;
+
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: track.metadata?.title || track.filename || "Unknown Title",
+      artist: track.metadata?.artist || "Unknown Artist",
+      album: track.metadata?.album || track.metadata?.title || "Unknown Album",
+      artwork: [
+        {
+          src: getImageUrl(track.id),
+          type: "image/png",
+        },
+      ],
+    });
+  }
+
+  private initializeMediaSessionHandlers() {
+    if (
+      !this.isMediaSessionSupported() ||
+      this.mediaSessionHandlersInitialized
+    ) {
+      return;
+    }
+
+    navigator.mediaSession.setActionHandler("play", () => this.play());
+    navigator.mediaSession.setActionHandler("pause", () => this.pause());
+    navigator.mediaSession.setActionHandler("seekto", (e) =>
+      this.seek(e.seekTime ?? 0),
+    );
+    navigator.mediaSession.setActionHandler("previoustrack", () =>
+      this.playPrevious(),
+    );
+    navigator.mediaSession.setActionHandler("nexttrack", () => this.playNext());
+
+    this.mediaSessionHandlersInitialized = true;
+  }
+
   initializeCarousel(id: string, api: CarouselAPI) {
     const existing = this.carousels.get(id);
     if (existing) {
@@ -571,6 +623,9 @@ class PlayerState {
   }
 
   async updateMetadata(track: AudioFile) {
+    this.initializeMediaSessionHandlers();
+    this.updateMediaSessionMetadata(track);
+
     if (!this.playerRef) return;
 
     const sourceTrack = await resolvePlaybackSource(
@@ -591,34 +646,9 @@ class PlayerState {
       this.currentBlobUrl = audioUrl;
     }
 
-    if ("mediaSession" in navigator) {
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: track.metadata?.title || track.filename || "Unknown Title",
-        artist: track.metadata?.artist || "Unknown Artist",
-        album:
-          track.metadata?.album || track.metadata?.title || "Unknown Album",
-        artwork: [
-          {
-            src: getImageUrl(track.id),
-            type: "image/png",
-          },
-        ],
-      });
-
-      navigator.mediaSession.setActionHandler("play", () => this.play());
-      navigator.mediaSession.setActionHandler("pause", () => this.pause());
-      navigator.mediaSession.setActionHandler("seekto", (e) =>
-        this.seek(e.seekTime ?? 0),
-      );
-      navigator.mediaSession.setActionHandler("previoustrack", () =>
-        this.playPrevious(),
-      );
-      navigator.mediaSession.setActionHandler("nexttrack", () =>
-        this.playNext(),
-      );
-    }
-
-    await this.loadTrackColor(track);
+    this.loadTrackColor(track).catch((error) => {
+      console.error("Failed to load track color:", error);
+    });
   }
 
   async play(opts?: { track?: AudioFile; index?: number }) {
@@ -649,18 +679,23 @@ class PlayerState {
         this.queueIndex = newIndex;
         this.currentTime = 0;
         this.syncCarouselToTrack(newIndex);
+        this.initializeMediaSessionHandlers();
+        this.updateMediaSessionMetadata(newTrack);
+        this.setMediaSessionPlaybackState("playing");
         await this.updateMetadata(newTrack);
 
         await historyStore.addToHistory(newTrack.id, this.currentPlaylist?.id);
       }
 
       this.isPlaying = true;
+      this.setMediaSessionPlaybackState("playing");
 
       try {
         await this.playerRef.play();
       } catch (error) {
         console.error("Failed to play audio:", error);
         this.isPlaying = false;
+        this.setMediaSessionPlaybackState("paused");
       }
     }
   }
@@ -669,6 +704,7 @@ class PlayerState {
     if (this.playerRef && this.isPlaying) {
       this.isPlaying = false;
       this.playerRef.pause();
+      this.setMediaSessionPlaybackState("paused");
     }
   }
 

@@ -134,7 +134,7 @@
         ? 'bg-muted'
         : 'bg-muted/80 dark:bg-muted/50 backdrop-blur-md'}"
     >
-      <div class="flex flex-col">
+      <div class="flex flex-col truncate">
         <div class="flex items-center gap-1.5">
           <p class="text-sm font-medium truncate leading-tight flex-1">
             {displayName}
