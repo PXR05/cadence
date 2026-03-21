@@ -156,7 +156,7 @@
                 crossorigin="use-credentials"
                 src={getImageUrl(queueTrack.id)}
                 alt={queueTrack.id}
-                class="size-[min(40dvh,90dvw)] object-cover mx-auto rounded-2xl text-transparent"
+                class="size-[min(calc(100dvh-400px),calc(100dvw-3rem))] object-cover mx-auto rounded-2xl text-transparent"
               />
             {:else}
               <div
@@ -232,7 +232,7 @@
     background: linear-gradient(
       to top,
       color-mix(in oklab, {playerStore.trackColor} 10%, var(--background)) 0%,
-      var(--background) 50%,
+      color-mix(in oklab, {playerStore.trackColor} 5%, var(--background)) 50%,
       color-mix(in oklab, {playerStore.trackColor} 10%, var(--background)) 100%
     );
     "

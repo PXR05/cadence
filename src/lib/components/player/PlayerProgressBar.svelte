@@ -114,7 +114,10 @@
 
 <div class="flex gap-2 items-center">
   {#if showTime && timeSide === "side"}
-    <span class="text-xs text-muted-foreground tabular-nums">
+    <span
+      class="text-xs tabular-nums opacity-75"
+      style="color: {playerStore.lightTrackColor};"
+    >
       {formatTime(displayTime)}
     </span>
   {/if}
@@ -139,7 +142,7 @@
     >
       <div
         class="absolute inset-0 pointer-events-none rounded-full overflow-clip"
-        style="background-color: {playerStore.mutedLightTrackColor};"
+        style="background-color: {playerStore.darkTrackColor};"
       >
         <div
           style="
@@ -166,8 +169,9 @@
 
       {#if showTime && timeSide === "bottom"}
         <div
-          style="padding-top: {height * 3.5}px;"
-          class="w-full flex justify-between gap-2 text-muted-foreground select-none pointer-events-none tabular-nums"
+          style="padding-top: {height *
+            3.5}px; color: {playerStore.lightTrackColor};"
+          class="w-full flex justify-between gap-2 select-none pointer-events-none tabular-nums opacity-75"
         >
           <span draggable={false}>
             {formatTime(displayTime)}
@@ -190,7 +194,10 @@
     </div>
   </div>
   {#if showTime && timeSide === "side"}
-    <span class="text-xs text-muted-foreground tabular-nums">
+    <span
+      class="text-xs tabular-nums opacity-75"
+      style="color: {playerStore.lightTrackColor};"
+    >
       {formatTime(playerStore.duration)}
     </span>
   {/if}

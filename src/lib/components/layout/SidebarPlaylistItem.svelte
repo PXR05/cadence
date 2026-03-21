@@ -117,7 +117,7 @@
           {/if}
         </div>
 
-        <div class="flex flex-col items-start min-w-0 truncate">
+        <div class="flex flex-col items-start min-w-0">
           <span class="flex-1 truncate text-base">{playlist.name}</span>
           <span class="flex-1 truncate text-xs font-normal opacity-50"
             >{playlist.itemCount} songs</span

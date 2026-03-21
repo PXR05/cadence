@@ -41,7 +41,7 @@
       >
         <div
           class="absolute inset-y-3 left-1/2 -translate-x-1/2 w-1.5 rounded-lg overflow-clip pointer-events-none"
-          style="background-color: {playerStore.mutedLightTrackColor};"
+          style="background-color: {playerStore.darkTrackColor};"
         >
           <div
             class="absolute bottom-0 w-full rounded-lg"

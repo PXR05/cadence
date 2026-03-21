@@ -19,7 +19,7 @@
 >
   <div
     class="absolute inset-0"
-    style="background-color: {playerStore.mutedLightTrackColor};"
+    style="background-color: {playerStore.darkTrackColor};"
   ></div>
   <div
     style="

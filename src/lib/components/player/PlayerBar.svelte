@@ -53,7 +53,7 @@
     const height = innerHeight.current || window.innerHeight;
     if (height === 0) return 0;
     if (isTopRoute && isMobile) return height - 62 - 80; // 3.875rem = 62px
-    return height - (isMobile ? 6 : 9) - 80; // 0.375rem = 6px
+    return height - (isMobile ? 6 : 8) - 80; // 0.375rem = 6px
   });
 
   const isPanelAnimating = $derived(

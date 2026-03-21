@@ -37,7 +37,7 @@
   class:pointer-events-none={isDisabled}
 >
   <Carousel.Root
-    class="w-full"
+    class="relative w-full"
     opts={{ loop: true }}
     setApi={(emblaApi) => setApi(emblaApi ?? null)}
   >
@@ -57,7 +57,7 @@
           >
             {#if shouldLoadItem(i)}
               <div
-                class="flex items-center flex-1 min-w-0 gap-2 md:gap-3 text-left w-full pl-2"
+                class="flex items-center flex-1 min-w-0 gap-2 md:gap-3.5 text-left w-full pl-2"
               >
                 <img
                   loading="lazy"
@@ -66,7 +66,7 @@
                   alt={track.id}
                   class="rounded-md size-12 md:size-16 shrink-0 object-cover text-transparent"
                 />
-                <div class="text-left flex-1 min-w-0">
+                <div class="text-left flex-1 min-w-0 md:self-end md:pb-1">
                   <p
                     class="font-medium truncate"
                     style="color: {playerStore.lightTrackColor};"
@@ -81,7 +81,7 @@
                       <span
                         role="link"
                         tabindex="0"
-                        class="hover:underline cursor-pointer"
+                        class="hover:underline cursor-pointer max-md:pointer-events-none"
                         onclick={(e) => {
                           e.stopPropagation();
                           goto(`/playlist?id=artist_${a}`);
@@ -98,6 +98,10 @@
           </Carousel.Item>
         {/each}
       </Carousel.Content>
+      <span
+        class="max-md:hidden absolute bg-[linear-gradient(to_right,transparent,var(--muted))] select-none right-0 top-0 bottom-0 h-16 w-8 z-50"
+      >
+      </span>
     {/if}
   </Carousel.Root>
 </div>

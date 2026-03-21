@@ -111,9 +111,10 @@ class TracksStore {
             sortBy: "uploadedAt",
             sortOrder: "desc",
           });
-
+          
           allTracks.push(...result.tracks);
           hasMore = result.hasMore;
+          this.isLoadingMore = result.hasMore;
           currentPage++;
         } catch (err) {
           console.error("Error fetching tracks page:", err);
