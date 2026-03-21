@@ -134,7 +134,7 @@
   let gestureStartY = $state(0);
   let gestureDirection: "none" | "horizontal" | "vertical" = $state("none");
   let isOnCarousel = $state(false);
-  const DIRECTION_THRESHOLD = 10;
+  const DIRECTION_THRESHOLD = 6;
 
   function isCarouselElement(target: EventTarget | null): boolean {
     if (!(target instanceof Element)) return false;
@@ -241,15 +241,17 @@
   ) {
     handleGestureMove(clientX, clientY);
 
+    if (event && "touches" in event && event.cancelable) {
+      if (isDragging || (isOnCarousel && gestureDirection !== "horizontal")) {
+        event.preventDefault();
+      }
+    }
+
     if (!isDragging) return;
 
     const deltaY = clientY - startY;
     const startPosition = panelState.isOpen ? 0 : closedPosition;
     const newTranslate = startPosition + deltaY;
-
-    if (event && "touches" in event && event.cancelable) {
-      event.preventDefault();
-    }
 
     const clampedTranslate = Math.max(
       0,
