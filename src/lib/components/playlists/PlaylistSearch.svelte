@@ -17,7 +17,7 @@
   class="flex items-center relative rounded-xl overflow-clip border border-input/15
   {appearanceStore.disableBlur
     ? 'bg-muted'
-    : 'bg-muted-foreground/10 dark:bg-muted/50 backdrop-blur-md'}"
+    : 'bg-muted-foreground/10 dark:bg-muted/70 backdrop-blur-md'}"
 >
   <SearchIcon
     size={16}

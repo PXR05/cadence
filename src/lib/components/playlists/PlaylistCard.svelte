@@ -132,7 +132,7 @@
       class="flex items-center justify-between py-1 px-2 border border-input/15 rounded-md
       {appearanceStore.disableBlur
         ? 'bg-muted'
-        : 'bg-muted/80 dark:bg-muted/50 backdrop-blur-md'}"
+        : 'bg-muted/80 dark:bg-muted/70 backdrop-blur-md'}"
     >
       <div class="flex flex-col truncate">
         <div class="flex items-center gap-1.5">

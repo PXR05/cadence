@@ -22,7 +22,12 @@ export const navItems: NavItem[] = [
     path: "/search",
     label: "Search",
     icon: SearchIcon,
-    action: () => console.log("Search clicked"),
+    action: () => {
+      const input = document.querySelector("input[type='search']");
+      if (input && input instanceof HTMLInputElement) {
+        input.focus();
+      }
+    },
   },
   { path: "/library", label: "Library", icon: ListMusicIcon },
   { path: "/settings", label: "Settings", icon: SettingsIcon },

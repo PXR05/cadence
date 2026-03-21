@@ -8,11 +8,13 @@
     showTime,
     timeSide,
     isPanelAnimating = false,
+    monochrome = false,
   }: {
     height?: number;
     showTime?: boolean;
     timeSide?: "side" | "bottom";
     isPanelAnimating?: boolean;
+    monochrome?: boolean;
   } = $props();
 
   let progressBar: HTMLDivElement | null = $state(null);
@@ -116,7 +118,9 @@
   {#if showTime && timeSide === "side"}
     <span
       class="text-xs tabular-nums opacity-75"
-      style="color: {playerStore.lightTrackColor};"
+      style="color: {monochrome
+        ? 'var(--muted-foreground)'
+        : playerStore.lightTrackColor};"
     >
       {formatTime(displayTime)}
     </span>
@@ -142,7 +146,9 @@
     >
       <div
         class="absolute inset-0 pointer-events-none rounded-full overflow-clip"
-        style="background-color: {playerStore.darkTrackColor};"
+        style="background-color: {monochrome
+          ? 'color-mix(in oklab, var(--foreground) 20%, transparent)'
+          : playerStore.darkTrackColor};"
       >
         <div
           style="
@@ -150,27 +156,34 @@
           transition: {isDragging || isPanelAnimating
             ? 'none'
             : 'transform 100ms linear'};
-          background-color: {playerStore.lightTrackColor};"
+          background-color: {monochrome
+            ? 'var(--foreground)'
+            : playerStore.lightTrackColor};"
           class="w-full h-full rounded-full"
         ></div>
-        <div
-          style="transform: translate3d(calc({currentProgress}% - {height}px), 0, 0);
+      </div>
+      
+      <div
+        style="transform: translate3d(calc({currentProgress}% - {height}px), 0, 0);
           transition: {isDragging || isPanelAnimating
-            ? 'none'
-            : 'transform 100ms linear'};"
-          class="w-full h-full absolute inset-0"
-        >
-          <div
-            style="width: {height * 2}px; height: {height}px;"
-            class="rounded-full dark:bg-white bg-black group-hover:opacity-100 opacity-0"
-          ></div>
-        </div>
+          ? 'none'
+          : 'transform 100ms linear'};"
+        class="w-full h-full absolute inset-0"
+      >
+        <div
+          style="width: {height}px; 
+            height: {height * (timeSide === 'bottom' ? 3 : 2)}px; 
+            margin-top: -{height / (timeSide === 'bottom' ? 1 : 2)}px;"
+          class="rounded-full bg-foreground"
+        ></div>
       </div>
 
       {#if showTime && timeSide === "bottom"}
         <div
-          style="padding-top: {height *
-            3.5}px; color: {playerStore.lightTrackColor};"
+          style="padding-top: {height * 8}px; 
+            color: {monochrome
+            ? 'var(--muted-foreground)'
+            : playerStore.lightTrackColor};"
           class="w-full flex justify-between gap-2 select-none pointer-events-none tabular-nums opacity-75"
         >
           <span draggable={false}>
@@ -196,7 +209,9 @@
   {#if showTime && timeSide === "side"}
     <span
       class="text-xs tabular-nums opacity-75"
-      style="color: {playerStore.lightTrackColor};"
+      style="color: {monochrome
+        ? 'var(--muted-foreground)'
+        : playerStore.lightTrackColor};"
     >
       {formatTime(playerStore.duration)}
     </span>

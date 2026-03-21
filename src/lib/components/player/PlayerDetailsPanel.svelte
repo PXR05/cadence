@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
   import { downloadStore } from "$lib/stores/download.svelte";
   import { getImageUrl } from "$lib/constants";
   import { playerStore } from "$lib/stores/player.svelte";
@@ -13,10 +12,12 @@
   } from "@lucide/svelte";
   import { onMount } from "svelte";
   import { PlaybackControls, ProgressBar } from ".";
+  import TrackInfo from "./TrackInfo.svelte";
   import { ManagePlaylistsDialog } from "../playlists";
   import { Button } from "../ui/button";
   import * as Carousel from "../ui/carousel";
   import type { CarouselAPI } from "../ui/carousel/context";
+  import { appearanceStore } from "$lib/stores/appearance.svelte";
 
   interface Props {
     onOpenChange: (open: boolean) => void;
@@ -171,54 +172,19 @@
 {/snippet}
 
 {#snippet controls()}
-  <div class="flex flex-col gap-8 px-6 my-auto z-20">
-    <div class="text-center mb-2 grid gap-1">
-      <div
-        class="hide-scrollbar overflow-x-auto px-1"
-        role="group"
-        aria-label="Scrollable track title"
-        ontouchstart={(e) => e.stopPropagation()}
-        ontouchmove={(e) => e.stopPropagation()}
-      >
-        <h2
-          class="text-xl font-semibold whitespace-nowrap w-max mx-auto"
-          style="color: {playerStore.lightTrackColor};"
-        >
-          {title}
-        </h2>
-      </div>
-      <div
-        class="hide-scrollbar overflow-x-auto px-1"
-        role="group"
-        aria-label="Scrollable artists"
-        ontouchstart={(e) => e.stopPropagation()}
-        ontouchmove={(e) => e.stopPropagation()}
-      >
-        <p
-          class="text-muted-foreground whitespace-nowrap w-max mx-auto"
-          style="color: {playerStore.lightTrackColor};"
-        >
-          {#each artists as a, i}
-            <span
-              role="link"
-              tabindex="0"
-              class="hover:underline cursor-pointer"
-              onclick={(e) => {
-                e.stopPropagation();
-                goto(`/playlist?id=artist_${a}`);
-              }}
-              onkeydown={(e) =>
-                e.key === "Enter" && goto(`/playlist?id=artist_${a}`)}>{a}</span
-            >{#if i < artists.length - 1},&nbsp;{/if}
-          {/each}
-        </p>
-      </div>
-    </div>
+  <div class="flex flex-col gap-8 px-6 mt-auto mb-2 z-20">
+    <TrackInfo trackId={track?.id ?? ""} {title} {artists} />
 
-    <div class="flex flex-col gap-8">
-      <ProgressBar height={10} {isPanelAnimating} showTime timeSide="bottom" />
+    <div class="flex flex-col gap-12">
+      <ProgressBar
+        monochrome
+        height={6}
+        {isPanelAnimating}
+        showTime
+        timeSide="bottom"
+      />
 
-      <PlaybackControls variant="large" />
+      <PlaybackControls variant="large" monochrome />
     </div>
   </div>
 {/snippet}
@@ -227,19 +193,32 @@
   bind:this={panelElement}
   role="dialog"
   tabindex="0"
-  class="hide-scrollbar mt-0 relative h-dvh w-full"
-  style="
-    background: linear-gradient(
-      to top,
-      color-mix(in oklab, {playerStore.trackColor} 10%, var(--background)) 0%,
-      color-mix(in oklab, {playerStore.trackColor} 5%, var(--background)) 50%,
-      color-mix(in oklab, {playerStore.trackColor} 10%, var(--background)) 100%
-    );
-    "
+  class="hide-scrollbar mt-0 relative h-dvh w-full bg-background"
   ontouchend={(e) => onTouchEnd?.(e)}
   onmousedown={(e) => onMouseDown?.(e)}
 >
-  <div class="flex flex-col h-dvh">
+  {#if playerStore.currentTrack && !appearanceStore.disableBlur}
+    <img
+      loading="lazy"
+      crossorigin="use-credentials"
+      src={getImageUrl(playerStore.currentTrack.id)}
+      alt={playerStore.currentTrack.id}
+      class="absolute inset-0 size-full object-cover text-transparent brightness-50"
+    />
+  {/if}
+
+  <div
+    class="flex flex-col h-dvh
+    {appearanceStore.disableBlur ? '' : 'backdrop-blur-2xl'}"
+    style="
+    background: linear-gradient(
+      to top,
+      color-mix(in oklab, var(--background) 90%, transparent) 0%,
+      color-mix(in oklab, var(--background) 10%, transparent) 50%,
+      color-mix(in oklab, var(--background) 90%, transparent) 100%
+    );
+    "
+  >
     <div class="flex justify-between items-center p-6">
       <Button
         size="icon"
@@ -250,6 +229,7 @@
       >
         <ChevronDown class="size-6" />
       </Button>
+
       <Button
         size="icon"
         variant="ghost"

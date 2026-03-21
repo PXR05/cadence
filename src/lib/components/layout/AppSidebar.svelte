@@ -127,7 +127,7 @@
   <Sidebar.Content class="relative flex flex-col gap-0">
     {@render navigation()}
 
-    <div class="flex-1 min-h-0">
+    <div class="flex-1 min-h-0 md:mb-22">
       {@render list()}
     </div>
   </Sidebar.Content>

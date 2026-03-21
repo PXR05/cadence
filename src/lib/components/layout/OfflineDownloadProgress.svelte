@@ -8,7 +8,7 @@
 
   const progress = $derived(downloadStore.progress);
   const percentage = $derived(
-    progress ? Math.round((progress.current / progress.total) * 100) : 0
+    progress ? Math.round((progress.current / progress.total) * 100) : 0,
   );
 
   let showCancelDialog = $state(false);
@@ -28,7 +28,7 @@
     class="border rounded-xl overflow-clip border-input/15 mx-1.5
     {appearanceStore.disableBlur
       ? 'bg-muted'
-      : 'bg-muted-foreground/10 dark:bg-muted/50 backdrop-blur-md'}"
+      : 'bg-muted-foreground/10 dark:bg-muted/70 backdrop-blur-md'}"
   >
     <div class="flex items-center justify-between p-3 gap-2">
       <div class="flex-1 min-w-0">

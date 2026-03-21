@@ -41,20 +41,21 @@
       >
         <div
           class="absolute inset-y-3 left-1/2 -translate-x-1/2 w-1.5 rounded-lg overflow-clip pointer-events-none"
-          style="background-color: {playerStore.darkTrackColor};"
+          style="background-color: color-mix(in oklab, var(--foreground) 20%, transparent);"
         >
           <div
             class="absolute bottom-0 w-full rounded-lg"
             style="
               height: {playerStore.volume * 100}%;
-              background-color: {playerStore.lightTrackColor};"
+              background-color: var(--foreground);"
           ></div>
-          <div
-            class="absolute left-1/2 -translate-x-1/2 transition-opacity duration-150 opacity-80 group-hover/volume:opacity-100 group-focus-within/volume:opacity-100"
-            style="bottom: calc({playerStore.volume * 100}% - 3px);"
-          >
-            <div class="rounded-full dark:bg-white bg-black w-1.5 h-3"></div>
-          </div>
+        </div>
+
+        <div
+          class="absolute left-1/2 -translate-x-1/2 transition-opacity duration-150 opacity-80 group-hover/volume:opacity-100 group-focus-within/volume:opacity-100"
+          style="bottom: calc({playerStore.volume} * (100% - 27px) + 12px);"
+        >
+          <div class="rounded-full bg-foreground w-3 h-1.5"></div>
         </div>
 
         <input

@@ -17,9 +17,10 @@
 
   interface Props {
     variant?: "compact" | "large";
+    monochrome?: boolean;
   }
 
-  let { variant = "compact" }: Props = $props();
+  let { variant = "compact", monochrome = false }: Props = $props();
 
   const sizes = {
     compact: { button: 8, primary: 10, icon: 4, subIcon: 4, primaryIcon: 6 },
@@ -28,7 +29,9 @@
 
   const size = $derived(sizes[variant]);
 
-  const textColor = $derived(playerStore.lightTrackColor);
+  const textColor = $derived(
+    monochrome ? "var(--foreground)" : playerStore.lightTrackColor,
+  );
 </script>
 
 <div class="flex items-center gap-4">
@@ -38,8 +41,9 @@
       trigger([{ duration: 8 }]);
       playerStore.isShuffled = !playerStore.isShuffled;
     }}
-    class="size-{size.button} grid place-items-center ml-auto
-    {playerStore.isShuffled ? '' : 'opacity-50'}"
+    class="size-{size.button} max-md:rounded-lg grid place-items-center
+    {playerStore.isShuffled ? 'hover:bg-accent/50 bg-accent' : 'opacity-50'}
+    {variant === 'large' ? 'mr-auto' : 'ml-auto'}"
     style="color: {textColor};"
     aria-label="Shuffle tracks"
   >
@@ -56,7 +60,7 @@
       trigger([{ duration: 10 }]);
       playerStore.playPrevious();
     }}
-    class="size-{size.button} grid place-items-center"
+    class="size-{size.button} max-md:rounded-lg grid place-items-center"
     style="color: {textColor};"
     aria-label="Previous track"
   >
@@ -74,7 +78,7 @@
       trigger([{ duration: 10 }]);
       playerStore.togglePlayPause();
     }}
-    class="size-{size.primary} grid place-items-center"
+    class="size-{size.primary} max-md:rounded-xl grid place-items-center"
     style="color: {textColor};"
     aria-label={playerStore.isPlaying ? "Pause" : "Play"}
   >
@@ -101,7 +105,7 @@
       trigger([{ duration: 10 }]);
       playerStore.playNext();
     }}
-    class="size-{size.button} grid place-items-center"
+    class="size-{size.button} max-md:rounded-lg grid place-items-center"
     style="color: {textColor};"
     aria-label="Next track"
   >
@@ -119,8 +123,9 @@
       trigger([{ duration: 8 }]);
       playerStore.isRepeated = !playerStore.isRepeated;
     }}
-    class="size-{size.button} grid place-items-center mr-auto
-    {playerStore.isRepeated ? '' : 'opacity-50'}"
+    class="size-{size.button} max-md:rounded-lg grid place-items-center
+    {playerStore.isRepeated ? 'hover:bg-accent/50 bg-accent' : 'opacity-50'}
+    {variant === 'large' ? 'ml-auto' : 'mr-auto'}"
     style="color: {textColor};"
     aria-label="Repeat track"
   >

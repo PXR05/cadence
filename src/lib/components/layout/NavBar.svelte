@@ -2,14 +2,9 @@
   import { page } from "$app/state";
   import { goto } from "$app/navigation";
   import { flip } from "svelte/animate";
-  import { playerStore } from "$lib/stores/player.svelte";
   import { isActive, navItems } from "./navItems";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
-  import { createWebHaptics } from "web-haptics/svelte";
   import { onDestroy } from "svelte";
-
-  const { trigger, destroy } = createWebHaptics();
-  onDestroy(destroy);
 
   const {
     orientation = "horizontal",
@@ -26,9 +21,10 @@
   const activeTabIndex = $derived(tabs.findIndex((tab) => isActive(tab.path)));
 
   function handleTabClick(e: MouseEvent, tabIndex: number) {
-    trigger([{ duration: 5 }]);
-
-    if (tabIndex === activeTabIndex) return;
+    if (tabIndex === activeTabIndex) {
+      tabs[tabIndex].action?.();
+      return;
+    }
 
     e.preventDefault();
     goto(tabs[tabIndex].path);
@@ -41,7 +37,7 @@
       {orientation === 'horizontal' ? 'flex-row w-full' : 'flex-col h-full'}
       {appearanceStore.disableBlur
       ? 'bg-muted'
-      : 'bg-muted-foreground/10 dark:bg-muted/50 backdrop-blur-md'}
+      : 'bg-muted-foreground/10 dark:bg-muted/70 backdrop-blur-md'}
       "
   >
     {#if activeTabIndex >= 0}
@@ -51,7 +47,7 @@
           ? ''
           : 'transition-all duration-300 ease-vaul'}"
         style="
-        background-color: {playerStore.lightTrackColor};
+        background-color: color-mix(in oklab, var(--muted-foreground) 15%, transparent);
         {orientation === 'horizontal'
           ? `
             top: 0.375rem;
@@ -72,7 +68,6 @@
 
     {#each tabs as tab, i (tab.path)}
       {@const active = isActive(tab.path)}
-      {@const isUnderIndicator = activeTabIndex === i}
       <button
         draggable="false"
         animate:flip={{ duration: appearanceStore.disableAnimations ? 0 : 200 }}
@@ -88,11 +83,9 @@
             absoluteStrokeWidth
             strokeWidth={2}
             class="size-5 m-auto"
-            style="color: {isUnderIndicator
-              ? 'var(--primary-foreground)'
-              : active
-                ? playerStore.lightTrackColor
-                : 'var(--muted-foreground)'} !important;"
+            style="color: {active
+              ? 'var(--foreground)'
+              : 'var(--muted-foreground)'} !important;"
           />
         </div>
       </button>

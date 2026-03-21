@@ -9,6 +9,12 @@
   --font-serif: "Lora", serif;
   --font-sans: "Satoshi", sans-serif;
 
+  --font-weight-thin: 400;
+  --font-weight-normal: 500;
+  --font-weight-medium: 600;
+  --font-weight-semibold: 700;
+  --font-weight-bold: 800;
+
   --radius: 0.75rem;
   --tracking-normal: 0rem;
   --spacing: 0.25rem;
@@ -192,6 +198,7 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    font-weight: var(--font-weight-normal);
   }
 
   body {

@@ -21,7 +21,6 @@
     Volume2Icon,
     YoutubeIcon,
   } from "@lucide/svelte";
-  import { appearanceStore } from "$lib/stores/appearance.svelte";
 
   interface Props {
     playlist: Playlist;

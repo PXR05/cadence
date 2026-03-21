@@ -42,6 +42,7 @@ export function useMenuDialogState(options: MenuDialogOptions) {
 
     skipNextSync = true;
     isOpen = true;
+    onOpen?.(id);
 
     const url = new URL(page.url);
     url.searchParams.set(paramName, id);

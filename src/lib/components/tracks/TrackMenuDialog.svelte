@@ -18,12 +18,14 @@
     CloudOffIcon,
     Trash2Icon,
     ListXIcon,
+    InfoIcon,
   } from "@lucide/svelte";
   import { toast } from "svelte-sonner";
   import { page } from "$app/state";
   import { getPlaylistById, removeItemFromPlaylist } from "$lib/api/playlist";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
-  import { invalidateAll } from "$app/navigation";
+  import { invalidateAll, goto } from "$app/navigation";
+  import { trackInfoDialogStore } from "$lib/stores/trackInfoDialog.svelte";
 
   const managePlaylistDialog = useDialogState("manage-playlists");
   const deleteTrackDialog = useDialogState("delete-track");
@@ -118,6 +120,22 @@
     managePlaylistDialog.open();
   }
 
+  function handleOpenTrackInfo() {
+    if (!track) return;
+
+    trackInfoDialogStore.setTrack(track);
+
+    const url = new URL(page.url);
+    url.searchParams.delete("track-menu");
+    url.searchParams.set("track-info", track.id);
+
+    goto(url.toString(), {
+      replaceState: false,
+      noScroll: true,
+      keepFocus: true,
+    });
+  }
+
   async function handleRemoveFromPlaylist() {
     if (!track || !playlistId) return;
 
@@ -199,6 +217,15 @@
   >
     <ListMusicIcon class="size-5" />
     Add to Playlist
+  </Button>
+
+  <Button
+    variant="ghost"
+    class="justify-start gap-3 h-12"
+    onclick={handleOpenTrackInfo}
+  >
+    <InfoIcon class="size-5" />
+    Track Info
   </Button>
 
   {#if playlistId}

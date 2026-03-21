@@ -3,7 +3,7 @@
   import { MediaQuery } from "svelte/reactivity";
   import * as Dialog from "$lib/components/ui/dialog";
   import * as Drawer from "$lib/components/ui/drawer";
-  import { Button, buttonVariants } from "$lib/components/ui/button";
+  import { buttonVariants } from "$lib/components/ui/button";
   import { XIcon } from "@lucide/svelte";
 
   interface Props {
@@ -79,11 +79,6 @@
         {@render header()}
       </Drawer.Header>
       {@render menu()}
-      <Drawer.Footer class="pt-2">
-        <Drawer.Close>
-          <Button variant="outline" class="w-full">Cancel</Button>
-        </Drawer.Close>
-      </Drawer.Footer>
     </Drawer.Content>
   </Drawer.Root>
 {/if}

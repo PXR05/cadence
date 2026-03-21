@@ -59,8 +59,25 @@ class TracksStore {
     return this._sourcesByIsrc.get(track.isrc) ?? [track];
   }
 
+  private deduplicateArtists(artists: string): string {
+    const artistList = (artists ?? "Unknown").split(
+      artists?.includes(",") ? ", " : "、",
+    );
+    const uniqueArtists = Array.from(new Set(artistList));
+    return uniqueArtists.join(", ");
+  }
+
   private applyDeduplication(rawTracks: AudioFile[]): AudioFile[] {
-    const { deduplicated, sourcesByIsrc } = deduplicateByIsrc(rawTracks);
+    const fixedRaw = rawTracks.map((track) => ({
+      ...track,
+      metadata: track.metadata
+        ? {
+            ...track.metadata,
+            artist: this.deduplicateArtists(track.metadata.artist ?? "Unknown"),
+          }
+        : undefined,
+    }));
+    const { deduplicated, sourcesByIsrc } = deduplicateByIsrc(fixedRaw);
     this._sourcesByIsrc = sourcesByIsrc;
     return deduplicated;
   }
@@ -111,7 +128,7 @@ class TracksStore {
             sortBy: "uploadedAt",
             sortOrder: "desc",
           });
-          
+
           allTracks.push(...result.tracks);
           hasMore = result.hasMore;
           this.isLoadingMore = result.hasMore;

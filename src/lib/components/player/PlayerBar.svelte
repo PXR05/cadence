@@ -400,9 +400,9 @@
 
 {#snippet barControls()}
   <div class="hidden w-full md:flex flex-col place-self-center">
-    <PlaybackControls variant="compact" />
+    <PlaybackControls variant="compact" monochrome />
     <div class="max-md:hidden">
-      <ProgressBar {isPanelAnimating} timeSide="side" showTime />
+      <ProgressBar {isPanelAnimating} timeSide="side" showTime monochrome />
     </div>
   </div>
 
@@ -462,8 +462,8 @@
     bind:this={barElement}
     class="max-md:mx-1.5 md:p-1 max-md:rounded-xl max-md:border border-t max-md:border-input/15
         {appearanceStore.disableBlur
-      ? 'max-md:bg-muted'
-      : 'bg-muted max-md:bg-muted-foreground/10 max-md:dark:bg-muted/50 max-md:backdrop-blur-md'}"
+      ? 'bg-muted'
+      : 'bg-muted max-md:bg-muted-foreground/10 max-md:dark:bg-muted/70 max-md:backdrop-blur-md'}"
     role="button"
     tabindex="0"
     ontouchend={handleTouchEnd}
@@ -483,7 +483,7 @@
       {/if}
     </div>
     <div class="px-2 md:hidden">
-      <ProgressBar {isPanelAnimating} />
+      <ProgressBar {isPanelAnimating} monochrome />
     </div>
   </div>
 {/snippet}

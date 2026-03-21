@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
   import { getImageUrl } from "$lib/constants";
   import { playerStore } from "$lib/stores/player.svelte";
   import { downloadStore } from "$lib/stores/download.svelte";
@@ -8,6 +7,7 @@
   import type { CarouselAPI } from "$lib/components/ui/carousel/context";
   import { shouldLoadItem } from "$lib/utils/queue";
   import type { AudioFile } from "$lib/schemas";
+  import TrackInfo from "./TrackInfo.svelte";
 
   interface Props {
     onTrackClick?: () => void;
@@ -66,42 +66,18 @@
                   alt={track.id}
                   class="rounded-md size-12 md:size-16 shrink-0 object-cover text-transparent"
                 />
-                <div class="text-left flex-1 min-w-0 md:self-end md:pb-1">
-                  <p
-                    class="font-medium truncate"
-                    style="color: {playerStore.lightTrackColor};"
-                  >
-                    {trackTitle}
-                  </p>
-                  <p
-                    class="text-sm truncate opacity-70"
-                    style="color: {playerStore.lightTrackColor};"
-                  >
-                    {#each trackArtists as a, artistIndex}
-                      <span
-                        role="link"
-                        tabindex="0"
-                        class="hover:underline cursor-pointer max-md:pointer-events-none"
-                        onclick={(e) => {
-                          e.stopPropagation();
-                          goto(`/playlist?id=artist_${a}`);
-                        }}
-                        onkeydown={(e) =>
-                          e.key === "Enter" && goto(`/playlist?id=artist_${a}`)}
-                        >{a}</span
-                      >{#if artistIndex < trackArtists.length - 1},&nbsp;{/if}
-                    {/each}
-                  </p>
-                </div>
+                <TrackInfo
+                  trackId={track.id}
+                  title={trackTitle}
+                  artists={trackArtists}
+                  compact
+                  openDialogOnClick={false}
+                />
               </div>
             {/if}
           </Carousel.Item>
         {/each}
       </Carousel.Content>
-      <span
-        class="max-md:hidden absolute bg-[linear-gradient(to_right,transparent,var(--muted))] select-none right-0 top-0 bottom-0 h-16 w-8 z-50"
-      >
-      </span>
     {/if}
   </Carousel.Root>
 </div>

@@ -7,6 +7,7 @@
     SplashScreen,
     UpdateNotification,
     AppSidebar,
+    TrackInfoDialog,
   } from "$lib/components";
   import { TrackMenuDialog } from "$lib/components/tracks";
   import { PlaylistMenuDialog } from "$lib/components/playlists";
@@ -183,6 +184,7 @@
 {/if}
 
 {#if authStore.isAuthenticated}
+  <TrackInfoDialog />
   <TrackMenuDialog />
   <PlaylistMenuDialog />
   <Sidebar.Provider>
