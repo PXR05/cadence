@@ -173,7 +173,11 @@
 
 {#snippet controls()}
   <div class="flex flex-col gap-8 px-6 mt-auto mb-2 z-20">
-    <TrackInfo trackId={track?.id ?? ""} {title} {artists} />
+    <TrackInfo
+      trackId={track?.id ?? ""}
+      {title}
+      {artists}
+    />
 
     <div class="flex flex-col gap-12">
       <ProgressBar

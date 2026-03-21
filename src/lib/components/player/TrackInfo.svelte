@@ -259,7 +259,7 @@
           <span
             role="link"
             tabindex="0"
-            class="hover:underline cursor-pointer"
+            class="hover:underline cursor-pointer max-md:pointer-events-none"
             onclick={(e) => {
               e.stopPropagation();
               goto(`/playlist?id=artist_${a}`);
@@ -276,17 +276,21 @@
 {#if openDialogOnClick}
   <button
     type="button"
+    data-allow-panel-drag
     class="text-left grid w-full min-w-0 {compact
       ? 'gap-0.5'
       : 'mb-2 gap-1'} cursor-pointer"
     onclick={openInfoDialog}
     aria-label="Open track info"
+    draggable="false"
   >
     {@render trackInfoContent()}
   </button>
 {:else}
   <div
+    data-allow-panel-drag
     class="text-left grid w-full min-w-0 {compact ? 'gap-0.5' : 'mb-2 gap-1'}"
+    role="presentation"
   >
     {@render trackInfoContent()}
   </div>

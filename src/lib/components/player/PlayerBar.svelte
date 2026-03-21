@@ -156,6 +156,10 @@
 
     if (!panelState.isOpen) return false;
 
+    if (target.closest("[data-allow-panel-drag]")) {
+      return false;
+    }
+
     const interactiveSelectors = [
       "button",
       "input",
