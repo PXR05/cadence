@@ -33,7 +33,7 @@
 
 {#if progress}
   <div
-    class="border rounded-xl overflow-clip border-input/15 mx-1.5
+    class="border rounded-full overflow-clip border-input/15 mx-1.5
     {appearanceStore.disableBlur
       ? 'bg-muted'
       : 'bg-muted-foreground/10 dark:bg-muted/70 backdrop-blur-md'}"

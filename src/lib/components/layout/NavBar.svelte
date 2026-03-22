@@ -4,13 +4,10 @@
   import { flip } from "svelte/animate";
   import { isActive, navItems } from "./navItems";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
-  import { onDestroy } from "svelte";
 
   const {
-    orientation = "horizontal",
     size = 36,
   }: {
-    orientation?: "vertical" | "horizontal";
     size?: number;
   } = $props();
 
@@ -32,38 +29,23 @@
 </script>
 
 {#if isTopRoute}
-  <nav
-    class="overflow-clip mx-auto flex rounded-xl border border-input/15 relative p-1.5 gap-1.5 select-none
-      {orientation === 'horizontal' ? 'flex-row w-full' : 'flex-col h-full'}
-      {appearanceStore.disableBlur
-      ? 'bg-muted'
-      : 'bg-muted-foreground/10 dark:bg-muted/70 backdrop-blur-md'}
-      "
-  >
+  <nav class="overflow-clip flex relative px-2 py-3 gap-1.5 select-none">
     {#if activeTabIndex >= 0}
       <div
-        class="absolute rounded-lg pointer-events-none z-10
+        class="absolute rounded-full pointer-events-none z-10
         {appearanceStore.disableAnimations
           ? ''
           : 'transition-all duration-300 ease-vaul'}"
         style="
         background-color: color-mix(in oklab, var(--muted-foreground) 15%, transparent);
-        {orientation === 'horizontal'
-          ? `
-            top: 0.375rem;
-            bottom: 0.375rem;
-            left: 0.375rem;
-            width: calc((100% - 0.75rem) / ${tabs.length} - 0.375rem);
-            transform: translate3d(calc(${activeTabIndex} * (100% + 0.5rem)), 0, 0);
-            `
-          : `
-            left: 0.375rem;
-            right: 0.375rem;
-            top: 0.375rem;
-            height: calc((100% - 0.75rem) / ${tabs.length} - 0.375rem);
-            transform: translate3d(0, calc(${activeTabIndex} * (100% + 0.5rem)), 0);
-            `}"
+        top: 0.5rem;
+        bottom: 0.5rem;
+        left: 0.5rem;
+        width: calc((100% - 1rem) / {tabs.length} - 0.375rem);
+        transform: translate3d(calc({activeTabIndex} * (100% + 0.5rem)), 0, 0);
+        "
       ></div>
+      <!-- top, bottom, left = padding, 1rem = total side padding -->
     {/if}
 
     {#each tabs as tab, i (tab.path)}

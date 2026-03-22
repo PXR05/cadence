@@ -12,7 +12,7 @@
   } from "@lucide/svelte";
   import { onMount } from "svelte";
   import { PlaybackControls, ProgressBar } from ".";
-  import TrackInfo from "./TrackInfo.svelte";
+  import TrackInfo from "../tracks/TrackInfo.svelte";
   import { ManagePlaylistsDialog } from "../playlists";
   import { Button } from "../ui/button";
   import * as Carousel from "../ui/carousel";
@@ -173,20 +173,20 @@
 
 {#snippet controls()}
   <div class="flex flex-col gap-8 px-6 mt-auto mb-2 z-20">
-    <TrackInfo
-      trackId={track?.id ?? ""}
-      {title}
-      {artists}
-    />
+    <div class="px-2">
+      <TrackInfo trackId={track?.id ?? ""} {title} {artists} />
+    </div>
 
     <div class="flex flex-col gap-12">
-      <ProgressBar
-        monochrome
-        height={6}
-        {isPanelAnimating}
-        showTime
-        timeSide="bottom"
-      />
+      <div class="px-2">
+        <ProgressBar
+          monochrome
+          height={6}
+          {isPanelAnimating}
+          showTime
+          timeSide="bottom"
+        />
+      </div>
 
       <PlaybackControls variant="large" monochrome />
     </div>

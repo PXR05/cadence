@@ -340,7 +340,7 @@
       {import.meta.env.COMMIT_HASH} - {import.meta.env.BUILD_DATE}
     </p>
 
-    <div class="h-32"></div>
+    <div class="h-64"></div>
   </div>
 </div>
 

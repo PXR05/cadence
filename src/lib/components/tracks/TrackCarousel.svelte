@@ -33,7 +33,7 @@
 </script>
 
 <div
-  class="w-[calc(100dvw-5rem)] md:w-full self-center"
+  class="w-[calc(100dvw-5.7rem)] md:w-full self-center"
   class:pointer-events-none={isDisabled}
 >
   <Carousel.Root
@@ -64,7 +64,7 @@
                   crossorigin="use-credentials"
                   src={getImageUrl(track.id)}
                   alt={track.id}
-                  class="rounded-md size-12 md:size-16 shrink-0 object-cover text-transparent"
+                  class="rounded-lg md:rounded-md size-12 md:size-16 shrink-0 object-cover text-transparent"
                 />
                 <TrackInfo
                   trackId={track.id}

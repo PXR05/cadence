@@ -1,4 +1,4 @@
-<script lang="ts">
+<!-- <script lang="ts">
   import { playerStore } from "$lib/stores/player.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { getSourceInfoList, type TrackSourceInfo } from "$lib/utils/trackSources";
@@ -66,4 +66,4 @@
       </DropdownMenu.RadioGroup>
     </DropdownMenu.Content>
   </DropdownMenu.Root>
-{/if}
+{/if} -->
