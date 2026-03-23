@@ -64,7 +64,7 @@
 </div>
 
 <div
-  class="p-4 pt-16 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 pb-72"
+  class="p-4 pt-17 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 pb-72"
 >
   {#each allUserPlaylists as playlist, i (playlist.id)}
     <div
@@ -113,7 +113,7 @@
       height: var(--h);
     }
     &::after {
-      height: calc(var(--h) - 2rem);
+      height: calc(var(--h) - 1rem);
     }
   }
 

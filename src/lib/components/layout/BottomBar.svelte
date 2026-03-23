@@ -59,7 +59,7 @@
     if (playerStore.trackQueue.length > 0) {
       return -4.25 + "rem";
     }
-    return 0 + "rem";
+    return 0.5 + "rem";
   });
 
   const panelOpenProgress = $derived.by(() => {
@@ -95,6 +95,14 @@
 </script>
 
 <div class="flex flex-col gap-1.5 fixed bottom-0 left-0 right-0 z-50">
+  <div
+    style="
+      --h: {isTopRoute ? 5 : 2}rem;
+      top: calc(-1*var(--h));
+    "
+    class="_bg _color absolute inset-0 -z-10"
+  ></div>
+
   <div
     class="absolute bottom-0 left-0 right-0 space-y-1.5
     {appearanceStore.disableAnimations ? '' : 'transition-all duration-200'}"
@@ -137,7 +145,11 @@
     </div>
 
     <div
-      class="md:hidden m-3"
+      class="md:hidden m-3
+      {appearanceStore.disableAnimations ? '' : 'transition-all duration-200'}
+      {playerDetailMotionStore.isDragging || playerDetailMotionStore.isAnimating
+        ? 'transition-none!'
+        : ''}"
       style="
         will-change: transform, opacity;
         transform: translate3d(0, {navTranslate}, 0);
@@ -148,3 +160,32 @@
     </div>
   </div>
 </div>
+
+<style>
+  ._bg {
+    &::before,
+    &::after {
+      pointer-events: none;
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: -1;
+      mask: linear-gradient(to bottom, transparent, black 90%, black);
+    }
+    &::before {
+      height: var(--h);
+    }
+    &::after {
+      height: calc(var(--h) - 0rem);
+    }
+  }
+
+  ._color {
+    &::before,
+    &::after {
+      background-color: var(--background);
+    }
+  }
+</style>

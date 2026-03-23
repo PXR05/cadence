@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
+  import { playerDetailMotionStore } from "$lib/stores/playerDetailMotion.svelte";
   import { trackInfoDialogStore } from "$lib/stores/trackInfoDialog.svelte";
   import { onMount } from "svelte";
 
@@ -24,6 +25,11 @@
   const AUTO_SCROLL_PX_PER_SEC = 28;
   const EDGE_HOLD_MS = 1000;
 
+  let rootElement: HTMLDivElement | null = $state(null);
+  let isVisible = $state(false);
+  let isPageVisible = $state(true);
+  let hasPointerInteraction = $state(false);
+
   let titleViewport: HTMLDivElement | null = $state(null);
   let titleContent: HTMLHeadingElement | null = $state(null);
   let titleOffset = $state(0);
@@ -42,6 +48,14 @@
   let lastTick = 0;
   let lastTitleKey = "";
   let lastArtistsKey = "";
+
+  const shouldAutoScroll = $derived.by(
+    () =>
+      isVisible &&
+      isPageVisible &&
+      !hasPointerInteraction &&
+      !playerDetailMotionStore.isDragging,
+  );
 
   function measureTitle() {
     if (!titleViewport || !titleContent) {
@@ -114,6 +128,12 @@
   }
 
   function frame(now: number) {
+    if (!shouldAutoScroll) {
+      lastTick = now;
+      rafId = requestAnimationFrame(frame);
+      return;
+    }
+
     const dt = lastTick === 0 ? 16 : now - lastTick;
     lastTick = now;
 
@@ -169,6 +189,8 @@
   }
 
   onMount(() => {
+    isPageVisible = document.visibilityState === "visible";
+
     measureTitle();
     measureArtists();
 
@@ -177,16 +199,49 @@
       measureArtists();
     });
 
+    const intersectionObserver = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        isVisible = !!entry?.isIntersecting;
+      },
+      { threshold: 0.05 },
+    );
+
+    const handleVisibilityChange = () => {
+      isPageVisible = document.visibilityState === "visible";
+    };
+
+    const handlePointerDown = () => {
+      hasPointerInteraction = true;
+    };
+
+    const handlePointerUp = () => {
+      hasPointerInteraction = false;
+    };
+
     if (titleViewport) resizeObserver.observe(titleViewport);
     if (titleContent) resizeObserver.observe(titleContent);
     if (artistsViewport) resizeObserver.observe(artistsViewport);
     if (artistsContent) resizeObserver.observe(artistsContent);
+    if (rootElement) intersectionObserver.observe(rootElement);
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pointerdown", handlePointerDown, true);
+    window.addEventListener("pointerup", handlePointerUp, true);
+    window.addEventListener("pointercancel", handlePointerUp, true);
+    window.addEventListener("blur", handlePointerUp);
 
     rafId = requestAnimationFrame(frame);
 
     return () => {
       if (rafId) cancelAnimationFrame(rafId);
       resizeObserver.disconnect();
+      intersectionObserver.disconnect();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pointerdown", handlePointerDown, true);
+      window.removeEventListener("pointerup", handlePointerUp, true);
+      window.removeEventListener("pointercancel", handlePointerUp, true);
+      window.removeEventListener("blur", handlePointerUp);
     };
   });
 
@@ -219,79 +274,81 @@
   }
 </script>
 
-{#snippet trackInfoContent()}
-  <div
-    bind:this={titleViewport}
-    class="overflow-hidden"
-    role="group"
-    aria-label="Auto-scrolling track title"
-    style={titleMaskStyle()}
-  >
-    <h2
-      bind:this={titleContent}
-      class="whitespace-nowrap font-medium will-change-transform {compact
-        ? 'text-base'
-        : 'text-xl'}"
-      style="color: {color}; transform: translateX(-{titleOffset}px);"
+<div bind:this={rootElement} class="w-full min-w-0">
+  {#snippet trackInfoContent()}
+    <div
+      bind:this={titleViewport}
+      class="overflow-hidden"
+      role="group"
+      aria-label="Auto-scrolling track title"
+      style={titleMaskStyle()}
     >
-      {title}
-    </h2>
-  </div>
+      <h2
+        bind:this={titleContent}
+        class="whitespace-nowrap font-medium will-change-transform {compact
+          ? 'text-base'
+          : 'text-xl'}"
+        style="color: {color}; transform: translateX(-{titleOffset}px);"
+      >
+        {title}
+      </h2>
+    </div>
 
-  <div
-    bind:this={artistsViewport}
-    class="overflow-hidden"
-    role="group"
-    aria-label="Auto-scrolling artists"
-    style={artistsMaskStyle()}
-  >
-    <p
-      bind:this={artistsContent}
-      class="text-muted-foreground whitespace-nowrap will-change-transform {compact
-        ? 'text-sm'
-        : ''}"
-      style="color: {color}; transform: translateX(-{artistsOffset}px);"
+    <div
+      bind:this={artistsViewport}
+      class="overflow-hidden"
+      role="group"
+      aria-label="Auto-scrolling artists"
+      style={artistsMaskStyle()}
     >
-      {#each artists as a, i}
-        {#if openDialogOnClick}
-          <span>{a}</span>{#if i < artists.length - 1},&nbsp;{/if}
-        {:else}
-          <span
-            role="link"
-            tabindex="0"
-            class="hover:underline cursor-pointer max-md:pointer-events-none"
-            onclick={(e) => {
-              e.stopPropagation();
-              goto(`/playlist?id=artist_${a}`);
-            }}
-            onkeydown={(e) =>
-              e.key === "Enter" && goto(`/playlist?id=artist_${a}`)}>{a}</span
-          >{#if i < artists.length - 1},&nbsp;{/if}
-        {/if}
-      {/each}
-    </p>
-  </div>
-{/snippet}
+      <p
+        bind:this={artistsContent}
+        class="text-muted-foreground whitespace-nowrap will-change-transform {compact
+          ? 'text-sm'
+          : ''}"
+        style="color: {color}; transform: translateX(-{artistsOffset}px);"
+      >
+        {#each artists as a, i}
+          {#if openDialogOnClick}
+            <span>{a}</span>{#if i < artists.length - 1},&nbsp;{/if}
+          {:else}
+            <span
+              role="link"
+              tabindex="0"
+              class="hover:underline cursor-pointer max-md:pointer-events-none"
+              onclick={(e) => {
+                e.stopPropagation();
+                goto(`/playlist?id=artist_${a}`);
+              }}
+              onkeydown={(e) =>
+                e.key === "Enter" && goto(`/playlist?id=artist_${a}`)}>{a}</span
+            >{#if i < artists.length - 1},&nbsp;{/if}
+          {/if}
+        {/each}
+      </p>
+    </div>
+  {/snippet}
 
-{#if openDialogOnClick}
-  <button
-    type="button"
-    data-allow-panel-drag
-    class="text-left grid w-full min-w-0 {compact
-      ? 'gap-0.5'
-      : 'mb-2 gap-1'} cursor-pointer"
-    onclick={openInfoDialog}
-    aria-label="Open track info"
-    draggable="false"
-  >
-    {@render trackInfoContent()}
-  </button>
-{:else}
-  <div
-    data-allow-panel-drag
-    class="text-left grid w-full min-w-0 {compact ? 'gap-0.5' : 'mb-2 gap-1'}"
-    role="presentation"
-  >
-    {@render trackInfoContent()}
-  </div>
-{/if}
+  {#if openDialogOnClick}
+    <button
+      type="button"
+      data-allow-panel-drag
+      class="text-left grid w-full min-w-0 {compact
+        ? 'gap-0.5'
+        : 'mb-2 gap-1'} cursor-pointer"
+      onclick={openInfoDialog}
+      aria-label="Open track info"
+      draggable="false"
+    >
+      {@render trackInfoContent()}
+    </button>
+  {:else}
+    <div
+      data-allow-panel-drag
+      class="text-left grid w-full min-w-0 {compact ? 'gap-0.5' : 'mb-2 gap-1'}"
+      role="presentation"
+    >
+      {@render trackInfoContent()}
+    </div>
+  {/if}
+</div>

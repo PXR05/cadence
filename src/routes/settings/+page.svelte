@@ -181,9 +181,8 @@
   </button>
 {/snippet}
 
-<!-- Account header -->
 <div
-  style="--h: 5rem;"
+  style="--h: 5.5rem;"
   class="p-2 fixed top-0 left-0 md:left-64 right-0 z-30 flex items-end justify-between"
 >
   <div class="_bg _color absolute inset-0 -z-10"></div>
