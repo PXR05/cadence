@@ -100,7 +100,7 @@
       --h: {isTopRoute ? 5 : 2}rem;
       top: calc(-1*var(--h));
     "
-    class="_bg _color absolute inset-0 -z-10"
+    class="md:hidden _bg _color absolute inset-0 -z-10"
   ></div>
 
   <div

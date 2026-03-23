@@ -1,25 +1,10 @@
 <script lang="ts">
   import { page } from "$app/state";
-  import { getPlaylistImageUrl } from "$lib/constants";
+  import PlaylistCoverImage from "$lib/components/playlists/PlaylistCoverImage.svelte";
   import { playlistMenuStore } from "$lib/stores/playlistMenu.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
-  import {
-    getPlaylistDisplayName,
-    isArtistPlaylist,
-    isAlbumPlaylist,
-    isYoutubePlaylist,
-    isTidalCollectionPlaylist,
-  } from "$lib/utils/playlist";
-  import {
-    MusicIcon,
-    Disc3Icon,
-    UserIcon,
-    LibraryIcon,
-    CloudCheckIcon,
-    YoutubeIcon,
-    Volume2Icon,
-  } from "@lucide/svelte";
-  import { SPECIAL_PLAYLIST_IDS } from "$lib/utils/playlist";
+  import { getPlaylistDisplayName } from "$lib/utils/playlist";
+  import { Volume2Icon } from "@lucide/svelte";
   import type { Playlist } from "$lib/schemas";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
 
@@ -31,10 +16,6 @@
   let { playlist, size = "small" }: Props = $props();
 
   const displayName = $derived(getPlaylistDisplayName(playlist));
-  const isYoutube = $derived(isYoutubePlaylist(playlist.id));
-  const isTidal = $derived(isTidalCollectionPlaylist(playlist.id));
-  const isArtist = $derived(isArtistPlaylist(playlist.id));
-  const isAlbum = $derived(isAlbumPlaylist(playlist.id));
 
   function handleContextMenu(e: MouseEvent) {
     e.preventDefault();
@@ -60,86 +41,28 @@
 <a
   href="/playlist?id={playlist.id}"
   oncontextmenu={handleContextMenu}
-  class="relative rounded-lg overflow-clip aspect-square border hover:bg-muted/20 transition-colors flex flex-col
+  class="relative rounded-xl overflow-clip aspect-square border hover:bg-muted/20 transition-colors flex flex-col
   {size === 'large' ? 'w-full shrink-0' : 'w-40 shrink-0'}
   "
 >
-  <div class="h-full overflow-hidden relative grid place-items-center">
-    <div class="absolute inset-0 grid place-items-center pb-10">
-      {#if playlist.id === SPECIAL_PLAYLIST_IDS.ALL_SONGS}
-        <LibraryIcon
-          size={48}
-          absoluteStrokeWidth
-          strokeWidth={2}
-          class="text-muted-foreground"
-        />
-      {:else if playlist.id === SPECIAL_PLAYLIST_IDS.DOWNLOADED}
-        <CloudCheckIcon
-          size={48}
-          absoluteStrokeWidth
-          strokeWidth={2}
-          class="text-muted-foreground"
-        />
-      {:else if isArtist}
-        <UserIcon
-          size={48}
-          absoluteStrokeWidth
-          strokeWidth={2}
-          class="text-muted-foreground"
-        />
-      {:else if isAlbum}
-        <Disc3Icon
-          size={48}
-          absoluteStrokeWidth
-          strokeWidth={2}
-          class="text-muted-foreground"
-        />
-      {:else if isYoutube}
-        <YoutubeIcon
-          size={48}
-          absoluteStrokeWidth
-          strokeWidth={2}
-          class="text-muted-foreground"
-        />
-      {:else if isTidal}
-        <MusicIcon
-          size={48}
-          absoluteStrokeWidth
-          strokeWidth={2}
-          class="text-cyan-500"
-        />
-      {:else}
-        <MusicIcon
-          size={48}
-          absoluteStrokeWidth
-          strokeWidth={2}
-          class="text-muted-foreground"
-        />
-      {/if}
-    </div>
-    {#if playlist.coverImage}
-      <img
-        loading="lazy"
-        crossorigin="use-credentials"
-        src={getPlaylistImageUrl(playlist.id)}
-        alt={playlist.name}
-        class="w-full h-full object-cover relative z-10"
-      />
-    {/if}
-  </div>
-  <div class="absolute bottom-0 w-full z-10 p-1">
+  <PlaylistCoverImage
+    {playlist}
+    iconSize={48}
+    containerClass="h-full overflow-hidden relative grid place-items-center"
+    iconWrapperClass="absolute inset-0 grid place-items-center pb-10"
+    imageClass="w-full h-full object-cover relative z-10"
+  />
+  <div class="absolute bottom-0 w-full z-10 p-1.5">
     <div
-      class="flex items-center justify-between py-1 px-2 border border-input/15 rounded-md
+      class="flex items-center justify-between p-2 border border-input/15 rounded-md
       {appearanceStore.disableBlur
         ? 'bg-muted'
         : 'bg-muted/80 dark:bg-muted/70 backdrop-blur-md'}"
     >
-      <div class="flex flex-col truncate">
-        <div class="flex items-center gap-1.5">
-          <p class="text-sm font-medium truncate leading-tight flex-1">
-            {displayName}
-          </p>
-        </div>
+      <div class="flex flex-col truncate gap-0.5">
+        <p class="text-sm font-medium truncate leading-tight flex-1">
+          {displayName}
+        </p>
         <p class="text-xs leading-tight">
           {playlist.itemCount ?? 0} tracks
         </p>

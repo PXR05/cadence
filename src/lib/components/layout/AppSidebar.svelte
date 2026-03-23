@@ -12,6 +12,7 @@
   import { navItems } from "./navItems";
   import { Button } from "../ui/button";
   import { goto } from "$app/navigation";
+  import { playerStore } from "$lib/stores/player.svelte";
 
   function isActive(tabPath: string): boolean {
     if (tabPath === "/") return page.url.pathname === "/";
@@ -92,14 +93,13 @@
 {/snippet}
 
 {#snippet list()}
-  <Sidebar.Group
-    class="flex flex-col h-full overflow-hidden gap-1 py-0"
-  >
+  <Sidebar.Group class="flex flex-col h-full overflow-hidden gap-1 py-0">
     <Sidebar.GroupLabel class="relative flex items-center justify-between">
       <span
         class="text-sm group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:pointer-events-none transition-all duration-200"
         >Playlists</span
       >
+
       <button
         class="absolute right-0 group-data-[collapsible=icon]:right-2 top-0 size-8 grid place-items-center rounded-sm hover:bg-sidebar-accent transition-colors"
         onclick={() => (createDialogOpen = true)}
@@ -107,8 +107,11 @@
         <PlusIcon class="size-4" />
       </button>
     </Sidebar.GroupLabel>
+
     <Sidebar.GroupContent class="flex-1 h-full overflow-y-scroll">
-      <Sidebar.Menu class="pb-40 gap-1 group-data-[collapsible=icon]:gap-0 transition-all duration-200">
+      <Sidebar.Menu
+        class="pb-40 gap-1 transition-all duration-200"
+      >
         {#each allUserPlaylists as playlist (playlist.id)}
           <SidebarPlaylistItem {playlist} />
         {/each}
@@ -151,7 +154,12 @@
   <Sidebar.Content class="relative flex flex-col gap-0">
     {@render navigation()}
 
-    <div class="flex-1 min-h-0 md:mb-22">
+    <Sidebar.Separator class="mt-0.5 mb-2" />
+
+    <div
+      class="flex-1 min-h-0
+      {playerStore.queueLength > 0 ? 'md:mb-22' : ''}"
+    >
       {@render list()}
     </div>
   </Sidebar.Content>

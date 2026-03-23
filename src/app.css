@@ -9,12 +9,6 @@
   --font-serif: "Lora", serif;
   --font-sans: "Satoshi", sans-serif;
 
-  --font-weight-thin: 400;
-  --font-weight-normal: 500;
-  --font-weight-medium: 600;
-  --font-weight-semibold: 700;
-  --font-weight-bold: 800;
-
   --radius: 0.75rem;
   --tracking-normal: 0rem;
   --spacing: 0.25rem;
@@ -124,6 +118,14 @@
 }
 
 @theme inline {
+  --font-weight-thin: 400;
+  --font-weight-normal: 500;
+  --font-weight-medium: 600;
+  --font-weight-semibold: 700;
+  --font-weight-bold: 800;
+
+  --container-9xl: 96rem;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);

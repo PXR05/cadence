@@ -62,7 +62,7 @@
 </svelte:head>
 
 <div
-style="--h: 5rem;"
+  style="--h: 5rem;"
   class="p-2 fixed top-0 left-0 right-0 z-30 transition-[left] duration-200
   {isSidebarCollapsed ? 'md:left-16' : 'md:left-64'}"
 >
@@ -71,7 +71,7 @@ style="--h: 5rem;"
 </div>
 
 <div
-  class="p-4 pt-17 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 pb-72"
+  class="p-4 pt-17 grid grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-4 @7xl:grid-cols-5 @9xl:grid-cols-6 gap-4 pb-72"
 >
   {#each allUserPlaylists as playlist, i (playlist.id)}
     <div

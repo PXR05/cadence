@@ -17,7 +17,10 @@
   let { setCarouselApi, onQueueOpen, onMenuOpen }: Props = $props();
 </script>
 
-<div class="p-1 border-t bg-muted">
+<div
+  class="p-1 border-t bg-muted
+  {playerStore.queueLength === 0 ? 'pointer-events-none opacity-0' : ''}"
+>
   <div class="relative grid grid-cols-3 items-center py-2 min-h-20">
     <TrackCarousel setApi={(emblaApi) => setCarouselApi(emblaApi)} />
 

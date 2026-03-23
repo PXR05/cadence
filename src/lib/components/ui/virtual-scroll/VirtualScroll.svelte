@@ -349,9 +349,9 @@
   }
 </script>
 
-<ScrollArea
-  class={className}
-  bind:ref={containerRef}
+<div
+  class="overflow-y-scroll {className}"
+  bind:this={containerRef}
   role="list"
   aria-label="Virtualized list"
   aria-busy={items.length === 0}
@@ -415,4 +415,4 @@
       </div>
     </div>
   {/if}
-</ScrollArea>
+</div>

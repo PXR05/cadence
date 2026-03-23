@@ -1,26 +1,11 @@
 <script lang="ts">
   import { page } from "$app/state";
+  import PlaylistCoverImage from "$lib/components/playlists/PlaylistCoverImage.svelte";
   import * as Sidebar from "$lib/components/ui/sidebar";
-  import { getPlaylistImageUrl } from "$lib/constants";
   import type { Playlist } from "$lib/schemas";
   import { playlistMenuStore } from "$lib/stores/playlistMenu.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
-  import {
-    SPECIAL_PLAYLIST_IDS,
-    isAlbumPlaylist,
-    isArtistPlaylist,
-    isTidalCollectionPlaylist,
-    isYoutubePlaylist,
-  } from "$lib/utils/playlist";
-  import {
-    CloudCheckIcon,
-    Disc3Icon,
-    LibraryIcon,
-    MusicIcon,
-    UserIcon,
-    Volume2Icon,
-    YoutubeIcon,
-  } from "@lucide/svelte";
+  import { Volume2Icon } from "@lucide/svelte";
 
   interface Props {
     playlist: Playlist;
@@ -28,10 +13,6 @@
 
   let { playlist }: Props = $props();
 
-  const isYoutube = $derived(isYoutubePlaylist(playlist.id));
-  const isTidal = $derived(isTidalCollectionPlaylist(playlist.id));
-  const isArtist = $derived(isArtistPlaylist(playlist.id));
-  const isAlbum = $derived(isAlbumPlaylist(playlist.id));
   const isActive = $derived(
     page.url.pathname === "/playlist" &&
       page.url.searchParams.get("id") === playlist.id,
@@ -50,7 +31,7 @@
 
 <Sidebar.MenuItem>
   <Sidebar.MenuButton
-    class="relative h-14 group-data-[collapsible=icon]:p-0 p-1 transition-all duration-200"
+    class="relative group-data-[collapsible=icon]:rounded-md group-data-[collapsible=icon]:h-12 h-14 group-data-[collapsible=icon]:p-0 p-1 transition-all duration-200"
     {isActive}
     tooltipContent={playlist.name}
   >
@@ -60,70 +41,20 @@
         oncontextmenu={handleContextMenu}
         {...props}
       >
-        <div
-          class="size-12 shrink-0 rounded-sm overflow-hidden bg-muted relative grid place-items-center"
-        >
-          <div class="absolute inset-0 grid place-items-center">
-            {#if playlist.id === SPECIAL_PLAYLIST_IDS.ALL_SONGS}
-              <LibraryIcon
-                size={16}
-                strokeWidth={2}
-                class="text-muted-foreground"
-              />
-            {:else if playlist.id === SPECIAL_PLAYLIST_IDS.DOWNLOADED}
-              <CloudCheckIcon
-                size={16}
-                strokeWidth={2}
-                class="text-muted-foreground"
-              />
-            {:else if isArtist}
-              <UserIcon
-                size={16}
-                strokeWidth={2}
-                class="text-muted-foreground"
-              />
-            {:else if isAlbum}
-              <Disc3Icon
-                size={16}
-                strokeWidth={2}
-                class="text-muted-foreground"
-              />
-            {:else if isYoutube}
-              <YoutubeIcon
-                size={16}
-                strokeWidth={2}
-                class="text-muted-foreground"
-              />
-            {:else if isTidal}
-              <MusicIcon
-                size={16}
-                strokeWidth={2}
-                class={isActive ? "text-background" : "text-cyan-500"}
-              />
-            {:else}
-              <MusicIcon
-                size={16}
-                strokeWidth={2}
-                class="text-muted-foreground"
-              />
-            {/if}
-          </div>
+        <PlaylistCoverImage
+          {playlist}
+          iconSize={16}
+          strokeWidth={2}
+          useAbsoluteStrokeWidth={false}
+          containerClass="size-12 shrink-0 rounded-sm overflow-hidden bg-muted relative grid place-items-center"
+          imageClass="size-full object-cover relative z-10"
+          tidalIconClass={isActive ? "text-background" : "text-cyan-500"}
+        />
 
-          {#if playlist.coverImage}
-            <img
-              loading="lazy"
-              crossorigin="use-credentials"
-              src={getPlaylistImageUrl(playlist.id)}
-              alt={playlist.name}
-              class="size-full object-cover relative z-10"
-            />
-          {/if}
-        </div>
-
-        <div class="flex flex-col items-start min-w-0">
+        <div class="truncate flex flex-col items-start min-w-0">
           <span class="flex-1 truncate text-base font-medium"
-            >{playlist.name}</span
-          >
+            >{playlist.name}
+          </span>
           <span class="flex-1 truncate text-xs opacity-75"
             >{playlist.itemCount} songs</span
           >

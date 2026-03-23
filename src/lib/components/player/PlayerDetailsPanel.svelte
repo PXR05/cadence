@@ -201,7 +201,7 @@
   ontouchend={(e) => onTouchEnd?.(e)}
   onmousedown={(e) => onMouseDown?.(e)}
 >
-  {#if playerStore.currentTrack && !appearanceStore.disableBlur}
+  {#if playerStore.currentTrack}
     <img
       loading="lazy"
       crossorigin="use-credentials"
@@ -212,8 +212,7 @@
   {/if}
 
   <div
-    class="flex flex-col h-dvh
-    {appearanceStore.disableBlur ? '' : 'backdrop-blur-2xl'}"
+    class="flex flex-col h-dvh backdrop-blur-2xl"
     style="
     background: linear-gradient(
       to top,

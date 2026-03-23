@@ -118,10 +118,12 @@
       <PlaylistHeader {playlist} {isScrolled} />
 
       <div
-        class="absolute w-[calc(100dvw-12px)] ease-vaul
+        class="absolute w-[calc(100dvw-16px)] ease-vaul
           {isScrolled ? 'translate-y-15' : 'translate-y-42 md:translate-y-68'}
           {appearanceStore.disableAnimations ? 'duration-0' : 'duration-200'}
-          {isSidebarCollapsed ? 'md:w-[calc(100dvw-12px-64px)]' : 'md:w-[calc(100dvw-12px-256px)]'}"
+          {isSidebarCollapsed
+          ? 'md:w-[calc(100dvw-16px-64px)]'
+          : 'md:w-[calc(100dvw-16px-256px)]'}"
       >
         <PlaylistSearch bind:searchQuery />
       </div>
