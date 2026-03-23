@@ -35,6 +35,7 @@
   import { getRemoteProviderLabel } from "$lib/utils/remote";
   import { toast } from "svelte-sonner";
   import { browser } from "$app/environment";
+  import { useSidebar } from "../ui/sidebar";
 
   const LIMIT = 10;
   const DEBOUNCE_MS = 300;
@@ -277,12 +278,15 @@
       (provider) => remoteResultsByProvider[provider].length > 0,
     ) ?? null,
   );
+
+  const isSidebarCollapsed = $derived(useSidebar().state === "collapsed");
 </script>
 
 <form
   onsubmit={handleSubmit}
   style="--h: 8rem;"
-  class="p-2 fixed top-0 left-0 md:left-64 right-0 z-10"
+  class="p-2 fixed top-0 left-0 right-0 z-10 transition-[left] duration-200
+  {isSidebarCollapsed ? 'md:left-16' : 'md:left-64'}"
 >
   <div class="_bg _color absolute inset-0 -z-10"></div>
   <h2 class="text-2xl font-semibold p-2">Search</h2>

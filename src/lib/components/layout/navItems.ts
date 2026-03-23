@@ -5,6 +5,7 @@ import {
   ShieldIcon,
   SettingsIcon,
   DiamondIcon,
+  LibraryIcon,
 } from "@lucide/svelte";
 import type { Component } from "svelte";
 import { page } from "$app/state";
@@ -29,7 +30,7 @@ export const navItems: NavItem[] = [
       }
     },
   },
-  { path: "/library", label: "Library", icon: ListMusicIcon },
+  { path: "/library", label: "Library", icon: LibraryIcon },
   { path: "/settings", label: "Settings", icon: SettingsIcon },
 ];
 

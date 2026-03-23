@@ -197,7 +197,10 @@
     >
       {#key page.url.pathname}
         <div
-          class="row-start-1 col-start-1 relative overflow-x-hidden overflow-y-scroll h-dvh md:h-[calc(100dvh-88px)] md:w-[calc(100dvw-256px)] flex flex-col"
+          class="row-start-1 col-start-1 relative overflow-x-hidden overflow-y-scroll h-dvh md:h-[calc(100dvh-88px)] flex flex-col transition-[width] duration-200
+          {Sidebar.useSidebar().state === 'collapsed'
+            ? 'md:w-[calc(100dvw-64px)]'
+            : 'md:w-[calc(100dvw-256px)]'}"
           in:fade={{
             duration: !appearanceStore.disableAnimations ? 150 : 0,
             easing: vaulEase,

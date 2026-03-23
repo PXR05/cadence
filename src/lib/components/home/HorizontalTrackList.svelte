@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { ScrollArea } from "$lib/components/ui/scroll-area";
   import HorizontalTrackItem from "./HorizontalTrackItem.svelte";
   import type { AudioFile } from "$lib/schemas";
   import type { Snippet } from "svelte";
   import { flip } from "svelte/animate";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
   import { vaulEase } from "$lib/utils";
+  import { useSidebar } from "../ui/sidebar";
 
   interface Props {
     title: string;
@@ -14,6 +14,8 @@
   }
 
   const { title, tracks, emptyState }: Props = $props();
+
+  const isSidebarCollapsed = $derived(useSidebar().state === "collapsed");
 </script>
 
 <div class="flex flex-col gap-2">
@@ -23,7 +25,8 @@
     {@render emptyState()}
   {:else}
     <div
-      class="flex overflow-x-auto scroll-smooth w-dvw md:w-[calc(100dvw-256px)] pb-4 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      class="flex overflow-x-auto scroll-smooth w-dvw pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden transition-[width] duration-200
+      {isSidebarCollapsed ? 'md:w-[calc(100dvw-64px)]' : 'md:w-[calc(100dvw-256px)]'}"
     >
       {#each tracks as track, i (track.id)}
         <div
@@ -32,7 +35,7 @@
             easing: vaulEase,
           }}
           class="w-48 md:w-56
-          {i === 0 ? 'ml-2 snap-end' : 'snap-start'}
+          {i === 0 ? 'ml-2' : ''}
           {i === tracks.length - 1 ? 'mr-2' : ''}"
         >
           <HorizontalTrackItem {track} />

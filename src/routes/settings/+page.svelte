@@ -28,6 +28,7 @@
   import MenuDialog from "$lib/components/ui/menu-dialog/MenuDialog.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
+  import { useSidebar } from "$lib/components/ui/sidebar";
 
   const isAdmin = $derived(authStore.isAdmin);
   let accountMenuOpen = $state(false);
@@ -151,6 +152,8 @@
     { value: "dark", label: "Dark", icon: MoonIcon },
     { value: "system", label: "System", icon: MonitorIcon },
   ] as const;
+
+  const isSidebarCollapsed = $derived(useSidebar().state === "collapsed");
 </script>
 
 <svelte:head>
@@ -183,7 +186,9 @@
 
 <div
   style="--h: 5.5rem;"
-  class="p-2 fixed top-0 left-0 md:left-64 right-0 z-30 flex items-end justify-between"
+  class="p-2 fixed top-0 left-0 right-0 z-30 flex items-end justify-between transition-[left] duration-200
+  {isSidebarCollapsed ? 'md:left-16' : 'md:left-64'}
+  "
 >
   <div class="_bg _color absolute inset-0 -z-10"></div>
   <h2 class="text-2xl font-semibold p-2">Settings</h2>

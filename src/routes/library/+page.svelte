@@ -10,6 +10,7 @@
   import { liveQuery } from "dexie";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
+  import { useSidebar } from "$lib/components/ui/sidebar";
 
   let createDialogOpen = $state(false);
 
@@ -48,6 +49,8 @@
     playlistsStore.invalidate();
     await playlistsStore.loadAllPlaylists(true);
   }
+
+  const isSidebarCollapsed = $derived(useSidebar().state === "collapsed");
 </script>
 
 <svelte:head>
@@ -58,7 +61,11 @@
   >
 </svelte:head>
 
-<div style="--h: 5rem;" class="p-2 fixed top-0 left-0 md:left-64 right-0 z-30">
+<div
+style="--h: 5rem;"
+  class="p-2 fixed top-0 left-0 right-0 z-30 transition-[left] duration-200
+  {isSidebarCollapsed ? 'md:left-16' : 'md:left-64'}"
+>
   <div class="_bg _color absolute inset-0 -z-10"></div>
   <h2 class="text-2xl font-semibold p-2">Playlists</h2>
 </div>

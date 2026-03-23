@@ -18,6 +18,7 @@
   import { fade } from "svelte/transition";
   import { appearanceStore } from "$lib/stores/appearance.svelte.js";
   import { playerStore } from "$lib/stores/player.svelte.js";
+  import { useSidebar } from "$lib/components/ui/sidebar/index.js";
 
   let { data } = $props();
 
@@ -40,24 +41,24 @@
   const addTracksDialog = useDialogState("add-tracks");
 
   const existingTrackIds = $derived(
-    new SvelteSet(playlist?.items.map((item) => item.audio.id) ?? [])
+    new SvelteSet(playlist?.items.map((item) => item.audio.id) ?? []),
   );
 
   const isNonModifiable = $derived(
     playlist &&
       (isSpecialPlaylist(playlist.id) ||
         isArtistPlaylist(playlist.id) ||
-        isAlbumPlaylist(playlist.id))
+        isAlbumPlaylist(playlist.id)),
   );
 
   const hasAddButton = $derived(
-    !searchQuery.trim() && playlist && !isNonModifiable
+    !searchQuery.trim() && playlist && !isNonModifiable,
   );
 
   const filteredTracks = $derived(
     searchQuery.trim()
       ? filterTracks(playlist?.items ?? [], searchQuery)
-      : (playlist?.items ?? [])
+      : (playlist?.items ?? []),
   );
 
   function filterTracks(items: PlaylistItem[], query: string) {
@@ -73,12 +74,16 @@
   }
 
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
+
+  const isSidebarCollapsed = $derived(useSidebar().state === "collapsed");
 </script>
 
 <svelte:head>
-  <title>{playerStore.isPlaying && playerStore.currentTrack?.metadata?.title
+  <title
+    >{playerStore.isPlaying && playerStore.currentTrack?.metadata?.title
       ? playerStore.currentTrack.metadata?.title
-      : playlist?.name ?? "Playlist"} | Cadence</title>
+      : (playlist?.name ?? "Playlist")} | Cadence</title
+  >
 </svelte:head>
 
 <div class="flex flex-col mx-auto w-full h-full relative">
@@ -113,12 +118,10 @@
       <PlaylistHeader {playlist} {isScrolled} />
 
       <div
-        class="absolute w-[calc(100dvw-12px)] md:w-[calc(100dvw-12px-256px)] ease-vaul
-          {isScrolled
-          ? 'translate-y-15'
-          : 'translate-y-42 md:translate-y-68'}
+        class="absolute w-[calc(100dvw-12px)] ease-vaul
+          {isScrolled ? 'translate-y-15' : 'translate-y-42 md:translate-y-68'}
           {appearanceStore.disableAnimations ? 'duration-0' : 'duration-200'}
-      "
+          {isSidebarCollapsed ? 'md:w-[calc(100dvw-12px-64px)]' : 'md:w-[calc(100dvw-12px-256px)]'}"
       >
         <PlaylistSearch bind:searchQuery />
       </div>

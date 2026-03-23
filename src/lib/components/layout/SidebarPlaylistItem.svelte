@@ -49,7 +49,11 @@
 </script>
 
 <Sidebar.MenuItem>
-  <Sidebar.MenuButton class="relative h-14 p-1" {isActive}>
+  <Sidebar.MenuButton
+    class="relative h-14 group-data-[collapsible=icon]:p-0 p-1 transition-all duration-200"
+    {isActive}
+    tooltipContent={playlist.name}
+  >
     {#snippet child({ props })}
       <a
         href="/playlist?id={playlist.id}"
@@ -117,8 +121,10 @@
         </div>
 
         <div class="flex flex-col items-start min-w-0">
-          <span class="flex-1 truncate text-base">{playlist.name}</span>
-          <span class="flex-1 truncate text-xs font-normal opacity-50"
+          <span class="flex-1 truncate text-base font-medium"
+            >{playlist.name}</span
+          >
+          <span class="flex-1 truncate text-xs opacity-75"
             >{playlist.itemCount} songs</span
           >
         </div>
