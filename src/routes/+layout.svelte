@@ -99,12 +99,14 @@
       target &&
       (target.tagName === "INPUT" ||
         target.tagName === "TEXTAREA" ||
+        target.tagName === "BUTTON" ||
+        target.tagName === "A" ||
         target.isContentEditable)
     ) {
       return;
     }
 
-    if (e.code === "Space") {
+    if (e.code === "Space" && playerStore.currentTrack) {
       e.preventDefault();
       playerStore.togglePlayPause();
     }

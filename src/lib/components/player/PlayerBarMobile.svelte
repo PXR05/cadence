@@ -42,6 +42,13 @@
   let barElement: HTMLDivElement | null = $state(null);
   let detailsPanelElement: HTMLDivElement | null = $state(null);
   let gsapTween: gsap.core.Tween | null = null;
+  let dragFrameId: number | null = null;
+  let pendingDragY: number | null = null;
+
+  let lastMotionY = Number.NaN;
+  let lastMotionClosed = Number.NaN;
+  let lastOpacity = Number.NaN;
+  let hasWindowMouseListeners = false;
 
   let gestureStartX = $state(0);
   let gestureStartY = $state(0);
@@ -61,16 +68,73 @@
       (gsapTween !== null ? (gsapTween as gsap.core.Tween).isActive() : false),
   );
 
-  function updateOpacity(currentY: number) {
+  function updateOpacity(currentY: number, force = false) {
     const closedPos = closedPosition || 1;
     const normalizedPos = Math.max(0, Math.min(1, currentY / closedPos));
     const detailsOpacity = cubicOut(1 - normalizedPos);
 
-    playerDetailMotionStore.setMotion(currentY, closedPos);
-
-    if (detailsPanelElement) {
-      detailsPanelElement.style.opacity = String(detailsOpacity);
+    if (
+      force ||
+      Math.abs(currentY - lastMotionY) >= 0.5 ||
+      Math.abs(closedPos - lastMotionClosed) >= 0.5
+    ) {
+      playerDetailMotionStore.setMotion(currentY, closedPos);
+      lastMotionY = currentY;
+      lastMotionClosed = closedPos;
     }
+
+    if (
+      detailsPanelElement &&
+      (force || Math.abs(detailsOpacity - lastOpacity) >= 0.005)
+    ) {
+      detailsPanelElement.style.opacity = String(detailsOpacity);
+      lastOpacity = detailsOpacity;
+    }
+  }
+
+  function applyPanelPosition(translateY: number, forceMotionSync = false) {
+    if (!containerEl) return;
+    gsap.set(containerEl, { y: translateY, force3D: true });
+    updateOpacity(translateY, forceMotionSync);
+  }
+
+  function flushDragFrame() {
+    dragFrameId = null;
+    if (pendingDragY === null) return;
+    applyPanelPosition(pendingDragY);
+    pendingDragY = null;
+  }
+
+  function queueDragFrame(nextY: number) {
+    pendingDragY = nextY;
+    if (dragFrameId !== null) return;
+    dragFrameId = window.requestAnimationFrame(flushDragFrame);
+  }
+
+  function flushPendingDragPosition(forceMotionSync = false) {
+    if (dragFrameId !== null) {
+      window.cancelAnimationFrame(dragFrameId);
+      dragFrameId = null;
+    }
+
+    if (pendingDragY !== null) {
+      applyPanelPosition(pendingDragY, forceMotionSync);
+      pendingDragY = null;
+    }
+  }
+
+  function attachWindowMouseListeners() {
+    if (hasWindowMouseListeners) return;
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    hasWindowMouseListeners = true;
+  }
+
+  function detachWindowMouseListeners() {
+    if (!hasWindowMouseListeners) return;
+    window.removeEventListener("mousemove", handleMouseMove);
+    window.removeEventListener("mouseup", handleMouseUp);
+    hasWindowMouseListeners = false;
   }
 
   function animateToPosition(targetY: number, duration?: number) {
@@ -85,7 +149,7 @@
     if (appearanceStore.disableAnimations) {
       gsap.killTweensOf(containerEl);
       gsap.set(containerEl, { y: targetY, force3D: true, overwrite: "auto" });
-      updateOpacity(targetY);
+      updateOpacity(targetY, true);
       playerDetailMotionStore.setAnimating(false);
       return;
     }
@@ -93,7 +157,7 @@
     const startPosition = gsap.getProperty(containerEl, "y") as number;
     const distance = Math.abs(targetY - startPosition);
     const animDuration =
-      duration ?? Math.min(0.3, Math.max(0.15, distance / 1000));
+      duration ?? Math.min(0.3, Math.max(0.2, distance / 1000));
     const proxy = { y: startPosition };
 
     playerDetailMotionStore.setAnimating(true);
@@ -113,7 +177,7 @@
         if (containerEl) {
           gsap.set(containerEl, { y: targetY, force3D: true });
         }
-        updateOpacity(targetY);
+        updateOpacity(targetY, true);
         gsapTween = null;
         playerDetailMotionStore.setAnimating(false);
       },
@@ -149,12 +213,9 @@
     if (target.closest("[data-allow-panel-drag]")) return false;
 
     const interactiveSelectors = [
-      "button",
       "input",
       "textarea",
       "select",
-      "a",
-      '[role="button"]',
       '[role="slider"]',
       '[role="progressbar"]',
       'input[type="range"]',
@@ -183,6 +244,8 @@
         gsapTween = null;
       }
 
+      flushPendingDragPosition(true);
+
       isDragging = true;
       playerDetailMotionStore.setDragging(true);
       startY = clientY;
@@ -205,6 +268,8 @@
             gsapTween.kill();
             gsapTween = null;
           }
+
+          flushPendingDragPosition(true);
 
           isDragging = true;
           playerDetailMotionStore.setDragging(true);
@@ -242,10 +307,7 @@
       Math.min(closedPosition, newTranslate),
     );
 
-    if (containerEl) {
-      gsap.set(containerEl, { y: clampedTranslate, force3D: true });
-      updateOpacity(clampedTranslate);
-    }
+    queueDragFrame(clampedTranslate);
 
     lastMoveY = currentY;
     currentY = clientY;
@@ -257,6 +319,8 @@
     isOnCarousel = false;
 
     if (!isDragging) return;
+
+    flushPendingDragPosition(true);
 
     const timeDelta = Date.now() - lastMoveTime;
     const moveDelta = currentY - lastMoveY;
@@ -314,6 +378,7 @@
   }
 
   function handleMouseDown(e: MouseEvent) {
+    attachWindowMouseListeners();
     handleDragStart(e.clientY, e);
   }
 
@@ -323,6 +388,7 @@
 
   function handleMouseUp() {
     handleDragEnd();
+    detachWindowMouseListeners();
   }
 
   function handlePlayPause() {
@@ -331,13 +397,9 @@
   }
 
   onMount(() => {
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-
     if (!barElement) {
       return () => {
-        window.removeEventListener("mousemove", handleMouseMove);
-        window.removeEventListener("mouseup", handleMouseUp);
+        detachWindowMouseListeners();
       };
     }
 
@@ -349,15 +411,14 @@
     };
 
     barElement.addEventListener("touchstart", touchStartHandler, {
-      passive: false,
+      passive: true,
     });
     barElement.addEventListener("touchmove", touchMoveHandler, {
       passive: false,
     });
 
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
+      detachWindowMouseListeners();
       barElement?.removeEventListener("touchstart", touchStartHandler);
       barElement?.removeEventListener("touchmove", touchMoveHandler);
     };
@@ -367,6 +428,8 @@
     if (gsapTween) {
       gsapTween.kill();
     }
+    flushPendingDragPosition();
+    detachWindowMouseListeners();
     playerDetailMotionStore.reset();
     destroy();
   });
