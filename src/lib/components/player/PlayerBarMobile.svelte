@@ -33,10 +33,10 @@
   const panelState = useDialogState("player-detail");
 
   let isDragging = $state(false);
-  let startY = $state(0);
-  let currentY = $state(0);
-  let lastMoveY = $state(0);
-  let lastMoveTime = $state(0);
+  let startY = 0;
+  let currentY = 0;
+  let lastMoveY = 0;
+  let lastMoveTime = 0;
 
   let containerEl: HTMLDivElement | null = $state(null);
   let barElement: HTMLDivElement | null = $state(null);
@@ -49,11 +49,12 @@
   let lastMotionClosed = Number.NaN;
   let lastOpacity = Number.NaN;
   let hasWindowMouseListeners = false;
+  let didHandleDragEndAnimation = false;
 
-  let gestureStartX = $state(0);
-  let gestureStartY = $state(0);
-  let gestureDirection: "none" | "horizontal" | "vertical" = $state("none");
-  let isOnCarousel = $state(false);
+  let gestureStartX = 0;
+  let gestureStartY = 0;
+  let gestureDirection: "none" | "horizontal" | "vertical" = "none";
+  let isOnCarousel = false;
   const DIRECTION_THRESHOLD = 6;
 
   const closedPosition = $derived.by(() => {
@@ -186,6 +187,10 @@
 
   $effect(() => {
     if (!isDragging && containerEl) {
+      if (didHandleDragEndAnimation) {
+        didHandleDragEndAnimation = false;
+        return;
+      }
       const targetY = panelState.isOpen ? 0 : closedPosition;
       animateToPosition(targetY);
     }
@@ -358,6 +363,7 @@
       panelState.close();
     }
 
+    didHandleDragEndAnimation = true;
     isDragging = false;
     playerDetailMotionStore.setDragging(false);
   }
@@ -442,7 +448,7 @@
 >
   <div class="relative select-none h-dvh">
     <div
-      class="absolute top-1 left-4 right-4 flex items-center justify-between min-h-14"
+      class="absolute top-1 left-4 right-4 flex items-center justify-between min-h-14 touch-none"
       bind:this={barElement}
       role="button"
       tabindex="0"
