@@ -23,8 +23,13 @@ class AuthStore {
     "cadence.user",
     null,
   );
+  private sessionIdStore = createLocalStorageState<string | null>(
+    "cadence.sessionId",
+    null,
+  );
 
   user = $state<User | null>(null);
+  sessionId = $state<string | null>(null);
 
   constructor() {
     if (typeof window !== "undefined" && this.user === null) {
@@ -41,6 +46,10 @@ class AuthStore {
 
   private saveUserToStorage(user: User | null): void {
     this.userStore.value = user;
+  }
+
+  private saveSessionIdToStorage(sessionId: string | null): void {
+    this.sessionIdStore.value = sessionId;
   }
 
   get isAuthenticated(): boolean {
@@ -70,6 +79,8 @@ class AuthStore {
 
       this.user = data.user;
       this.saveUserToStorage(data.user);
+      this.sessionId = data.sessionId;
+      this.saveSessionIdToStorage(data.sessionId);
     } catch (error) {
       console.error("Login failed:", error);
       throw error;
@@ -95,6 +106,8 @@ class AuthStore {
 
       this.user = data.user;
       this.saveUserToStorage(data.user);
+      this.sessionId = data.sessionId;
+      this.saveSessionIdToStorage(data.sessionId);
     } catch (error) {
       console.error("Registration failed:", error);
       throw error;

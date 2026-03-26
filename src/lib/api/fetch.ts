@@ -8,7 +8,9 @@ export async function authFetch(
     throw new Error("API base URL is not defined in environment variables");
   }
 
-  return fetch(`${baseUrl}${path}`, {
+  const url = new URL(path, baseUrl);
+
+  return fetch(url, {
     ...init,
     credentials: "include",
     mode: "cors",
