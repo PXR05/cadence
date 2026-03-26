@@ -17,6 +17,8 @@
   import TrackCarousel from "../tracks/TrackCarousel.svelte";
 
   const { trigger, destroy } = createWebHaptics();
+  const PANEL_ANIMATION_DURATION = 0.4;
+  const PANEL_ANIMATION_MIN_DURATION = PANEL_ANIMATION_DURATION * 0.5;
 
   interface Props {
     onQueueOpen: () => void;
@@ -42,14 +44,14 @@
   let barElement: HTMLDivElement | null = $state(null);
   let detailsPanelElement: HTMLDivElement | null = $state(null);
   let gsapTween: gsap.core.Tween | null = null;
+  let setContainerY: ((value: number) => void) | null = null;
+  let setDetailsOpacity: ((value: number) => void) | null = null;
   let dragFrameId: number | null = null;
-  let pendingDragY: number | null = null;
-
+  let pendingTranslateY: number | null = null;
   let lastMotionY = Number.NaN;
   let lastMotionClosed = Number.NaN;
-  let lastOpacity = Number.NaN;
-  let hasWindowMouseListeners = false;
-  let didHandleDragEndAnimation = false;
+  let lastDetailsOpacity = Number.NaN;
+  let dragSettleTargetY: number | null = null;
 
   let gestureStartX = 0;
   let gestureStartY = 0;
@@ -69,6 +71,18 @@
       (gsapTween !== null ? (gsapTween as gsap.core.Tween).isActive() : false),
   );
 
+  $effect(() => {
+    setContainerY = containerEl
+      ? gsap.quickSetter(containerEl, "y", "px") as (value: number) => void
+      : null;
+  });
+
+  $effect(() => {
+    setDetailsOpacity = detailsPanelElement
+      ? gsap.quickSetter(detailsPanelElement, "opacity") as (value: number) => void
+      : null;
+  });
+
   function updateOpacity(currentY: number, force = false) {
     const closedPos = closedPosition || 1;
     const normalizedPos = Math.max(0, Math.min(1, currentY / closedPos));
@@ -86,56 +100,54 @@
 
     if (
       detailsPanelElement &&
-      (force || Math.abs(detailsOpacity - lastOpacity) >= 0.005)
+      (force || Math.abs(detailsOpacity - lastDetailsOpacity) >= 0.005)
     ) {
-      detailsPanelElement.style.opacity = String(detailsOpacity);
-      lastOpacity = detailsOpacity;
+      if (setDetailsOpacity) {
+        setDetailsOpacity(detailsOpacity);
+      } else {
+        detailsPanelElement.style.opacity = String(detailsOpacity);
+      }
+      lastDetailsOpacity = detailsOpacity;
     }
   }
 
-  function applyPanelPosition(translateY: number, forceMotionSync = false) {
+  function applyPanelPosition(translateY: number, force = false) {
     if (!containerEl) return;
-    gsap.set(containerEl, { y: translateY, force3D: true });
-    updateOpacity(translateY, forceMotionSync);
+
+    if (setContainerY) {
+      setContainerY(translateY);
+    } else {
+      gsap.set(containerEl, { y: translateY, force3D: true });
+    }
+
+    updateOpacity(translateY, force);
   }
 
-  function flushDragFrame() {
-    dragFrameId = null;
-    if (pendingDragY === null) return;
-    applyPanelPosition(pendingDragY);
-    pendingDragY = null;
-  }
-
-  function queueDragFrame(nextY: number) {
-    pendingDragY = nextY;
-    if (dragFrameId !== null) return;
-    dragFrameId = window.requestAnimationFrame(flushDragFrame);
-  }
-
-  function flushPendingDragPosition(forceMotionSync = false) {
+  function flushPendingDragPosition(force = false) {
     if (dragFrameId !== null) {
       window.cancelAnimationFrame(dragFrameId);
       dragFrameId = null;
     }
 
-    if (pendingDragY !== null) {
-      applyPanelPosition(pendingDragY, forceMotionSync);
-      pendingDragY = null;
-    }
+    if (pendingTranslateY === null) return;
+
+    applyPanelPosition(pendingTranslateY, force);
+    pendingTranslateY = null;
   }
 
-  function attachWindowMouseListeners() {
-    if (hasWindowMouseListeners) return;
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-    hasWindowMouseListeners = true;
-  }
+  function queuePanelPosition(translateY: number) {
+    pendingTranslateY = translateY;
 
-  function detachWindowMouseListeners() {
-    if (!hasWindowMouseListeners) return;
-    window.removeEventListener("mousemove", handleMouseMove);
-    window.removeEventListener("mouseup", handleMouseUp);
-    hasWindowMouseListeners = false;
+    if (dragFrameId !== null) return;
+
+    dragFrameId = window.requestAnimationFrame(() => {
+      dragFrameId = null;
+
+      if (pendingTranslateY === null) return;
+
+      applyPanelPosition(pendingTranslateY);
+      pendingTranslateY = null;
+    });
   }
 
   function animateToPosition(targetY: number, duration?: number) {
@@ -158,7 +170,11 @@
     const startPosition = gsap.getProperty(containerEl, "y") as number;
     const distance = Math.abs(targetY - startPosition);
     const animDuration =
-      duration ?? Math.min(0.3, Math.max(0.2, distance / 1000));
+      duration ??
+      Math.min(
+        PANEL_ANIMATION_DURATION,
+        Math.max(PANEL_ANIMATION_MIN_DURATION, distance / 1000),
+      );
     const proxy = { y: startPosition };
 
     playerDetailMotionStore.setAnimating(true);
@@ -169,16 +185,10 @@
       ease: vaulEase,
       onUpdate: () => {
         if (gsapTween === null) return;
-        if (containerEl) {
-          gsap.set(containerEl, { y: proxy.y, force3D: true });
-        }
-        updateOpacity(proxy.y);
+        applyPanelPosition(proxy.y);
       },
       onComplete: () => {
-        if (containerEl) {
-          gsap.set(containerEl, { y: targetY, force3D: true });
-        }
-        updateOpacity(targetY, true);
+        applyPanelPosition(targetY, true);
         gsapTween = null;
         playerDetailMotionStore.setAnimating(false);
       },
@@ -187,11 +197,14 @@
 
   $effect(() => {
     if (!isDragging && containerEl) {
-      if (didHandleDragEndAnimation) {
-        didHandleDragEndAnimation = false;
+      const targetY = panelState.isOpen ? 0 : closedPosition;
+
+      if (dragSettleTargetY !== null && dragSettleTargetY === targetY) {
+        dragSettleTargetY = null;
         return;
       }
-      const targetY = panelState.isOpen ? 0 : closedPosition;
+
+      dragSettleTargetY = null;
       animateToPosition(targetY);
     }
   });
@@ -248,7 +261,6 @@
         gsapTween.kill();
         gsapTween = null;
       }
-
       flushPendingDragPosition(true);
 
       isDragging = true;
@@ -273,7 +285,6 @@
             gsapTween.kill();
             gsapTween = null;
           }
-
           flushPendingDragPosition(true);
 
           isDragging = true;
@@ -312,7 +323,7 @@
       Math.min(closedPosition, newTranslate),
     );
 
-    queueDragFrame(clampedTranslate);
+    queuePanelPosition(clampedTranslate);
 
     lastMoveY = currentY;
     currentY = clientY;
@@ -349,12 +360,16 @@
     }
 
     const targetPosition = shouldOpen ? 0 : closedPosition;
-    let duration = 0.3;
+    let duration = PANEL_ANIMATION_DURATION;
 
     if (Math.abs(velocityPxPerMs) > 0.5) {
-      duration = Math.max(0.2, 0.3 - Math.abs(velocityPxPerMs) * 0.15);
+      duration = Math.max(
+        PANEL_ANIMATION_MIN_DURATION,
+        PANEL_ANIMATION_DURATION - Math.abs(velocityPxPerMs) * 0.15,
+      );
     }
 
+    dragSettleTargetY = targetPosition;
     animateToPosition(targetPosition, duration);
 
     if (shouldOpen) {
@@ -363,7 +378,6 @@
       panelState.close();
     }
 
-    didHandleDragEndAnimation = true;
     isDragging = false;
     playerDetailMotionStore.setDragging(false);
   }
@@ -384,7 +398,6 @@
   }
 
   function handleMouseDown(e: MouseEvent) {
-    attachWindowMouseListeners();
     handleDragStart(e.clientY, e);
   }
 
@@ -394,7 +407,6 @@
 
   function handleMouseUp() {
     handleDragEnd();
-    detachWindowMouseListeners();
   }
 
   function handlePlayPause() {
@@ -403,9 +415,13 @@
   }
 
   onMount(() => {
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
     if (!barElement) {
       return () => {
-        detachWindowMouseListeners();
+        window.removeEventListener("mousemove", handleMouseMove);
+        window.removeEventListener("mouseup", handleMouseUp);
       };
     }
 
@@ -417,14 +433,15 @@
     };
 
     barElement.addEventListener("touchstart", touchStartHandler, {
-      passive: true,
+      passive: false,
     });
     barElement.addEventListener("touchmove", touchMoveHandler, {
       passive: false,
     });
 
     return () => {
-      detachWindowMouseListeners();
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
       barElement?.removeEventListener("touchstart", touchStartHandler);
       barElement?.removeEventListener("touchmove", touchMoveHandler);
     };
@@ -435,7 +452,6 @@
       gsapTween.kill();
     }
     flushPendingDragPosition();
-    detachWindowMouseListeners();
     playerDetailMotionStore.reset();
     destroy();
   });
@@ -448,7 +464,7 @@
 >
   <div class="relative select-none h-dvh">
     <div
-      class="absolute top-1 left-4 right-4 flex items-center justify-between min-h-14 touch-none"
+      class="absolute top-1 left-4 right-4 flex items-center justify-between min-h-14"
       bind:this={barElement}
       role="button"
       tabindex="0"

@@ -54,7 +54,7 @@
 
   const bgTopOffset = $derived.by(() => {
     if (!isTopRoute) {
-      return -0.25 + "rem";
+      return -0.3 + "rem";
     }
     if (playerStore.trackQueue.length > 0) {
       return -4.25 + "rem";
@@ -132,7 +132,6 @@
       {!isTopRoute && playerStore.trackQueue.length === 0
         ? 'opacity-0 pointer-events-none'
         : ''}
-      {panelOpenProgress > 0.98 ? 'rounded-none' : 'rounded-4xl'}  
       "
     ></div>
 
