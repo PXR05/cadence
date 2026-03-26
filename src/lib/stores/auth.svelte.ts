@@ -42,6 +42,11 @@ class AuthStore {
     if (cachedUser) {
       this.user = cachedUser;
     }
+
+    const cachedSessionId = this.sessionIdStore.value;
+    if (cachedSessionId) {
+      this.sessionId = cachedSessionId;
+    }
   }
 
   private saveUserToStorage(user: User | null): void {
@@ -169,7 +174,9 @@ class AuthStore {
     const hadSession = this.user !== null;
 
     this.userStore.clear();
+    this.sessionIdStore.clear();
     this.user = null;
+    this.sessionId = null;
 
     if (hadSession && "onLine" in navigator && navigator.onLine) {
       try {

@@ -201,6 +201,9 @@
   * {
     @apply border-border outline-ring/50;
     font-weight: var(--font-weight-normal);
+
+    scrollbar-width: thin;
+    scrollbar-color: var(--muted-foreground) var(--muted);
   }
 
   body {
@@ -254,4 +257,21 @@
 ::view-transition-new(*),
 ::view-transition-old(*) {
   animation-duration: 0.1s;
+}
+
+@media (width >= 48rem) {
+  *::-webkit-scrollbar {
+    width: 6cqh;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: var(--muted);
+    border-radius: 5px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: var(--muted-foreground);
+    border-radius: 5px;
+    border: 1px solid var(--muted);
+  }
 }

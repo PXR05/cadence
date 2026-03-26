@@ -5,14 +5,15 @@
 
   function handleVolumeChange(e: Event) {
     const target = e.target as HTMLInputElement;
-    playerStore.volume = parseFloat(target.value) / 100;
-    if (playerStore.volume > 0) playerStore.isMuted = false;
-    playerStore.audioEngine.setVolume(playerStore.volume);
+    const nextVolume = parseFloat(target.value) / 100;
+    if (nextVolume > 0 && playerStore.isMuted) {
+      playerStore.isMuted = false;
+    }
+    playerStore.volume = nextVolume;
   }
 
   function toggleMute() {
-    playerStore.playerRef!.muted = !playerStore.isMuted;
-    playerStore.isMuted = !playerStore.isMuted;
+    playerStore.toggleMute();
   }
 
   const isMuted = $derived(playerStore.isMuted || playerStore.volume === 0);

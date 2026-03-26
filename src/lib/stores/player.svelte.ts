@@ -345,6 +345,14 @@ class PlayerState {
     this.audioEngine.cleanup();
   }
 
+  toggleMute() {
+    this.isMuted = !this.isMuted;
+    
+    if (this.playerRef) {
+      this.playerRef.muted = this.isMuted;
+    }
+  }
+
   getFrequencyData(): Uint8Array | null {
     return this.audioEngine.getFrequencyData();
   }
