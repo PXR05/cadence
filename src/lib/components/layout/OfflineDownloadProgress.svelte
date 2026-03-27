@@ -28,7 +28,7 @@
     class="border rounded-xl overflow-clip border-input/15 mx-1.5
     {appearanceStore.disableBlur
       ? 'bg-muted'
-      : 'bg-muted-foreground/10 dark:bg-muted/70 backdrop-blur-md'}"
+      : 'bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md'}"
   >
     <div class="flex items-center justify-between p-3 gap-2">
       <div class="flex-1 min-w-0">

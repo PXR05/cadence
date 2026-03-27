@@ -125,7 +125,7 @@
       class="md:hidden transition-all duration-200 absolute inset-0 rounded-4xl border border-input/15
       {appearanceStore.disableBlur
         ? 'bg-muted'
-        : 'bg-muted-foreground/10 dark:bg-muted/70 backdrop-blur-md'}
+        : 'bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md'}
       {playerDetailMotionStore.isDragging || playerDetailMotionStore.isAnimating
         ? 'transition-none!'
         : ''}

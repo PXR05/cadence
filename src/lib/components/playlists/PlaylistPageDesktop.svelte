@@ -31,9 +31,6 @@
 </script>
 
 <div
-  transition:fade={{
-    duration: appearanceStore.disableAnimations ? 0 : 150,
-  }}
   style="--h: {isScrolled ? 10 : 16}rem;"
   class="z-10 flex flex-col absolute top-0 w-full gap-2"
 >

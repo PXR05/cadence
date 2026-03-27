@@ -293,9 +293,9 @@
   <div class="flex items-center gap-2">
     <div
       class="flex-1 mt-2 flex items-stretch relative rounded-xl border border-input/15 min-h-11
-    {appearanceStore.disableBlur
+      {appearanceStore.disableBlur
         ? 'bg-muted'
-        : 'bg-muted-foreground/10 dark:bg-muted/70 backdrop-blur-md'}"
+        : 'bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md'}"
     >
       <SelectRoot
         type="single"
@@ -341,6 +341,7 @@
           placeholder="search..."
           class="flex-1 text-base h-auto bg-transparent! border-0 transition-all p-3 pr-11 pl-20 outline-none font-mono placeholder:text-muted-foreground rounded-xl"
         />
+
         <Button
           variant="ghost"
           size="icon"
@@ -358,10 +359,15 @@
         </Button>
       </div>
     </div>
+
     <Button
       variant="outline"
       size="icon"
-      class="mt-2 size-11 rounded-xl shrink-0"
+      class="mt-2 size-11 rounded-xl shrink-0 
+      {appearanceStore.disableBlur
+        ? 'bg-muted!'
+        : 'bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md'}
+      "
       onclick={() => (uploadDialogOpen = true)}
       aria-label="Add track"
     >

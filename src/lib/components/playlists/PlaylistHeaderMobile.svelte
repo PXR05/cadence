@@ -11,7 +11,6 @@
     PlusIcon,
     ShuffleIcon,
   } from "@lucide/svelte";
-  import { fade } from "svelte/transition";
   import { Button } from "../ui/button";
 
   interface Props {
@@ -76,48 +75,69 @@
   });
 </script>
 
-<div
-  class="fixed top-2 left-2 right-2 flex items-center justify-between rounded-4xl p-2 z-30
-  {!isScrolled
-    ? 'border-transparent'
-    : appearanceStore.disableBlur
-      ? 'bg-muted'
-      : 'bg-muted-foreground/10 dark:bg-muted/70 backdrop-blur-md'}
-  "
->
-  <Button
-    variant="ghost"
-    size="icon"
-    class="rounded-lg size-11"
-    title="Back"
-    onclick={() => history.back()}
-  >
-    <ArrowLeftIcon class="size-5" />
-  </Button>
+<div class="fixed top-0 left-0 right-0 z-10 flex flex-col p-2">
+  <div
+    class="absolute inset-0 transition-opacity duration-100 {isScrolled
+      ? 'opacity-100'
+      : 'opacity-0'}"
+    style="
+      background: linear-gradient(
+        to bottom,
+        color-mix(in oklab, var(--background) 100%, transparent) 0%,
+        color-mix(in oklab, var(--background) 100%, transparent) 20%,
+        color-mix(in oklab, var(--background) 0%, transparent) 100%
+      );
+    "
+  ></div>
 
-  {#if isScrolled}
-    <button
-      onclick={(e) => {
-        const thisButton = e.currentTarget;
-        const upTwoLevels = thisButton.parentElement?.parentElement;
-        if (upTwoLevels) {
-          upTwoLevels.scrollIntoView({ behavior: "smooth" });
-        }
-      }}
-     class="text-lg font-semibold truncate max-w-[50%] text-center">
-      {playlist.name}
-    </button>
-  {/if}
-
-  <Button
-    variant="ghost"
-    size="icon"
-    class="rounded-lg size-11"
-    title="Menu"
-    onclick={onMenu}
+  <div
+    class="z-10 flex items-center justify-between rounded-4xl p-2
+    {!isScrolled
+      ? 'border-transparent'
+      : appearanceStore.disableBlur
+        ? 'bg-muted'
+        : 'bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md'}
+    "
   >
-    <EllipsisIcon class="size-5" />
-  </Button>
+    <Button
+      variant="ghost"
+      size="icon"
+      class="rounded-xl size-11 border border-transparent {isScrolled
+        ? ''
+        : 'bg-muted/10 border-muted-foreground/10 backdrop-blur-md'}"
+      title="Back"
+      onclick={() => history.back()}
+    >
+      <ArrowLeftIcon class="size-5" />
+    </Button>
+
+    {#if isScrolled}
+      <button
+        onclick={(e) => {
+          const thisButton = e.currentTarget;
+          const upTwoLevels = thisButton.parentElement?.parentElement;
+          if (upTwoLevels) {
+            upTwoLevels.scrollIntoView({ behavior: "smooth" });
+          }
+        }}
+        class="text-lg font-semibold truncate max-w-[50%] text-center"
+      >
+        {playlist.name}
+      </button>
+    {/if}
+
+    <Button
+      variant="ghost"
+      size="icon"
+      class="rounded-xl size-11 border border-transparent {isScrolled
+        ? ''
+        : 'bg-muted/10 border-muted-foreground/10 backdrop-blur-md'}"
+      title="Menu"
+      onclick={onMenu}
+    >
+      <EllipsisIcon class="size-5" />
+    </Button>
+  </div>
 </div>
 
 <img
@@ -140,14 +160,16 @@
       "
 ></div>
 
-<div class="w-full flex flex-col items-center gap-4 truncate pb-2 pt-18">
+<div
+  class="relative w-full flex flex-col items-center gap-4 truncate pb-2 pt-20 z-0"
+>
   {#key playlist.coverImage}
     <PlaylistCoverImage
       {playlist}
       iconSize={64}
       youtubeIconSize={48}
-      containerClass="shrink-0 overflow-hidden bg-muted relative grid place-items-center rounded-xl"
-      imageClass="object-cover relative z-10 size-[calc(60dvh-236px)]"
+      containerClass="shrink-0 overflow-hidden bg-muted relative grid place-items-center rounded-xl size-[calc(60dvh-240px)]"
+      imageClass="object-cover relative z-10 size-[calc(60dvh-240px)]"
     />
   {/key}
 
@@ -187,23 +209,25 @@
       size="icon"
       onclick={onShuffle}
       disabled={playlist.items.length === 0}
-      class="font-medium size-10 rounded-full bg-muted-foreground/20 text-foreground transition-colors hover:bg-muted-foreground/10 disabled:opacity-50 disabled:cursor-not-allowed"
+      class="font-medium size-12 backdrop-blur-md rounded-full bg-muted-foreground/10 border border-muted-foreground/10 text-foreground transition-colors duration-100 hover:bg-muted-foreground/15 disabled:opacity-50 disabled:cursor-not-allowed"
     >
       <ShuffleIcon size={16} />
     </Button>
+
     <Button
       onclick={onPlay}
       disabled={playlist.items.length === 0}
-      class="font-medium h-10 rounded-full bg-foreground text-primary-foreground transition-colors hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 px-8 justify-center text-sm"
+      class="font-medium h-12 rounded-full bg-foreground text-primary-foreground transition-colors duration-100 hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 px-8 justify-center text-sm"
     >
       <PlayIcon size={16} fill="currentColor" />
       Play
     </Button>
+
     <Button
       size="icon"
       onclick={onAddTracks}
       disabled={onAddTracks === undefined}
-      class="font-medium size-10 rounded-full bg-muted-foreground/20 text-foreground transition-colors hover:bg-muted-foreground/10"
+      class="font-medium size-12 backdrop-blur-md rounded-full bg-muted-foreground/10 border border-muted-foreground/10 text-foreground transition-colors duration-100 hover:bg-muted-foreground/15"
     >
       <PlusIcon size={16} />
     </Button>

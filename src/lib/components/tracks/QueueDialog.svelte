@@ -15,7 +15,7 @@
   const isDesktop = new MediaQuery("(min-width: 768px)");
 
   let virtualScroll: any = $state(null);
-  const ROW_HEIGHT = 52;
+  const ROW_HEIGHT = 68;
   let previousOpen = $state(false);
   let previousQueueIndex = $state(-1);
 

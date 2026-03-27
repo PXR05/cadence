@@ -64,7 +64,7 @@
       );
 
       await playlistsStore.invalidatePlaylistDetail(playlistId);
-      
+
       resetDialog();
       onOpenChange(false);
 
@@ -184,7 +184,7 @@
           onclick={() => toggleTrack(track.id)}
           disabled={loading}
           class="h-auto transition-none! w-full flex items-center gap-3 p-2 text-left group
-            {isSelected ? 'bg-muted/70' : ''}
+            {isSelected ? 'bg-muted/60' : ''}
             {actualIndex === filteredTracks.length - 1 ? 'mb-20' : ''}"
         >
           <div

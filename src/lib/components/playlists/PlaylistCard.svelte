@@ -57,7 +57,7 @@
       class="flex items-center justify-between p-2 border border-input/15 rounded-md
       {appearanceStore.disableBlur
         ? 'bg-muted'
-        : 'bg-muted/80 dark:bg-muted/70 backdrop-blur-md'}"
+        : 'bg-muted/80 dark:bg-muted/60 backdrop-blur-md'}"
     >
       <div class="flex flex-col truncate gap-0.5">
         <p class="text-sm font-medium truncate leading-tight flex-1">

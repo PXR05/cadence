@@ -15,7 +15,7 @@
   <div
     class="flex-1 flex items-center flex-row gap-1.5 md:gap-2 rounded-xl p-1.5 md:p-2 border-input/15 {appearanceStore.disableBlur
       ? 'bg-muted'
-      : 'bg-muted-foreground/10 dark:bg-muted/70 backdrop-blur-md'}"
+      : 'bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md'}"
   >
     <Button
       variant="ghost"

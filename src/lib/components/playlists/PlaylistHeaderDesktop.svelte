@@ -40,7 +40,7 @@
       class="p-2 row-start-1 col-start-1 h-fit flex items-center rounded-xl border relative w-full gap-2
       {appearanceStore.disableBlur
         ? 'bg-muted border-input/15'
-        : 'bg-muted-foreground/10 dark:bg-muted/70 backdrop-blur-md border-input/15'}"
+        : 'bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md border-input/15'}"
     >
       <Button
         variant="ghost"
