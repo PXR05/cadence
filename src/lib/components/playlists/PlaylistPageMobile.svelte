@@ -42,14 +42,14 @@
     }
   }}
 >
-
-<div class="flex-1 z-10">
   {#if isScrolled}
     <div
       style="--h: 5rem;"
-      class="_bg _color fixed top-0 left-0 right-0 z-40"
+      class="_bg _color fixed top-0 left-0 right-0 z-10"
     ></div>
   {/if}
+
+  <div class="flex-1 z-10">
     <PlaylistHeaderMobile
       {playlist}
       {isScrolled}
