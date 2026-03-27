@@ -10,6 +10,7 @@
     playlist: PlaylistDetail;
     items: PlaylistItem[];
     hasAddButton?: boolean | null;
+    useVirtualScroll?: boolean;
     onAddTracks?: () => void;
     onScroll?: (scrollTop: number) => void;
   }
@@ -18,6 +19,7 @@
     playlist,
     items,
     hasAddButton = false,
+    useVirtualScroll = true,
     onAddTracks,
     onScroll,
   }: Props = $props();
@@ -26,7 +28,7 @@
 
   const ROW_HEIGHT = 80;
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
-  const topOffset = $derived(isMobile ? 227 + 6 : 272 + 44 + 16);
+  const topOffset = $derived(isMobile ? 0 : 272 + 44 + 16);
 
   let virtualScrollRef: VirtualScroll<PlaylistItem> | null = $state(null);
 
@@ -66,7 +68,7 @@
       <p>No tracks in this playlist</p>
     </div>
   </div>
-{:else}
+{:else if useVirtualScroll}
   <VirtualScroll
     bind:this={virtualScrollRef}
     {items}
@@ -88,4 +90,20 @@
       />
     {/snippet}
   </VirtualScroll>
+{:else}
+  <div class="flex flex-col gap-2 px-2">
+    {#if showAddButton && onAddTracks}
+      {@render addButton()}
+    {/if}
+    {#each items as item, index}
+      <TrackItem
+        {index}
+        {playlist}
+        isCurrentTrack={item.audio.id === playerStore.currentTrack?.id}
+        track={item.audio}
+        fromQueue={false}
+      />
+    {/each}
+    <span class="h-[50dvh]"></span>
+  </div>
 {/if}

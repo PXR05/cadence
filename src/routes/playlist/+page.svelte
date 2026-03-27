@@ -8,17 +8,13 @@
   } from "$lib/utils/playlist";
   import {
     AddTracksDialog,
-    PlaylistHeader,
-    PlaylistTrackList,
+    PlaylistPageDesktop,
+    PlaylistPageMobile,
   } from "$lib/components";
-  import PlaylistSearch from "$lib/components/playlists/PlaylistSearch.svelte";
   import { innerWidth } from "svelte/reactivity/window";
   import { LoaderIcon, TriangleAlertIcon } from "@lucide/svelte";
   import type { PlaylistDetail, PlaylistItem } from "$lib/schemas";
-  import { fade } from "svelte/transition";
-  import { appearanceStore } from "$lib/stores/appearance.svelte.js";
   import { playerStore } from "$lib/stores/player.svelte.js";
-  import { useSidebar } from "$lib/components/ui/sidebar/index.js";
 
   let { data } = $props();
 
@@ -52,7 +48,7 @@
   );
 
   const hasAddButton = $derived(
-    !searchQuery.trim() && playlist && !isNonModifiable,
+    !searchQuery.trim() && Boolean(playlist) && !isNonModifiable,
   );
 
   const filteredTracks = $derived(
@@ -74,8 +70,6 @@
   }
 
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
-
-  const isSidebarCollapsed = $derived(useSidebar().state === "collapsed");
 </script>
 
 <svelte:head>
@@ -102,45 +96,23 @@
     <div class="flex items-center justify-center h-full">
       <LoaderIcon class="delayed-loader animate-spin text-muted-foreground" />
     </div>
-  {:else}
-    <div
-      transition:fade={{
-        duration: appearanceStore.disableAnimations ? 0 : 150,
-      }}
-      style="--h: {isScrolled ? 10 : 16}rem;"
-      class="z-20 p-1.5 md:p-2 flex flex-col absolute top-0 w-full gap-1.5 md:gap-2"
-    >
-      {#if !appearanceStore.disableBlur}
-        <div class="_bg _blur absolute inset-0 -z-10"></div>
-      {/if}
-      <div class="_bg _color absolute inset-0 -z-10"></div>
-
-      <PlaylistHeader {playlist} {isScrolled} />
-
-      <div
-        class="absolute w-[calc(100dvw-16px)] ease-vaul
-          {isScrolled ? 'translate-y-15' : 'translate-y-42 md:translate-y-68'}
-          {appearanceStore.disableAnimations ? 'duration-0' : 'duration-200'}
-          {isSidebarCollapsed
-          ? 'md:w-[calc(100dvw-16px-64px)]'
-          : 'md:w-[calc(100dvw-16px-256px)]'}"
-      >
-        <PlaylistSearch bind:searchQuery />
-      </div>
-    </div>
-
-    <PlaylistTrackList
+  {:else if isMobile}
+    <PlaylistPageMobile
       {playlist}
+      bind:isScrolled
+      bind:searchQuery
       {hasAddButton}
       items={filteredTracks}
       onAddTracks={() => addTracksDialog.open()}
-      onScroll={(scrollTop) => {
-        if (isScrolled && scrollTop < 154) {
-          isScrolled = false;
-        } else if (!isScrolled && scrollTop > (isMobile ? 245 : 273 + 64)) {
-          isScrolled = true;
-        }
-      }}
+    />
+  {:else}
+    <PlaylistPageDesktop
+      {playlist}
+      bind:isScrolled
+      bind:searchQuery
+      {hasAddButton}
+      items={filteredTracks}
+      onAddTracks={() => addTracksDialog.open()}
     />
   {/if}
 </div>
@@ -153,32 +125,3 @@
     {existingTrackIds}
   />
 {/if}
-
-<style>
-  ._bg {
-    &::before,
-    &::after {
-      pointer-events: none;
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: -1;
-      mask: linear-gradient(to top, transparent, black);
-    }
-    &::before {
-      height: var(--h);
-    }
-    &::after {
-      height: calc(var(--h) - 1rem);
-    }
-  }
-
-  ._color {
-    &::before,
-    &::after {
-      background-color: var(--background);
-    }
-  }
-</style>

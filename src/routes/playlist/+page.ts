@@ -1,4 +1,5 @@
 import { browser } from "$app/environment";
+import { getImageUrl } from "$lib/constants";
 import { offlineDb } from "$lib/db/offline";
 import type { AudioFile, PlaylistDetail } from "$lib/schemas";
 import { playlistsStore } from "$lib/stores/playlists.svelte";
@@ -79,6 +80,7 @@ async function loadArtistPlaylist(playlistId: string): Promise<PlaylistDetail> {
     userId: "system",
     createdAt: new Date(),
     updatedAt: new Date(),
+    coverImage: getImageUrl(items[0]?.audio.id),
     items,
   };
 

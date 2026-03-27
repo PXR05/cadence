@@ -45,7 +45,6 @@
     iconWrapperClass = "absolute inset-0 grid place-items-center",
     imageClass = "w-full h-full object-cover relative z-10",
     fallbackIconClass = "text-muted-foreground",
-    tidalIconClass = "text-cyan-500",
   }: Props = $props();
 
   const isYoutube = $derived(isYoutubePlaylist(playlist.id));
@@ -96,7 +95,7 @@
         size={iconSize}
         {strokeWidth}
         absoluteStrokeWidth={useAbsoluteStrokeWidth}
-        class={tidalIconClass}
+        class={fallbackIconClass}
       />
     {:else}
       <MusicIcon
@@ -112,7 +111,9 @@
     <img
       loading="lazy"
       crossorigin="use-credentials"
-      src={getPlaylistImageUrl(playlist.id)}
+      src={playlist.coverImage.startsWith("http")
+        ? playlist.coverImage
+        : getPlaylistImageUrl(playlist.id)}
       alt={playlist.name}
       class={imageClass}
     />

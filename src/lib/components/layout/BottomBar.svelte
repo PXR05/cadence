@@ -54,7 +54,7 @@
 
   const bgTopOffset = $derived.by(() => {
     if (!isTopRoute) {
-      return -0.3 + "rem";
+      return -0.25 + "rem";
     }
     if (playerStore.trackQueue.length > 0) {
       return -4.25 + "rem";

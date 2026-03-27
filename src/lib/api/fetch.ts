@@ -1,3 +1,5 @@
+import { authStore } from "$lib/stores/auth.svelte";
+
 export async function authFetch(
   path: string,
   init?: RequestInit,
@@ -14,5 +16,9 @@ export async function authFetch(
     ...init,
     credentials: "include",
     mode: "cors",
+    headers: {
+      ...init?.headers,
+      Authorization: `Bearer ${authStore.sessionId}`,
+    },
   });
 }

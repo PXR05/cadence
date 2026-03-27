@@ -509,7 +509,6 @@
       style:pointer-events={panelState.isOpen ? "auto" : "none"}
     >
       <PlayerDetailsPanel
-        onOpenChange={(v) => (v ? panelState.open() : panelState.close())}
         {onQueueOpen}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}

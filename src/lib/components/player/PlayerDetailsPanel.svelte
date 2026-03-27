@@ -20,7 +20,6 @@
   import { appearanceStore } from "$lib/stores/appearance.svelte";
 
   interface Props {
-    onOpenChange: (open: boolean) => void;
     onQueueOpen: () => void;
     onTouchStart?: (e: TouchEvent) => void;
     onTouchMove?: (e: TouchEvent) => void;
@@ -30,7 +29,6 @@
   }
 
   let {
-    onOpenChange,
     onQueueOpen,
     onTouchStart,
     onTouchMove,
@@ -81,7 +79,7 @@
   }
 
   function handleClose() {
-    onOpenChange(false);
+    history.back();
   }
 
   onMount(async () => {
@@ -207,12 +205,12 @@
       crossorigin="use-credentials"
       src={getImageUrl(playerStore.currentTrack.id)}
       alt={playerStore.currentTrack.id}
-      class="absolute inset-0 size-full object-cover text-transparent brightness-50"
+      class="absolute inset-0 size-full object-cover text-transparent brightness-125 dark:brightness-60 blur-2xl scale-115"
     />
   {/if}
 
   <div
-    class="flex flex-col h-dvh backdrop-blur-2xl"
+    class="flex flex-col h-dvh backdrop-brightness-95"
     style="
     background: linear-gradient(
       to top,
@@ -230,7 +228,7 @@
         class="transition-opacity hover:opacity-90 cursor-pointer"
         aria-label="Close player details"
       >
-        <ChevronDown class="size-6" />
+        <ChevronDown class="size-5" />
       </Button>
 
       <Button
@@ -242,7 +240,7 @@
             ? trackMenuStore.open(track, isOffline, refreshOfflineStatus)
             : {}}
       >
-        <EllipsisIcon class="size-6" />
+        <EllipsisIcon class="size-5" />
       </Button>
     </div>
 

@@ -10,6 +10,7 @@
   import type { AudioFile, PlaylistDetail } from "$lib/schemas";
   import { Button } from "../ui/button";
   import { createWebHaptics } from "web-haptics/svelte";
+  import { innerWidth } from "svelte/reactivity/window";
 
   const { trigger, destroy } = createWebHaptics();
   onDestroy(destroy);
@@ -43,6 +44,7 @@
   );
 
   let isOffline = $state(false);
+  const isMobile = $derived((innerWidth.current ?? 0) <= 768);
 
   onMount(async () => {
     isOffline = await downloadStore.checkTrackOfflineStatus(track.id);
@@ -115,19 +117,23 @@
         ? 'text-primary/50'
         : 'text-muted-foreground'}"
     >
-      {#each artists as a, i}
-        <span
-          role="link"
-          tabindex="0"
-          class="hover:underline cursor-pointer"
-          onclick={(e) => {
-            e.stopPropagation();
-            goto(`/playlist?id=artist_${a}`);
-          }}
-          onkeydown={(e) =>
-            e.key === "Enter" && goto(`/playlist?id=artist_${a}`)}>{a}</span
-        >{#if i < artists.length - 1},&nbsp;{/if}
-      {/each}
+      {#if !isMobile}
+        {#each artists as a, i}
+          <span
+            role="link"
+            tabindex="0"
+            class="hover:underline cursor-pointer"
+            onclick={(e) => {
+              e.stopPropagation();
+              goto(`/playlist?id=artist_${a}`);
+            }}
+            onkeydown={(e) =>
+              e.key === "Enter" && goto(`/playlist?id=artist_${a}`)}>{a}</span
+          >{#if i < artists.length - 1},&nbsp;{/if}
+        {/each}
+      {:else}
+        {artists.join(", ")}
+      {/if}
       {#if showAlbum}
         &nbsp;•&nbsp;
         {album}

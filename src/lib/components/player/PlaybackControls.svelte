@@ -41,7 +41,7 @@
       trigger([{ duration: 8 }]);
       playerStore.isShuffled = !playerStore.isShuffled;
     }}
-    class="size-{size.button} max-md:rounded-lg grid place-items-center
+    class="size-{size.button} max-md:rounded-xl grid place-items-center
     {playerStore.isShuffled ? 'hover:bg-accent/50 bg-accent' : 'opacity-50'}
     {variant === 'large' ? 'mr-auto' : 'ml-auto'}"
     style="color: {textColor};"
@@ -60,7 +60,7 @@
       trigger([{ duration: 10 }]);
       playerStore.playPrevious();
     }}
-    class="size-{size.button} max-md:rounded-lg grid place-items-center"
+    class="size-{size.button} max-md:rounded-xl grid place-items-center"
     style="color: {textColor};"
     aria-label="Previous track"
   >
@@ -78,7 +78,7 @@
       trigger([{ duration: 10 }]);
       playerStore.togglePlayPause();
     }}
-    class="size-{size.primary} max-md:rounded-xl grid place-items-center"
+    class="size-{size.primary} max-md:rounded-2xl grid place-items-center"
     style="color: {textColor};"
     aria-label={playerStore.isPlaying ? "Pause" : "Play"}
   >
@@ -105,7 +105,7 @@
       trigger([{ duration: 10 }]);
       playerStore.playNext();
     }}
-    class="size-{size.button} max-md:rounded-lg grid place-items-center"
+    class="size-{size.button} max-md:rounded-xl grid place-items-center"
     style="color: {textColor};"
     aria-label="Next track"
   >
@@ -123,7 +123,7 @@
       trigger([{ duration: 8 }]);
       playerStore.isRepeated = !playerStore.isRepeated;
     }}
-    class="size-{size.button} max-md:rounded-lg grid place-items-center
+    class="size-{size.button} max-md:rounded-xl grid place-items-center
     {playerStore.isRepeated ? 'hover:bg-accent/50 bg-accent' : 'opacity-50'}
     {variant === 'large' ? 'ml-auto' : 'mr-auto'}"
     style="color: {textColor};"

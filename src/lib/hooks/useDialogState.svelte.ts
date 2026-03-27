@@ -5,18 +5,12 @@ import { browser } from "$app/environment";
 
 export function useDialogState(dialogName: string) {
   let isOpen = $state(browser ? page.url.searchParams.has(dialogName) : false);
-  let skipNextSync = false;
 
   $effect(() => {
     if (!browser) return;
 
     const currentlyOpen = page.url.searchParams.has(dialogName);
-    
-    if (skipNextSync) {
-      skipNextSync = false;
-      return;
-    }
-    
+
     if (currentlyOpen !== untrack(() => isOpen)) {
       isOpen = currentlyOpen;
     }
@@ -25,7 +19,6 @@ export function useDialogState(dialogName: string) {
   function open() {
     if (isOpen) return;
 
-    skipNextSync = true;
     isOpen = true;
 
     const url = new URL(page.url);
@@ -40,7 +33,6 @@ export function useDialogState(dialogName: string) {
   function close() {
     if (!isOpen) return;
 
-    skipNextSync = true;
     isOpen = false;
 
     history.back();

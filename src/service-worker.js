@@ -131,7 +131,7 @@ self.addEventListener("fetch", (event) => {
       try {
         const response = await fetch(event.request.url, {
           credentials: "include",
-          mode: "cors",
+          mode: "cors"
         });
         if (response.status === 200 && response.type !== "opaque" && trackId) {
           response
@@ -156,7 +156,10 @@ self.addEventListener("fetch", (event) => {
     }
 
     try {
-      const response = await fetch(event.request);
+      const response = await fetch(event.request, {
+        credentials: "include",
+        mode: "cors",
+      });
       if (!(response instanceof Response)) {
         throw new Error("invalid response from fetch");
       }
