@@ -45,7 +45,7 @@
   {#if isScrolled}
     <div
       style="--h: 5rem;"
-      class="_bg _color fixed top-0 left-0 right-0 z-10"
+      class="_bg _color fixed top-0 left-0 right-0 z-20"
     ></div>
   {/if}
 
@@ -53,11 +53,10 @@
     <PlaylistHeaderMobile
       {playlist}
       {isScrolled}
-      isOffline={header.offline.isOffline}
       onPlay={header.handlePlay}
       onMenu={header.handleMenu}
       onShuffle={header.handleShuffle}
-      onEdit={() => {}}
+      onAddTracks={hasAddButton ? onAddTracks : undefined}
     />
   </div>
 
@@ -68,7 +67,6 @@
   <PlaylistTrackList
     useVirtualScroll={false}
     {playlist}
-    {hasAddButton}
     {items}
     {onAddTracks}
   />

@@ -6,10 +6,9 @@
   import { isArtistPlaylist, isSpecialPlaylist } from "$lib/utils/playlist";
   import {
     ArrowLeftIcon,
-    CloudCheckIcon,
     EllipsisIcon,
     PlayIcon,
-    ShareIcon,
+    PlusIcon,
     ShuffleIcon,
   } from "@lucide/svelte";
   import { fade } from "svelte/transition";
@@ -18,22 +17,14 @@
   interface Props {
     playlist: PlaylistDetail;
     isScrolled: boolean;
-    isOffline: boolean;
     onPlay: () => void;
     onMenu: (e: MouseEvent) => void;
-    onEdit: () => void;
     onShuffle: () => void;
+    onAddTracks?: () => void;
   }
 
-  let {
-    playlist,
-    isScrolled,
-    isOffline,
-    onPlay,
-    onMenu,
-    onEdit,
-    onShuffle,
-  }: Props = $props();
+  let { playlist, isScrolled, onPlay, onMenu, onShuffle, onAddTracks }: Props =
+    $props();
 
   const isArtist = $derived(isArtistPlaylist(playlist.id));
   const isSpecial = $derived(isSpecialPlaylist(playlist.id));
@@ -105,14 +96,17 @@
   </Button>
 
   {#if isScrolled}
-    <p
-      transition:fade={{
-        duration: appearanceStore.disableAnimations ? 0 : 100,
+    <button
+      onclick={(e) => {
+        const thisButton = e.currentTarget;
+        const upTwoLevels = thisButton.parentElement?.parentElement;
+        if (upTwoLevels) {
+          upTwoLevels.scrollIntoView({ behavior: "smooth" });
+        }
       }}
-      class="text-lg font-semibold truncate w-[50%] text-center py-2"
-    >
+     class="text-lg font-semibold truncate max-w-[50%] text-center">
       {playlist.name}
-    </p>
+    </button>
   {/if}
 
   <Button
@@ -153,25 +147,23 @@
       iconSize={64}
       youtubeIconSize={48}
       containerClass="shrink-0 overflow-hidden bg-muted relative grid place-items-center rounded-xl"
-      imageClass="object-cover relative z-10 size-[calc(55dvh-236px)]"
+      imageClass="object-cover relative z-10 size-[calc(60dvh-236px)]"
     />
   {/key}
 
   <div class="px-6 w-full text-center flex flex-col items-center gap-0.5">
     <div
-      class="flex items-center justify-center gap-2 w-full overflow-x-scroll hide-scrollbar"
+      class="flex items-center justify-center gap-2 w-full overflow-x-scroll hide-scrollbar px-3"
       style="
-        -webkit-mask-image: linear-gradient(to right, transparent 0%, black 1.5rem, black calc(100% - 1.5rem), transparent 100%);
-        mask-image: linear-gradient(to right, transparent 0%, black 1.5rem, black calc(100% - 1.5rem), transparent 100%);
+        scroll-padding-inline: 1rem;
+        -webkit-mask-image: linear-gradient(to right, transparent 0%, black 0.75rem, black calc(100% - 0.75rem), transparent 100%);
+        mask-image: linear-gradient(to right, transparent 0%, black 0.75rem, black calc(100% - 0.75rem), transparent 100%);
         -webkit-mask-repeat: no-repeat;
         mask-repeat: no-repeat;
       "
     >
-      <h1 class="font-semibold text-2xl px-4">
+      <h1 class="font-semibold text-2xl w-full">
         {playlist.name}
-        {#if isOffline}
-          <CloudCheckIcon size={20} class="shrink-0 text-primary" />
-        {/if}
       </h1>
     </div>
 
@@ -209,10 +201,11 @@
     </Button>
     <Button
       size="icon"
-      onclick={onEdit}
+      onclick={onAddTracks}
+      disabled={onAddTracks === undefined}
       class="font-medium size-10 rounded-full bg-muted-foreground/20 text-foreground transition-colors hover:bg-muted-foreground/10"
     >
-      <ShareIcon size={16} />
+      <PlusIcon size={16} />
     </Button>
   </div>
 </div>
