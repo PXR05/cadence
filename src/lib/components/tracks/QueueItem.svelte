@@ -81,19 +81,20 @@
       </p>
     </div>
 
-    {#if dragHandleProps}
-      <div class="flex items-center group/grip">
-        <button
-          type="button"
-          class="text-muted-foreground p-1 hidden md:opacity-0 md:group-hover/grip:opacity-100 md:block hover:text-destructive transition-opacity"
-          onclick={(e) => {
-            e.stopPropagation();
-            playerStore.removeFromQueue(index);
-          }}
-          aria-label="Remove from queue"
-        >
-          <XIcon size={18} />
-        </button>
+    <div class="flex items-center group/grip">
+      <button
+        type="button"
+        class="text-muted-foreground p-1 hidden md:opacity-0 md:group-hover/grip:opacity-100 md:block hover:text-destructive transition-opacity"
+        onclick={(e) => {
+          e.stopPropagation();
+          playerStore.removeFromQueue(index);
+        }}
+        aria-label="Remove from queue"
+      >
+        <XIcon size={18} />
+      </button>
+
+      {#if dragHandleProps}
         <span
           class="text-muted-foreground px-2 cursor-grab active:cursor-grabbing touch-none"
           onpointerdown={(e) => {
@@ -108,11 +109,7 @@
         >
           <GripHorizontalIcon />
         </span>
-      </div>
-    {:else if track.metadata && track.metadata.duration && track.metadata.duration > 0}
-      <span class="text-muted-foreground px-2">
-        <GripHorizontalIcon />
-      </span>
-    {/if}
+      {/if}
+    </div>
   </Button>
 </Swiper>

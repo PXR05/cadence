@@ -4,6 +4,7 @@
   import { innerWidth } from "svelte/reactivity/window";
   import { VirtualScroll } from "../ui/virtual-scroll";
   import { playerStore } from "$lib/stores/player.svelte";
+  import type { Snippet } from "svelte";
   import type { PlaylistDetail, PlaylistItem } from "$lib/schemas";
 
   interface Props {
@@ -11,6 +12,8 @@
     items: PlaylistItem[];
     hasAddButton?: boolean | null;
     useVirtualScroll?: boolean;
+    header?: Snippet;
+    headerHeight?: number;
     onAddTracks?: () => void;
     onScroll?: (scrollTop: number) => void;
   }
@@ -20,17 +23,41 @@
     items,
     hasAddButton = false,
     useVirtualScroll = true,
+    header,
+    headerHeight = 0,
     onAddTracks,
     onScroll,
   }: Props = $props();
 
   const showAddButton = $derived(hasAddButton ?? false);
+  const hasVirtualHeader = $derived(!!header && headerHeight > 0);
+  const showStandaloneAddButton = $derived(
+    !hasVirtualHeader && !!(showAddButton && onAddTracks),
+  );
+  const showAddButtonRow = $derived(showStandaloneAddButton);
 
   const ROW_HEIGHT = 80;
+  const ADD_BUTTON_HEIGHT = 88;
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
   const topOffset = $derived(isMobile ? 0 : 272 + 44 + 16);
+  type VirtualRow = PlaylistItem | { __header: true } | { __addButton: true };
+  const virtualRows = $derived<VirtualRow[]>([
+    ...(hasVirtualHeader ? [{ __header: true } as const] : []),
+    ...(showAddButtonRow ? [{ __addButton: true } as const] : []),
+    ...items,
+  ]);
+  const firstItemHeight = $derived(
+    hasVirtualHeader
+      ? headerHeight
+      : showAddButtonRow
+        ? ADD_BUTTON_HEIGHT
+        : undefined,
+  );
+  const itemOffset = $derived(
+    (hasVirtualHeader ? 1 : 0) + (showAddButtonRow ? 1 : 0),
+  );
 
-  let virtualScrollRef: VirtualScroll<PlaylistItem> | null = $state(null);
+  let virtualScrollRef: VirtualScroll<VirtualRow> | null = $state(null);
 
   $effect(() => {
     items;
@@ -57,7 +84,10 @@
 
 {#if items.length === 0}
   <div class="h-dvh px-2" style="margin-top: {topOffset}px;">
-    {#if showAddButton && onAddTracks}
+    {#if hasVirtualHeader && header}
+      {@render header()}
+    {/if}
+    {#if showStandaloneAddButton}
       {@render addButton()}
     {/if}
     <div
@@ -71,28 +101,36 @@
 {:else if useVirtualScroll}
   <VirtualScroll
     bind:this={virtualScrollRef}
-    {items}
+    items={virtualRows}
     rowHeight={ROW_HEIGHT}
-    class="h-dvh px-2"
+    {firstItemHeight}
+    class="h-dvh px-2 overflow-x-hidden"
     {topOffset}
     {onScroll}
   >
-    {#snippet children({ item, visibleIndex, actualIndex })}
-      {#if showAddButton && onAddTracks && visibleIndex === 0}
+    {#snippet children({ item, actualIndex })}
+      {#if "__header" in item}
+        {@render header?.()}
+      {:else if "__addButton" in item}
         {@render addButton()}
+      {:else}
+        {@const trackIndex = actualIndex - itemOffset}
+        <TrackItem
+          index={trackIndex}
+          {playlist}
+          isCurrentTrack={item.audio.id === playerStore.currentTrack?.id}
+          track={item.audio}
+          fromQueue={false}
+        />
       {/if}
-      <TrackItem
-        index={actualIndex}
-        {playlist}
-        isCurrentTrack={item.audio.id === playerStore.currentTrack?.id}
-        track={item.audio}
-        fromQueue={false}
-      />
     {/snippet}
   </VirtualScroll>
 {:else}
   <div class="flex flex-col gap-2 px-2">
-    {#if showAddButton && onAddTracks}
+    {#if hasVirtualHeader && header}
+      {@render header()}
+    {/if}
+    {#if showStandaloneAddButton}
       {@render addButton()}
     {/if}
     {#each items as item, index}

@@ -1,1 +1,1 @@
-export { default as VirtualScroll } from "./VirtualScroll.svelte";
+export { default as VirtualScroll } from "./VirtualScrollTanStack.svelte";

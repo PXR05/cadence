@@ -90,7 +90,7 @@
 
   const isValid = $derived(selectedTracks.size > 0 && !loading);
   const isEmpty = $derived(searchQuery.trim().length === 0);
-  const ROW_HEIGHT = 68;
+  const ROW_HEIGHT = 72;
 
   function clearSearch() {
     searchQuery = "";
@@ -100,10 +100,10 @@
 <Dialog.Root {open} onOpenChange={handleOpenChange}>
   <Dialog.Content
     showCloseButton={false}
-    class="md:max-w-2xl h-dvh md:h-[90dvh] overflow-clip max-w-dvw flex flex-col z-60 p-0 max-md:border-0 rounded-none md:rounded-2xl bg-background"
+    class="md:max-w-2xl h-dvh md:h-[90dvh] overflow-clip max-w-dvw flex flex-col z-60 p-0 max-md:border-0 rounded-none md:rounded-4xl bg-background"
   >
     <div
-      class="absolute top-1.5 left-1.5 right-1.5 z-10 rounded-lg bg-muted border border-input/15 flex flex-col"
+      class="absolute top-1.5 left-1.5 right-1.5 z-10 rounded-4xl bg-muted border border-input/15 flex flex-col"
     >
       <div class="px-2 py-3 flex justify-between items-center">
         <Dialog.Close
@@ -132,14 +132,14 @@
           bind:value={searchQuery}
           type="text"
           placeholder="search..."
-          class="flex-1 text-base h-auto transition-all px-3 py-3 outline-none bg-background! rounded-lg border border-input/15
+          class="flex-1 text-base h-auto transition-all px-3 py-3 outline-none bg-background! rounded-3xl border border-input/15
             {!isEmpty ? '' : 'pl-9'}"
           disabled={loading}
         />
         <Button
           variant="ghost"
           size="icon"
-          class="text-muted-foreground absolute right-1 rounded-lg
+          class="text-muted-foreground absolute right-1 rounded-4xl
             {isEmpty ? 'opacity-0' : ''}"
           style="transform: translateX({isEmpty ? '0.5rem' : '0rem'})"
           onclick={clearSearch}
@@ -155,7 +155,7 @@
     <VirtualScroll
       items={filteredTracks}
       rowHeight={ROW_HEIGHT}
-      class="mt-30 h-[calc(100dvh-8rem)] md:h-[calc(90dvh-8rem)]"
+      class="mt-30 h-[calc(100dvh-10rem)] md:h-[calc(90dvh-8rem)]"
       topOffset={8}
       leftPadding={8}
       rightPadding={8}
@@ -183,20 +183,20 @@
           variant="ghost"
           onclick={() => toggleTrack(track.id)}
           disabled={loading}
-          class="h-auto transition-none! w-full flex items-center gap-3 p-2 text-left group
+          class="h-auto rounded-2xl transition-none! w-full flex items-center gap-3 p-2 text-left group
             {isSelected ? 'bg-muted/60' : ''}
             {actualIndex === filteredTracks.length - 1 ? 'mb-20' : ''}"
         >
           <div
-            class="size-4 border-2 border-muted-foreground shrink-0 grid place-items-center rounded-sm"
+            class="size-4 border-2 border-muted-foreground shrink-0 grid place-items-center rounded-full"
           >
             {#if isSelected}
-              <div class="size-2 bg-primary rounded-sm"></div>
+              <div class="size-2 bg-foreground rounded-full"></div>
             {/if}
           </div>
 
           <div
-            class="size-12 border shrink-0 overflow-hidden rounded-md bg-muted"
+            class="size-14 border shrink-0 overflow-hidden rounded-lg bg-muted"
           >
             <img
               loading="lazy"
@@ -208,10 +208,10 @@
           </div>
 
           <div class="flex-1 min-w-0">
-            <p class="font-medium truncate text-sm">
+            <p class="font-medium truncate text-base">
               {title}
             </p>
-            <p class="text-xs truncate text-muted-foreground">
+            <p class="text-sm truncate text-muted-foreground">
               {artist}
             </p>
           </div>
@@ -220,17 +220,21 @@
     </VirtualScroll>
 
     <div
-      class="absolute bottom-1.5 left-1.5 right-1.5 z-10 rounded-lg bg-muted border border-input/15 p-1.5 flex gap-1.5"
+      class="absolute bottom-1.5 left-1.5 right-1.5 z-10 rounded-4xl bg-muted border border-input/15 p-1.5 flex gap-1.5"
     >
       <Button
         variant="outline"
         onclick={() => handleOpenChange(false)}
         disabled={loading}
-        class="dark:bg-background h-11 flex-1 "
+        class="dark:bg-background h-11 flex-1 rounded-3xl"
       >
         Cancel
       </Button>
-      <Button onclick={handleAdd} disabled={!isValid} class="h-11 flex-1">
+      <Button
+        onclick={handleAdd}
+        disabled={!isValid}
+        class="h-11 flex-1 rounded-3xl bg-foreground hover:bg-foreground/90 text-background"
+      >
         {#if loading}
           <LoaderIcon class="animate-spin" size={14} />
           Adding...

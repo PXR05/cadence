@@ -302,7 +302,6 @@
             {#each themeOptions as option}
               {@const Icon = option.icon}
               <Button
-                style="--primary: {playerStore.lightTrackColor};"
                 variant={mode.current === option.value ||
                 (mode.current === undefined && option.value === "system")
                   ? "default"

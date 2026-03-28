@@ -1,5 +1,4 @@
 <script lang="ts" generics="T">
-  import { ScrollArea } from "../scroll-area";
   import type { Snippet } from "svelte";
 
   interface Props {
@@ -75,6 +74,8 @@
     pageSize: 20,
   });
 
+  const itemSize = $derived(Math.max(1, rowHeight + itemGap));
+
   const range = $derived({
     start: Math.max(0, pagination.offset - overscan),
     end: Math.min(
@@ -95,7 +96,7 @@
     const rect = containerRef.getBoundingClientRect();
     const scrollTop = containerRef.scrollTop;
     const relativeY = clientY - rect.top + scrollTop - topOffset;
-    const targetIndex = Math.floor(relativeY / rowHeight);
+    const targetIndex = Math.floor(relativeY / itemSize);
     return Math.max(0, Math.min(items.length - 1, targetIndex));
   }
 
@@ -143,7 +144,7 @@
     if (containerRef) {
       const rect = containerRef.getBoundingClientRect();
       const scrollTop = containerRef.scrollTop;
-      const itemTop = index * rowHeight + topOffset - scrollTop + rect.top;
+      const itemTop = index * itemSize + topOffset - scrollTop + rect.top;
       dragOffsetY = e.clientY - itemTop;
     }
 
@@ -195,7 +196,7 @@
       if (containerRef) {
         const rect = containerRef.getBoundingClientRect();
         const scrollTop = containerRef.scrollTop;
-        const currentTop = dragFromIndex * rowHeight + topOffset;
+        const currentTop = dragFromIndex * itemSize + topOffset;
         const targetTop =
           pointerY - rect.top + scrollTop - topOffset - dragOffsetY;
         const offset = targetTop - currentTop;
@@ -203,11 +204,11 @@
       }
     } else if (dragFromIndex < dragToIndex) {
       if (actualIndex > dragFromIndex && actualIndex <= dragToIndex) {
-        return `translate3d(0, -${rowHeight}px, 0)`;
+        return `translate3d(0, -${itemSize}px, 0)`;
       }
     } else if (dragFromIndex > dragToIndex) {
       if (actualIndex >= dragToIndex && actualIndex < dragFromIndex) {
-        return `translate3d(0, ${rowHeight}px, 0)`;
+        return `translate3d(0, ${itemSize}px, 0)`;
       }
     }
     return "";
@@ -216,7 +217,7 @@
   function handleResize(ref: HTMLDivElement | null) {
     if (!ref) return;
     const clientHeight = ref.clientHeight;
-    const visibleRows = Math.ceil(clientHeight / rowHeight);
+    const visibleRows = Math.ceil(clientHeight / itemSize);
     pagination.pageSize = visibleRows;
   }
 
@@ -234,7 +235,7 @@
     const scrollTop = ref.scrollTop;
 
     throttledScroll(() => {
-      const newOffset = Math.floor(scrollTop / rowHeight);
+      const newOffset = Math.floor(scrollTop / itemSize);
       const oldOffset = pagination.offset;
 
       pagination.offset = newOffset;
@@ -317,7 +318,7 @@
 
   export function scrollToIndex(index: number, smooth = true) {
     if (containerRef && index >= 0 && index < items.length) {
-      const scrollTop = index * rowHeight - 100;
+      const scrollTop = index * itemSize - 100;
       containerRef.scrollTo({
         top: scrollTop,
         behavior: smooth ? "smooth" : "auto",
@@ -328,7 +329,7 @@
 
   export function scrollToBottom(smooth = true) {
     if (containerRef) {
-      const scrollTop = items.length * rowHeight;
+      const scrollTop = items.length * itemSize;
       containerRef.scrollTo({
         top: scrollTop,
         behavior: smooth ? "smooth" : "auto",
@@ -364,7 +365,7 @@
       style="
         position: relative;
         width: 100%;
-        height: {items.length * rowHeight + topOffset}px;
+        height: {Math.max(0, items.length * itemSize - itemGap) + topOffset}px;
         padding-top: {topOffset}px;
         padding-left: {leftPadding}px;
         padding-right: {rightPadding}px;"
@@ -380,7 +381,7 @@
         left: {leftPadding}px;
         right: {rightPadding}px;
         gap: {itemGap}px;
-        transform: translate3d(0, {range.start * rowHeight}px, 0);"
+        transform: translate3d(0, {range.start * itemSize}px, 0);"
       >
         {#each items.slice(range.start, range.end) as item, i (getKey(item, range.start + i))}
           {@const actualIndex = range.start + i}

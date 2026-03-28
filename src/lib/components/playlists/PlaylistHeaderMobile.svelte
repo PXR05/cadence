@@ -2,11 +2,8 @@
   import PlaylistCoverImage from "$lib/components/playlists/PlaylistCoverImage.svelte";
   import { getPlaylistImageUrl } from "$lib/constants";
   import type { PlaylistDetail } from "$lib/schemas";
-  import { appearanceStore } from "$lib/stores/appearance.svelte";
   import { isArtistPlaylist, isSpecialPlaylist } from "$lib/utils/playlist";
   import {
-    ArrowLeftIcon,
-    EllipsisIcon,
     PlayIcon,
     PlusIcon,
     ShuffleIcon,
@@ -15,14 +12,12 @@
 
   interface Props {
     playlist: PlaylistDetail;
-    isScrolled: boolean;
     onPlay: () => void;
-    onMenu: (e: MouseEvent) => void;
     onShuffle: () => void;
     onAddTracks?: () => void;
   }
 
-  let { playlist, isScrolled, onPlay, onMenu, onShuffle, onAddTracks }: Props =
+  let { playlist, onPlay, onShuffle, onAddTracks }: Props =
     $props();
 
   const isArtist = $derived(isArtistPlaylist(playlist.id));
@@ -75,71 +70,6 @@
   });
 </script>
 
-<div class="fixed top-0 left-0 right-0 z-10 flex flex-col p-2">
-  <div
-    class="absolute inset-0 transition-opacity duration-100 {isScrolled
-      ? 'opacity-100'
-      : 'opacity-0'}"
-    style="
-      background: linear-gradient(
-        to bottom,
-        color-mix(in oklab, var(--background) 100%, transparent) 0%,
-        color-mix(in oklab, var(--background) 100%, transparent) 20%,
-        color-mix(in oklab, var(--background) 0%, transparent) 100%
-      );
-    "
-  ></div>
-
-  <div
-    class="z-10 flex items-center justify-between rounded-4xl p-2
-    {!isScrolled
-      ? 'border-transparent'
-      : appearanceStore.disableBlur
-        ? 'bg-muted'
-        : 'bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md'}
-    "
-  >
-    <Button
-      variant="ghost"
-      size="icon"
-      class="rounded-xl size-11 border border-transparent {isScrolled
-        ? ''
-        : 'bg-muted/10 border-muted-foreground/10 backdrop-blur-md'}"
-      title="Back"
-      onclick={() => history.back()}
-    >
-      <ArrowLeftIcon class="size-5" />
-    </Button>
-
-    {#if isScrolled}
-      <button
-        onclick={(e) => {
-          const thisButton = e.currentTarget;
-          const upTwoLevels = thisButton.parentElement?.parentElement;
-          if (upTwoLevels) {
-            upTwoLevels.scrollIntoView({ behavior: "smooth" });
-          }
-        }}
-        class="text-lg font-semibold truncate max-w-[50%] text-center"
-      >
-        {playlist.name}
-      </button>
-    {/if}
-
-    <Button
-      variant="ghost"
-      size="icon"
-      class="rounded-xl size-11 border border-transparent {isScrolled
-        ? ''
-        : 'bg-muted/10 border-muted-foreground/10 backdrop-blur-md'}"
-      title="Menu"
-      onclick={onMenu}
-    >
-      <EllipsisIcon class="size-5" />
-    </Button>
-  </div>
-</div>
-
 <img
   loading="lazy"
   crossorigin="use-credentials"
@@ -147,18 +77,6 @@
   alt={playlist.name}
   class="-z-1 absolute inset-0 -top-24 w-dvw h-full max-h-[55dvh] object-cover text-transparent brightness-125 dark:brightness-60 blur-2xl scale-125 pointer-events-none"
 />
-
-<div
-  class="absolute inset-0 pointer-events-none"
-  style="
-      background: linear-gradient(
-        to bottom,
-        color-mix(in oklab, var(--background) 30%, transparent) 0%,
-        color-mix(in oklab, var(--background) 0%, transparent) 50%,
-        color-mix(in oklab, var(--background) 0%, transparent) 100%
-      );
-      "
-></div>
 
 <div
   class="relative w-full flex flex-col items-center gap-4 truncate pb-2 pt-20 z-0"
