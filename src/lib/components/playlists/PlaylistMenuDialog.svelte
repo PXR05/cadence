@@ -32,6 +32,7 @@
     DownloadIcon,
     MusicIcon,
     ListPlusIcon,
+    PlayIcon,
   } from "@lucide/svelte";
   import { toast } from "svelte-sonner";
   import { invalidateAll } from "$app/navigation";
@@ -123,6 +124,17 @@
     handleClose();
   }
 
+  async function handlePlay() {
+    const playlist = await getPlaylistDetail();
+    if (!playlist) {
+      toast.error("Failed to load playlist details");
+      return;
+    }
+    const tracks = playlist.items.map((item) => item.audio);
+    playerStore.setQueue(tracks, 0, playlist);
+    handleClose();
+  }
+
   async function handleAddToQueue() {
     const detail = await getPlaylistDetail();
     if (detail && detail.items.length > 0) {
@@ -211,18 +223,15 @@
 {/snippet}
 
 {#snippet menuItems()}
-  {#if !isNonModifiable}
-    <Button
-      variant="ghost"
-      class="justify-start gap-3 h-12"
-      onclick={handleEditPlaylist}
-    >
-      <PencilIcon class="size-5" />
-      Edit Playlist
-    </Button>
-
-    <div class="h-px bg-border my-1"></div>
-  {/if}
+  <Button
+    variant="ghost"
+    class="justify-start gap-3 h-12"
+    onclick={handlePlay}
+    disabled={itemCount === 0}
+  >
+    <PlayIcon class="size-5" />
+    Play
+  </Button>
 
   <Button
     variant="ghost"
@@ -262,8 +271,6 @@
     </Button>
   {/if}
 
-  <div class="h-px bg-border my-1"></div>
-
   {#if offline.isOffline || playlist?.id === SPECIAL_PLAYLIST_IDS.DOWNLOADED}
     <Button
       variant="ghost"
@@ -284,6 +291,21 @@
       <CloudDownloadIcon class="size-5" />
       Make Available Offline
     </Button>
+  {/if}
+
+  <div class="h-px bg-border my-1"></div>
+
+  {#if !isNonModifiable}
+    <Button
+      variant="ghost"
+      class="justify-start gap-3 h-12"
+      onclick={handleEditPlaylist}
+    >
+      <PencilIcon class="size-5" />
+      Edit Playlist
+    </Button>
+
+    <div class="h-px bg-border my-1"></div>
   {/if}
 {/snippet}
 

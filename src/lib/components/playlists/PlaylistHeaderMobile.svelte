@@ -3,12 +3,9 @@
   import { getPlaylistImageUrl } from "$lib/constants";
   import type { PlaylistDetail } from "$lib/schemas";
   import { isArtistPlaylist, isSpecialPlaylist } from "$lib/utils/playlist";
-  import {
-    PlayIcon,
-    PlusIcon,
-    ShuffleIcon,
-  } from "@lucide/svelte";
+  import { PlayIcon, PlusIcon, ShuffleIcon } from "@lucide/svelte";
   import { Button } from "../ui/button";
+  import { playlistMenuStore } from "$lib/stores/playlistMenu.svelte";
 
   interface Props {
     playlist: PlaylistDetail;
@@ -17,8 +14,7 @@
     onAddTracks?: () => void;
   }
 
-  let { playlist, onPlay, onShuffle, onAddTracks }: Props =
-    $props();
+  let { playlist, onPlay, onShuffle, onAddTracks }: Props = $props();
 
   const isArtist = $derived(isArtistPlaylist(playlist.id));
   const isSpecial = $derived(isSpecialPlaylist(playlist.id));
@@ -68,6 +64,11 @@
 
     return main;
   });
+
+  async function openPlaylistMenu(e: MouseEvent) {
+    e.preventDefault();
+    playlistMenuStore.open(playlist, false, false);
+  }
 </script>
 
 <img
@@ -81,7 +82,7 @@
 <div
   class="relative w-full flex flex-col items-center gap-4 truncate pb-2 pt-20 z-0"
 >
-  {#key playlist.coverImage}
+  <div tabindex="0" role="button" oncontextmenu={openPlaylistMenu}>
     <PlaylistCoverImage
       {playlist}
       iconSize={64}
@@ -89,7 +90,7 @@
       containerClass="shrink-0 overflow-hidden bg-muted relative grid place-items-center rounded-xl size-[calc(60dvh-240px)]"
       imageClass="object-cover relative z-10 size-[calc(60dvh-240px)]"
     />
-  {/key}
+  </div>
 
   <div class="px-6 w-full text-center flex flex-col items-center gap-0.5">
     <div
