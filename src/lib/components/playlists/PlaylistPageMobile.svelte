@@ -30,9 +30,45 @@
   const isArtist = $derived(isArtistPlaylist(playlist.id));
   const isSpecial = $derived(isSpecialPlaylist(playlist.id));
   const headerActions = usePlaylistHeaderActions(() => playlist);
-  const MOBILE_VIRTUAL_HEADER_HEIGHT = $derived(
+  const DEFAULT_MOBILE_VIRTUAL_HEADER_HEIGHT = $derived(
     isArtist || isSpecial ? 620 : 650,
   );
+
+  let headerContentRef = $state<HTMLDivElement | null>(null);
+  let mobileVirtualHeaderHeight = $state<number>(650);
+
+  function updateMobileHeaderHeight() {
+    if (!headerContentRef) return;
+
+    const measuredHeight = Math.max(
+      1,
+      Math.ceil(headerContentRef.getBoundingClientRect().height),
+    );
+
+    if (measuredHeight !== mobileVirtualHeaderHeight) {
+      mobileVirtualHeaderHeight = measuredHeight;
+    }
+  }
+
+  $effect(() => {
+    mobileVirtualHeaderHeight = DEFAULT_MOBILE_VIRTUAL_HEADER_HEIGHT;
+  });
+
+  $effect(() => {
+    const element = headerContentRef;
+    if (!element || typeof ResizeObserver === "undefined") return;
+
+    updateMobileHeaderHeight();
+    const resizeObserver = new ResizeObserver(() => {
+      updateMobileHeaderHeight();
+    });
+
+    resizeObserver.observe(element);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  });
 </script>
 
 <div class="flex flex-col relative w-full overflow-x-hidden">
@@ -107,23 +143,24 @@
     {hasAddButton}
     {items}
     {onAddTracks}
-    headerHeight={MOBILE_VIRTUAL_HEADER_HEIGHT}
+    headerHeight={mobileVirtualHeaderHeight}
     onScroll={(scrollTop) => {
       isScrolled = scrollTop >= 440;
     }}
   >
     {#snippet header()}
-      <div class="flex-1 z-20">
-        <PlaylistHeaderMobile
-          {playlist}
-          onPlay={headerActions.handlePlay}
-          onShuffle={headerActions.handleShuffle}
-          onAddTracks={hasAddButton ? onAddTracks : undefined}
-        />
-      </div>
-
-      <div class="py-4">
-        <PlaylistSearch bind:searchQuery />
+      <div class="flex flex-col" bind:this={headerContentRef}>
+        <div class="flex-1 z-20">
+          <PlaylistHeaderMobile
+            {playlist}
+            onPlay={headerActions.handlePlay}
+            onShuffle={headerActions.handleShuffle}
+            onAddTracks={hasAddButton ? onAddTracks : undefined}
+          />
+        </div>
+        <div class="py-4">
+          <PlaylistSearch bind:searchQuery />
+        </div>
       </div>
     {/snippet}
   </PlaylistTrackList>

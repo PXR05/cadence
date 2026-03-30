@@ -54,6 +54,12 @@
 
   const bgTopOffset = $derived.by(() => {
     if (!isTopRoute) {
+      if (
+        playerStore.trackQueue.length > 0 &&
+        page.url.pathname.split("/").length > 2
+      ) {
+        return -4.75 + "rem";
+      }
       return -0.25 + "rem";
     }
     if (playerStore.trackQueue.length > 0) {
