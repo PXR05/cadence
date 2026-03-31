@@ -156,6 +156,7 @@
             onPlay={headerActions.handlePlay}
             onShuffle={headerActions.handleShuffle}
             onAddTracks={hasAddButton ? onAddTracks : undefined}
+            onMenu={headerActions.handleMenu}
           />
         </div>
         <div class="py-4">

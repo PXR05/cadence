@@ -45,9 +45,8 @@ interface PersistedPlayerState {
   currentTime: number;
   equalizerBands: EqualizerBand[];
   equalizerEnabled: boolean;
+  preAmpDb: number;
   pureBypassEnabled: boolean;
-  reverbEnabled: boolean;
-  reverbPreset: string;
 }
 
 class PlayerState {
@@ -119,9 +118,8 @@ class PlayerState {
         },
       ],
       equalizerEnabled: true,
+      preAmpDb: 0,
       pureBypassEnabled: false,
-      reverbEnabled: false,
-      reverbPreset: "Small Hall 1",
     },
   );
 
@@ -271,25 +269,20 @@ class PlayerState {
     this.persistedState.equalizerEnabled = value;
   }
 
+  get preAmpDb() {
+    return this.persistedState.preAmpDb ?? 0;
+  }
+  set preAmpDb(value: number) {
+    const clampedDb = Math.max(-30, Math.min(30, value));
+    this.persistedState.preAmpDb = clampedDb;
+    this.audioEngine.setPreAmpDb(clampedDb);
+  }
+
   get pureBypassEnabled() {
     return this.persistedState.pureBypassEnabled;
   }
   set pureBypassEnabled(value: boolean) {
     this.persistedState.pureBypassEnabled = value;
-  }
-
-  get reverbEnabled() {
-    return this.persistedState.reverbEnabled;
-  }
-  set reverbEnabled(value: boolean) {
-    this.persistedState.reverbEnabled = value;
-  }
-
-  get reverbPreset() {
-    return this.persistedState.reverbPreset;
-  }
-  set reverbPreset(value: string) {
-    this.persistedState.reverbPreset = value;
   }
 
   initialize(player: HTMLAudioElement) {
@@ -300,8 +293,7 @@ class PlayerState {
       player,
       this.equalizerBands,
       this.equalizerEnabled,
-      this.reverbEnabled,
-      this.reverbPreset,
+      this.preAmpDb,
       this.pureBypassEnabled,
       this.volume,
     );
@@ -347,7 +339,7 @@ class PlayerState {
 
   toggleMute() {
     this.isMuted = !this.isMuted;
-    
+
     if (this.playerRef) {
       this.playerRef.muted = this.isMuted;
     }
@@ -392,6 +384,10 @@ class PlayerState {
   togglePureBypass() {
     this.pureBypassEnabled = !this.pureBypassEnabled;
     this.audioEngine.togglePureBypass(this.pureBypassEnabled);
+  }
+
+  setPreAmpDb(value: number) {
+    this.preAmpDb = value;
   }
 
   resetEqualizer() {
@@ -554,17 +550,7 @@ class PlayerState {
   }
 
   get maxBands(): number {
-    return 8;
-  }
-
-  toggleReverb() {
-    this.reverbEnabled = !this.reverbEnabled;
-    this.audioEngine.toggleReverb(this.reverbEnabled);
-  }
-
-  async setReverbPreset(preset: string) {
-    this.reverbPreset = preset;
-    await this.audioEngine.setReverbPreset(preset);
+    return 10;
   }
 
   private isMediaSessionSupported() {

@@ -19,7 +19,6 @@
     PlusIcon,
     PowerIcon,
     PowerOffIcon,
-    WavesIcon,
     XIcon,
   } from "@lucide/svelte";
   import { onMount } from "svelte";
@@ -454,6 +453,10 @@
     { key: "Q", label: "Q", min: 0.1, max: 10, step: 0.1 },
   ];
 
+  function formatDb(value: number): string {
+    return `${value > 0 ? "+" : ""}${value.toFixed(1)} dB`;
+  }
+
   onMount(() => {
     drawEqualizer();
 
@@ -480,8 +483,8 @@
     onToggle={() => playerStore.togglePureBypass()}
   >
     <p class="text-sm text-muted-foreground px-2 pb-1">
-      Routes audio directly from source to output. EQ, reverb, and analyzer
-      processing are bypassed while enabled.
+      Bypasses EQ, pre-amp, and analyzer processing while keeping master volume
+      control active.
     </p>
   </SettingCard>
 
@@ -504,6 +507,51 @@
         class="border rounded-lg cursor-crosshair"
         style="width: {WIDTH}px; height: {HEIGHT}px; max-width: 100%;"
       ></canvas>
+
+      <div class="w-full border rounded-lg p-3 bg-background/70 md:bg-card">
+        <div class="flex items-center justify-between gap-3">
+          <label for="preamp-db" class="text-sm font-medium">Pre-Amp</label>
+          <span class="text-xs text-muted-foreground">
+            {formatDb(playerStore.preAmpDb)}
+          </span>
+        </div>
+        <div class="mt-2 flex flex-col gap-2">
+          <input
+            id="preamp-db"
+            type="range"
+            min="-30"
+            max="30"
+            step="0.5"
+            value={playerStore.preAmpDb}
+            oninput={(e) =>
+              playerStore.setPreAmpDb(
+                parseFloat((e.target as HTMLInputElement).value),
+              )}
+            class="w-full accent-primary"
+            aria-label="Pre-amp in dB"
+          />
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-muted-foreground w-14">-30 dB</span>
+            <Input
+              type="number"
+              min={-30}
+              max={30}
+              step={0.5}
+              value={playerStore.preAmpDb}
+              oninput={(e) => {
+                const val = parseFloat((e.target as HTMLInputElement).value);
+                if (!isNaN(val)) {
+                  playerStore.setPreAmpDb(val);
+                }
+              }}
+              class="text-xs w-full"
+            />
+            <span class="text-xs text-muted-foreground w-14 text-right">
+              +30 dB
+            </span>
+          </div>
+        </div>
+      </div>
 
       <div class="w-full">
         <div
@@ -651,52 +699,6 @@
             </div>
           {/if}
         </div>
-      </div>
-    </SettingCard>
-  </div>
-
-  <div
-    class:opacity-50={playerStore.pureBypassEnabled}
-    class:pointer-events-none={playerStore.pureBypassEnabled}
-    aria-disabled={playerStore.pureBypassEnabled}
-  >
-    <SettingCard
-      icon={WavesIcon}
-      title="Reverb"
-      enabled={playerStore.reverbEnabled}
-      onToggle={playerStore.pureBypassEnabled
-        ? undefined
-        : () => playerStore.toggleReverb()}
-    >
-      <div class="flex flex-col gap-2">
-        <label for="reverb-preset" class="text-sm font-medium pl-2">
-          Preset
-        </label>
-        <SelectRoot
-          type="single"
-          value={playerStore.reverbPreset}
-          onValueChange={(preset) => playerStore.setReverbPreset(preset)}
-        >
-          <SelectTrigger id="reverb-preset" class="w-full">
-            {playerStore.reverbPreset}
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Small Hall 1">Small Hall 1</SelectItem>
-            <SelectItem value="Small Hall 2">Small Hall 2</SelectItem>
-            <SelectItem value="Medium Hall 1">Medium Hall 1</SelectItem>
-            <SelectItem value="Medium Hall 2">Medium Hall 2</SelectItem>
-            <SelectItem value="Large Hall 1">Large Hall 1</SelectItem>
-            <SelectItem value="Large Hall 2">Large Hall 2</SelectItem>
-            <SelectItem value="Small Room 1">Small Room 1</SelectItem>
-            <SelectItem value="Small Room 2">Small Room 2</SelectItem>
-            <SelectItem value="Medium Room 1">Medium Room 1</SelectItem>
-            <SelectItem value="Medium Room 2">Medium Room 2</SelectItem>
-            <SelectItem value="Large Room 1">Large Room 1</SelectItem>
-            <SelectItem value="Large Room 2">Large Room 2</SelectItem>
-            <SelectItem value="Plate High">Plate High</SelectItem>
-            <SelectItem value="Plate Low">Plate Low</SelectItem>
-          </SelectContent>
-        </SelectRoot>
       </div>
     </SettingCard>
   </div>

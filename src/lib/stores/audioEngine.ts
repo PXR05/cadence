@@ -1,34 +1,19 @@
 import type { EqualizerBand } from "./player.svelte";
 
-const REFLECTION_MAP_CACHE_KEY = "cadence.reflection_maps";
-
 export class AudioEngine {
   audioContext: AudioContext | null = null;
   sourceNode: MediaElementAudioSourceNode | null = null;
+  preAmpGainNode: GainNode | null = null;
   gainNode: GainNode | null = null;
   analyzerNode: AnalyserNode | null = null;
   equalizerNodes: BiquadFilterNode[] = [];
-  convolverNode: ConvolverNode | null = null;
-  reverbDryGainNode: GainNode | null = null;
-  reverbWetGainNode: GainNode | null = null;
 
   private equalizerBands: EqualizerBand[] = [];
   private equalizerEnabled: boolean = true;
-  private reverbEnabled: boolean = false;
-  private reverbPreset: string = "Small Hall 1";
   private pureBypassEnabled: boolean = false;
 
   private frequencyDataBuffer: Uint8Array | null = null;
   private timeDomainDataBuffer: Uint8Array | null = null;
-
-  private impulseResponseCache: Map<string, AudioBuffer> = new Map();
-
-  private irGenerationPending: boolean = false;
-
-  private reflectionMapCache: Map<
-    string,
-    Map<number, { gain: number; index: number }>
-  > = new Map();
 
   private lastFrequencyDataTime: number = 0;
   private lastTimeDomainDataTime: number = 0;
@@ -38,20 +23,18 @@ export class AudioEngine {
     player: HTMLAudioElement,
     bands: EqualizerBand[],
     eqEnabled: boolean,
-    reverbEnabled: boolean,
-    reverbPreset: string,
+    preAmpDb: number,
     pureBypassEnabled: boolean,
     volume: number,
   ) {
     this.equalizerBands = bands;
     this.equalizerEnabled = eqEnabled;
-    this.reverbEnabled = reverbEnabled;
-    this.reverbPreset = reverbPreset;
     this.pureBypassEnabled = pureBypassEnabled;
 
     this.audioContext = new AudioContext({ latencyHint: "playback" });
 
     this.sourceNode = this.audioContext.createMediaElementSource(player);
+    this.preAmpGainNode = this.audioContext.createGain();
     this.gainNode = this.audioContext.createGain();
     this.analyzerNode = this.audioContext.createAnalyser();
 
@@ -76,25 +59,19 @@ export class AudioEngine {
       return filter;
     });
 
-    this.convolverNode = this.audioContext.createConvolver();
-    this.convolverNode.normalize = true;
-    this.reverbDryGainNode = this.audioContext.createGain();
-    this.reverbWetGainNode = this.audioContext.createGain();
-    this.reverbDryGainNode.gain.value = 0.6;
-    this.reverbWetGainNode.gain.value = 1.2;
-
-    this.loadImpulseResponse(this.reverbPreset);
-
-    this.sourceNode.connect(this.gainNode);
+    this.setPreAmpDb(preAmpDb);
+    this.gainNode.gain.value = Math.max(0, volume);
     this.reconnectAudioGraph();
-
-    this.gainNode.gain.value = volume;
   }
 
   cleanup() {
     if (this.sourceNode) {
       this.sourceNode.disconnect();
       this.sourceNode = null;
+    }
+    if (this.preAmpGainNode) {
+      this.preAmpGainNode.disconnect();
+      this.preAmpGainNode = null;
     }
     if (this.gainNode) {
       this.gainNode.disconnect();
@@ -103,18 +80,6 @@ export class AudioEngine {
     if (this.equalizerNodes.length > 0) {
       this.equalizerNodes.forEach((node) => node.disconnect());
       this.equalizerNodes = [];
-    }
-    if (this.convolverNode) {
-      this.convolverNode.disconnect();
-      this.convolverNode = null;
-    }
-    if (this.reverbDryGainNode) {
-      this.reverbDryGainNode.disconnect();
-      this.reverbDryGainNode = null;
-    }
-    if (this.reverbWetGainNode) {
-      this.reverbWetGainNode.disconnect();
-      this.reverbWetGainNode = null;
     }
     if (this.analyzerNode) {
       this.analyzerNode.disconnect();
@@ -127,7 +92,6 @@ export class AudioEngine {
 
     this.frequencyDataBuffer = null;
     this.timeDomainDataBuffer = null;
-    this.impulseResponseCache.clear();
   }
 
   getFrequencyData(): Uint8Array | null {
@@ -194,6 +158,25 @@ export class AudioEngine {
 
   setAnalyzerThrottleMs(ms: number) {
     this.analyzerThrottleMs = Math.max(16, ms);
+  }
+
+  setPreAmpDb(db: number) {
+    const clampedDb = Math.max(-30, Math.min(30, db));
+
+    if (this.preAmpGainNode && this.audioContext) {
+      const now = this.audioContext.currentTime;
+      const linearGain = Math.pow(10, clampedDb / 20);
+
+      this.preAmpGainNode.gain.cancelScheduledValues(now);
+      this.preAmpGainNode.gain.setValueAtTime(
+        this.preAmpGainNode.gain.value,
+        now,
+      );
+      this.preAmpGainNode.gain.exponentialRampToValueAtTime(
+        Math.max(0.0001, linearGain),
+        now + 0.03,
+      );
+    }
   }
 
   setVolume(volume: number) {
@@ -287,490 +270,28 @@ export class AudioEngine {
     this.reconnectAudioGraph();
   }
 
-  toggleReverb(enabled: boolean) {
-    this.reverbEnabled = enabled;
-    this.reconnectAudioGraph();
-  }
-
   togglePureBypass(enabled: boolean) {
     this.pureBypassEnabled = enabled;
     this.reconnectAudioGraph();
   }
 
-  async setReverbPreset(preset: string) {
-    this.reverbPreset = preset;
-    await this.loadImpulseResponse(preset);
-  }
-
-  private async loadImpulseResponse(preset: string) {
-    if (!this.audioContext || !this.convolverNode) return;
-
-    const cached = this.impulseResponseCache.get(preset);
-    if (cached) {
-      this.convolverNode.buffer = cached;
+  private reconnectAudioGraph() {
+    if (
+      !this.sourceNode ||
+      !this.preAmpGainNode ||
+      !this.gainNode ||
+      !this.analyzerNode ||
+      !this.audioContext
+    ) {
       return;
     }
 
-    if (this.irGenerationPending) return;
-    this.irGenerationPending = true;
-
     try {
-      const impulseResponse = await this.generateImpulseResponseAsync(preset);
-      this.impulseResponseCache.set(preset, impulseResponse);
-      if (this.convolverNode) {
-        this.convolverNode.buffer = impulseResponse;
-      }
-    } finally {
-      this.irGenerationPending = false;
-    }
-  }
-
-  private async generateImpulseResponseAsync(
-    preset: string,
-  ): Promise<AudioBuffer> {
-    if (!this.audioContext) {
-      throw new Error("AudioContext not initialized");
-    }
-
-    const sampleRate = this.audioContext.sampleRate;
-    const params = this.getPresetParams(preset);
-
-    const cappedDuration = Math.min(params.duration, 5);
-    const length = Math.floor(sampleRate * cappedDuration);
-
-    const impulse = this.audioContext.createBuffer(2, length, sampleRate);
-    const left = impulse.getChannelData(0);
-    const right = impulse.getChannelData(1);
-
-    const chunkSize = 16384;
-    const totalChunks = Math.ceil(length / chunkSize);
-
-    const reflectionMap = this.buildReflectionMap(
-      params.earlyReflections,
-      sampleRate,
-      preset,
-    );
-
-    this.randomSeed = 1;
-
-    for (let chunk = 0; chunk < totalChunks; chunk++) {
-      const startIdx = chunk * chunkSize;
-      const endIdx = Math.min(startIdx + chunkSize, length);
-
-      this.processImpulseChunk(
-        left,
-        right,
-        startIdx,
-        endIdx,
-        sampleRate,
-        params,
-        reflectionMap,
-      );
-      if (chunk % 2 === 0 && chunk < totalChunks - 1) {
-        await this.yieldToMainThread();
-      }
-    }
-
-    this.normalizeImpulseResponse(impulse, 0.35);
-
-    return impulse;
-  }
-
-  private normalizeImpulseResponse(impulse: AudioBuffer, targetPeak: number) {
-    const left = impulse.getChannelData(0);
-    const right = impulse.getChannelData(1);
-
-    let peak = 0;
-    for (let i = 0; i < left.length; i++) {
-      const l = Math.abs(left[i]);
-      const r = Math.abs(right[i]);
-      if (l > peak) peak = l;
-      if (r > peak) peak = r;
-    }
-
-    if (peak <= 0) return;
-
-    const scale = Math.min(1, targetPeak / peak);
-    if (scale === 1) return;
-
-    for (let i = 0; i < left.length; i++) {
-      left[i] *= scale;
-      right[i] *= scale;
-    }
-  }
-
-  private buildReflectionMap(
-    earlyReflections: { delay: number; gain: number }[],
-    sampleRate: number,
-    preset: string,
-  ): Map<number, { gain: number; index: number }> {
-    const cacheKey = `${preset}:${sampleRate}`;
-
-    const memoryCached = this.reflectionMapCache.get(cacheKey);
-    if (memoryCached) {
-      return memoryCached;
-    }
-
-    const storageCached = this.loadReflectionMapFromStorage(cacheKey);
-    if (storageCached) {
-      this.reflectionMapCache.set(cacheKey, storageCached);
-      return storageCached;
-    }
-
-    const map = new Map<number, { gain: number; index: number }>();
-    earlyReflections.forEach((r, index) => {
-      const sample = Math.floor(r.delay * sampleRate);
-      map.set(sample, { gain: r.gain, index });
-    });
-
-    this.reflectionMapCache.set(cacheKey, map);
-    this.saveReflectionMapToStorage(cacheKey, map);
-
-    return map;
-  }
-
-  private loadReflectionMapFromStorage(
-    cacheKey: string,
-  ): Map<number, { gain: number; index: number }> | null {
+      this.sourceNode.disconnect();
+    } catch {}
     try {
-      const stored = localStorage.getItem(REFLECTION_MAP_CACHE_KEY);
-      if (!stored) return null;
-
-      const allMaps = JSON.parse(stored) as Record<
-        string,
-        Array<[number, { gain: number; index: number }]>
-      >;
-      const entries = allMaps[cacheKey];
-      if (!entries) return null;
-
-      return new Map(entries);
-    } catch {
-      return null;
-    }
-  }
-
-  private saveReflectionMapToStorage(
-    cacheKey: string,
-    map: Map<number, { gain: number; index: number }>,
-  ) {
-    try {
-      const stored = localStorage.getItem(REFLECTION_MAP_CACHE_KEY);
-      const allMaps = stored
-        ? (JSON.parse(stored) as Record<
-            string,
-            Array<[number, { gain: number; index: number }]>
-          >)
-        : {};
-
-      allMaps[cacheKey] = Array.from(map.entries());
-
-      localStorage.setItem(REFLECTION_MAP_CACHE_KEY, JSON.stringify(allMaps));
-    } catch {
-      console.warn("Failed to save reflection map to storage");
-    }
-  }
-
-  private processImpulseChunk(
-    left: Float32Array,
-    right: Float32Array,
-    startIdx: number,
-    endIdx: number,
-    sampleRate: number,
-    params: ReverbParams,
-    reflectionMap: Map<number, { gain: number; index: number }>,
-  ) {
-    const { decay, density, modulation } = params;
-    const invSampleRate = 1 / sampleRate;
-    const densityScale = density * 10;
-    const modScale = modulation * 1000;
-
-    for (let i = startIdx; i < endIdx; i++) {
-      const t = i * invSampleRate;
-      const envelope = Math.exp(-decay * t);
-
-      let leftSample = 0;
-      let rightSample = 0;
-
-      const reflection = reflectionMap.get(i);
-      if (reflection) {
-        const sign = reflection.index % 2 === 0 ? 1 : -1;
-        leftSample += reflection.gain * sign;
-        rightSample += reflection.gain * -sign;
-      }
-
-      const densityFactor = Math.min(1, t * densityScale);
-
-      const modArg = t * modScale;
-      const mod = this.fastSin(modArg) * 0.3;
-
-      const rand1 = this.fastRandom() * 2 - 1;
-      const rand2 = this.fastRandom() * 2 - 1;
-
-      const envDensity = envelope * densityFactor;
-      leftSample += rand1 * envDensity * (1 + mod);
-      rightSample += rand2 * envDensity * (1 - mod);
-
-      left[i] = leftSample;
-      right[i] = rightSample;
-    }
-  }
-
-  private randomSeed: number = 1;
-  private fastRandom(): number {
-    this.randomSeed = (this.randomSeed * 16807) % 2147483647;
-    return this.randomSeed / 2147483647;
-  }
-
-  private fastSin(x: number): number {
-    const PI = 3.141592653589793;
-    const TWO_PI = 6.283185307179586;
-
-    x = x % TWO_PI;
-    if (x < 0) x += TWO_PI;
-
-    if (x < PI) {
-      const x2 = x * (PI - x);
-      return (16 * x2) / (49.348022005446793 - 4 * x2);
-    } else {
-      const x1 = x - PI;
-      const x2 = x1 * (PI - x1);
-      return -(16 * x2) / (49.348022005446793 - 4 * x2);
-    }
-  }
-
-  private yieldToMainThread(): Promise<void> {
-    return new Promise((resolve) => {
-      if (
-        "scheduler" in globalThis &&
-        "yield" in
-          (
-            globalThis as unknown as {
-              scheduler: { yield: () => Promise<void> };
-            }
-          ).scheduler
-      ) {
-        (
-          globalThis as unknown as { scheduler: { yield: () => Promise<void> } }
-        ).scheduler
-          .yield()
-          .then(resolve);
-      } else if (typeof requestIdleCallback !== "undefined") {
-        requestIdleCallback(() => resolve(), { timeout: 8 });
-      } else {
-        setTimeout(resolve, 0);
-      }
-    });
-  }
-
-  private getPresetParams(preset: string): ReverbParams {
-    switch (preset) {
-      case "Small Hall 1":
-        return {
-          duration: 2.1,
-          decay: 2.5,
-          density: 0.5,
-          modulation: 0.3,
-          earlyReflections: [
-            { delay: 0.01, gain: 0.5 },
-            { delay: 0.022, gain: 0.45 },
-            { delay: 0.035, gain: 0.4 },
-            { delay: 0.048, gain: 0.35 },
-          ],
-        };
-      case "Small Hall 2":
-        return {
-          duration: 2.3,
-          decay: 2.8,
-          density: 0.5,
-          modulation: 0.25,
-          earlyReflections: [
-            { delay: 0.01, gain: 0.5 },
-            { delay: 0.022, gain: 0.45 },
-            { delay: 0.035, gain: 0.4 },
-            { delay: 0.048, gain: 0.35 },
-          ],
-        };
-      case "Medium Hall 1":
-        return {
-          duration: 2.8,
-          decay: 2.3,
-          density: 0.6,
-          modulation: 0.25,
-          earlyReflections: [
-            { delay: 0.01, gain: 0.55 },
-            { delay: 0.024, gain: 0.5 },
-            { delay: 0.039, gain: 0.45 },
-            { delay: 0.055, gain: 0.4 },
-            { delay: 0.072, gain: 0.35 },
-          ],
-        };
-      case "Medium Hall 2":
-        return {
-          duration: 2.9,
-          decay: 2.4,
-          density: 0.6,
-          modulation: 0.2,
-          earlyReflections: [
-            { delay: 0.01, gain: 0.55 },
-            { delay: 0.024, gain: 0.5 },
-            { delay: 0.039, gain: 0.45 },
-            { delay: 0.055, gain: 0.4 },
-            { delay: 0.072, gain: 0.35 },
-          ],
-        };
-      case "Large Hall 1":
-        return {
-          duration: 3.8,
-          decay: 1.8,
-          density: 0.7,
-          modulation: 0.15,
-          earlyReflections: [
-            { delay: 0.018, gain: 0.6 },
-            { delay: 0.036, gain: 0.55 },
-            { delay: 0.056, gain: 0.5 },
-            { delay: 0.078, gain: 0.45 },
-            { delay: 0.102, gain: 0.4 },
-            { delay: 0.128, gain: 0.35 },
-          ],
-        };
-      case "Large Hall 2":
-        return {
-          duration: 4.2,
-          decay: 1.7,
-          density: 0.7,
-          modulation: 0.2,
-          earlyReflections: [
-            { delay: 0.018, gain: 0.6 },
-            { delay: 0.036, gain: 0.55 },
-            { delay: 0.056, gain: 0.5 },
-            { delay: 0.078, gain: 0.45 },
-            { delay: 0.102, gain: 0.4 },
-            { delay: 0.128, gain: 0.35 },
-          ],
-        };
-      case "Small Room 1":
-        return {
-          duration: 0.5,
-          decay: 5.5,
-          density: 0.4,
-          modulation: 0.2,
-          earlyReflections: [
-            { delay: 0.005, gain: 0.7 },
-            { delay: 0.012, gain: 0.6 },
-            { delay: 0.02, gain: 0.5 },
-          ],
-        };
-      case "Small Room 2":
-        return {
-          duration: 0.5,
-          decay: 5.5,
-          density: 0.45,
-          modulation: 0.3,
-          earlyReflections: [
-            { delay: 0.005, gain: 0.7 },
-            { delay: 0.012, gain: 0.6 },
-            { delay: 0.02, gain: 0.5 },
-          ],
-        };
-      case "Medium Room 1":
-        return {
-          duration: 0.8,
-          decay: 4.0,
-          density: 0.5,
-          modulation: 0.2,
-          earlyReflections: [
-            { delay: 0.008, gain: 0.65 },
-            { delay: 0.018, gain: 0.6 },
-            { delay: 0.029, gain: 0.5 },
-            { delay: 0.042, gain: 0.4 },
-          ],
-        };
-      case "Medium Room 2":
-        return {
-          duration: 1.2,
-          decay: 3.2,
-          density: 0.55,
-          modulation: 0.3,
-          earlyReflections: [
-            { delay: 0.016, gain: 0.65 },
-            { delay: 0.03, gain: 0.6 },
-            { delay: 0.046, gain: 0.5 },
-            { delay: 0.064, gain: 0.4 },
-          ],
-        };
-      case "Large Room 1":
-        return {
-          duration: 1.8,
-          decay: 2.6,
-          density: 0.65,
-          modulation: 0.2,
-          earlyReflections: [
-            { delay: 0.01, gain: 0.7 },
-            { delay: 0.025, gain: 0.65 },
-            { delay: 0.042, gain: 0.6 },
-            { delay: 0.061, gain: 0.5 },
-            { delay: 0.082, gain: 0.4 },
-          ],
-        };
-      case "Large Room 2":
-        return {
-          duration: 1.9,
-          decay: 2.5,
-          density: 0.65,
-          modulation: 0.3,
-          earlyReflections: [
-            { delay: 0.02, gain: 0.7 },
-            { delay: 0.04, gain: 0.65 },
-            { delay: 0.062, gain: 0.6 },
-            { delay: 0.086, gain: 0.5 },
-            { delay: 0.112, gain: 0.4 },
-          ],
-        };
-      case "Plate High":
-        return {
-          duration: 1.8,
-          decay: 2.6,
-          density: 0.8,
-          modulation: 0.2,
-          earlyReflections: [
-            { delay: 0.0, gain: 0.8 },
-            { delay: 0.003, gain: 0.75 },
-            { delay: 0.007, gain: 0.7 },
-            { delay: 0.012, gain: 0.6 },
-            { delay: 0.018, gain: 0.5 },
-          ],
-        };
-      case "Plate Low":
-        return {
-          duration: 1.9,
-          decay: 2.5,
-          density: 0.8,
-          modulation: 0.3,
-          earlyReflections: [
-            { delay: 0.0, gain: 0.8 },
-            { delay: 0.003, gain: 0.75 },
-            { delay: 0.007, gain: 0.7 },
-            { delay: 0.012, gain: 0.6 },
-            { delay: 0.018, gain: 0.5 },
-          ],
-        };
-      default:
-        return {
-          duration: 2.1,
-          decay: 2.5,
-          density: 0.5,
-          modulation: 0.25,
-          earlyReflections: [
-            { delay: 0.02, gain: 0.6 },
-            { delay: 0.038, gain: 0.5 },
-            { delay: 0.058, gain: 0.4 },
-          ],
-        };
-    }
-  }
-
-  private reconnectAudioGraph() {
-    if (!this.gainNode || !this.analyzerNode || !this.audioContext) return;
+      this.preAmpGainNode.disconnect();
+    } catch {}
 
     try {
       this.gainNode.disconnect();
@@ -781,24 +302,19 @@ export class AudioEngine {
       } catch {}
     });
     try {
-      this.convolverNode?.disconnect();
-    } catch {}
-    try {
-      this.reverbDryGainNode?.disconnect();
-    } catch {}
-    try {
-      this.reverbWetGainNode?.disconnect();
-    } catch {}
-    try {
       this.analyzerNode.disconnect();
     } catch {}
 
-    let currentNode: AudioNode = this.gainNode;
-
     if (this.pureBypassEnabled) {
-      currentNode.connect(this.audioContext.destination);
+      this.sourceNode.connect(this.gainNode);
+      this.gainNode.connect(this.audioContext.destination);
       return;
     }
+
+    this.sourceNode.connect(this.preAmpGainNode);
+    this.preAmpGainNode.connect(this.gainNode);
+
+    let currentNode: AudioNode = this.gainNode;
 
     if (this.equalizerEnabled && this.equalizerNodes.length > 0) {
       currentNode.connect(this.equalizerNodes[0]);
@@ -807,34 +323,7 @@ export class AudioEngine {
       }
       currentNode = this.equalizerNodes[this.equalizerNodes.length - 1];
     }
-
-    if (
-      this.reverbEnabled &&
-      this.convolverNode &&
-      this.reverbDryGainNode &&
-      this.reverbWetGainNode
-    ) {
-      currentNode.connect(this.reverbDryGainNode);
-      currentNode.connect(this.convolverNode);
-      this.convolverNode.connect(this.reverbWetGainNode);
-
-      this.reverbDryGainNode.connect(this.audioContext.destination);
-      this.reverbWetGainNode.connect(this.audioContext.destination);
-
-      this.reverbDryGainNode.connect(this.analyzerNode);
-      return;
-    }
-
-    currentNode.connect(this.audioContext.destination);
-
     currentNode.connect(this.analyzerNode);
+    this.analyzerNode.connect(this.audioContext.destination);
   }
-}
-
-interface ReverbParams {
-  duration: number;
-  decay: number;
-  density: number;
-  modulation: number;
-  earlyReflections: { delay: number; gain: number }[];
 }

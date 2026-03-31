@@ -267,7 +267,7 @@
         <div>
           <p class="font-medium">Audio Settings</p>
           <p class="text-sm text-muted-foreground">
-            Equalizer, reverb, and audio processing
+            Equalizer, pre-amp, and audio processing
           </p>
         </div>
       </div>

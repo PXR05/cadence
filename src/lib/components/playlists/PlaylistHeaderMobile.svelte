@@ -11,10 +11,11 @@
     playlist: PlaylistDetail;
     onPlay: () => void;
     onShuffle: () => void;
+    onMenu: () => void;
     onAddTracks?: () => void;
   }
 
-  let { playlist, onPlay, onShuffle, onAddTracks }: Props = $props();
+  let { playlist, onPlay, onShuffle, onMenu, onAddTracks }: Props = $props();
 
   const isArtist = $derived(isArtistPlaylist(playlist.id));
   const isSpecial = $derived(isSpecialPlaylist(playlist.id));
@@ -64,11 +65,6 @@
 
     return main;
   });
-
-  async function openPlaylistMenu(e: MouseEvent) {
-    e.preventDefault();
-    playlistMenuStore.open(playlist, false, false);
-  }
 </script>
 
 <img
@@ -82,7 +78,7 @@
 <div
   class="relative w-full flex flex-col items-center gap-4 truncate pb-2 pt-20 z-0"
 >
-  <div tabindex="0" role="button" oncontextmenu={openPlaylistMenu}>
+  <div tabindex="0" role="button" oncontextmenu={onMenu}>
     <PlaylistCoverImage
       {playlist}
       iconSize={64}
