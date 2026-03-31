@@ -10,6 +10,7 @@
   import { Button } from "../ui/button";
   import { Swiper } from "../ui/swiper";
   import type { AudioFile } from "$lib/schemas";
+  import { Image } from "../ui/image";
 
   const {
     index,
@@ -50,7 +51,7 @@
    {isCurrentTrack ? 'bg-muted' : 'bg-background'}"
   >
     <div class="relative rounded-sm size-12 shrink-0 overflow-hidden bg-muted">
-      <img
+      <Image
         loading="lazy"
         crossorigin="use-credentials"
         src={getImageUrl(track.id)}

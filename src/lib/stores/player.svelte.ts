@@ -10,6 +10,7 @@ import type { AudioFile, PlaylistDetail } from "$lib/schemas";
 import { resolvePlaybackSource } from "$lib/utils/trackSources";
 import { historyStore } from "./history.svelte";
 import { tracksStore } from "./tracks.svelte";
+import { authStore } from "./auth.svelte";
 
 export type FilterType =
   | "lowshelf"
@@ -640,7 +641,9 @@ class PlayerState {
       this.currentBlobUrl = null;
     }
 
-    const audioUrl = await getAudioUrl(sourceTrack.id);
+    const audioUrl = await getAudioUrl(sourceTrack.id, {
+      useCustomAuthFetch: authStore.shouldUseCustomMediaAuthFetch,
+    });
     this.playerRef.src = audioUrl;
     this.playerRef.load();
 

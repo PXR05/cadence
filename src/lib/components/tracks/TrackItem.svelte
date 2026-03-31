@@ -11,6 +11,7 @@
   import { Button } from "../ui/button";
   import { createWebHaptics } from "web-haptics/svelte";
   import { innerWidth } from "svelte/reactivity/window";
+  import { Image } from "../ui/image";
 
   const { trigger, destroy } = createWebHaptics();
   onDestroy(destroy);
@@ -91,7 +92,7 @@
   oncontextmenu={handleContextMenu}
 >
   <div class="rounded-md size-16 shrink-0 overflow-hidden">
-    <img
+    <Image
       loading="lazy"
       crossorigin="use-credentials"
       src={getImageUrl(track.id)}

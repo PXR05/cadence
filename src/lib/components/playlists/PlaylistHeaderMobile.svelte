@@ -6,6 +6,7 @@
   import { PlayIcon, PlusIcon, ShuffleIcon } from "@lucide/svelte";
   import { Button } from "../ui/button";
   import { playlistMenuStore } from "$lib/stores/playlistMenu.svelte";
+  import { Image } from "../ui/image";
 
   interface Props {
     playlist: PlaylistDetail;
@@ -67,7 +68,7 @@
   });
 </script>
 
-<img
+<Image
   loading="lazy"
   crossorigin="use-credentials"
   src={isArtist ? playlist.coverImage : getPlaylistImageUrl(playlist.id)}

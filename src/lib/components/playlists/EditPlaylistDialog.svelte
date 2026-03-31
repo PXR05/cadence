@@ -8,6 +8,7 @@
   import { Input } from "../ui/input";
   import { getPlaylistImageUrl } from "$lib/constants";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
+  import { Image } from "../ui/image";
 
   interface Props {
     open: boolean;
@@ -118,7 +119,7 @@
           <div
             class="relative w-full aspect-square border rounded-lg overflow-hidden"
           >
-            <img
+            <Image
               crossorigin="use-credentials"
               src={editCoverImagePreview}
               alt="Cover preview"

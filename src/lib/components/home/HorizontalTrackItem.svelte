@@ -10,6 +10,7 @@
   import { onMount, onDestroy } from "svelte";
   import { Button } from "../ui/button";
   import { createWebHaptics } from "web-haptics/svelte";
+  import { Image } from "../ui/image";
 
   const { trigger, destroy } = createWebHaptics();
   onDestroy(destroy);
@@ -62,7 +63,7 @@
   <div
     class="aspect-square rounded-md overflow-hidden border bg-muted relative"
   >
-    <img
+    <Image
       loading="lazy"
       crossorigin="use-credentials"
       src={getImageUrl(track.id)}

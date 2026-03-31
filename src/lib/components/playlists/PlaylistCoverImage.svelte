@@ -15,6 +15,7 @@
     UserIcon,
     YoutubeIcon,
   } from "@lucide/svelte";
+  import { Image } from "../ui/image";
 
   interface PlaylistCoverData {
     id: string;
@@ -108,7 +109,7 @@
   </div>
 
   {#if playlist.coverImage}
-    <img
+    <Image
       loading="lazy"
       crossorigin="use-credentials"
       src={playlist.coverImage.startsWith("http")

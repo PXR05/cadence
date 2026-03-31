@@ -30,11 +30,46 @@ class AuthStore {
 
   user = $state<User | null>(null);
   sessionId = $state<string | null>(null);
+  private cookieAuthMode = $state<"unknown" | "supported" | "unsupported">(
+    "unknown",
+  );
 
   constructor() {
     if (typeof window !== "undefined" && this.user === null) {
       this.getCurrentUser();
+      void this.probeServerCookieAuth();
     }
+  }
+
+  private async probeServerCookieAuth(): Promise<void> {
+    if (typeof window === "undefined") return;
+
+    if ("onLine" in navigator && !navigator.onLine) {
+      return;
+    }
+
+    const baseUrl = import.meta.env.VITE_API_URL;
+    if (!baseUrl) {
+      return;
+    }
+
+    try {
+      const url = new URL("/auth/me", baseUrl);
+      const response = await fetch(url, {
+        method: "GET",
+        credentials: "include",
+        mode: "cors",
+      });
+
+      if (response.ok) {
+        this.cookieAuthMode = "supported";
+        return;
+      }
+
+      if (response.status === 401) {
+        this.cookieAuthMode = "unsupported";
+      }
+    } catch {}
   }
 
   private restoreUserFromStorage(): void {
@@ -65,6 +100,18 @@ class AuthStore {
     return this.user?.role === "admin";
   }
 
+  get canUseServerCookieAuth(): boolean {
+    return this.cookieAuthMode === "supported";
+  }
+
+  get shouldUseCustomMediaAuthFetch(): boolean {
+    return this.cookieAuthMode !== "supported";
+  }
+
+  get shouldUseCustomImageAuthFetch(): boolean {
+    return this.shouldUseCustomMediaAuthFetch;
+  }
+
   async login(username: string, password: string): Promise<void> {
     try {
       const response = await authFetch("/auth/login", {
@@ -86,6 +133,7 @@ class AuthStore {
       this.saveUserToStorage(data.user);
       this.sessionId = data.sessionId;
       this.saveSessionIdToStorage(data.sessionId);
+      void this.probeServerCookieAuth();
     } catch (error) {
       console.error("Login failed:", error);
       throw error;
@@ -113,6 +161,7 @@ class AuthStore {
       this.saveUserToStorage(data.user);
       this.sessionId = data.sessionId;
       this.saveSessionIdToStorage(data.sessionId);
+      void this.probeServerCookieAuth();
     } catch (error) {
       console.error("Registration failed:", error);
       throw error;
@@ -140,6 +189,7 @@ class AuthStore {
       const data: GetCurrentUserResponse = await response.json();
       this.user = data.data;
       this.saveUserToStorage(data.data);
+      void this.probeServerCookieAuth();
       return data.data;
     } catch (error) {
       console.error("Failed to get current user:", error);

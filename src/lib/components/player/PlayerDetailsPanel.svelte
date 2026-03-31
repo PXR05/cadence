@@ -18,6 +18,7 @@
   import * as Carousel from "../ui/carousel";
   import type { CarouselAPI } from "../ui/carousel/context";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
+  import { Image } from "../ui/image";
 
   interface Props {
     onQueueOpen: () => void;
@@ -150,7 +151,7 @@
             onlongpress={() => openCarouselTrackMenu(queueTrack)}
           >
             {#if shouldLoadItem(i)}
-              <img
+              <Image
                 loading="lazy"
                 crossorigin="use-credentials"
                 src={getImageUrl(queueTrack.id)}
@@ -200,7 +201,7 @@
   onmousedown={(e) => onMouseDown?.(e)}
 >
   {#if playerStore.currentTrack}
-    <img
+    <Image
       loading="lazy"
       crossorigin="use-credentials"
       src={getImageUrl(playerStore.currentTrack.id)}

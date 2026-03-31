@@ -8,6 +8,7 @@
   import { shouldLoadItem } from "$lib/utils/queue";
   import type { AudioFile } from "$lib/schemas";
   import TrackInfo from "./TrackInfo.svelte";
+  import { Image } from "../ui/image";
 
   interface Props {
     onTrackClick?: () => void;
@@ -59,7 +60,7 @@
               <div
                 class="flex items-center flex-1 min-w-0 gap-2 md:gap-3.5 text-left w-full pl-2"
               >
-                <img
+                <Image
                   loading="lazy"
                   crossorigin="use-credentials"
                   src={getImageUrl(track.id)}

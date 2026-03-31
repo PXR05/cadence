@@ -5,6 +5,7 @@
   import * as Drawer from "$lib/components/ui/drawer";
   import { buttonVariants } from "$lib/components/ui/button";
   import { XIcon } from "@lucide/svelte";
+  import { Image } from "../image";
 
   interface Props {
     open: boolean;
@@ -37,7 +38,7 @@
       class="rounded-md size-20 shrink-0 overflow-hidden bg-muted grid place-items-center"
     >
       {#if imageUrl}
-        <img
+        <Image
           crossorigin="use-credentials"
           src={imageUrl}
           alt={title}

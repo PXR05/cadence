@@ -1,5 +1,32 @@
 import Dexie, { type Table } from "dexie";
-import { getImageUrl } from "$lib/constants";
+
+const IMAGE_PATH_PATTERN = /^\/(audio|playlist)\/([^/]+)\/image$/;
+
+type OfflineImageResource = "audio" | "playlist";
+
+function getOfflineImageIdentity(imageUrl: string): {
+  resource: OfflineImageResource;
+  id: string;
+  key: string;
+} | null {
+  try {
+    const parsedUrl = new URL(imageUrl, "http://localhost");
+    const match = parsedUrl.pathname.match(IMAGE_PATH_PATTERN);
+
+    if (!match) return null;
+
+    const resource = match[1] as OfflineImageResource;
+    const id = match[2];
+
+    return {
+      resource,
+      id,
+      key: `${resource}:${id}`,
+    };
+  } catch {
+    return null;
+  }
+}
 
 export interface OfflineTrack {
   id: string;
@@ -73,7 +100,7 @@ export async function saveTrackOffline(
   audioBlob: Blob,
   metadata: OfflineTrack["metadata"],
   filename: string,
-  size?: number
+  size?: number,
 ): Promise<void> {
   await offlineDb.tracks.put({
     id: trackId,
@@ -84,17 +111,10 @@ export async function saveTrackOffline(
     filename,
     downloadedAt: Date.now(),
   });
-
-  if (navigator.serviceWorker?.controller) {
-    navigator.serviceWorker.controller.postMessage({
-      type: "CACHE_IMAGE",
-      url: getImageUrl(trackId),
-    });
-  }
 }
 
 export async function getOfflineTrack(
-  trackId: string
+  trackId: string,
 ): Promise<OfflineTrack | undefined> {
   return offlineDb.tracks.get(trackId);
 }
@@ -106,7 +126,7 @@ export async function isTrackOffline(trackId: string): Promise<boolean> {
 
 export async function isTrackOfflineWithSize(
   trackId: string,
-  expectedSize: number
+  expectedSize: number,
 ): Promise<boolean> {
   const track = await offlineDb.tracks.get(trackId);
   if (!track) return false;
@@ -134,7 +154,7 @@ export async function getStorageEstimate(): Promise<{
 
 export async function saveImageOffline(
   trackId: string,
-  imageBlob: Blob
+  imageBlob: Blob,
 ): Promise<void> {
   await offlineDb.images.put({
     id: trackId,
@@ -145,12 +165,45 @@ export async function saveImageOffline(
   });
 }
 
+export async function saveImageOfflineByUrl(
+  imageUrl: string,
+  imageBlob: Blob,
+): Promise<void> {
+  const identity = getOfflineImageIdentity(imageUrl);
+  if (!identity) return;
+
+  await saveImageOffline(identity.key, imageBlob);
+}
+
 export async function getOfflineImage(
-  trackId: string
+  trackId: string,
 ): Promise<OfflineImage | undefined> {
   return offlineDb.images.get(trackId);
 }
 
+export async function getOfflineImageByUrl(
+  imageUrl: string,
+): Promise<OfflineImage | undefined> {
+  const identity = getOfflineImageIdentity(imageUrl);
+  if (!identity) return undefined;
+
+  const image = await offlineDb.images.get(identity.key);
+  if (image) return image;
+
+  if (identity.resource === "audio") {
+    return offlineDb.images.get(identity.id);
+  }
+
+  return undefined;
+}
+
 export async function deleteOfflineImage(trackId: string): Promise<void> {
   await offlineDb.images.delete(trackId);
+}
+
+export async function deleteOfflineImageByUrl(imageUrl: string): Promise<void> {
+  const identity = getOfflineImageIdentity(imageUrl);
+  if (!identity) return;
+
+  await offlineDb.images.delete(identity.key);
 }

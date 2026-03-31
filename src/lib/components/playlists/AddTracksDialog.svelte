@@ -10,6 +10,7 @@
   import { SvelteSet } from "svelte/reactivity";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
   import { invalidateAll } from "$app/navigation";
+  import { Image } from "../ui/image";
 
   interface Props {
     open: boolean;
@@ -198,7 +199,7 @@
           <div
             class="size-14 border shrink-0 overflow-hidden rounded-lg bg-muted"
           >
-            <img
+            <Image
               loading="lazy"
               crossorigin="use-credentials"
               src={getImageUrl(track.id)}
