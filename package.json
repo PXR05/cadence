@@ -46,6 +46,7 @@
     "gsap": "^3.14.2",
     "jszip": "^3.10.1",
     "mode-watcher": "^1.1.0",
+    "shaders": "^2.5.87",
     "valibot": "^1.2.0",
     "web-haptics": "^0.0.6"
   }

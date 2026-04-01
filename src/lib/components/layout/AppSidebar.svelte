@@ -109,9 +109,7 @@
     </Sidebar.GroupLabel>
 
     <Sidebar.GroupContent class="flex-1 h-full overflow-y-scroll">
-      <Sidebar.Menu
-        class="pb-40 gap-1 transition-all duration-200"
-      >
+      <Sidebar.Menu class="pb-40 gap-1 transition-all duration-200">
         {#each allUserPlaylists as playlist (playlist.id)}
           <SidebarPlaylistItem {playlist} />
         {/each}
@@ -138,7 +136,7 @@
         <img src="/favicon.svg" alt="Cadence Logo" class="size-8" />
       </div>
       <span
-        class="text-xl font-semibold tracking-tight group-data-[state=collapsed]:opacity-0 transition-all duration-200"
+        class="text-xl font-semibold group-data-[state=collapsed]:opacity-0 transition-all duration-200"
       >
         Cadence
       </span>

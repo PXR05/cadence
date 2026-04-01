@@ -52,7 +52,7 @@
   }
 </script>
 
-<form onsubmit={handleSubmit} class="space-y-4">
+<form onsubmit={handleSubmit} class="space-y-6">
   <div class="space-y-2">
     <label for="register-username" class="text-sm font-medium">Username</label>
     <Input
