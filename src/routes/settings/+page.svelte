@@ -376,8 +376,7 @@
     <SettingCard icon={ServerIcon} title="Backend URL">
       <div class="p-3 pt-1 space-y-3">
         <p class="text-sm text-muted-foreground">
-          Change the backend server URL. Applying a new URL signs you out and
-          clears cached content.
+          Change the backend server URL.
         </p>
         <BackendUrlUpdateField
           bind:value={backendUrlInput}

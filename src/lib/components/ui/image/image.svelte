@@ -128,7 +128,7 @@
   $effect(() => {
     if (!imgEl) return;
 
-    if (!isLazy) {
+    if (!isLazy || !shouldUseCustomAuthFetch) {
       canLoadImage = true;
       return;
     }
