@@ -867,6 +867,22 @@ class PlayerState {
     this.currentPlaylist = null;
   }
 
+  resetContentState() {
+    this.pause();
+    this.clearQueue();
+    this.currentTrack = null;
+    this.currentTime = 0;
+    this.duration = 0;
+    this.shuffledIndices = undefined;
+    this.isShuffled = false;
+    this.persistedState.trackColor = null;
+
+    if (this.playerRef) {
+      this.playerRef.src = "";
+      this.playerRef.load();
+    }
+  }
+
   shuffleQueue() {
     const trackLength = this.trackQueue.length;
     if (trackLength <= 1) return;

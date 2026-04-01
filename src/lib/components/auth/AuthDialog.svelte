@@ -1,114 +1,122 @@
 <script lang="ts">
-  import { authStore } from "$lib/stores/auth.svelte";
-  import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-  } from "$lib/components/ui/dialog";
+  import * as Dialog from "$lib/components/ui/dialog";
   import { Button } from "$lib/components/ui/button";
-  import { Input } from "../ui/input";
-  import { EyeIcon, EyeOffIcon } from "@lucide/svelte";
+  import { ServerIcon } from "@lucide/svelte";
+  import BackendUrlUpdateField from "$lib/components/BackendUrlUpdateField.svelte";
+  import { apiUrlStore, getBackendUrl } from "$lib/stores/apiUrl.svelte";
+  import { applyApiUrlChange } from "$lib/utils/apiUrlChange";
+  import LoginDialog from "./LoginDialog.svelte";
+  import RegisterDialog from "./RegisterDialog.svelte";
 
   let { onAuthenticated } = $props<{
     onAuthenticated: () => void;
   }>();
 
-  let username = $state("");
-  let password = $state("");
-  let isProcessing = $state(false);
-  let error = $state("");
-  let showPassword = $state(false);
-
-  async function handleSubmit(e: Event) {
-    e.preventDefault();
-
-    if (!username.trim()) {
-      error = "Username is required";
-      return;
+  function getInitialBackendUrl(): string {
+    try {
+      return getBackendUrl();
+    } catch {
+      return apiUrlStore.defaultUrl;
     }
+  }
 
-    if (!password.trim()) {
-      error = "Password is required";
-      return;
+  let mode = $state<"login" | "register">("login");
+  let backendUrlInput = $state(getInitialBackendUrl());
+  let backendUrlError = $state("");
+  let isApplyingBackendUrl = $state(false);
+  let backendUrlDialogOpen = $state(false);
+
+  function openBackendUrlDialog(): void {
+    backendUrlInput = getInitialBackendUrl();
+    backendUrlError = "";
+    backendUrlDialogOpen = true;
+  }
+
+  function resetBackendUrlInput(): void {
+    if (apiUrlStore.defaultUrl) {
+      backendUrlInput = apiUrlStore.defaultUrl;
+      backendUrlError = "";
     }
+  }
 
-    isProcessing = true;
-    error = "";
+  async function handleApplyBackendUrl(): Promise<void> {
+    isApplyingBackendUrl = true;
+    backendUrlError = "";
 
     try {
-      await authStore.login(username, password);
-      onAuthenticated();
-    } catch (err) {
-      error =
-        err instanceof Error ? err.message : "Invalid username or password";
-      console.error(err);
+      const result = await applyApiUrlChange(backendUrlInput);
+      backendUrlInput = result.activeUrl;
+      backendUrlDialogOpen = false;
+    } catch (error) {
+      backendUrlError =
+        error instanceof Error ? error.message : "Failed to update backend URL";
     } finally {
-      isProcessing = false;
+      isApplyingBackendUrl = false;
     }
   }
 </script>
 
-<Dialog open={true}>
-  <DialogContent
+<Dialog.Root open={true}>
+  <Dialog.Content
     showCloseButton={false}
     onInteractOutside={(e) => e.preventDefault()}
     onEscapeKeydown={(e) => e.preventDefault()}
   >
-    <DialogHeader>
-      <DialogTitle>Sign In</DialogTitle>
-      <DialogDescription>Enter your credentials to continue</DialogDescription>
-    </DialogHeader>
+    <Button
+      type="button"
+      variant="outline"
+      size="icon"
+      class="absolute right-4 top-4 text-muted-foreground"
+      onclick={openBackendUrlDialog}
+      disabled={isApplyingBackendUrl}
+      title="Configure backend URL"
+      aria-label="Configure backend URL"
+    >
+      <ServerIcon class="size-4" />
+    </Button>
 
-    <form onsubmit={handleSubmit} class="space-y-4">
-      <div class="space-y-2">
-        <label for="username" class="text-sm font-medium">Username</label>
-        <Input
-          id="username"
-          type="text"
-          bind:value={username}
-          disabled={isProcessing}
-          class="w-full px-3 py-2"
-          placeholder="Enter your username"
-          autocomplete="username"
-        />
-      </div>
+    <Dialog.Header>
+      <Dialog.Title>{mode === "login" ? "Sign In" : "Register"}</Dialog.Title>
+      <Dialog.Description>
+        {mode === "login"
+          ? "Enter your credentials to continue"
+          : "Create an account to continue"}
+      </Dialog.Description>
+    </Dialog.Header>
 
-      <div class="space-y-2">
-        <label for="password" class="text-sm font-medium">Password</label>
-        <div class="relative">
-          <Input
-            id="password"
-            type={showPassword ? "text" : "password"}
-            bind:value={password}
-            disabled={isProcessing}
-            class="w-full px-3 py-2"
-            placeholder="Enter your password"
-            autocomplete="current-password"
-          />
-          <Button
-            variant="ghost"
-            size="icon"
-            class="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground"
-            onclick={() => (showPassword = !showPassword)}
-          >
-            {#if showPassword}
-              <EyeIcon size={16} />
-            {:else}
-              <EyeOffIcon size={16} />
-            {/if}
-          </Button>
-        </div>
-      </div>
+    {#if mode === "login"}
+      <LoginDialog
+        {onAuthenticated}
+        disabled={isApplyingBackendUrl}
+        onSwitchToRegister={() => (mode = "register")}
+      />
+    {:else}
+      <RegisterDialog
+        {onAuthenticated}
+        disabled={isApplyingBackendUrl}
+        onSwitchToLogin={() => (mode = "login")}
+      />
+    {/if}
+  </Dialog.Content>
+</Dialog.Root>
 
-      {#if error}
-        <p class="text-sm text-red-500">{error}</p>
-      {/if}
+<Dialog.Root bind:open={backendUrlDialogOpen}>
+  <Dialog.Content class="sm:max-w-md">
+    <Dialog.Header>
+      <Dialog.Title>Backend URL</Dialog.Title>
+      <Dialog.Description>
+        Update the server URL. Applying a change clears cached content and signs
+        out active sessions.
+      </Dialog.Description>
+    </Dialog.Header>
 
-      <Button type="submit" disabled={isProcessing} class="w-full">
-        {isProcessing ? "Processing..." : "Sign In"}
-      </Button>
-    </form>
-  </DialogContent>
-</Dialog>
+    <BackendUrlUpdateField
+      bind:value={backendUrlInput}
+      defaultValue={apiUrlStore.defaultUrl}
+      isApplying={isApplyingBackendUrl}
+      error={backendUrlError}
+      onReset={resetBackendUrlInput}
+      onApply={handleApplyBackendUrl}
+    />
+  </Dialog.Content>
+</Dialog.Root>

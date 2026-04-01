@@ -1,6 +1,7 @@
 import { createLocalStorageState } from "./localStorage.svelte";
 import type { User } from "$lib/schemas/auth";
 import { authFetch } from "$lib/api/fetch";
+import { buildBackendUrl, getBackendUrl } from "$lib/stores/apiUrl.svelte";
 
 interface LoginResponse {
   message: string;
@@ -48,14 +49,14 @@ class AuthStore {
       return;
     }
 
-    const baseUrl = import.meta.env.VITE_API_URL;
-    if (!baseUrl) {
+    try {
+      getBackendUrl();
+    } catch {
       return;
     }
 
     try {
-      const url = new URL("/auth/me", baseUrl);
-      const response = await fetch(url, {
+      const response = await fetch(buildBackendUrl("/auth/me"), {
         method: "GET",
         credentials: "include",
         mode: "cors",
@@ -70,6 +71,11 @@ class AuthStore {
         this.cookieAuthMode = "unsupported";
       }
     } catch {}
+  }
+
+  async refreshCookieAuthMode(): Promise<void> {
+    this.cookieAuthMode = "unknown";
+    await this.probeServerCookieAuth();
   }
 
   private restoreUserFromStorage(): void {

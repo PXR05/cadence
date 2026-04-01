@@ -662,6 +662,17 @@ class DownloadStore {
     this.saveToStorage();
   }
 
+  resetState() {
+    this._queue = [];
+    this._currentDownload = null;
+    this._progress = null;
+    this._isCancelled = false;
+    this._isProcessing = false;
+    this._offlineStatus = new Map();
+    this._trackOfflineStatus = new Map();
+    this.saveToStorage();
+  }
+
   isInQueue(id: string): boolean {
     return (
       this._queue.some((item) => item.id === id) ||

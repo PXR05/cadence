@@ -10,6 +10,7 @@
   import { Input } from "../ui/input";
   import type { RemoteProvider } from "$lib/schemas";
   import { detectRemoteProviderFromUrl } from "$lib/utils/remote";
+  import { getAudioBaseUrl } from "$lib/constants";
 
   interface Props {
     open?: boolean;
@@ -79,7 +80,7 @@
 
       xhr.timeout = 300000;
 
-      xhr.open("POST", `${import.meta.env.VITE_API_URL}/audio/upload`);
+      xhr.open("POST", `${getAudioBaseUrl()}/upload`);
       xhr.withCredentials = true;
       xhr.send(formData);
     });

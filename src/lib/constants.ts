@@ -1,9 +1,11 @@
-const BACKEND_URL = import.meta.env.VITE_API_URL;
+import { buildBackendUrl } from "$lib/stores/apiUrl.svelte";
 
-export const BASE_URL = `${BACKEND_URL}/audio`;
-export const PLAYLIST_URL = `${BACKEND_URL}/playlist`;
+export const getAudioBaseUrl = () => buildBackendUrl("/audio");
+export const getPlaylistBaseUrl = () => buildBackendUrl("/playlist");
 
-export const getStreamUrl = (id: string) => `${BASE_URL}/${id}/stream`;
-export const getImageUrl = (id: string) => `${BASE_URL}/${id}/image`;
+export const getStreamUrl = (id: string) =>
+  buildBackendUrl(`/audio/${id}/stream`);
+export const getImageUrl = (id: string) =>
+  buildBackendUrl(`/audio/${id}/image`);
 export const getPlaylistImageUrl = (id: string) =>
-  `${PLAYLIST_URL}/${id}/image`;
+  buildBackendUrl(`/playlist/${id}/image`);

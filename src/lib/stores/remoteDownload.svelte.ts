@@ -1,4 +1,4 @@
-import { BASE_URL } from "$lib/constants";
+import { getAudioBaseUrl } from "$lib/constants";
 import type {
   RemoteCollectionKind,
   RemoteDownloadResponse,
@@ -337,8 +337,9 @@ class RemoteDownloadStore {
     onProgress: (event: RemoteProgressEvent) => void,
   ): Promise<void> {
     const params = new URLSearchParams({ url, stream });
+    const audioBaseUrl = getAudioBaseUrl();
     const eventSource = new EventSource(
-      `${BASE_URL}/upload/${provider}?${params}`,
+      `${audioBaseUrl}/upload/${provider}?${params}`,
       {
         withCredentials: true,
       },
@@ -385,8 +386,9 @@ class RemoteDownloadStore {
     const { provider, streamId } = this._currentDownload;
 
     try {
+      const audioBaseUrl = getAudioBaseUrl();
       const response = await fetch(
-        `${BASE_URL}/upload/${provider}/${streamId}`,
+        `${audioBaseUrl}/upload/${provider}/${streamId}`,
         {
           method: "DELETE",
           credentials: "include",
