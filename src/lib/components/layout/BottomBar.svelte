@@ -8,7 +8,6 @@
   import { appearanceStore } from "$lib/stores/appearance.svelte";
   import { playerDetailMotionStore } from "$lib/stores/playerDetailMotion.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
-  import { cubicOut } from "svelte/easing";
 
   function lerp(start: number, end: number, progress: number): number {
     return start + (end - start) * progress;
@@ -68,36 +67,6 @@
     return 0.5 + "rem";
   });
 
-  const panelOpenProgress = $derived.by(() => {
-    const openProgress = playerDetailMotionStore.openProgress;
-    return cubicOut(openProgress);
-  });
-
-  const bgInset = $derived.by(() => {
-    const progress = panelOpenProgress;
-    const closedInset = 0.5;
-    const openInset = -0.75;
-
-    return lerp(closedInset, openInset, progress).toFixed(4) + "rem";
-  });
-
-  const bgTopStyle = $derived.by(() => {
-    const progress = playerDetailMotionStore.openProgress;
-    const closedTop = bgTopOffset;
-
-    if (progress <= 0) {
-      return closedTop;
-    }
-
-    if (progress >= 1) {
-      return "calc(-100dvh + 6rem)";
-    }
-
-    const closedWeight = (1 - progress).toFixed(4);
-    const openWeight = progress.toFixed(4);
-
-    return `calc((${closedTop}) * ${closedWeight} + (-100dvh + 6rem) * ${openWeight})`;
-  });
 </script>
 
 <div class="flex flex-col gap-1.5 fixed bottom-0 left-0 right-0 z-50">
@@ -123,18 +92,17 @@
   <div class="absolute bottom-0 left-0 right-0 z-60">
     <div
       style="
-      top: {bgTopStyle};
-      left: {bgInset};
-      right: {bgInset};
-      bottom: {bgInset};
+      top: calc(-100dvh + 5rem);
+      left: 0.5rem;
+      right: 0.5rem;
+      bottom: 0.5rem;
+      clip-path: inset(calc(({bgTopOffset}) - (-100dvh + 5rem)) 0 0 0 round var(--radius-4xl));
+      will-change: clip-path;
     "
-      class="md:hidden transition-all duration-200 absolute inset-0 rounded-4xl border border-input/15
+      class="md:hidden absolute inset-0 rounded-4xl border border-input/15
       {appearanceStore.disableBlur
         ? 'bg-muted'
         : 'bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md'}
-      {playerDetailMotionStore.isDragging || playerDetailMotionStore.isAnimating
-        ? 'transition-none!'
-        : ''}
       {!isTopRoute && playerStore.trackQueue.length === 0
         ? 'opacity-0 pointer-events-none'
         : ''}
