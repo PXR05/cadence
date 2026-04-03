@@ -15,16 +15,12 @@
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
   import { authStore } from "$lib/stores/auth.svelte";
-  import { beforeNavigate, goto } from "$app/navigation";
+  import { goto } from "$app/navigation";
   import { onMount } from "svelte";
   import { innerWidth } from "svelte/reactivity/window";
   import { page } from "$app/state";
   import { Toaster } from "$lib/components/ui/sonner";
   import * as Sidebar from "$lib/components/ui/sidebar";
-  import { vaulEase } from "$lib/utils";
-  import { fade } from "svelte/transition";
-  import { isActive, navItems } from "$lib/components/layout/navItems";
-  import { appearanceStore } from "$lib/stores/appearance.svelte";
 
   let { children } = $props();
 
@@ -148,21 +144,6 @@
       }
     }
   }
-
-  let goingLeft = $state(false);
-  beforeNavigate((e) => {
-    const oldIndex = navItems.findIndex((i) =>
-      isActive(i.path, e.from?.url.pathname || ""),
-    );
-    const newIndex = navItems.findIndex((i) =>
-      isActive(i.path, e.to?.url.pathname || ""),
-    );
-    if (newIndex < oldIndex) {
-      goingLeft = true;
-    } else {
-      goingLeft = false;
-    }
-  });
 
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
   const isTopRoute = $derived(page.url.pathname.split("/").length <= 2);

@@ -8,6 +8,8 @@
   import { appearanceStore } from "$lib/stores/appearance.svelte";
   import { playerDetailMotionStore } from "$lib/stores/playerDetailMotion.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
+  import { cubicOut, quintOut } from "svelte/easing";
+  import { Progress } from "bits-ui";
 
   function lerp(start: number, end: number, progress: number): number {
     return start + (end - start) * progress;
@@ -52,21 +54,27 @@
   });
 
   const bgTopOffset = $derived.by(() => {
-    if (!isTopRoute) {
-      if (
-        playerStore.trackQueue.length > 0 &&
-        page.url.pathname.split("/").length > 2
-      ) {
-        return -4.75 + "rem";
-      }
-      return -0.25 + "rem";
+    const hasQueue = playerStore.trackQueue.length > 0;
+
+    if (isTopRoute) {
+      return hasQueue ? 9.5 : 4.75;
     }
-    if (playerStore.trackQueue.length > 0) {
-      return -4.25 + "rem";
-    }
-    return 0.5 + "rem";
+
+    return hasQueue ? 5.5 : 9.5;
   });
 
+  const bgTopInset = $derived.by(() => {
+    // const baseOffset = bgTopOffset;
+    // const progress = playerDetailMotionStore.openProgress;
+
+    // return `${100 * (1 - progress)}dvh - ${baseOffset * (1 - progress)}rem`;
+    return `100dvh - ${bgTopOffset}rem`;
+  });
+
+  const bgInset = $derived(
+    0.5,
+    // 0.5 - quintOut(0.5 * playerDetailMotionStore.openProgress),
+  );
 </script>
 
 <div class="flex flex-col gap-1.5 fixed bottom-0 left-0 right-0 z-50">
@@ -89,26 +97,25 @@
     <OfflineDownloadProgress />
   </div>
 
-  <div class="absolute bottom-0 left-0 right-0 z-60">
-    <div
-      style="
-      top: calc(-100dvh + 5rem);
-      left: 0.5rem;
-      right: 0.5rem;
-      bottom: 0.5rem;
-      clip-path: inset(calc(({bgTopOffset}) - (-100dvh + 5rem)) 0 0 0 round var(--radius-4xl));
+  <div
+    style="
+      top: -100dvh;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      clip-path: inset(calc({bgTopInset}) {bgInset}rem {bgInset}rem {bgInset}rem round var(--radius-4xl));
       will-change: clip-path;
     "
-      class="md:hidden absolute inset-0 rounded-4xl border border-input/15
+    class="md:hidden absolute inset-0 rounded-4xl border border-input/15
       {appearanceStore.disableBlur
-        ? 'bg-muted'
-        : 'bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md'}
+      ? 'bg-muted'
+      : 'bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md'}
       {!isTopRoute && playerStore.trackQueue.length === 0
-        ? 'opacity-0 pointer-events-none'
-        : ''}
+      ? 'opacity-0 pointer-events-none'
+      : ''}
       "
-    ></div>
-
+  ></div>
+  <div class="absolute bottom-0 left-0 right-0 z-60">
     <div
       class={playerStore.trackQueue.length === 0
         ? "max-md:pointer-events-none max-md:opacity-0"

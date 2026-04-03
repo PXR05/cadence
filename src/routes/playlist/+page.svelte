@@ -8,6 +8,7 @@
   } from "$lib/utils/playlist";
   import {
     AddTracksDialog,
+    PullToRefresh,
     PlaylistPageDesktop,
     PlaylistPageMobile,
   } from "$lib/components";
@@ -15,6 +16,7 @@
   import { LoaderIcon, TriangleAlertIcon } from "@lucide/svelte";
   import type { PlaylistDetail, PlaylistItem } from "$lib/schemas";
   import { playerStore } from "$lib/stores/player.svelte.js";
+  import { loadPlaylistForRoute } from "./load-playlist";
 
   let { data } = $props();
 
@@ -70,6 +72,17 @@
   }
 
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
+
+  async function refreshCurrentPlaylist() {
+    if (!playlistId) {
+      return;
+    }
+
+    const refreshed = await loadPlaylistForRoute(playlistId);
+    if (refreshed) {
+      playlist = refreshed;
+    }
+  }
 </script>
 
 <svelte:head>
@@ -80,42 +93,47 @@
   >
 </svelte:head>
 
-<div class="flex flex-col mx-auto w-full h-full relative">
-  {#if !playlistId}
-    <div
-      class="flex flex-col items-center justify-center h-full text-muted-foreground gap-2"
-    >
-      <TriangleAlertIcon
-        size={48}
-        strokeWidth={1.5}
-        class="text-muted-foreground"
+<PullToRefresh
+  enabled={Boolean(playlistId)}
+  onStageOne={refreshCurrentPlaylist}
+>
+  <div class="flex flex-col mx-auto w-full h-full relative">
+    {#if !playlistId}
+      <div
+        class="flex flex-col items-center justify-center h-full text-muted-foreground gap-2"
+      >
+        <TriangleAlertIcon
+          size={48}
+          strokeWidth={1.5}
+          class="text-muted-foreground"
+        />
+        <p>Invalid playlist ID</p>
+      </div>
+    {:else if !playlist}
+      <div class="delayed-loader flex items-center justify-center h-full">
+        <LoaderIcon class="animate-spin text-muted-foreground" />
+      </div>
+    {:else if isMobile}
+      <PlaylistPageMobile
+        {playlist}
+        bind:isScrolled
+        bind:searchQuery
+        {hasAddButton}
+        items={filteredTracks}
+        onAddTracks={() => addTracksDialog.open()}
       />
-      <p>Invalid playlist ID</p>
-    </div>
-  {:else if !playlist}
-    <div class="delayed-loader flex items-center justify-center h-full">
-      <LoaderIcon class="animate-spin text-muted-foreground" />
-    </div>
-  {:else if isMobile}
-    <PlaylistPageMobile
-      {playlist}
-      bind:isScrolled
-      bind:searchQuery
-      {hasAddButton}
-      items={filteredTracks}
-      onAddTracks={() => addTracksDialog.open()}
-    />
-  {:else}
-    <PlaylistPageDesktop
-      {playlist}
-      bind:isScrolled
-      bind:searchQuery
-      {hasAddButton}
-      items={filteredTracks}
-      onAddTracks={() => addTracksDialog.open()}
-    />
-  {/if}
-</div>
+    {:else}
+      <PlaylistPageDesktop
+        {playlist}
+        bind:isScrolled
+        bind:searchQuery
+        {hasAddButton}
+        items={filteredTracks}
+        onAddTracks={() => addTracksDialog.open()}
+      />
+    {/if}
+  </div>
+</PullToRefresh>
 
 {#if playlist && playlistId && !isNonModifiable}
   <AddTracksDialog
