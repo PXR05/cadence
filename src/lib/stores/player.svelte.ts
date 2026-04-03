@@ -5,6 +5,7 @@ import { createNestedLocalStorageState } from "./localStorage.svelte";
 import { getAudioUrl, revokeAudioUrl } from "$lib/utils/offline";
 import Color from "colorjs.io";
 import { updateTrackColor } from "$lib/db/cache";
+import { authFetch } from "$lib/api/fetch";
 import { AudioEngine } from "./audioEngine";
 import type { AudioFile, PlaylistDetail } from "$lib/schemas";
 import { resolvePlaybackSource } from "$lib/utils/trackSources";
@@ -918,9 +919,12 @@ class PlayerState {
       return;
     }
 
-    const imageResponse = await fetch(getImageUrl(track.id), {
-      credentials: "include",
-    });
+    const imageUrl = getImageUrl(track.id);
+    const imageResponse = authStore.shouldUseCustomMediaAuthFetch
+      ? await authFetch(imageUrl)
+      : await fetch(imageUrl, {
+          credentials: "include",
+        });
     const imageBlob = await imageResponse.blob();
     const imageBlobUrl = URL.createObjectURL(imageBlob);
 

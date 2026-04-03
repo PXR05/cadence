@@ -13,7 +13,7 @@
     LibraryIcon,
     MusicIcon,
     UserIcon,
-    YoutubeIcon,
+    SquarePlayIcon,
   } from "@lucide/svelte";
   import { Image } from "../ui/image";
 
@@ -85,7 +85,7 @@
         class={fallbackIconClass}
       />
     {:else if isYoutube}
-      <YoutubeIcon
+      <SquarePlayIcon
         size={youtubeIconSize ?? iconSize}
         {strokeWidth}
         absoluteStrokeWidth={useAbsoluteStrokeWidth}

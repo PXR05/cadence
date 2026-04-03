@@ -1,6 +1,5 @@
 <script lang="ts">
   import { authFetch } from "$lib/api/fetch";
-  import { getOfflineImageByUrl, saveImageOfflineByUrl } from "$lib/db/offline";
   import { authStore } from "$lib/stores/auth.svelte";
   import type { WithElementRef } from "$lib/utils";
   import { onDestroy } from "svelte";
@@ -17,9 +16,6 @@
   let canLoadImage = $state(false);
   let requestVersion = 0;
 
-  const STREAM_PREVIEW_MIN_BYTES = 24 * 1024;
-  const STREAM_PREVIEW_MAX_ATTEMPTS = 6;
-  const STREAM_PREVIEW_INTERVAL_MS = 120;
   const PLACEHOLDER_SRC =
     "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
   const MAX_PARALLEL_IMAGE_FETCHES = 6;
@@ -97,34 +93,6 @@
     imgEl.src = objectUrl;
   }
 
-  async function trySetPreviewBlob(
-    chunks: ArrayBuffer[],
-    mimeType: string,
-    isStale: () => boolean,
-  ) {
-    if (!imgEl || isStale()) return;
-
-    const previewBlob = new Blob(chunks, { type: mimeType });
-    const previewUrl = URL.createObjectURL(previewBlob);
-    const probe = new Image();
-    probe.src = previewUrl;
-
-    try {
-      await probe.decode();
-
-      if (!imgEl || isStale()) {
-        URL.revokeObjectURL(previewUrl);
-        return;
-      }
-
-      revokeCurrentObjectUrl();
-      objectUrl = previewUrl;
-      imgEl.src = objectUrl;
-    } catch {
-      URL.revokeObjectURL(previewUrl);
-    }
-  }
-
   $effect(() => {
     if (!imgEl) return;
 
@@ -168,46 +136,47 @@
     const currentVersion = ++requestVersion;
     const abortController = new AbortController();
     let cancelled = false;
-    const hasVisibleImage =
-      !!objectUrl || (!!imgEl.src && imgEl.src !== PLACEHOLDER_SRC);
-    const allowStreamPreview = !hasVisibleImage;
 
     const isStale = () => cancelled || currentVersion !== requestVersion;
 
     if (!imageSrc) {
       imgEl.src = PLACEHOLDER_SRC;
       revokeCurrentObjectUrl();
-    } else if (!hasVisibleImage) {
-      imgEl.src = PLACEHOLDER_SRC;
-    }
-
-    if (!imageSrc || !canLoadImage) {
       return () => {
         cancelled = true;
         abortController.abort();
       };
     }
 
+    if (!canLoadImage) {
+      return () => {
+        cancelled = true;
+        abortController.abort();
+      };
+    }
+
+    if (!shouldUseCustomAuthFetch) {
+      revokeCurrentObjectUrl();
+      if (!isStale()) {
+        imgEl.src = imageSrc;
+      }
+      return () => {
+        cancelled = true;
+        abortController.abort();
+      };
+    }
+
+    const hasVisibleImage =
+      !!objectUrl || (!!imgEl.src && imgEl.src !== PLACEHOLDER_SRC);
+
+    if (!hasVisibleImage) {
+      imgEl.src = PLACEHOLDER_SRC;
+    }
+
     (async () => {
       let releaseSlot: (() => void) | null = null;
 
       try {
-        const offlineImage = await getOfflineImageByUrl(imageSrc);
-
-        if (isStale()) return;
-
-        if (offlineImage?.imageBlob) {
-          setImageBlob(offlineImage.imageBlob);
-          return;
-        }
-
-        if (!shouldUseCustomAuthFetch) {
-          if (!imgEl || isStale()) return;
-          revokeCurrentObjectUrl();
-          imgEl.src = imageSrc;
-          return;
-        }
-
         releaseSlot = await acquireFetchSlot(abortController.signal);
 
         const response = await authFetch(imageSrc, {
@@ -229,16 +198,11 @@
           if (isStale()) return;
 
           setImageBlob(blob);
-          void saveImageOfflineByUrl(imageSrc, blob);
           return;
         }
 
         const chunks: ArrayBuffer[] = [];
         const reader = body.getReader();
-        let loadedBytes = 0;
-        let previewAttempts = 0;
-        let lastPreviewTime = 0;
-        let previewInFlight = false;
 
         while (true) {
           const { done, value } = await reader.read();
@@ -250,26 +214,6 @@
             value.byteOffset + value.byteLength,
           ) as ArrayBuffer;
           chunks.push(chunkBuffer);
-          loadedBytes += chunkBuffer.byteLength;
-
-          if (
-            allowStreamPreview &&
-            previewAttempts < STREAM_PREVIEW_MAX_ATTEMPTS &&
-            loadedBytes >= STREAM_PREVIEW_MIN_BYTES
-          ) {
-            const now = Date.now();
-            if (
-              now - lastPreviewTime >= STREAM_PREVIEW_INTERVAL_MS &&
-              !previewInFlight
-            ) {
-              lastPreviewTime = now;
-              previewAttempts += 1;
-              previewInFlight = true;
-              void trySetPreviewBlob(chunks, mimeType, isStale).finally(() => {
-                previewInFlight = false;
-              });
-            }
-          }
 
           if (isStale()) {
             try {
@@ -284,7 +228,6 @@
         if (isStale()) return;
 
         setImageBlob(blob);
-        void saveImageOfflineByUrl(imageSrc, blob);
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") {
           return;

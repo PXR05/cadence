@@ -17,7 +17,6 @@
   import { Button } from "../ui/button";
   import * as Carousel from "../ui/carousel";
   import type { CarouselAPI } from "../ui/carousel/context";
-  import { appearanceStore } from "$lib/stores/appearance.svelte";
   import { Image } from "../ui/image";
 
   interface Props {
@@ -198,6 +197,7 @@
   tabindex="0"
   class="hide-scrollbar mt-0 relative h-dvh w-full bg-background"
   ontouchend={(e) => onTouchEnd?.(e)}
+  ontouchcancel={(e) => onTouchEnd?.(e)}
   onmousedown={(e) => onMouseDown?.(e)}
 >
   {#if playerStore.currentTrack}

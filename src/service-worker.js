@@ -5,12 +5,61 @@
 /// <reference types="../.svelte-kit/ambient.d.ts" />
 
 import { build, files, prerendered, version } from "$service-worker";
+import Dexie from "dexie";
+
+const IMAGE_URL_PATTERN = /^\/(?:audio|playlist)\/[^/]+\/image$/;
 
 const self = /** @type {ServiceWorkerGlobalScope} */ (
   /** @type {unknown} */ (globalThis.self)
 );
 
 const CACHE = `cache-${version}`;
+
+/**
+ * @param {string} trackId
+ * @returns {Promise<Blob | null>}
+ */
+async function getImageFromIndexedDB(trackId) {
+  try {
+    const db = new Dexie("CadenceOfflineDB");
+    db.version(4).stores({
+      tracks: "id, downloadedAt",
+      images: "id, downloadedAt",
+    });
+    const image = await db.table("images").get(trackId);
+    if (image && image.imageBlob) {
+      return image.imageBlob;
+    }
+    return null;
+  } catch (err) {
+    console.warn("Failed to get image from IndexedDB:", err);
+    return null;
+  }
+}
+
+/**
+ * @param {string} trackId
+ * @param {Blob} imageBlob
+ * @returns {Promise<void>}
+ */
+async function saveImageToIndexedDB(trackId, imageBlob) {
+  try {
+    const db = new Dexie("CadenceOfflineDB");
+    db.version(4).stores({
+      tracks: "id, downloadedAt",
+      images: "id, downloadedAt",
+    });
+    await db.table("images").put({
+      id: trackId,
+      imageBlob,
+      mimeType: imageBlob.type || "image/jpeg",
+      size: imageBlob.size,
+      downloadedAt: Date.now(),
+    });
+  } catch (err) {
+    console.warn("Failed to save image to IndexedDB:", err);
+  }
+}
 
 const ASSETS = [...build, ...files, ...prerendered];
 
@@ -52,12 +101,49 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
   const url = new URL(event.request.url);
-  if (url.origin !== self.location.origin) {
+  const isCrossOrigin = url.origin !== self.location.origin;
+  const isImageRequest = IMAGE_URL_PATTERN.test(url.pathname);
+
+  if (isCrossOrigin && !isImageRequest) {
     return;
   }
 
   async function respond() {
     const cache = await caches.open(CACHE);
+
+    if (isImageRequest) {
+      const pathParts = url.pathname.split("/");
+      const trackId = pathParts[pathParts.length - 2];
+
+      if (trackId) {
+        const imageBlob = await getImageFromIndexedDB(trackId);
+        if (imageBlob) {
+          return new Response(imageBlob, {
+            status: 200,
+            headers: {
+              "Content-Type": imageBlob.type || "image/jpeg",
+              "Content-Length": String(imageBlob.size),
+            },
+          });
+        }
+      }
+
+      try {
+        // Preserve headers (including Authorization for custom-auth fetches).
+        const response = await fetch(event.request);
+        if (response.status === 200 && response.type !== "opaque" && trackId) {
+          response
+            .clone()
+            .blob()
+            .then((blob) => {
+              saveImageToIndexedDB(trackId, blob);
+            });
+        }
+        return response;
+      } catch (err) {
+        throw err;
+      }
+    }
 
     if (ASSETS.includes(url.pathname)) {
       const response = await cache.match(url.pathname);
@@ -67,7 +153,32 @@ self.addEventListener("fetch", (event) => {
       }
     }
 
-    return await fetch(event.request);
+    try {
+      const response = await fetch(event.request, {
+        credentials: "include",
+        mode: "cors",
+      });
+      if (!(response instanceof Response)) {
+        throw new Error("invalid response from fetch");
+      }
+
+      const isAsset = ASSETS.includes(url.pathname);
+      if (response.status === 200 && isAsset) {
+        cache.put(event.request, response.clone());
+      }
+
+      return response;
+    } catch (err) {
+      const isAsset = ASSETS.includes(url.pathname);
+      if (isAsset) {
+        const response = await cache.match(event.request);
+        if (response) {
+          return response;
+        }
+      }
+
+      throw err;
+    }
   }
 
   event.respondWith(respond());
@@ -83,6 +194,40 @@ self.addEventListener("message", (event) => {
     if (self.registration && self.registration.waiting) {
       notifyClientsOfUpdate();
     }
+    return;
+  }
+
+  if (event.data && event.data.type === "CACHE_IMAGE") {
+    const imageUrl = event.data.url;
+
+    async function cacheImage() {
+      try {
+        const url = new URL(imageUrl, self.location.origin);
+
+        if (!IMAGE_URL_PATTERN.test(url.pathname)) return;
+
+        const pathParts = url.pathname.split("/");
+        const trackId = pathParts[pathParts.length - 2];
+
+        if (!trackId) return;
+
+        const existing = await getImageFromIndexedDB(trackId);
+        if (existing) return;
+
+        const response = await fetch(imageUrl, {
+          credentials: "include",
+          mode: "cors",
+        });
+        if (response.status === 200 && response.type !== "opaque") {
+          const blob = await response.blob();
+          await saveImageToIndexedDB(trackId, blob);
+        }
+      } catch (err) {
+        console.error("Failed to cache image:", err);
+      }
+    }
+
+    event.waitUntil(cacheImage());
     return;
   }
 

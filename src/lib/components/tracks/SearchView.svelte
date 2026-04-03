@@ -9,7 +9,7 @@
     PlusIcon,
     SearchIcon,
     XIcon,
-    YoutubeIcon,
+    SquarePlayIcon,
   } from "@lucide/svelte";
   import TrackItem from "./TrackItem.svelte";
   import RemoteTrackItem from "./RemoteTrackItem.svelte";
@@ -309,7 +309,7 @@
           {#if searchProvider === "local"}
             <DatabaseIcon size={14} class="text-muted-foreground" />
           {:else if searchProvider === "youtube"}
-            <YoutubeIcon size={14} class="text-muted-foreground" />
+            <SquarePlayIcon size={14} class="text-muted-foreground" />
           {:else}
             <MusicIcon size={14} class="text-muted-foreground" />
           {/if}
@@ -321,7 +321,7 @@
                 {#if provider === "local"}
                   <DatabaseIcon size={14} class="text-muted-foreground" />
                 {:else if provider === "youtube"}
-                  <YoutubeIcon size={14} class="text-muted-foreground" />
+                  <SquarePlayIcon size={14} class="text-muted-foreground" />
                 {:else}
                   <MusicIcon size={14} class="text-muted-foreground" />
                 {/if}
