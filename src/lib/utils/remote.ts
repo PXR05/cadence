@@ -120,7 +120,6 @@ export function detectRemoteProviderFromUrl(
       return "tidal";
     }
   } catch {
-    // Fallback to substring matching for non-normalized URLs.
   }
 
   if (/youtu\.be|youtube\.com/i.test(trimmedUrl)) {

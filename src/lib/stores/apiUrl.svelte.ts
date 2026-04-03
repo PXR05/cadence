@@ -54,7 +54,6 @@ class ApiUrlStore {
   constructor() {
     this.customUrl = tryNormalize(this.customUrlStorage.value);
 
-    // Drop malformed historical values and fall back to default env URL.
     if (this.customUrlStorage.value !== this.customUrl) {
       this.customUrlStorage.value = this.customUrl;
     }

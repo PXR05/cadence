@@ -34,7 +34,6 @@ async function clearWindowCaches(): Promise<void> {
       cacheNames.map((name) => window.caches.delete(name)),
     );
   } catch {
-    // Best effort only.
   }
 }
 
@@ -42,7 +41,6 @@ async function resetBackendContentData(): Promise<void> {
   try {
     await downloadStore.cancelDownload();
   } catch {
-    // Keep reset running even if cancellation fails.
   }
 
   downloadStore.resetState();
