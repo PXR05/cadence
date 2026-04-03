@@ -270,6 +270,32 @@ export class AudioEngine {
     this.reconnectAudioGraph();
   }
 
+  applyEqualizerPreset(
+    bands: EqualizerBand[],
+    equalizerEnabled: boolean,
+    preAmpDb: number,
+  ) {
+    this.equalizerBands = bands;
+    this.equalizerEnabled = equalizerEnabled;
+
+    if (!this.audioContext) {
+      return;
+    }
+
+    this.equalizerNodes.forEach((node) => node.disconnect());
+    this.equalizerNodes = bands.map((band) => {
+      const filter = this.audioContext!.createBiquadFilter();
+      filter.type = band.type;
+      filter.frequency.value = band.frequency;
+      filter.gain.value = band.gain;
+      filter.Q.value = band.Q;
+      return filter;
+    });
+
+    this.setPreAmpDb(preAmpDb);
+    this.reconnectAudioGraph();
+  }
+
   togglePureBypass(enabled: boolean) {
     this.pureBypassEnabled = enabled;
     this.reconnectAudioGraph();
