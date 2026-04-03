@@ -25,11 +25,13 @@
   let playlist = $state<PlaylistDetail | undefined>(undefined);
   let searchQuery = $state("");
   let isScrolled = $state(false);
+  let mobileListScrollTop = $state(0);
 
   $effect(() => {
     playlist = undefined;
     searchQuery = "";
     isScrolled = false;
+    mobileListScrollTop = 0;
 
     data.playlist.then((resolved) => {
       playlist = resolved;
@@ -72,6 +74,9 @@
   }
 
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
+  const pullToRefreshEnabled = $derived(
+    Boolean(playlistId) && (!isMobile || mobileListScrollTop <= 0),
+  );
 
   async function refreshCurrentPlaylist() {
     if (!playlistId) {
@@ -94,7 +99,7 @@
 </svelte:head>
 
 <PullToRefresh
-  enabled={Boolean(playlistId)}
+  enabled={pullToRefreshEnabled}
   onStageOne={refreshCurrentPlaylist}
 >
   <div class="flex flex-col mx-auto w-full h-full relative">
@@ -120,6 +125,9 @@
         bind:searchQuery
         {hasAddButton}
         items={filteredTracks}
+        onListScroll={(scrollTop) => {
+          mobileListScrollTop = scrollTop;
+        }}
         onAddTracks={() => addTracksDialog.open()}
       />
     {:else}

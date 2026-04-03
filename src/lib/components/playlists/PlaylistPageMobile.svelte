@@ -16,6 +16,7 @@
     items: PlaylistItem[];
     searchQuery?: string;
     onAddTracks: () => void;
+    onListScroll?: (scrollTop: number) => void;
   }
 
   let {
@@ -25,6 +26,7 @@
     items,
     searchQuery = $bindable(""),
     onAddTracks,
+    onListScroll,
   }: Props = $props();
 
   const isArtist = $derived(isArtistPlaylist(playlist.id));
@@ -146,6 +148,7 @@
     headerHeight={mobileVirtualHeaderHeight}
     onScroll={(scrollTop) => {
       isScrolled = scrollTop >= 440;
+      onListScroll?.(scrollTop);
     }}
   >
     {#snippet header()}

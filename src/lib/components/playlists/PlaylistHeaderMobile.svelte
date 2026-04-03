@@ -5,14 +5,13 @@
   import { isArtistPlaylist, isSpecialPlaylist } from "$lib/utils/playlist";
   import { PlayIcon, PlusIcon, ShuffleIcon } from "@lucide/svelte";
   import { Button } from "../ui/button";
-  import { playlistMenuStore } from "$lib/stores/playlistMenu.svelte";
   import { Image } from "../ui/image";
 
   interface Props {
     playlist: PlaylistDetail;
     onPlay: () => void;
     onShuffle: () => void;
-    onMenu: () => void;
+    onMenu: (e: MouseEvent) => void;
     onAddTracks?: () => void;
   }
 
