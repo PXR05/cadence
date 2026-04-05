@@ -13,6 +13,7 @@
   import { Button } from "../ui/button";
   import PlayerDetailsPanel from "./PlayerDetailsPanel.svelte";
   import TrackCarousel from "../tracks/TrackCarousel.svelte";
+  import { nativeBridgeStore } from "$lib/stores/nativeBridge.svelte";
 
   const { trigger, destroy } = createWebHaptics();
   const OPEN_POSITION = 0;
@@ -69,8 +70,11 @@
   const closedPosition = $derived.by(() => {
     const height = innerHeight.current || window.innerHeight;
     if (height === 0) return 0;
-    if (isTopRoute && isMobile) return height - 64 - 80;
-    return height - 80;
+    if (isTopRoute && isMobile)
+      return (
+        height - 64 - 80 - (nativeBridgeStore.info?.navigation_bar_height ?? 0)
+      );
+    return height - 80 - (nativeBridgeStore.info?.navigation_bar_height ?? 0);
   });
 
   const isPanelAnimating = $derived(isDragging || isSettling);

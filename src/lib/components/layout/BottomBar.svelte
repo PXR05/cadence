@@ -8,8 +8,7 @@
   import { appearanceStore } from "$lib/stores/appearance.svelte";
   import { playerDetailMotionStore } from "$lib/stores/playerDetailMotion.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
-  import { cubicOut, quintOut } from "svelte/easing";
-  import { Progress } from "bits-ui";
+  import { nativeBridgeStore } from "$lib/stores/nativeBridge.svelte";
 
   function lerp(start: number, end: number, progress: number): number {
     return start + (end - start) * progress;
@@ -42,7 +41,7 @@
       return `4.375rem`;
     }
 
-    return `${lerp(0, 4.375, navMotionProgress).toFixed(4)}rem`;
+    return `${lerp(0, 4.375, navMotionProgress).toFixed(4)}rem - ${nativeBridgeStore.info?.navigation_bar_height ?? 0}px`;
   });
 
   const navOpacity = $derived.by(() => {
@@ -68,7 +67,7 @@
     // const progress = playerDetailMotionStore.openProgress;
 
     // return `${100 * (1 - progress)}dvh - ${baseOffset * (1 - progress)}rem`;
-    return `100dvh - ${bgTopOffset}rem`;
+    return `100dvh - ${bgTopOffset}rem - ${nativeBridgeStore.info?.navigation_bar_height ?? 0}px`;
   });
 
   const bgInset = $derived(
@@ -102,7 +101,7 @@
       top: -100dvh;
       left: 0;
       right: 0;
-      bottom: 0;
+      bottom: {nativeBridgeStore.info?.navigation_bar_height ?? 0}px;
       clip-path: inset(calc({bgTopInset}) {bgInset}rem {bgInset}rem {bgInset}rem round var(--radius-4xl));
       will-change: clip-path;
     "
@@ -132,7 +131,7 @@
         : ''}"
       style="
         will-change: transform, opacity;
-        transform: translate3d(0, {navTranslate}, 0);
+        transform: translate3d(0, calc({navTranslate}), 0);
         opacity: {navOpacity};
       "
     >

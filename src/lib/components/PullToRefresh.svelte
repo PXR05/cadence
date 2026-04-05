@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { WithElementRef } from "$lib/utils";
   import {
     ArrowDownIcon,
     LoaderIcon,
@@ -7,9 +8,10 @@
   } from "@lucide/svelte";
   import { onMount } from "svelte";
   import type { Snippet } from "svelte";
+  import type { HTMLAttributes } from "svelte/elements";
   import { innerWidth } from "svelte/reactivity/window";
 
-  interface Props {
+  type Props = {
     enabled?: boolean;
     stageOneThreshold?: number;
     stageTwoThreshold?: number;
@@ -22,7 +24,7 @@
     onStageOne?: () => Promise<void> | void;
     onStageTwo?: () => Promise<void> | void;
     children?: Snippet;
-  }
+  } & WithElementRef<HTMLAttributes<HTMLDivElement>>;
 
   let {
     enabled = true,
@@ -37,6 +39,8 @@
     onStageOne,
     onStageTwo,
     children,
+    class: className,
+    ...rest
   }: Props = $props();
 
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
@@ -447,7 +451,7 @@
   }
 </script>
 
-<div class="relative">
+<div class="relative {className}" {...rest}>
   <div
     bind:this={pullIndicatorEl}
     class="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center"

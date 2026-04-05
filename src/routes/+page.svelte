@@ -15,6 +15,7 @@
   import { slide } from "svelte/transition";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
   import { Skeleton } from "$lib/components/ui/skeleton";
+  import { nativeBridgeStore } from "$lib/stores/nativeBridge.svelte";
 
   const tracks = $derived(tracksStore.tracks);
   const isInitialLoad = $derived(tracksStore.isInitialLoad);

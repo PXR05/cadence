@@ -1,4 +1,4 @@
-import type { EqualizerBand } from "./player.svelte";
+import type { EqualizerBand } from "./playerEqualizer.svelte";
 
 export class AudioEngine {
   audioContext: AudioContext | null = null;
@@ -13,10 +13,8 @@ export class AudioEngine {
   private pureBypassEnabled: boolean = false;
 
   private frequencyDataBuffer: Uint8Array | null = null;
-  private timeDomainDataBuffer: Uint8Array | null = null;
 
   private lastFrequencyDataTime: number = 0;
-  private lastTimeDomainDataTime: number = 0;
   private analyzerThrottleMs: number = 33;
 
   initialize(
@@ -44,9 +42,6 @@ export class AudioEngine {
     this.analyzerNode.maxDecibels = -10;
 
     this.frequencyDataBuffer = new Uint8Array(
-      this.analyzerNode.frequencyBinCount,
-    );
-    this.timeDomainDataBuffer = new Uint8Array(
       this.analyzerNode.frequencyBinCount,
     );
 
@@ -91,7 +86,6 @@ export class AudioEngine {
     }
 
     this.frequencyDataBuffer = null;
-    this.timeDomainDataBuffer = null;
   }
 
   getFrequencyData(): Uint8Array | null {
@@ -113,51 +107,6 @@ export class AudioEngine {
       this.frequencyDataBuffer as Uint8Array<ArrayBuffer>,
     );
     return this.frequencyDataBuffer;
-  }
-
-  getTimeDomainData(): Uint8Array | null {
-    if (
-      this.pureBypassEnabled ||
-      !this.analyzerNode ||
-      !this.timeDomainDataBuffer
-    ) {
-      return null;
-    }
-
-    const now = performance.now();
-    if (now - this.lastTimeDomainDataTime < this.analyzerThrottleMs) {
-      return this.timeDomainDataBuffer;
-    }
-    this.lastTimeDomainDataTime = now;
-
-    this.analyzerNode.getByteTimeDomainData(
-      this.timeDomainDataBuffer as Uint8Array<ArrayBuffer>,
-    );
-    return this.timeDomainDataBuffer;
-  }
-
-  setAnalyzerFFTSize(
-    size: 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 4096 | 8192 | 16384 | 32768,
-  ) {
-    if (this.analyzerNode) {
-      this.analyzerNode.fftSize = size;
-      this.frequencyDataBuffer = new Uint8Array(
-        this.analyzerNode.frequencyBinCount,
-      );
-      this.timeDomainDataBuffer = new Uint8Array(
-        this.analyzerNode.frequencyBinCount,
-      );
-    }
-  }
-
-  setAnalyzerSmoothing(value: number) {
-    if (this.analyzerNode) {
-      this.analyzerNode.smoothingTimeConstant = Math.max(0, Math.min(1, value));
-    }
-  }
-
-  setAnalyzerThrottleMs(ms: number) {
-    this.analyzerThrottleMs = Math.max(16, ms);
   }
 
   setPreAmpDb(db: number) {

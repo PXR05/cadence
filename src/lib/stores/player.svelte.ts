@@ -12,140 +12,24 @@ import { resolvePlaybackSource } from "$lib/utils/trackSources";
 import { historyStore } from "./history.svelte";
 import { tracksStore } from "./tracks.svelte";
 import { authStore } from "./auth.svelte";
+import {
+  nativeBridgeStore,
+  type NativePlayerEvent,
+  type NativePlayerCommandPayloadMap,
+} from "./nativeBridge.svelte";
+import {
+  createDefaultEqualizerState,
+  type FilterType,
+  PlayerEqualizerDomain,
+  type EqualizerBand,
+  type EqualizerPreset,
+} from "./playerEqualizer.svelte";
 
-export type FilterType =
-  | "lowshelf"
-  | "peaking"
-  | "highshelf"
-  | "lowpass"
-  | "highpass"
-  | "notch"
-  | "allpass"
-  | "bandpass";
-
-export interface EqualizerBand {
-  id: number;
-  type: FilterType;
-  frequency: number;
-  gain: number;
-  Q: number;
-  enabled: boolean;
-  prevGain?: number;
-}
-
-export interface EqualizerPreset {
-  id: string;
-  name: string;
-  bands: EqualizerBand[];
-  preAmpDb: number;
-  equalizerEnabled: boolean;
-}
-
-const FLAT_EQUALIZER_PRESET_ID = "flat";
-const FLAT_EQUALIZER_PRESET_NAME = "Flat";
-const MIN_PREAMP_DB = -30;
-const MAX_PREAMP_DB = 30;
-const MIN_BAND_FREQUENCY = 20;
-const MAX_BAND_FREQUENCY = 20000;
-const MIN_BAND_Q = 0.1;
-const MAX_BAND_Q = 10;
-const DEFAULT_NEW_BAND_FREQUENCY = 1000;
-
-const FILTER_TYPE_TOKENS: Record<FilterType, string> = {
-  peaking: "PK",
-  lowshelf: "LS",
-  highshelf: "HS",
-  lowpass: "LP",
-  highpass: "HP",
-  notch: "NT",
-  bandpass: "BP",
-  allpass: "AP",
-};
-
-const TOKEN_TO_FILTER_TYPE: Record<string, FilterType> = {
-  PK: "peaking",
-  LS: "lowshelf",
-  HS: "highshelf",
-  LP: "lowpass",
-  HP: "highpass",
-  NT: "notch",
-  BP: "bandpass",
-  AP: "allpass",
-};
-
-const FILTER_TYPES: FilterType[] = [
-  "lowshelf",
-  "peaking",
-  "highshelf",
-  "lowpass",
-  "highpass",
-  "notch",
-  "allpass",
-  "bandpass",
-];
-
-const DEFAULT_EQUALIZER_BANDS: EqualizerBand[] = [
-  {
-    id: 0,
-    type: "lowshelf",
-    frequency: 100,
-    gain: 0,
-    Q: 1,
-    enabled: true,
-  },
-  {
-    id: 1,
-    type: "peaking",
-    frequency: 400,
-    gain: 0,
-    Q: 1,
-    enabled: true,
-  },
-  {
-    id: 2,
-    type: "peaking",
-    frequency: 1000,
-    gain: 0,
-    Q: 1,
-    enabled: true,
-  },
-  {
-    id: 3,
-    type: "peaking",
-    frequency: 3000,
-    gain: 0,
-    Q: 1,
-    enabled: true,
-  },
-  {
-    id: 4,
-    type: "highshelf",
-    frequency: 8000,
-    gain: 0,
-    Q: 1,
-    enabled: true,
-  },
-];
-
-function clamp(value: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, value));
-}
-
-function isFilterType(value: unknown): value is FilterType {
-  return (
-    typeof value === "string" && FILTER_TYPES.includes(value as FilterType)
-  );
-}
-
-function cloneEqualizerBands(bands: EqualizerBand[]): EqualizerBand[] {
-  return bands.map((band) => ({ ...band }));
-}
-
-interface ParsedEqPresetText {
-  preAmpDb: number;
-  bands: EqualizerBand[];
-  truncated: boolean;
-}
+export type {
+  EqualizerBand,
+  EqualizerPreset,
+  FilterType,
+} from "./playerEqualizer.svelte";
 
 interface PersistedPlayerState {
   currentTrack: AudioFile | null;
@@ -167,11 +51,16 @@ interface PersistedPlayerState {
   activeEqualizerPresetId: string | null;
 }
 
+type NativePlaybackContextPayload = Omit<
+  NativePlayerCommandPayloadMap["player.initialize"],
+  "volume" | "muted"
+>;
+
 class PlayerState {
-  audioEngine = new AudioEngine();
-  playerRef: HTMLAudioElement | null = $state(null);
   isPlaying: boolean = $state(false);
   duration: number = $state(0);
+  private audioEngine = new AudioEngine();
+  private playerRef: HTMLAudioElement | null = $state(null);
   private carousels = new Map<
     string,
     { api: CarouselAPI; handler: () => void }
@@ -179,6 +68,7 @@ class PlayerState {
   private currentBlobUrl: string | null = null;
   private cachedShuffledQueue: AudioFile[] | null = null;
   private mediaSessionHandlersInitialized = false;
+  private nativeEventUnsubscribe: (() => void) | null = null;
 
   private persistedState = createNestedLocalStorageState<PersistedPlayerState>(
     "cadence.player_state",
@@ -193,25 +83,20 @@ class PlayerState {
       isMuted: false,
       volume: 1,
       currentTime: 0,
-      equalizerBands: cloneEqualizerBands(DEFAULT_EQUALIZER_BANDS),
-      equalizerEnabled: true,
-      preAmpDb: 0,
-      pureBypassEnabled: false,
-      equalizerPresets: [
-        {
-          id: FLAT_EQUALIZER_PRESET_ID,
-          name: FLAT_EQUALIZER_PRESET_NAME,
-          bands: cloneEqualizerBands(DEFAULT_EQUALIZER_BANDS),
-          preAmpDb: 0,
-          equalizerEnabled: true,
-        },
-      ],
-      activeEqualizerPresetId: FLAT_EQUALIZER_PRESET_ID,
+      ...createDefaultEqualizerState(),
     },
   );
 
+  private nativeSessionId = this.createNativeSessionId();
+
+  private equalizerDomain = new PlayerEqualizerDomain(
+    this.persistedState,
+    this.audioEngine,
+  );
+
   constructor() {
-    this.migrateEqualizerState();
+    this.equalizerDomain.migrateState();
+    this.bindNativeBridgeEvents();
   }
 
   get currentTrack() {
@@ -307,6 +192,12 @@ class PlayerState {
   }
   set volume(value: number) {
     this.persistedState.volume = value;
+
+    if (this.shouldUseNativePlayback()) {
+      this.interceptNativeSetVolume(value);
+      return;
+    }
+
     this.audioEngine.setVolume(value);
   }
 
@@ -319,6 +210,22 @@ class PlayerState {
 
   get progress() {
     return this.duration ? this.currentTime / this.duration : 0;
+  }
+
+  get bitPerfectSupported() {
+    return nativeBridgeStore.info !== null;
+  }
+
+  get bitPerfectEnabled() {
+    return true;
+  }
+
+  get isBitPerfectActive() {
+    return this.shouldUseNativePlayback();
+  }
+
+  refreshBitPerfectSupport() {
+    nativeBridgeStore.refreshNativeInfo();
   }
 
   get isLoaded() {
@@ -342,7 +249,7 @@ class PlayerState {
   }
 
   get equalizerBands() {
-    return this.persistedState.equalizerBands;
+    return this.equalizerDomain.equalizerBands;
   }
 
   get equalizerNodes() {
@@ -354,41 +261,47 @@ class PlayerState {
   }
 
   get equalizerEnabled() {
-    return this.persistedState.equalizerEnabled;
+    return this.equalizerDomain.equalizerEnabled;
   }
   set equalizerEnabled(value: boolean) {
-    this.persistedState.equalizerEnabled = value;
-    this.syncActivePresetFromCurrentEq();
+    this.equalizerDomain.setEqualizerEnabled(value);
   }
 
   get preAmpDb() {
-    return this.persistedState.preAmpDb ?? 0;
+    return this.equalizerDomain.preAmpDb;
   }
   set preAmpDb(value: number) {
-    const clampedDb = Math.max(-30, Math.min(30, value));
-    this.persistedState.preAmpDb = clampedDb;
-    this.audioEngine.setPreAmpDb(clampedDb);
-    this.syncActivePresetFromCurrentEq();
+    this.equalizerDomain.setPreAmpDb(value);
   }
 
   get pureBypassEnabled() {
-    return this.persistedState.pureBypassEnabled;
+    return this.equalizerDomain.pureBypassEnabled;
   }
   set pureBypassEnabled(value: boolean) {
-    this.persistedState.pureBypassEnabled = value;
+    this.equalizerDomain.setPureBypassEnabled(value);
   }
 
   get equalizerPresets() {
-    return this.persistedState.equalizerPresets;
+    return this.equalizerDomain.equalizerPresets;
   }
 
   get activeEqualizerPresetId() {
-    return this.persistedState.activeEqualizerPresetId;
+    return this.equalizerDomain.activeEqualizerPresetId;
   }
 
   initialize(player: HTMLAudioElement) {
     this.playerRef = player;
     this.initializeMediaSessionHandlers();
+
+    if (this.currentTrack) {
+      this.updateMediaSessionMetadata(this.currentTrack);
+    }
+
+    if (this.shouldUseNativePlayback()) {
+      this.initializeNativePlayback();
+      this.setMediaSessionPlaybackState(this.isPlaying ? "playing" : "paused");
+      return;
+    }
 
     this.audioEngine.initialize(
       player,
@@ -404,7 +317,6 @@ class PlayerState {
     }
 
     if (this.currentTrack) {
-      this.updateMediaSessionMetadata(this.currentTrack);
       this.updateMetadata(this.currentTrack);
     }
 
@@ -435,11 +347,21 @@ class PlayerState {
       this.currentBlobUrl = null;
     }
 
+    if (this.shouldUseNativePlayback()) {
+      this.cleanupNativePlayback();
+      return;
+    }
+
     this.audioEngine.cleanup();
   }
 
   toggleMute() {
     this.isMuted = !this.isMuted;
+
+    if (this.shouldUseNativePlayback()) {
+      this.interceptNativeSetMuted(this.isMuted);
+      return;
+    }
 
     if (this.playerRef) {
       this.playerRef.muted = this.isMuted;
@@ -450,626 +372,60 @@ class PlayerState {
     return this.audioEngine.getFrequencyData();
   }
 
-  getTimeDomainData(): Uint8Array | null {
-    return this.audioEngine.getTimeDomainData();
-  }
-
-  setAnalyzerFFTSize(
-    size: 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 4096 | 8192 | 16384 | 32768,
-  ) {
-    this.audioEngine.setAnalyzerFFTSize(size);
-  }
-
-  setAnalyzerSmoothing(value: number) {
-    this.audioEngine.setAnalyzerSmoothing(value);
-  }
-
   updateEqualizerBand(id: number, updates: Partial<EqualizerBand>) {
-    const bands = [...this.equalizerBands];
-    const bandIndex = bands.findIndex((b) => b.id === id);
-
-    if (bandIndex === -1) return;
-
-    bands[bandIndex] = { ...bands[bandIndex], ...updates };
-
-    this.persistedState.equalizerBands = bands;
-
-    this.audioEngine.updateEqualizerBand(id, updates, bands);
-    this.syncActivePresetFromCurrentEq();
+    this.equalizerDomain.updateEqualizerBand(id, updates);
   }
 
   toggleEqualizer() {
-    this.equalizerEnabled = !this.equalizerEnabled;
-    this.audioEngine.toggleEqualizer(this.equalizerEnabled);
+    this.equalizerDomain.toggleEqualizer();
   }
 
   togglePureBypass() {
-    this.pureBypassEnabled = !this.pureBypassEnabled;
-    this.audioEngine.togglePureBypass(this.pureBypassEnabled);
+    this.equalizerDomain.togglePureBypass();
   }
 
   setPreAmpDb(value: number) {
-    this.preAmpDb = value;
+    this.equalizerDomain.setPreAmpDb(value);
   }
 
   resetEqualizer() {
-    const resetBands = this.equalizerBands.map((band) => ({
-      ...band,
-      gain: 0,
-    }));
-
-    this.persistedState.equalizerBands = resetBands;
-
-    this.audioEngine.resetEqualizer();
-    this.syncActivePresetFromCurrentEq();
+    this.equalizerDomain.resetEqualizer();
   }
 
   getEqualizerPresetById(presetId: string | null | undefined) {
-    if (!presetId) return null;
-    return (
-      this.equalizerPresets.find((preset) => preset.id === presetId) ?? null
-    );
+    return this.equalizerDomain.getEqualizerPresetById(presetId);
   }
 
   createEqualizerPreset(name: string) {
-    const uniqueName = this.getUniquePresetName(name || "Preset");
-    const preset: EqualizerPreset = {
-      id: this.createPresetId(),
-      name: uniqueName,
-      bands: cloneEqualizerBands(this.equalizerBands),
-      preAmpDb: this.preAmpDb,
-      equalizerEnabled: this.equalizerEnabled,
-    };
-
-    this.persistedState.equalizerPresets = [...this.equalizerPresets, preset];
-    this.persistedState.activeEqualizerPresetId = preset.id;
-
-    return preset;
+    return this.equalizerDomain.createEqualizerPreset(name);
   }
 
   saveCurrentEqualizerPreset(presetId: string, name?: string) {
-    const presetIndex = this.equalizerPresets.findIndex(
-      (preset) => preset.id === presetId,
-    );
-    if (presetIndex === -1) return null;
-
-    const presets = [...this.equalizerPresets];
-    const currentPreset = presets[presetIndex];
-    const nextName =
-      name !== undefined
-        ? this.getUniquePresetName(name, currentPreset.id)
-        : currentPreset.name;
-
-    presets[presetIndex] = {
-      ...currentPreset,
-      name: nextName,
-      bands: cloneEqualizerBands(this.equalizerBands),
-      preAmpDb: this.preAmpDb,
-      equalizerEnabled: this.equalizerEnabled,
-    };
-
-    this.persistedState.equalizerPresets = presets;
-
-    return presets[presetIndex];
+    return this.equalizerDomain.saveCurrentEqualizerPreset(presetId, name);
   }
 
   renameEqualizerPreset(presetId: string, name: string) {
-    const presetIndex = this.equalizerPresets.findIndex(
-      (preset) => preset.id === presetId,
-    );
-    if (presetIndex === -1 || presetId === FLAT_EQUALIZER_PRESET_ID)
-      return null;
-
-    const presets = [...this.equalizerPresets];
-    presets[presetIndex] = {
-      ...presets[presetIndex],
-      name: this.getUniquePresetName(name, presetId),
-    };
-
-    this.persistedState.equalizerPresets = presets;
-
-    return presets[presetIndex];
+    return this.equalizerDomain.renameEqualizerPreset(presetId, name);
   }
 
   applyEqualizerPreset(presetId: string) {
-    const preset = this.getEqualizerPresetById(presetId);
-    if (!preset) return false;
-
-    this.applyEqualizerSnapshot(preset);
-    this.persistedState.activeEqualizerPresetId = preset.id;
-
-    return true;
+    return this.equalizerDomain.applyEqualizerPreset(presetId);
   }
 
   deleteEqualizerPreset(presetId: string) {
-    if (presetId === FLAT_EQUALIZER_PRESET_ID) {
-      return false;
-    }
-
-    const presetExists = this.equalizerPresets.some(
-      (preset) => preset.id === presetId,
-    );
-    if (!presetExists) {
-      return false;
-    }
-
-    const remainingPresets = this.equalizerPresets.filter(
-      (preset) => preset.id !== presetId,
-    );
-
-    this.persistedState.equalizerPresets = remainingPresets;
-
-    if (this.activeEqualizerPresetId === presetId) {
-      const fallbackPreset =
-        this.getEqualizerPresetById(FLAT_EQUALIZER_PRESET_ID) ??
-        remainingPresets[0];
-
-      if (fallbackPreset) {
-        this.applyEqualizerSnapshot(fallbackPreset);
-        this.persistedState.activeEqualizerPresetId = fallbackPreset.id;
-      } else {
-        this.persistedState.activeEqualizerPresetId = null;
-      }
-    }
-
-    return true;
+    return this.equalizerDomain.deleteEqualizerPreset(presetId);
   }
 
   exportEqualizerPresetToText(presetId?: string) {
-    const targetPresetId =
-      presetId ?? this.activeEqualizerPresetId ?? this.equalizerPresets[0]?.id;
-    const preset = this.getEqualizerPresetById(targetPresetId);
-
-    if (!preset) {
-      return null;
-    }
-
-    const lines = [`Preamp: ${preset.preAmpDb.toFixed(1)} dB`];
-
-    preset.bands.forEach((band, index) => {
-      const token = FILTER_TYPE_TOKENS[band.type] ?? "PK";
-      const gain = band.enabled ? band.gain : (band.prevGain ?? band.gain);
-      lines.push(
-        `Filter ${index + 1}: ${band.enabled ? "ON" : "OFF"} ${token} Fc ${Math.round(band.frequency)} Hz Gain ${gain.toFixed(1)} dB Q ${band.Q.toFixed(3)}`,
-      );
-    });
-
-    return lines.join("\n");
+    return this.equalizerDomain.exportEqualizerPresetToText(presetId);
   }
 
   importEqualizerPresetFromText(text: string, nameHint?: string) {
-    const parsed = this.parseEqualizerPresetText(text);
-    const preferredName =
-      typeof nameHint === "string" && nameHint.trim().length > 0
-        ? nameHint.trim()
-        : "Imported preset";
-
-    const preset: EqualizerPreset = {
-      id: this.createPresetId(),
-      name: this.getUniquePresetName(preferredName),
-      bands: parsed.bands,
-      preAmpDb: parsed.preAmpDb,
-      equalizerEnabled: true,
-    };
-
-    this.persistedState.equalizerPresets = [...this.equalizerPresets, preset];
-    this.applyEqualizerSnapshot(preset);
-    this.persistedState.activeEqualizerPresetId = preset.id;
-
-    return {
-      preset,
-      truncated: parsed.truncated,
-    };
-  }
-
-  private parseEqualizerPresetText(text: string): ParsedEqPresetText {
-    const lines = text
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter(Boolean);
-
-    if (lines.length === 0) {
-      throw new Error("Preset file is empty.");
-    }
-
-    let preAmpDb = 0;
-    const parsedBands: Array<{ order: number; band: EqualizerBand }> = [];
-
-    for (const line of lines) {
-      const preampMatch = line.match(/^Preamp:\s*([+-]?\d+(?:\.\d+)?)\s*dB$/i);
-      if (preampMatch) {
-        preAmpDb = clamp(
-          parseFloat(preampMatch[1]),
-          MIN_PREAMP_DB,
-          MAX_PREAMP_DB,
-        );
-        continue;
-      }
-
-      const filterMatch = line.match(
-        /^Filter\s+(\d+):\s*(ON|OFF)\s+([A-Z]+)\s+Fc\s+([+-]?\d+(?:\.\d+)?)\s*Hz\s+Gain\s+([+-]?\d+(?:\.\d+)?)\s*dB\s+Q\s+([+-]?\d+(?:\.\d+)?)/i,
-      );
-
-      if (!filterMatch) {
-        continue;
-      }
-
-      const order = Math.max(1, parseInt(filterMatch[1], 10));
-      const enabled = filterMatch[2].toUpperCase() === "ON";
-      const token = filterMatch[3].toUpperCase();
-      const mappedType = TOKEN_TO_FILTER_TYPE[token];
-      if (!mappedType) {
-        throw new Error(`Unsupported filter type token: ${token}`);
-      }
-
-      const frequency = clamp(
-        parseFloat(filterMatch[4]),
-        MIN_BAND_FREQUENCY,
-        MAX_BAND_FREQUENCY,
-      );
-      const parsedGain = clamp(
-        parseFloat(filterMatch[5]),
-        MIN_PREAMP_DB,
-        MAX_PREAMP_DB,
-      );
-      const q = clamp(parseFloat(filterMatch[6]), MIN_BAND_Q, MAX_BAND_Q);
-
-      parsedBands.push({
-        order,
-        band: {
-          id: 0,
-          type: mappedType,
-          frequency,
-          gain: enabled ? parsedGain : 0,
-          Q: q,
-          enabled,
-          prevGain: enabled ? undefined : parsedGain,
-        },
-      });
-    }
-
-    if (parsedBands.length === 0) {
-      throw new Error("No filter lines found in preset file.");
-    }
-
-    parsedBands.sort((a, b) => a.order - b.order);
-    const truncated = parsedBands.length > this.maxBands;
-    const bands = parsedBands
-      .slice(0, this.maxBands)
-      .map((entry, index) => this.normalizeBand(entry.band, index));
-
-    return {
-      preAmpDb,
-      bands,
-      truncated,
-    };
-  }
-
-  private migrateEqualizerState() {
-    this.persistedState.equalizerBands = this.normalizeBands(
-      this.persistedState.equalizerBands,
-      1,
-    );
-
-    const basePresets = Array.isArray(this.persistedState.equalizerPresets)
-      ? this.persistedState.equalizerPresets
-      : [];
-
-    let presets = this.dedupePresets(
-      basePresets.map((preset, index) => this.normalizePreset(preset, index)),
-    );
-
-    if (!presets.some((preset) => preset.id === FLAT_EQUALIZER_PRESET_ID)) {
-      presets = [this.createFlatPreset(), ...presets];
-    }
-
-    if (presets.length === 1 && presets[0].id === FLAT_EQUALIZER_PRESET_ID) {
-      const currentPreset: EqualizerPreset = {
-        id: this.createPresetId(),
-        name: "Current",
-        bands: cloneEqualizerBands(this.persistedState.equalizerBands),
-        preAmpDb: this.preAmpDb,
-        equalizerEnabled: this.equalizerEnabled,
-      };
-
-      if (!this.isSamePresetShape(currentPreset, presets[0])) {
-        presets.push(currentPreset);
-      }
-    }
-
-    this.persistedState.equalizerPresets = presets;
-
-    const requestedActiveId = this.persistedState.activeEqualizerPresetId;
-    const resolvedActiveId =
-      typeof requestedActiveId === "string" &&
-      presets.some((preset) => preset.id === requestedActiveId)
-        ? requestedActiveId
-        : (presets[0]?.id ?? FLAT_EQUALIZER_PRESET_ID);
-
-    this.persistedState.activeEqualizerPresetId = resolvedActiveId;
-  }
-
-  private createFlatPreset(): EqualizerPreset {
-    return {
-      id: FLAT_EQUALIZER_PRESET_ID,
-      name: FLAT_EQUALIZER_PRESET_NAME,
-      bands: cloneEqualizerBands(DEFAULT_EQUALIZER_BANDS),
-      preAmpDb: 0,
-      equalizerEnabled: true,
-    };
-  }
-
-  private normalizePreset(
-    preset: Partial<EqualizerPreset> | null | undefined,
-    index: number,
-  ): EqualizerPreset {
-    if (preset?.id === FLAT_EQUALIZER_PRESET_ID) {
-      return this.createFlatPreset();
-    }
-
-    return {
-      id:
-        typeof preset?.id === "string" && preset.id.trim().length > 0
-          ? preset.id.trim()
-          : `preset-${index + 1}`,
-      name:
-        typeof preset?.name === "string" && preset.name.trim().length > 0
-          ? preset.name.trim()
-          : `Preset ${index + 1}`,
-      bands: this.normalizeBands(preset?.bands, 1),
-      preAmpDb: clamp(preset?.preAmpDb ?? 0, MIN_PREAMP_DB, MAX_PREAMP_DB),
-      equalizerEnabled: preset?.equalizerEnabled ?? true,
-    };
-  }
-
-  private dedupePresets(presets: EqualizerPreset[]) {
-    const usedIds = new Set<string>();
-    const usedNames = new Set<string>();
-
-    return presets.map((preset) => {
-      let nextId = preset.id;
-      if (usedIds.has(nextId)) {
-        nextId = this.createPresetId();
-      }
-      usedIds.add(nextId);
-
-      let nextName = preset.name;
-      if (nextName.trim().length === 0) {
-        nextName = "Preset";
-      }
-
-      const baseName = nextName;
-      let suffix = 2;
-      while (usedNames.has(nextName.toLowerCase())) {
-        nextName = `${baseName} (${suffix})`;
-        suffix += 1;
-      }
-      usedNames.add(nextName.toLowerCase());
-
-      if (nextId === FLAT_EQUALIZER_PRESET_ID) {
-        return this.createFlatPreset();
-      }
-
-      return {
-        ...preset,
-        id: nextId,
-        name: nextName,
-        bands: this.normalizeBands(preset.bands, 1),
-        preAmpDb: clamp(preset.preAmpDb, MIN_PREAMP_DB, MAX_PREAMP_DB),
-      };
-    });
-  }
-
-  private normalizeBands(
-    bands: Array<Partial<EqualizerBand>> | EqualizerBand[] | undefined,
-    minBands: number,
-  ) {
-    const normalizedBands = (Array.isArray(bands) ? bands : [])
-      .slice(0, this.maxBands)
-      .map((band, index) => this.normalizeBand(band, index));
-
-    while (normalizedBands.length < minBands) {
-      normalizedBands.push(this.createDisabledBand(normalizedBands.length));
-    }
-
-    return normalizedBands;
-  }
-
-  private createDisabledBand(id: number): EqualizerBand {
-    return {
-      id,
-      type: "peaking",
-      frequency: DEFAULT_NEW_BAND_FREQUENCY,
-      gain: 0,
-      Q: 1,
-      enabled: false,
-    };
-  }
-
-  private normalizeBand(
-    band: Partial<EqualizerBand> | EqualizerBand,
-    id: number,
-  ): EqualizerBand {
-    const fallbackBand =
-      DEFAULT_EQUALIZER_BANDS[id] ?? this.createDisabledBand(id);
-
-    const frequency = clamp(
-      Number.isFinite(band.frequency)
-        ? Number(band.frequency)
-        : fallbackBand.frequency,
-      MIN_BAND_FREQUENCY,
-      MAX_BAND_FREQUENCY,
-    );
-    const gain = clamp(
-      Number.isFinite(band.gain) ? Number(band.gain) : fallbackBand.gain,
-      MIN_PREAMP_DB,
-      MAX_PREAMP_DB,
-    );
-    const Q = clamp(
-      Number.isFinite(band.Q) ? Number(band.Q) : fallbackBand.Q,
-      MIN_BAND_Q,
-      MAX_BAND_Q,
-    );
-
-    const prevGain =
-      Number.isFinite(band.prevGain) && typeof band.prevGain === "number"
-        ? clamp(band.prevGain, MIN_PREAMP_DB, MAX_PREAMP_DB)
-        : undefined;
-
-    return {
-      id,
-      type: isFilterType(band.type) ? band.type : fallbackBand.type,
-      frequency,
-      gain,
-      Q,
-      enabled:
-        typeof band.enabled === "boolean" ? band.enabled : fallbackBand.enabled,
-      prevGain,
-    };
-  }
-
-  private createPresetId() {
-    return `eq-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-  }
-
-  private getUniquePresetName(name: string, excludePresetId?: string) {
-    const trimmed = name.trim();
-    const baseName = trimmed.length > 0 ? trimmed : "Preset";
-
-    const existingNames = new Set(
-      this.equalizerPresets
-        .filter((preset) => preset.id !== excludePresetId)
-        .map((preset) => preset.name.toLowerCase()),
-    );
-
-    if (!existingNames.has(baseName.toLowerCase())) {
-      return baseName;
-    }
-
-    let suffix = 2;
-    let nextName = `${baseName} (${suffix})`;
-    while (existingNames.has(nextName.toLowerCase())) {
-      suffix += 1;
-      nextName = `${baseName} (${suffix})`;
-    }
-
-    return nextName;
-  }
-
-  private syncActivePresetFromCurrentEq() {
-    const activePresetId = this.persistedState.activeEqualizerPresetId;
-    if (!activePresetId) {
-      return;
-    }
-
-    this.saveCurrentEqualizerPreset(activePresetId);
-  }
-
-  private applyEqualizerSnapshot(
-    snapshot: Pick<EqualizerPreset, "bands" | "preAmpDb" | "equalizerEnabled">,
-  ) {
-    const normalizedBands = this.normalizeBands(snapshot.bands, 1);
-    const normalizedPreAmpDb = clamp(
-      snapshot.preAmpDb,
-      MIN_PREAMP_DB,
-      MAX_PREAMP_DB,
-    );
-
-    this.persistedState.equalizerBands = normalizedBands;
-    this.persistedState.preAmpDb = normalizedPreAmpDb;
-    this.persistedState.equalizerEnabled = snapshot.equalizerEnabled;
-
-    this.audioEngine.applyEqualizerPreset(
-      normalizedBands,
-      snapshot.equalizerEnabled,
-      normalizedPreAmpDb,
-    );
-  }
-
-  private isSamePresetShape(a: EqualizerPreset, b: EqualizerPreset) {
-    if (a.equalizerEnabled !== b.equalizerEnabled) return false;
-    if (Math.abs(a.preAmpDb - b.preAmpDb) > 0.001) return false;
-    if (a.bands.length !== b.bands.length) return false;
-
-    return a.bands.every((band, index) => {
-      const nextBand = b.bands[index];
-      if (!nextBand) return false;
-
-      return (
-        band.type === nextBand.type &&
-        band.enabled === nextBand.enabled &&
-        Math.abs(band.frequency - nextBand.frequency) < 0.001 &&
-        Math.abs(band.gain - nextBand.gain) < 0.001 &&
-        Math.abs(band.Q - nextBand.Q) < 0.001
-      );
-    });
-  }
-
-  private isFrequencyOverlapping(
-    frequency: number,
-    excludeBandId?: number,
-  ): boolean {
-    const MIN_FREQUENCY_RATIO = 1.5;
-
-    for (const band of this.equalizerBands) {
-      if (excludeBandId !== undefined && band.id === excludeBandId) continue;
-
-      const ratio =
-        frequency > band.frequency
-          ? frequency / band.frequency
-          : band.frequency / frequency;
-
-      if (ratio < MIN_FREQUENCY_RATIO) {
-        return true;
-      }
-    }
-    return false;
+    return this.equalizerDomain.importEqualizerPresetFromText(text, nameHint);
   }
 
   findAvailableFrequency(): number | null {
-    const MIN_FREQ = 20;
-    const MAX_FREQ = 20000;
-    const candidateFrequencies = [
-      60, 150, 250, 400, 630, 1000, 1600, 2500, 4000, 6300, 10000, 16000,
-    ];
-
-    const sortedBands = [...this.equalizerBands].sort(
-      (a, b) => a.frequency - b.frequency,
-    );
-
-    for (const freq of candidateFrequencies) {
-      if (!this.isFrequencyOverlapping(freq)) {
-        return freq;
-      }
-    }
-
-    for (let i = 0; i < sortedBands.length - 1; i++) {
-      const lowFreq = sortedBands[i].frequency;
-      const highFreq = sortedBands[i + 1].frequency;
-      const midFreq = Math.sqrt(lowFreq * highFreq);
-
-      if (!this.isFrequencyOverlapping(midFreq)) {
-        return Math.round(midFreq);
-      }
-    }
-
-    if (sortedBands.length > 0) {
-      const lowestFreq = sortedBands[0].frequency;
-      const belowFreq = lowestFreq / 2;
-      if (belowFreq >= MIN_FREQ && !this.isFrequencyOverlapping(belowFreq)) {
-        return Math.round(belowFreq);
-      }
-    }
-
-    if (sortedBands.length > 0) {
-      const highestFreq = sortedBands[sortedBands.length - 1].frequency;
-      const aboveFreq = highestFreq * 2;
-      if (aboveFreq <= MAX_FREQ && !this.isFrequencyOverlapping(aboveFreq)) {
-        return Math.round(aboveFreq);
-      }
-    }
-
-    return null;
+    return this.equalizerDomain.findAvailableFrequency();
   }
 
   addEqualizerBand(options?: {
@@ -1079,65 +435,225 @@ class PlayerState {
     Q?: number;
     enabled?: boolean;
   }): EqualizerBand | null {
-    if (this.equalizerBands.length >= this.maxBands) {
-      return null;
-    }
-
-    const newBand = this.normalizeBand(
-      {
-        id: this.equalizerBands.length,
-        type: options?.type ?? "peaking",
-        frequency: options?.frequency ?? DEFAULT_NEW_BAND_FREQUENCY,
-        gain: options?.gain ?? 0,
-        Q: options?.Q ?? 1,
-        enabled: options?.enabled ?? false,
-      },
-      this.equalizerBands.length,
-    );
-
-    const bands = [...this.equalizerBands, newBand].map((band, index) => ({
-      ...band,
-      id: index,
-    }));
-
-    this.persistedState.equalizerBands = bands;
-    this.audioEngine.rebuildEqualizer(bands);
-    this.syncActivePresetFromCurrentEq();
-
-    return bands[bands.length - 1];
+    return this.equalizerDomain.addEqualizerBand(options);
   }
 
   removeEqualizerBand(id: number): boolean {
-    const MIN_BANDS = 1;
-
-    if (this.equalizerBands.length <= MIN_BANDS) {
-      return false;
-    }
-
-    const bandIndex = this.equalizerBands.findIndex((b) => b.id === id);
-    if (bandIndex === -1) {
-      return false;
-    }
-
-    const bands = this.equalizerBands.filter((b) => b.id !== id);
-    bands.sort((a, b) => a.frequency - b.frequency);
-    bands.forEach((band, index) => {
-      band.id = index;
-    });
-
-    this.persistedState.equalizerBands = bands;
-    this.audioEngine.rebuildEqualizer(bands);
-    this.syncActivePresetFromCurrentEq();
-
-    return true;
+    return this.equalizerDomain.removeEqualizerBand(id);
   }
 
   canUseFrequency(frequency: number, excludeBandId?: number): boolean {
-    return !this.isFrequencyOverlapping(frequency, excludeBandId);
+    return this.equalizerDomain.canUseFrequency(frequency, excludeBandId);
+  }
+
+  private shouldUseNativePlayback() {
+    return this.bitPerfectSupported;
+  }
+
+  private createNativeSessionId() {
+    if (
+      typeof crypto !== "undefined" &&
+      typeof crypto.randomUUID === "function"
+    ) {
+      return crypto.randomUUID();
+    }
+
+    return `session-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  }
+
+  private createNativePlaybackContext(): NativePlaybackContextPayload {
+    return {
+      sessionId: this.nativeSessionId,
+      queueIndex: this.queueIndex,
+      queueLength: this.trackQueue.length,
+      trackId: this.currentTrack?.id ?? null,
+      playlistId: this.currentPlaylist?.id ?? null,
+    };
+  }
+
+  private bindNativeBridgeEvents() {
+    if (this.nativeEventUnsubscribe) {
+      return;
+    }
+
+    this.nativeEventUnsubscribe = nativeBridgeStore.subscribePlayerEvents(
+      (event) => {
+        this.handleNativePlayerEvent(event);
+      },
+    );
+  }
+
+  private handleNativePlayerEvent(event: NativePlayerEvent) {
+    if (!this.shouldUseNativePlayback()) {
+      return;
+    }
+
+    switch (event.type) {
+      case "player.state": {
+        this.applyNativeTiming(
+          event.payload.positionSeconds,
+          event.payload.durationSeconds,
+        );
+
+        if (event.payload.playbackState === "playing") {
+          this.isPlaying = true;
+          this.setMediaSessionPlaybackState("playing");
+          return;
+        }
+
+        if (event.payload.playbackState === "ended") {
+          this.isPlaying = false;
+          this.setMediaSessionPlaybackState("paused");
+          this.playNext();
+          return;
+        }
+
+        if (
+          event.payload.playbackState === "paused" ||
+          event.payload.playbackState === "idle" ||
+          event.payload.playbackState === "error"
+        ) {
+          this.isPlaying = false;
+          this.setMediaSessionPlaybackState("paused");
+        }
+
+        return;
+      }
+      case "player.position": {
+        this.applyNativeTiming(
+          event.payload.positionSeconds,
+          event.payload.durationSeconds,
+        );
+        return;
+      }
+      case "player.track_loaded": {
+        if (event.payload.trackId !== this.currentTrack?.id) {
+          return;
+        }
+
+        this.applyNativeTiming(
+          event.payload.positionSeconds,
+          event.payload.durationSeconds,
+        );
+        return;
+      }
+      case "player.ended": {
+        this.isPlaying = false;
+        this.setMediaSessionPlaybackState("paused");
+        this.playNext();
+        return;
+      }
+      case "player.error": {
+        this.isPlaying = false;
+        this.setMediaSessionPlaybackState("paused");
+        console.error(
+          `Native player error [${event.payload.code}]: ${event.payload.message}`,
+        );
+      }
+    }
+  }
+
+  private applyNativeTiming(
+    positionSeconds?: number,
+    durationSeconds?: number,
+  ) {
+    if (
+      typeof durationSeconds === "number" &&
+      Number.isFinite(durationSeconds)
+    ) {
+      this.duration = Math.max(0, durationSeconds);
+    }
+
+    if (
+      typeof positionSeconds === "number" &&
+      Number.isFinite(positionSeconds)
+    ) {
+      this.currentTime = Math.max(0, positionSeconds);
+    }
+  }
+
+  private postNativePlayerCommand<
+    TType extends keyof NativePlayerCommandPayloadMap,
+  >(type: TType, payload: NativePlayerCommandPayloadMap[TType]) {
+    nativeBridgeStore.postPlayerCommand(type, payload);
+  }
+
+  private initializeNativePlayback() {
+    this.postNativePlayerCommand("player.initialize", {
+      ...this.createNativePlaybackContext(),
+      volume: this.volume,
+      muted: this.isMuted,
+    });
+  }
+
+  private cleanupNativePlayback() {
+    this.postNativePlayerCommand("player.cleanup", {
+      sessionId: this.nativeSessionId,
+    });
+  }
+
+  private async interceptNativeUpdateTrack(
+    track: AudioFile,
+    sourceTrack: AudioFile,
+  ) {
+    this.postNativePlayerCommand("player.load_track", {
+      ...this.createNativePlaybackContext(),
+      canonicalTrackId: track.id,
+      sourceTrackId: sourceTrack.id,
+      canonicalTrack: track,
+      sourceTrack,
+    });
+  }
+
+  private async interceptNativePlay(opts?: {
+    track?: AudioFile;
+    index?: number;
+  }) {
+    this.postNativePlayerCommand("player.play", {
+      ...this.createNativePlaybackContext(),
+      requestedTrackId: opts?.track?.id ?? null,
+      requestedIndex: opts?.index ?? null,
+      positionSeconds: this.currentTime,
+    });
+  }
+
+  private interceptNativePause() {
+    this.postNativePlayerCommand("player.pause", {
+      ...this.createNativePlaybackContext(),
+      positionSeconds: this.currentTime,
+    });
+  }
+
+  private interceptNativeSeek(time: number) {
+    this.postNativePlayerCommand("player.seek", {
+      ...this.createNativePlaybackContext(),
+      targetSeconds: time,
+    });
+  }
+
+  private interceptNativeSetMuted(muted: boolean) {
+    this.postNativePlayerCommand("player.set_muted", {
+      ...this.createNativePlaybackContext(),
+      muted,
+    });
+  }
+
+  private interceptNativeSetVolume(volume: number) {
+    this.postNativePlayerCommand("player.set_volume", {
+      ...this.createNativePlaybackContext(),
+      volume,
+    });
+  }
+
+  private interceptNativeStop() {
+    this.postNativePlayerCommand("player.stop", {
+      ...this.createNativePlaybackContext(),
+      reason: "reset_content_state",
+    });
   }
 
   get maxBands(): number {
-    return 10;
+    return this.equalizerDomain.maxBands;
   }
 
   private isMediaSessionSupported() {
@@ -1215,12 +731,20 @@ class PlayerState {
     this.initializeMediaSessionHandlers();
     this.updateMediaSessionMetadata(track);
 
-    if (!this.playerRef) return;
-
     const sourceTrack = await resolvePlaybackSource(
       track,
       tracksStore.getSourcesForTrack(track),
     );
+
+    if (this.shouldUseNativePlayback()) {
+      await this.interceptNativeUpdateTrack(track, sourceTrack);
+      this.loadTrackColor(track).catch((error) => {
+        console.error("Failed to load track color:", error);
+      });
+      return;
+    }
+
+    if (!this.playerRef) return;
 
     if (this.currentBlobUrl) {
       revokeAudioUrl(this.currentBlobUrl);
@@ -1244,7 +768,7 @@ class PlayerState {
 
   async play(opts?: { track?: AudioFile; index?: number }) {
     const { track, index } = opts || {};
-    if (this.playerRef) {
+    if (this.playerRef || this.shouldUseNativePlayback()) {
       await this.audioEngine.resumeContext();
 
       let newTrack: AudioFile | undefined = undefined;
@@ -1281,8 +805,13 @@ class PlayerState {
       this.isPlaying = true;
       this.setMediaSessionPlaybackState("playing");
 
+      if (this.shouldUseNativePlayback()) {
+        await this.interceptNativePlay(opts);
+        return;
+      }
+
       try {
-        await this.playerRef.play();
+        await this.playerRef!.play();
       } catch (error) {
         console.error("Failed to play audio:", error);
         this.isPlaying = false;
@@ -1292,7 +821,16 @@ class PlayerState {
   }
 
   pause() {
-    if (this.playerRef && this.isPlaying) {
+    if (!this.isPlaying) return;
+
+    if (this.shouldUseNativePlayback()) {
+      this.isPlaying = false;
+      this.interceptNativePause();
+      this.setMediaSessionPlaybackState("paused");
+      return;
+    }
+
+    if (this.playerRef) {
       this.isPlaying = false;
       this.playerRef.pause();
       this.setMediaSessionPlaybackState("paused");
@@ -1347,6 +885,12 @@ class PlayerState {
   }
 
   seek(time: number) {
+    if (this.shouldUseNativePlayback()) {
+      this.currentTime = time;
+      this.interceptNativeSeek(time);
+      return;
+    }
+
     if (this.playerRef) {
       this.playerRef.currentTime = time;
       this.currentTime = time;
@@ -1455,6 +999,11 @@ class PlayerState {
 
   resetContentState() {
     this.pause();
+
+    if (this.shouldUseNativePlayback()) {
+      this.interceptNativeStop();
+    }
+
     this.clearQueue();
     this.currentTrack = null;
     this.currentTime = 0;

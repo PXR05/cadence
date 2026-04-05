@@ -15,6 +15,7 @@
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
   import { authStore } from "$lib/stores/auth.svelte";
+  import { nativeBridgeStore } from "$lib/stores/nativeBridge.svelte";
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
   import { innerWidth } from "svelte/reactivity/window";
@@ -28,6 +29,8 @@
   let updateWorker = $state<ServiceWorker | null>(null);
 
   onMount(async () => {
+    nativeBridgeStore.refreshNativeInfo();
+
     if (authStore.isAuthenticated) {
       loadInitialData();
     }
@@ -175,8 +178,7 @@
       <AppSidebar />
     {/if}
     <Sidebar.Inset
-      class="relative min-h-dvh grid grid-rows-1 grid-cols-1 grow overflow-x-hidden"
-      style="--h: {navHeight}px;"
+      class="min-h-dvh grid grid-rows-1 grid-cols-1 grow overflow-x-hidden"
     >
       <div
         class="@container row-start-1 col-start-1 relative overflow-x-hidden overflow-y-scroll h-dvh flex flex-col transition-[width] duration-200
