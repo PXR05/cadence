@@ -77,13 +77,15 @@
 </script>
 
 <div class="flex flex-col gap-1.5 fixed bottom-0 left-0 right-0 z-50">
-  <div
-    style="
+  {#if !nativeBridgeStore.info}
+    <div
+      style="
       --h: {isTopRoute ? 5 : 2}rem;
       top: calc(-1*var(--h));
     "
-    class="md:hidden _bg _color absolute inset-0 -z-10"
-  ></div>
+      class="md:hidden _bg _color absolute inset-0 -z-10"
+    ></div>
+  {/if}
 
   <div
     class="absolute bottom-0 left-0 right-0 space-y-1.5
