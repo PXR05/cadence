@@ -1,53 +1,36 @@
 import * as v from "valibot";
 import {
+  AddItemToPlaylistResponseSchema,
   CreatePlaylistResponseSchema,
-  UpdatePlaylistResponseSchema,
   DeletePlaylistResponseSchema,
   GetPlaylistResponseSchema,
-  AddItemToPlaylistResponseSchema,
-  RemoveItemFromPlaylistResponseSchema,
   GetUserPlaylistsResponseSchema,
+  RemoveItemFromPlaylistResponseSchema,
+  UpdatePlaylistResponseSchema,
+  type AddItemToPlaylistInput,
+  type CreatePlaylistInput,
+  type GetPlaylistQuery,
+  type GetPlaylistResponse,
+  type GetUserPlaylistsOptions,
+  type GetUserPlaylistsResponse,
+  type RemoveItemFromPlaylistInput,
+  type ReorderPlaylistItemInput,
+  type UpdatePlaylistInput,
 } from "$lib/schemas/playlist";
 import { authFetch } from "./fetch";
 
-export interface GetUserPlaylistsOptions {
-  type?: "user" | "artist" | "album" | "auto" | "youtube" | "tidal";
-  limit?: number;
-}
-
-export interface CreatePlaylistInput {
-  name: string;
-  coverImage?: File;
-}
-
-export interface UpdatePlaylistInput {
-  id: string;
-  name?: string;
-  coverImage?: File;
-}
-
-export interface AddItemToPlaylistInput {
-  playlistId: string;
-  audioId: string;
-}
-
-export interface RemoveItemFromPlaylistInput {
-  playlistId: string;
-  itemId: string;
-}
-
-export interface ReorderPlaylistItemInput {
-  playlistId: string;
-  itemId: string;
-  position: number;
-}
-
-export async function getUserPlaylists(options: GetUserPlaylistsOptions = {}) {
-  const { type, limit } = options;
+export async function getUserPlaylists(
+  options: GetUserPlaylistsOptions = {},
+): Promise<GetUserPlaylistsResponse> {
+  const { type, limit, lastFetchedAt } = options;
 
   const params = new URLSearchParams();
+
   if (type) params.append("type", type);
   if (limit) params.append("limit", limit.toString());
+  if (lastFetchedAt !== undefined) {
+    params.append("lastFetchedAt", lastFetchedAt.toString());
+  }
 
   const queryString = params.toString();
   const path = `/playlist${queryString ? `?${queryString}` : ""}`;
@@ -63,7 +46,7 @@ export async function getUserPlaylists(options: GetUserPlaylistsOptions = {}) {
   try {
     const data = JSON.parse(text);
     const validated = v.parse(GetUserPlaylistsResponseSchema, data);
-    return validated.playlists;
+    return validated;
   } catch (err) {
     throw new Error(
       "Failed to parse playlists response" +
@@ -73,8 +56,18 @@ export async function getUserPlaylists(options: GetUserPlaylistsOptions = {}) {
   }
 }
 
-export async function getPlaylistById(id: string) {
-  const response = await authFetch(`/playlist/${id}`);
+export async function getPlaylistById(
+  id: string,
+  query: GetPlaylistQuery = {},
+): Promise<GetPlaylistResponse> {
+  const params = new URLSearchParams();
+
+  if (query.lastFetchedAt !== undefined) {
+    params.set("lastFetchedAt", query.lastFetchedAt.toString());
+  }
+
+  const path = params.size ? `/playlist/${id}?${params}` : `/playlist/${id}`;
+  const response = await authFetch(path);
 
   if (!response.ok) {
     throw new Error(`Failed to get playlist: ${response.statusText}`);

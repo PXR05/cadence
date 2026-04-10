@@ -1,13 +1,29 @@
 import { deleteTrack, fetchTracks } from "$lib/api";
 import {
   getTracksCache,
-  saveTracksCache,
+  syncTracksCache,
   clearTracksCache,
   deleteTrackFromCache,
 } from "$lib/db/cache";
 import type { AudioFile } from "$lib/schemas";
 import { deduplicateByIsrc } from "$lib/utils/trackSources";
 import { downloadStore } from "./download.svelte";
+
+function toLastFetchedAtQuery(lastFetchedAt: string | null): number | undefined {
+  if (!lastFetchedAt) return undefined;
+
+  const numeric = Number(lastFetchedAt);
+  if (Number.isFinite(numeric)) {
+    return numeric;
+  }
+
+  const parsed = Date.parse(lastFetchedAt);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function createFetchMarker(): string {
+  return Date.now().toString();
+}
 
 class TracksStore {
   private _tracks = $state<AudioFile[]>([]);
@@ -99,6 +115,12 @@ class TracksStore {
     }
   }
 
+  private async refreshFromCache(): Promise<void> {
+    const cache = await getTracksCache();
+    this._tracks = this.applyDeduplication(cache?.tracks ?? []);
+    this._lastFetchedAt = cache?.lastFetchedAt ?? null;
+  }
+
   async loadAllTracks(forceRefresh: boolean = false): Promise<void> {
     await this.initializeFromCache();
 
@@ -116,35 +138,41 @@ class TracksStore {
     this.error = null;
 
     try {
-      const allTracks: AudioFile[] = [];
+      const lastFetchedAt = forceRefresh
+        ? undefined
+        : toLastFetchedAtQuery(this._lastFetchedAt);
+      const shouldReplace = forceRefresh || lastFetchedAt === undefined;
+      const syncedTracks: AudioFile[] = [];
+      const deletedIds = new Set<string>();
       let currentPage = 1;
       let hasMore = true;
 
       while (hasMore) {
-        try {
-          const result = await fetchTracks({
-            page: currentPage,
-            limit: 100,
-            sortBy: "uploadedAt",
-            sortOrder: "desc",
-          });
+        const result = await fetchTracks({
+          page: currentPage,
+          limit: 100,
+          sortBy: "uploadedAt",
+          sortOrder: "desc",
+          lastFetchedAt,
+        });
 
-          allTracks.push(...result.tracks);
-          hasMore = result.hasMore;
-          this.isLoadingMore = result.hasMore;
-          currentPage++;
-        } catch (err) {
-          console.error("Error fetching tracks page:", err);
-          return;
+        syncedTracks.push(...result.tracks);
+        for (const deletedId of result.deletedIds) {
+          deletedIds.add(deletedId);
         }
+
+        hasMore = shouldReplace ? result.hasMore : false;
+        this.isLoadingMore = shouldReplace ? result.hasMore : false;
+        currentPage++;
       }
 
-      this._tracks = this.applyDeduplication(allTracks);
-      this._lastFetchedAt = new Date().toISOString();
+      const fetchMarker = createFetchMarker();
+      await syncTracksCache(syncedTracks, Array.from(deletedIds), fetchMarker, {
+        replace: shouldReplace,
+      });
+      await this.refreshFromCache();
       this.isLoadingMore = false;
       this.error = null;
-
-      await saveTracksCache(allTracks, this._lastFetchedAt);
     } catch (err) {
       this.error = err instanceof Error ? err.message : "Failed to load tracks";
       this.isLoadingMore = false;
@@ -159,23 +187,10 @@ class TracksStore {
         limit: 1,
         sortBy: "uploadedAt",
         sortOrder: "desc",
+        lastFetchedAt: toLastFetchedAtQuery(this._lastFetchedAt),
       });
 
-      if (result.tracks.length === 0) {
-        return false;
-      }
-
-      const latestServerTrack = result.tracks[0];
-      const latestCachedTrack = this.tracks[0];
-
-      if (!latestCachedTrack) {
-        return true;
-      }
-
-      const serverDate = new Date(latestServerTrack.uploadedAt);
-      const cachedDate = new Date(latestCachedTrack.uploadedAt);
-
-      return serverDate > cachedDate;
+      return result.tracks.length > 0 || result.deletedIds.length > 0;
     } catch (err) {
       console.error("Error checking for updates:", err);
       return false;
@@ -234,10 +249,13 @@ class TracksStore {
       : [{ id: trackId }];
 
     await Promise.all(
+      allVariants.map((variant) => deleteTrack(variant.id)),
+    );
+
+    await Promise.all(
       allVariants.map(async (variant) => {
         await deleteTrackFromCache(variant.id);
         await downloadStore.removeTrackOffline(variant.id);
-        await deleteTrack(variant.id);
       }),
     );
 

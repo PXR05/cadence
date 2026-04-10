@@ -61,6 +61,7 @@ export const GetPlaylistResponseSchema = v.object({
     itemCount: v.optional(v.number()),
     items: v.array(PlaylistItemSchema),
   }),
+  deletedItemIds: v.array(v.string()),
 });
 
 export const AddItemToPlaylistResponseSchema = v.object({
@@ -76,6 +77,7 @@ export const RemoveItemFromPlaylistResponseSchema = v.object({
 
 export const GetUserPlaylistsResponseSchema = v.object({
   playlists: v.array(PlaylistSchema),
+  deletedIds: v.array(v.string()),
 });
 
 export const GetUserPlaylistsOptionsSchema = v.object({
@@ -83,6 +85,11 @@ export const GetUserPlaylistsOptionsSchema = v.object({
     v.picklist(["user", "artist", "album", "auto", "youtube", "tidal"]),
   ),
   limit: v.optional(v.number()),
+  lastFetchedAt: v.optional(v.number()),
+});
+
+export const GetPlaylistQuerySchema = v.object({
+  lastFetchedAt: v.optional(v.number()),
 });
 
 export const CreatePlaylistSchema = v.object({
@@ -129,12 +136,16 @@ export type DeletePlaylistResponse = v.InferOutput<
 export type GetPlaylistResponse = v.InferOutput<
   typeof GetPlaylistResponseSchema
 >;
+export type GetUserPlaylistsResponse = v.InferOutput<
+  typeof GetUserPlaylistsResponseSchema
+>;
 export type AddItemToPlaylistResponse = v.InferOutput<
   typeof AddItemToPlaylistResponseSchema
 >;
 export type RemoveItemFromPlaylistResponse = v.InferOutput<
   typeof RemoveItemFromPlaylistResponseSchema
 >;
+export type GetPlaylistQuery = v.InferOutput<typeof GetPlaylistQuerySchema>;
 export type GetUserPlaylistsOptions = v.InferOutput<
   typeof GetUserPlaylistsOptionsSchema
 >;

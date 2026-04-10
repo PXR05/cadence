@@ -4,49 +4,41 @@ import {
   SearchSuggestionsResponseSchema,
   DeleteTrackResponseSchema,
   type AudioFile,
+  type FetchTracksOptions,
+  type SearchTracksOptions,
+  type SearchSuggestionsOptions,
+  type FetchRandomTracksOptions,
 } from "$lib/schemas/audio";
 import { authFetch } from "./fetch";
 
-export interface FetchTracksOptions {
-  page?: number;
-  limit?: number;
-  total?: number;
-  sortBy?: "filename" | "size" | "uploadedAt" | "title";
-  sortOrder?: "asc" | "desc";
+export interface TrackListResult {
+  tracks: AudioFile[];
+  deletedIds: string[];
+  hasMore: boolean;
+  totalPages: number;
+  currentPage: number;
 }
 
-export interface SearchTracksOptions {
-  q: string;
-  page?: number;
-  limit?: number;
-}
-
-export interface SearchSuggestionsOptions {
-  q: string;
-  limit?: number;
-}
-
-export interface FetchRandomTracksOptions {
-  page?: number;
-  limit?: number;
-  seed?: string;
-  firstTrackId?: string;
-}
-
-export async function fetchTracks(options: FetchTracksOptions = {}) {
+export async function fetchTracks(
+  options: FetchTracksOptions = {},
+): Promise<TrackListResult> {
   const {
     page = 1,
     limit = 20,
     sortBy = "uploadedAt",
     sortOrder = "desc",
+    lastFetchedAt,
   } = options;
 
-  const params = new URLSearchParams({
-    page: page.toString(),
-    limit: limit.toString(),
-    sortBy,
-    sortOrder,
-  });
+  const params = new URLSearchParams();
+  params.set("page", page.toString());
+  params.set("limit", limit.toString());
+  params.set("sortBy", sortBy);
+  params.set("sortOrder", sortOrder);
+
+  if (lastFetchedAt !== undefined) {
+    params.set("lastFetchedAt", lastFetchedAt.toString());
+  }
 
   const response = await authFetch(`/audio?${params}`);
 
@@ -59,13 +51,16 @@ export async function fetchTracks(options: FetchTracksOptions = {}) {
 
   return {
     tracks: validated.files,
+    deletedIds: validated.deletedIds,
     hasMore: validated.files.length >= limit,
     totalPages: validated.totalPages,
     currentPage: page,
   };
 }
 
-export async function searchTracks(options: SearchTracksOptions) {
+export async function searchTracks(
+  options: SearchTracksOptions,
+): Promise<TrackListResult> {
   const { q, page = 1, limit = 20 } = options;
 
   const params = new URLSearchParams({
@@ -85,6 +80,7 @@ export async function searchTracks(options: SearchTracksOptions) {
 
   return {
     tracks: validated.files,
+    deletedIds: validated.deletedIds,
     hasMore: validated.files.length >= limit,
     totalPages: validated.totalPages,
     currentPage: page,
@@ -111,7 +107,7 @@ export async function getSearchSuggestions(options: SearchSuggestionsOptions) {
 
 export async function fetchRandomTracks(
   options: FetchRandomTracksOptions = {}
-) {
+): Promise<TrackListResult> {
   const { page = 1, limit = 50, seed, firstTrackId } = options;
 
   const params = new URLSearchParams({
@@ -138,6 +134,7 @@ export async function fetchRandomTracks(
 
   return {
     tracks: validated.files,
+    deletedIds: validated.deletedIds,
     hasMore: validated.files.length >= limit,
     totalPages: validated.totalPages,
     currentPage: page,

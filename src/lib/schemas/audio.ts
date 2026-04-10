@@ -10,6 +10,7 @@ export {
 
 export const AudioListResponseSchema = v.object({
   files: v.array(AudioFileSchema),
+  deletedIds: v.array(v.string()),
   count: v.number(),
   page: v.number(),
   limit: v.number(),
@@ -74,6 +75,7 @@ export const FetchTracksOptionsSchema = v.object({
   total: v.optional(v.number()),
   sortBy: v.optional(v.picklist(["filename", "size", "uploadedAt", "title"])),
   sortOrder: v.optional(v.picklist(["asc", "desc"])),
+  lastFetchedAt: v.optional(v.number()),
 });
 
 export const SearchTracksOptionsSchema = v.object({
