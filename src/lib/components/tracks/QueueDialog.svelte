@@ -2,7 +2,7 @@
   import * as Dialog from "$lib/components/ui/dialog";
   import * as Drawer from "$lib/components/ui/drawer";
   import { playerStore } from "$lib/stores/player.svelte";
-  import { ChevronDown, ListMusicIcon } from "@lucide/svelte";
+  import { ChevronDown } from "@lucide/svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { VirtualScroll } from "../ui/virtual-scroll";
   import QueueItem from "./QueueItem.svelte";

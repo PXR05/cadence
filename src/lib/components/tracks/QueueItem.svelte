@@ -3,7 +3,6 @@
   import { playerStore } from "$lib/stores/player.svelte";
   import {
     GripHorizontalIcon,
-    PlayIcon,
     Volume2Icon,
     XIcon,
   } from "@lucide/svelte";

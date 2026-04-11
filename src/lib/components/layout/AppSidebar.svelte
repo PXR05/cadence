@@ -99,7 +99,7 @@
     </Sidebar.GroupLabel>
 
     <Sidebar.GroupContent class="flex-1 h-full overflow-y-scroll">
-      <Sidebar.Menu class="pb-40 gap-1 transition-all duration-200">
+      <Sidebar.Menu class="pb-40 group-data-[collapsible=icon]:gap-2 gap-1 transition-all duration-200">
         {#each allPlaylists as playlist (playlist.id)}
           <SidebarPlaylistItem {playlist} />
         {/each}

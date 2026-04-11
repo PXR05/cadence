@@ -120,7 +120,6 @@
           {playlist}
           isCurrentTrack={item.audio.id === playerStore.currentTrack?.id}
           track={item.audio}
-          fromQueue={false}
         />
       {/if}
     {/snippet}
@@ -139,7 +138,6 @@
         {playlist}
         isCurrentTrack={item.audio.id === playerStore.currentTrack?.id}
         track={item.audio}
-        fromQueue={false}
       />
     {/each}
     <span class="h-[50dvh]"></span>

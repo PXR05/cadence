@@ -12,11 +12,8 @@ import { resolvePlaybackSource } from "$lib/utils/trackSources";
 import { historyStore } from "./history.svelte";
 import { tracksStore } from "./tracks.svelte";
 import { authStore } from "./auth.svelte";
-import {
-  nativeBridgeStore,
-  type NativePlayerEvent,
-  type NativePlayerCommandPayloadMap,
-} from "./nativeBridge.svelte";
+import { nativeBridgeStore } from "./nativeBridge.svelte";
+import { PlayerNativeDomain } from "./playerNative.svelte";
 import {
   createDefaultEqualizerState,
   type FilterType,
@@ -51,16 +48,14 @@ interface PersistedPlayerState {
   activeEqualizerPresetId: string | null;
 }
 
-type NativePlaybackContextPayload = Omit<
-  NativePlayerCommandPayloadMap["player.initialize"],
-  "volume" | "muted"
->;
-
 class PlayerState {
   isPlaying: boolean = $state(false);
   duration: number = $state(0);
   private audioEngine = new AudioEngine();
   private playerRef: HTMLAudioElement | null = $state(null);
+  private isWebSourceChanging = false;
+  private webLoadRequestId = 0;
+  private playRequestId = 0;
   private carousels = new Map<
     string,
     { api: CarouselAPI; handler: () => void }
@@ -68,7 +63,6 @@ class PlayerState {
   private currentBlobUrl: string | null = null;
   private cachedShuffledQueue: AudioFile[] | null = null;
   private mediaSessionHandlersInitialized = false;
-  private nativeEventUnsubscribe: (() => void) | null = null;
 
   private persistedState = createNestedLocalStorageState<PersistedPlayerState>(
     "cadence.player_state",
@@ -87,16 +81,32 @@ class PlayerState {
     },
   );
 
-  private nativeSessionId = this.createNativeSessionId();
-
   private equalizerDomain = new PlayerEqualizerDomain(
     this.persistedState,
     this.audioEngine,
   );
 
+  private nativeDomain = new PlayerNativeDomain({
+    shouldUseNativePlayback: () => this.shouldUseNativePlayback(),
+    getRuntimeContext: () => ({
+      queueIndex: this.queueIndex,
+      queueLength: this.trackQueue.length,
+      trackId: this.currentTrack?.id ?? null,
+      playlistId: this.currentPlaylist?.id ?? null,
+    }),
+    getCurrentTrackId: () => this.currentTrack?.id ?? null,
+    applyNativeTiming: (positionSeconds?: number, durationSeconds?: number) =>
+      this.applyNativeTiming(positionSeconds, durationSeconds),
+    setIsPlaying: (isPlaying: boolean) => {
+      this.isPlaying = isPlaying;
+    },
+    setMediaSessionPlaybackState: (state: MediaSessionPlaybackState) =>
+      this.setMediaSessionPlaybackState(state),
+    playNext: () => this.playNext(),
+  });
+
   constructor() {
     this.equalizerDomain.migrateState();
-    this.bindNativeBridgeEvents();
   }
 
   get currentTrack() {
@@ -194,7 +204,7 @@ class PlayerState {
     this.persistedState.volume = value;
 
     if (this.shouldUseNativePlayback()) {
-      this.interceptNativeSetVolume(value);
+      this.nativeDomain.setVolume(value);
       return;
     }
 
@@ -298,7 +308,7 @@ class PlayerState {
     }
 
     if (this.shouldUseNativePlayback()) {
-      this.initializeNativePlayback();
+      this.nativeDomain.initialize(this.volume, this.isMuted);
       this.setMediaSessionPlaybackState(this.isPlaying ? "playing" : "paused");
       return;
     }
@@ -322,13 +332,18 @@ class PlayerState {
 
     this.playerRef.addEventListener("loadedmetadata", () => {
       this.duration = this.playerRef!.duration || 0;
-      if (this.currentTime > 0 && this.currentTime < this.duration) {
+      if (this.currentTime >= 0 && this.currentTime <= this.duration) {
         this.playerRef!.currentTime = this.currentTime;
       }
+      this.isWebSourceChanging = false;
     });
 
     this.playerRef.addEventListener("timeupdate", () => {
-      if (this.playerRef && this.playerRef?.currentTime > 0) {
+      if (
+        this.playerRef &&
+        !this.isWebSourceChanging &&
+        this.playerRef.currentTime >= 0
+      ) {
         this.currentTime = this.playerRef.currentTime;
       }
     });
@@ -348,7 +363,7 @@ class PlayerState {
     }
 
     if (this.shouldUseNativePlayback()) {
-      this.cleanupNativePlayback();
+      this.nativeDomain.cleanup();
       return;
     }
 
@@ -359,7 +374,7 @@ class PlayerState {
     this.isMuted = !this.isMuted;
 
     if (this.shouldUseNativePlayback()) {
-      this.interceptNativeSetMuted(this.isMuted);
+      this.nativeDomain.setMuted(this.isMuted);
       return;
     }
 
@@ -450,109 +465,6 @@ class PlayerState {
     return this.bitPerfectSupported;
   }
 
-  private createNativeSessionId() {
-    if (
-      typeof crypto !== "undefined" &&
-      typeof crypto.randomUUID === "function"
-    ) {
-      return crypto.randomUUID();
-    }
-
-    return `session-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-  }
-
-  private createNativePlaybackContext(): NativePlaybackContextPayload {
-    return {
-      sessionId: this.nativeSessionId,
-      queueIndex: this.queueIndex,
-      queueLength: this.trackQueue.length,
-      trackId: this.currentTrack?.id ?? null,
-      playlistId: this.currentPlaylist?.id ?? null,
-    };
-  }
-
-  private bindNativeBridgeEvents() {
-    if (this.nativeEventUnsubscribe) {
-      return;
-    }
-
-    this.nativeEventUnsubscribe = nativeBridgeStore.subscribePlayerEvents(
-      (event) => {
-        this.handleNativePlayerEvent(event);
-      },
-    );
-  }
-
-  private handleNativePlayerEvent(event: NativePlayerEvent) {
-    if (!this.shouldUseNativePlayback()) {
-      return;
-    }
-
-    switch (event.type) {
-      case "player.state": {
-        this.applyNativeTiming(
-          event.payload.positionSeconds,
-          event.payload.durationSeconds,
-        );
-
-        if (event.payload.playbackState === "playing") {
-          this.isPlaying = true;
-          this.setMediaSessionPlaybackState("playing");
-          return;
-        }
-
-        if (event.payload.playbackState === "ended") {
-          this.isPlaying = false;
-          this.setMediaSessionPlaybackState("paused");
-          this.playNext();
-          return;
-        }
-
-        if (
-          event.payload.playbackState === "paused" ||
-          event.payload.playbackState === "idle" ||
-          event.payload.playbackState === "error"
-        ) {
-          this.isPlaying = false;
-          this.setMediaSessionPlaybackState("paused");
-        }
-
-        return;
-      }
-      case "player.position": {
-        this.applyNativeTiming(
-          event.payload.positionSeconds,
-          event.payload.durationSeconds,
-        );
-        return;
-      }
-      case "player.track_loaded": {
-        if (event.payload.trackId !== this.currentTrack?.id) {
-          return;
-        }
-
-        this.applyNativeTiming(
-          event.payload.positionSeconds,
-          event.payload.durationSeconds,
-        );
-        return;
-      }
-      case "player.ended": {
-        this.isPlaying = false;
-        this.setMediaSessionPlaybackState("paused");
-        this.playNext();
-        return;
-      }
-      case "player.error": {
-        this.isPlaying = false;
-        this.setMediaSessionPlaybackState("paused");
-        console.error(
-          `Native player error [${event.payload.code}]: ${event.payload.message}`,
-        );
-      }
-    }
-  }
-
   private applyNativeTiming(
     positionSeconds?: number,
     durationSeconds?: number,
@@ -570,86 +482,6 @@ class PlayerState {
     ) {
       this.currentTime = Math.max(0, positionSeconds);
     }
-  }
-
-  private postNativePlayerCommand<
-    TType extends keyof NativePlayerCommandPayloadMap,
-  >(type: TType, payload: NativePlayerCommandPayloadMap[TType]) {
-    nativeBridgeStore.postPlayerCommand(type, payload);
-  }
-
-  private initializeNativePlayback() {
-    this.postNativePlayerCommand("player.initialize", {
-      ...this.createNativePlaybackContext(),
-      volume: this.volume,
-      muted: this.isMuted,
-    });
-  }
-
-  private cleanupNativePlayback() {
-    this.postNativePlayerCommand("player.cleanup", {
-      sessionId: this.nativeSessionId,
-    });
-  }
-
-  private async interceptNativeUpdateTrack(
-    track: AudioFile,
-    sourceTrack: AudioFile,
-  ) {
-    this.postNativePlayerCommand("player.load_track", {
-      ...this.createNativePlaybackContext(),
-      canonicalTrackId: track.id,
-      sourceTrackId: sourceTrack.id,
-      canonicalTrack: track,
-      sourceTrack,
-    });
-  }
-
-  private async interceptNativePlay(opts?: {
-    track?: AudioFile;
-    index?: number;
-  }) {
-    this.postNativePlayerCommand("player.play", {
-      ...this.createNativePlaybackContext(),
-      requestedTrackId: opts?.track?.id ?? null,
-      requestedIndex: opts?.index ?? null,
-      positionSeconds: this.currentTime,
-    });
-  }
-
-  private interceptNativePause() {
-    this.postNativePlayerCommand("player.pause", {
-      ...this.createNativePlaybackContext(),
-      positionSeconds: this.currentTime,
-    });
-  }
-
-  private interceptNativeSeek(time: number) {
-    this.postNativePlayerCommand("player.seek", {
-      ...this.createNativePlaybackContext(),
-      targetSeconds: time,
-    });
-  }
-
-  private interceptNativeSetMuted(muted: boolean) {
-    this.postNativePlayerCommand("player.set_muted", {
-      ...this.createNativePlaybackContext(),
-      muted,
-    });
-  }
-
-  private interceptNativeSetVolume(volume: number) {
-    this.postNativePlayerCommand("player.set_volume", {
-      ...this.createNativePlaybackContext(),
-      volume,
-    });
-  }
-
-  private interceptNativeStop() {
-    this.postNativePlayerCommand("player.stop", {
-      ...this.createNativePlaybackContext(),
-      reason: "reset_content_state",
-    });
   }
 
   get maxBands(): number {
@@ -731,13 +563,23 @@ class PlayerState {
     this.initializeMediaSessionHandlers();
     this.updateMediaSessionMetadata(track);
 
+    const usingNative = this.shouldUseNativePlayback();
+    const webRequestId = usingNative ? 0 : ++this.webLoadRequestId;
+
+    if (!usingNative && this.playerRef) {
+      this.isWebSourceChanging = true;
+      this.currentTime = 0;
+      this.duration = 0;
+      this.playerRef.pause();
+    }
+
     const sourceTrack = await resolvePlaybackSource(
       track,
       tracksStore.getSourcesForTrack(track),
     );
 
-    if (this.shouldUseNativePlayback()) {
-      await this.interceptNativeUpdateTrack(track, sourceTrack);
+    if (usingNative) {
+      this.nativeDomain.updateTrack(track, sourceTrack);
       this.loadTrackColor(track).catch((error) => {
         console.error("Failed to load track color:", error);
       });
@@ -745,6 +587,12 @@ class PlayerState {
     }
 
     if (!this.playerRef) return;
+    if (
+      webRequestId !== this.webLoadRequestId ||
+      this.currentTrack?.id !== track.id
+    ) {
+      return;
+    }
 
     if (this.currentBlobUrl) {
       revokeAudioUrl(this.currentBlobUrl);
@@ -754,7 +602,20 @@ class PlayerState {
     const audioUrl = await getAudioUrl(sourceTrack.id, {
       useCustomAuthFetch: authStore.shouldUseCustomMediaAuthFetch,
     });
+
+    if (
+      webRequestId !== this.webLoadRequestId ||
+      this.currentTrack?.id !== track.id
+    ) {
+      if (audioUrl.startsWith("blob:")) {
+        revokeAudioUrl(audioUrl);
+      }
+      return;
+    }
+
+    this.isWebSourceChanging = true;
     this.playerRef.src = audioUrl;
+    this.playerRef.currentTime = 0;
     this.playerRef.load();
 
     if (audioUrl.startsWith("blob:")) {
@@ -766,8 +627,13 @@ class PlayerState {
     });
   }
 
-  async play(opts?: { track?: AudioFile; index?: number }) {
-    const { track, index } = opts || {};
+  async play(opts?: {
+    track?: AudioFile;
+    index?: number;
+    forceTrackReload?: boolean;
+  }) {
+    const { track, index, forceTrackReload = false } = opts || {};
+    const requestId = ++this.playRequestId;
     if (this.playerRef || this.shouldUseNativePlayback()) {
       await this.audioEngine.resumeContext();
 
@@ -779,7 +645,9 @@ class PlayerState {
         newIndex = this.trackQueue.findIndex((t) => t.id === track.id);
       } else if (
         index !== undefined &&
-        this.currentTrack?.id !== this.trackQueue[index].id
+        this.trackQueue[index] &&
+        (forceTrackReload ||
+          this.currentTrack?.id !== this.trackQueue[index].id)
       ) {
         newTrack = this.trackQueue[index];
         newIndex = index;
@@ -798,25 +666,79 @@ class PlayerState {
         this.updateMediaSessionMetadata(newTrack);
         this.setMediaSessionPlaybackState("playing");
         await this.updateMetadata(newTrack);
+        if (requestId !== this.playRequestId) {
+          return;
+        }
 
         await historyStore.addToHistory(newTrack.id, this.currentPlaylist?.id);
+        if (requestId !== this.playRequestId) {
+          return;
+        }
+      } else if (index !== undefined && this.trackQueue[index]) {
+        this.queueIndex = index;
+        this.syncCarouselToTrack(index, true);
+      }
+
+      if (requestId !== this.playRequestId) {
+        return;
       }
 
       this.isPlaying = true;
       this.setMediaSessionPlaybackState("playing");
 
       if (this.shouldUseNativePlayback()) {
-        await this.interceptNativePlay(opts);
+        this.nativeDomain.play({ track, index }, this.currentTime);
         return;
       }
 
       try {
         await this.playerRef!.play();
       } catch (error) {
-        console.error("Failed to play audio:", error);
-        this.isPlaying = false;
-        this.setMediaSessionPlaybackState("paused");
+        const replayed = await this.retryWebPlayAfterLoad();
+        if (!replayed) {
+          console.error("Failed to play audio:", error);
+          this.isPlaying = false;
+          this.setMediaSessionPlaybackState("paused");
+        }
       }
+    }
+  }
+
+  private async retryWebPlayAfterLoad() {
+    if (!this.playerRef || this.shouldUseNativePlayback()) {
+      return false;
+    }
+
+    const player = this.playerRef;
+
+    if (player.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+      await new Promise<void>((resolve) => {
+        let settled = false;
+
+        const cleanup = () => {
+          if (settled) return;
+          settled = true;
+          player.removeEventListener("canplay", onReady);
+          player.removeEventListener("loadeddata", onReady);
+          clearTimeout(timeoutId);
+          resolve();
+        };
+
+        const onReady = () => cleanup();
+
+        const timeoutId = window.setTimeout(() => cleanup(), 2000);
+        player.addEventListener("canplay", onReady, { once: true });
+        player.addEventListener("loadeddata", onReady, { once: true });
+      });
+    }
+
+    try {
+      await player.play();
+      this.isPlaying = true;
+      this.setMediaSessionPlaybackState("playing");
+      return true;
+    } catch {
+      return false;
     }
   }
 
@@ -825,7 +747,7 @@ class PlayerState {
 
     if (this.shouldUseNativePlayback()) {
       this.isPlaying = false;
-      this.interceptNativePause();
+      this.nativeDomain.pause(this.currentTime);
       this.setMediaSessionPlaybackState("paused");
       return;
     }
@@ -887,7 +809,7 @@ class PlayerState {
   seek(time: number) {
     if (this.shouldUseNativePlayback()) {
       this.currentTime = time;
-      this.interceptNativeSeek(time);
+      this.nativeDomain.seek(time);
       return;
     }
 
@@ -907,7 +829,9 @@ class PlayerState {
     this.trackQueue = tracks;
     this.queueIndex = startIndex;
     if (tracks[startIndex]) {
-      this.play({ index: startIndex });
+      this.syncCarouselToTrack(startIndex, true);
+      const shouldForceReload = this.currentTrack?.id !== tracks[startIndex].id;
+      this.play({ index: startIndex, forceTrackReload: shouldForceReload });
     }
   }
 
@@ -1001,7 +925,7 @@ class PlayerState {
     this.pause();
 
     if (this.shouldUseNativePlayback()) {
-      this.interceptNativeStop();
+      this.nativeDomain.stop();
     }
 
     this.clearQueue();
@@ -1044,11 +968,6 @@ class PlayerState {
         "--primary",
         `oklch(${color.coords[0]?.toFixed(3)} ${color.coords[1]?.toFixed(3)} ${color.coords[2]?.toFixed(3)})`,
       );
-      document.body.style.setProperty(
-        "--ring",
-        `oklch(${color.coords[0]?.toFixed(3)} ${color.coords[1]?.toFixed(3)} ${color.coords[2]?.toFixed(3)})`,
-      );
-
       this.persistedState.trackColor = track.color;
       return;
     }
@@ -1078,10 +997,6 @@ class PlayerState {
 
     document.body.style.setProperty(
       "--primary",
-      `oklch(${brighter.coords[0]} ${brighter.coords[1]} ${brighter.coords[2]})`,
-    );
-    document.body.style.setProperty(
-      "--ring",
       `oklch(${brighter.coords[0]} ${brighter.coords[1]} ${brighter.coords[2]})`,
     );
     const brighterString = brighter.toString({ format: "hex" });

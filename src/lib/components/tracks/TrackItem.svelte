@@ -21,7 +21,6 @@
     track: AudioFile;
     isCurrentTrack: boolean;
     playlist?: PlaylistDetail;
-    fromQueue?: boolean;
     showAlbum?: boolean;
   }
 
@@ -30,7 +29,6 @@
     track,
     isCurrentTrack,
     playlist,
-    fromQueue = false,
     showAlbum = false,
   }: Props = $props();
 
@@ -58,12 +56,9 @@
   async function handlePlay() {
     trigger([{ duration: 8 }]);
 
-    if (fromQueue) {
-      playerStore.queueIndex = index;
-      playerStore.play({ index });
-    }
-
-    if (playlist) {
+    if (playerStore.currentTrack?.id === track.id) {
+      playerStore.play();
+    } else if (playlist) {
       const tracks = playlist.items.map((item) => item.audio);
       const actualIndex =
         playlist.items.findIndex((item) => item.audio.id === track.id) ?? index;

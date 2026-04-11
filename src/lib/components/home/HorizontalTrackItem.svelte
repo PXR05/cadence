@@ -32,8 +32,12 @@
   function handlePlay() {
     trigger([{ duration: 8 }]);
 
-    const shuffledTracks = tracksStore.getShuffledTracks(track);
-    playerStore.setQueue(shuffledTracks, 0);
+    if (playerStore.currentTrack?.id === track.id) {
+      playerStore.play();
+    } else {
+      const shuffledTracks = tracksStore.getShuffledTracks(track);
+      playerStore.setQueue(shuffledTracks, 0);
+    }
   }
 
   let isOffline = $state(false);
