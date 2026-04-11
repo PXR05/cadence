@@ -15,7 +15,7 @@ export const PlaylistSchema = v.object({
   id: v.string(),
   name: v.string(),
   userId: v.string(),
-  coverImage: v.optional(v.string()),
+  coverImage: v.optional(v.nullable(v.string())),
   createdAt: v.pipe(
     v.string(),
     v.transform((s) => new Date(s)),
@@ -46,19 +46,7 @@ export const DeletePlaylistResponseSchema = v.object({
 
 export const GetPlaylistResponseSchema = v.object({
   playlist: v.object({
-    id: v.string(),
-    name: v.string(),
-    userId: v.string(),
-    coverImage: v.optional(v.string()),
-    createdAt: v.pipe(
-      v.string(),
-      v.transform((s) => new Date(s)),
-    ),
-    updatedAt: v.pipe(
-      v.string(),
-      v.transform((s) => new Date(s)),
-    ),
-    itemCount: v.optional(v.number()),
+    ...PlaylistSchema.entries,
     items: v.array(PlaylistItemSchema),
   }),
   deletedItemIds: v.array(v.string()),

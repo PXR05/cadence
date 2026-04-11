@@ -13,7 +13,7 @@
     open: boolean;
     onOpenChange: (open: boolean) => void;
     playlist: PlaylistDetail;
-    onUpdated: (playlist: { name: string; coverImage?: string }) => void;
+    onUpdated: (playlist: { name: string; coverImage?: string | null }) => void;
     onDeleted: () => void;
   }
 

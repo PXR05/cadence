@@ -98,7 +98,7 @@
 
 {#snippet header()}
   <div
-    class="absolute top-1.5 left-1.5 right-1.5 z-10 rounded-lg bg-muted border border-input/15 p-2 flex justify-between items-center"
+    class="absolute top-1.5 left-1.5 right-1.5 z-10 rounded-lg bg-muted border border-muted-foreground/10 p-2 flex justify-between items-center"
   >
     {#if isDesktop.current}
       <Dialog.Close
@@ -115,12 +115,8 @@
     {/if}
 
     <div class="flex items-center gap-2 text-sm text-muted-foreground">
-      <ListMusicIcon class="size-4" />
-      <span>
-        {playerStore.queueLength} track{playerStore.queueLength !== 1
-          ? "s"
-          : ""} in queue
-      </span>
+      {playerStore.queueLength} track{playerStore.queueLength !== 1 ? "s" : ""} in
+      queue
     </div>
 
     {#if isDesktop.current}

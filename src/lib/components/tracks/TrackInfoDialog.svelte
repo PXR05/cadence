@@ -5,7 +5,7 @@
   import { useMenuDialogState } from "$lib/hooks";
   import { trackInfoDialogStore } from "$lib/stores/trackInfoDialog.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
-  import { formatFileSize, formatTime } from "$lib/utils/format";
+  import { formatTime } from "$lib/utils/format";
 
   const dialogState = useMenuDialogState({
     paramName: "track-info",
@@ -39,8 +39,11 @@
   const format = $derived(track?.metadata?.format?.toUpperCase() || "Unknown");
   const bitrate = $derived(
     track?.metadata?.bitrate
-      ? `${Math.round(track.metadata.bitrate / 1000)} kbps`
+      ? `${(track.metadata.bitrate / 1000).toFixed(1)} kbps`
       : "Unknown",
+  );
+  const bitDepth = $derived(
+    track?.metadata?.bitDepth ? `${track.metadata.bitDepth}-bit` : "Unknown",
   );
   const sampleRate = $derived(
     track?.metadata?.sampleRate
@@ -54,7 +57,6 @@
     if (count === 2) return "Stereo";
     return `${count} channels`;
   });
-  const genres = $derived(track?.metadata?.genre?.join(", ") || "Unknown");
 
   async function restoreTrackFromId(trackId: string) {
     if (trackInfoDialogStore.track?.id === trackId) return;
@@ -116,11 +118,11 @@
       <p class="text-muted-foreground">Year</p>
       <p class="text-right">{year}</p>
 
-      <p class="text-muted-foreground">Genres</p>
-      <p class="text-right">{genres}</p>
-
       <p class="text-muted-foreground">Format</p>
       <p class="text-right">{format}</p>
+
+      <p class="text-muted-foreground">Bit Depth</p>
+      <p class="text-right">{bitDepth}</p>
 
       <p class="text-muted-foreground">Bitrate</p>
       <p class="text-right">{bitrate}</p>

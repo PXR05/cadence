@@ -292,7 +292,7 @@
   <h2 class="text-2xl font-semibold p-2">Search</h2>
   <div class="flex items-center gap-2">
     <div
-      class="flex-1 mt-2 flex items-stretch relative rounded-xl border border-input/15 min-h-11
+      class="flex-1 mt-2 flex items-stretch relative rounded-xl border border-muted-foreground/10 min-h-11
       {appearanceStore.disableBlur
         ? 'bg-muted'
         : 'bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md'}"
@@ -388,7 +388,7 @@
   <div class="flex-1 pt-32 md:pt-30">
     {#if loading}
       <div
-        class="flex flex-col items-center justify-center flex-1 p-8 pb-48 md:pb-36 h-full"
+        class="flex flex-col items-center justify-center flex-1 p-8 py-[calc((100dvh-380px)/2)] md:pb-36 h-full"
       >
         <LoaderIcon class="animate-spin text-muted-foreground" />
       </div>
@@ -435,7 +435,7 @@
         <div class="h-[50dvh]"></div>
       {:else}
         <div
-          class="h-full flex flex-col items-center justify-center p-8 pb-48 md:pb-36"
+          class="h-full flex flex-col items-center justify-center p-8 py-[calc((100dvh-380px)/2)] md:pb-36"
         >
           <p class="text-muted-foreground mb-2">No results found</p>
           <p class="text-sm text-muted-foreground">
@@ -445,7 +445,7 @@
       {/if}
     {:else}
       <div
-        class="flex flex-col items-center justify-center flex-1 p-8 pb-48 md:pb-36 h-full"
+        class="flex flex-col items-center justify-center flex-1 p-8 py-[calc((100dvh-380px)/2)] md:pb-36 h-full"
       >
         <SearchIcon
           strokeWidth={1.5}

@@ -52,11 +52,12 @@ class PlaylistsStore {
   }
 
   get allPlaylists() {
-    return [
+    const all = [
       ...this._userPlaylists,
       ...this._youtubePlaylists,
       ...this._tidalPlaylists,
     ];
+    return all.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
   }
 
   get lastFetchedAt() {

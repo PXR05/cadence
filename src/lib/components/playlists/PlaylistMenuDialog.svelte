@@ -16,7 +16,7 @@
     isArtistPlaylist,
     isAlbumPlaylist,
     isSpecialPlaylist,
-    isYoutubePlaylist,
+    isYoutubeCollectionPlaylist,
     isTidalAlbumPlaylist,
     isTidalCollectionPlaylist,
     SPECIAL_PLAYLIST_IDS,
@@ -36,6 +36,7 @@
   } from "@lucide/svelte";
   import { toast } from "svelte-sonner";
   import { invalidateAll } from "$app/navigation";
+  import { deleteOfflineImage } from "$lib/db/offline";
 
   const editDialog = useDialogState("edit-playlist");
 
@@ -70,6 +71,11 @@
           isArtistPlaylist(playlist.id) ||
           isAlbumPlaylist(playlist.id)
       : true,
+  );
+  const isResyncable = $derived(
+    playlist
+      ? isYoutubeCollectionPlaylist(playlist.id) || isTidalCollectionPlaylist(playlist.id)
+      : false,
   );
 
   const itemCount = $derived(playlist?.itemCount ?? 0);
@@ -150,7 +156,7 @@
     if (!playlist) return;
     try {
       handleClose();
-      if (isYoutubePlaylist(playlist.id)) {
+      if (isYoutubeCollectionPlaylist(playlist.id)) {
         await remoteDownloadStore.downloadFromUrl(
           "youtube",
           buildRemoteCollectionUrl(
@@ -187,7 +193,7 @@
 
   async function handlePlaylistUpdated(v: {
     name: string;
-    coverImage?: string;
+    coverImage?: string | null;
   }) {
     if (!playlist) return;
     await playlistsStore.invalidatePlaylistDetail(playlist.id);
@@ -197,6 +203,7 @@
       name: v.name,
       coverImage: v.coverImage,
     });
+    await deleteOfflineImage(playlist.id);
     editDialog.close();
     handleClose();
     invalidateAll();
@@ -206,6 +213,7 @@
     if (!playlist) return;
     await playlistsStore.invalidatePlaylist(playlist.id);
     playlistsStore.invalidate();
+    await deleteOfflineImage(playlist.id);
     editDialog.close();
     handleClose();
     invalidateAll();
@@ -255,12 +263,12 @@
     Download as ZIP
   </Button>
 
-  {#if playlist && (isYoutubePlaylist(playlist.id) || isTidalCollectionPlaylist(playlist.id))}
+  {#if playlist && (isYoutubeCollectionPlaylist(playlist.id) || isTidalCollectionPlaylist(playlist.id))}
     <Button
       variant="ghost"
       class="justify-start gap-3 h-12"
       onclick={handlePlaylistResync}
-      disabled={itemCount === 0}
+      disabled={!isResyncable}
     >
       <RefreshCwIcon class="size-5" />
       {#if playlist && isTidalAlbumPlaylist(playlist.id)}
@@ -293,9 +301,9 @@
     </Button>
   {/if}
 
-  <div class="h-px bg-border my-1"></div>
-
   {#if !isNonModifiable}
+    <div class="h-px bg-border my-1"></div>
+
     <Button
       variant="ghost"
       class="justify-start gap-3 h-12"
@@ -304,8 +312,6 @@
       <PencilIcon class="size-5" />
       Edit Playlist
     </Button>
-
-    <div class="h-px bg-border my-1"></div>
   {/if}
 {/snippet}
 

@@ -2,7 +2,12 @@
   import PlaylistCoverImage from "$lib/components/playlists/PlaylistCoverImage.svelte";
   import { getPlaylistImageUrl } from "$lib/constants";
   import type { PlaylistDetail } from "$lib/schemas";
-  import { isArtistPlaylist, isSpecialPlaylist } from "$lib/utils/playlist";
+  import {
+    isArtistPlaylist,
+    isSpecialPlaylist,
+    isTidalPlaylist,
+    isYoutubePlaylist,
+  } from "$lib/utils/playlist";
   import { PlayIcon, PlusIcon, ShuffleIcon } from "@lucide/svelte";
   import { Button } from "../ui/button";
   import { Image } from "../ui/image";
@@ -19,9 +24,12 @@
 
   const isArtist = $derived(isArtistPlaylist(playlist.id));
   const isSpecial = $derived(isSpecialPlaylist(playlist.id));
+  const isPlaylist = $derived(
+    isTidalPlaylist(playlist.id) || isYoutubePlaylist(playlist.id),
+  );
 
   const mainArtist = $derived.by(() => {
-    if (isArtist || isSpecial) {
+    if (isArtist || isSpecial || isPlaylist) {
       return null;
     }
     const artistMap = new Map<string, number>();

@@ -2,13 +2,13 @@
   import { downloadStore } from "$lib/stores/download.svelte";
   import { getImageUrl } from "$lib/constants";
   import { playerStore } from "$lib/stores/player.svelte";
+  import { trackInfoDialogStore } from "$lib/stores/trackInfoDialog.svelte";
   import { trackMenuStore } from "$lib/stores/trackMenu.svelte";
   import { shouldLoadItem } from "$lib/utils/queue";
   import {
     ChevronDown,
     ChevronUpIcon,
     EllipsisIcon,
-    ListMusicIcon,
   } from "@lucide/svelte";
   import { onMount } from "svelte";
   import { PlaybackControls, ProgressBar } from ".";
@@ -43,6 +43,9 @@
     (track?.metadata?.artist ?? "Unknown").split(
       track?.metadata?.artist?.includes(",") ? ", " : "、",
     ),
+  );
+  const isLossless = $derived(
+    (track?.metadata?.format ?? "").trim().toLowerCase() === "flac",
   );
 
   let managePlaylistsDialogOpen = $state(false);
@@ -133,6 +136,11 @@
     e.stopPropagation();
     openCarouselTrackMenu(queueTrack);
   }
+
+  function openTrackInfoDialog() {
+    if (!track) return;
+    trackInfoDialogStore.openById(track.id);
+  }
 </script>
 
 {#snippet coverCarousel()}
@@ -175,7 +183,7 @@
       <TrackInfo trackId={track?.id ?? ""} {title} {artists} />
     </div>
 
-    <div class="flex flex-col gap-12">
+    <div class="flex flex-col gap-14">
       <div class="px-2">
         <ProgressBar
           monochrome
@@ -215,9 +223,9 @@
     style="
     background: linear-gradient(
       to top,
-      color-mix(in oklab, var(--background) 90%, transparent) 0%,
+      color-mix(in oklab, var(--background) 80%, transparent) 0%,
       color-mix(in oklab, var(--background) 10%, transparent) 50%,
-      color-mix(in oklab, var(--background) 90%, transparent) 100%
+      color-mix(in oklab, var(--background) 80%, transparent) 100%
     );
     "
   >
@@ -231,6 +239,24 @@
       >
         <ChevronDown class="size-5" />
       </Button>
+
+      <button
+        class="text-muted-foreground text-xs grid"
+        onclick={openTrackInfoDialog}
+        aria-label="Open track info"
+      >
+        <span>
+          {track?.metadata?.format?.toUpperCase()}
+        </span>
+        <span>
+          {#if track?.metadata?.bitDepth}
+            {track?.metadata?.bitDepth}-bit
+          {/if}
+          {#if track?.metadata?.sampleRate}
+            {(track.metadata.sampleRate / 1000).toFixed(1)} kHz
+          {/if}
+        </span>
+      </button>
 
       <Button
         size="icon"
@@ -267,13 +293,10 @@
       >
         <ChevronUpIcon size={24} />
 
-        <span class="flex items-center gap-2 text-muted-foreground">
-          <ListMusicIcon size={20} />
-          <span>
-            {playerStore.queueLength} track{playerStore.queueLength !== 1
-              ? "s"
-              : ""} in queue
-          </span>
+        <span class="text-muted-foreground">
+          {playerStore.queueLength} track{playerStore.queueLength !== 1
+            ? "s"
+            : ""} in queue
         </span>
       </Button>
     </div>

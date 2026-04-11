@@ -14,7 +14,7 @@
 </script>
 
 <div
-  class="flex items-center relative rounded-xl overflow-clip border border-input/15
+  class="flex items-center relative rounded-xl overflow-clip border border-muted-foreground/10
   {appearanceStore.disableBlur
     ? 'bg-muted'
     : 'bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md'}"

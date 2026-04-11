@@ -1,11 +1,8 @@
 import {
-  HouseIcon,
-  ListMusicIcon,
   SearchIcon,
-  ShieldIcon,
   SettingsIcon,
-  DiamondIcon,
   LibraryIcon,
+  HouseIcon,
 } from "@lucide/svelte";
 import type { Component } from "svelte";
 import { page } from "$app/state";
@@ -18,7 +15,7 @@ export interface NavItem {
 }
 
 export const navItems: NavItem[] = [
-  { path: "/", label: "Home", icon: DiamondIcon },
+  { path: "/", label: "Home", icon: HouseIcon },
   {
     path: "/search",
     label: "Search",

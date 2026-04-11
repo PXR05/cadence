@@ -9,7 +9,9 @@ import type { AudioFile } from "$lib/schemas";
 import { deduplicateByIsrc } from "$lib/utils/trackSources";
 import { downloadStore } from "./download.svelte";
 
-function toLastFetchedAtQuery(lastFetchedAt: string | null): number | undefined {
+function toLastFetchedAtQuery(
+  lastFetchedAt: string | null,
+): number | undefined {
   if (!lastFetchedAt) return undefined;
 
   const numeric = Number(lastFetchedAt);
@@ -111,7 +113,9 @@ class TracksStore {
       console.error("Failed to load tracks from cache:", err);
     } finally {
       this._initialized = true;
-      this.isInitialLoad = false;
+      if (this._tracks.length > 0) {
+        this.isInitialLoad = false;
+      }
     }
   }
 
@@ -126,11 +130,13 @@ class TracksStore {
 
     if (!forceRefresh && this.tracks.length > 0 && this.lastFetchedAt) {
       if ("onLine" in navigator && !navigator.onLine) {
+        this.isInitialLoad = false;
         return;
       }
 
       const shouldRefresh = await this.shouldRefreshTracks();
       if (!shouldRefresh) {
+        this.isInitialLoad = false;
         return;
       }
     }
@@ -172,10 +178,12 @@ class TracksStore {
       });
       await this.refreshFromCache();
       this.isLoadingMore = false;
+      this.isInitialLoad = false;
       this.error = null;
     } catch (err) {
       this.error = err instanceof Error ? err.message : "Failed to load tracks";
       this.isLoadingMore = false;
+      this.isInitialLoad = false;
       throw err;
     }
   }
@@ -248,9 +256,7 @@ class TracksStore {
       ? this.getSourcesForTrack(track)
       : [{ id: trackId }];
 
-    await Promise.all(
-      allVariants.map((variant) => deleteTrack(variant.id)),
-    );
+    await Promise.all(allVariants.map((variant) => deleteTrack(variant.id)));
 
     await Promise.all(
       allVariants.map(async (variant) => {

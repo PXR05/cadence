@@ -45,10 +45,10 @@
   />
 
   <div
-    class="p-2 absolute w-dvw ease-vaul
+    class="p-2 absolute w-dvw ease-vaul overflow-clip
       {isScrolled ? 'translate-y-15' : 'translate-y-68'}
       {appearanceStore.disableAnimations ? 'duration-0' : 'duration-200'}
-      {isSidebarCollapsed ? 'w-[calc(100dvw-64px)]' : 'w-[calc(100dvw-256px)]'}"
+      {isSidebarCollapsed ? 'w-[calc(100dvw-64px)]!' : 'w-[calc(100dvw-256px)]!'}"
   >
     <PlaylistSearch bind:searchQuery />
   </div>

@@ -37,10 +37,10 @@
         duration: appearanceStore.disableAnimations ? 0 : 150,
         easing: vaulEase,
       }}
-      class="p-2 row-start-1 col-start-1 h-fit flex items-center rounded-xl border relative w-full gap-2
+      class="p-2 row-start-1 col-start-1 h-fit flex items-center rounded-xl relative w-full gap-2 border border-muted-foreground/10
       {appearanceStore.disableBlur
-        ? 'bg-muted border-input/15'
-        : 'bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md border-input/15'}"
+        ? 'bg-muted '
+        : 'bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md'}"
     >
       <Button
         variant="ghost"

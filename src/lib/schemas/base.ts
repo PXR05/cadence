@@ -7,6 +7,7 @@ export const AudioMetadataSchema = v.object({
   year: v.optional(v.number()),
   genre: v.optional(v.array(v.string())),
   duration: v.optional(v.number()),
+  bitDepth: v.optional(v.number()),
   bitrate: v.optional(v.number()),
   sampleRate: v.optional(v.number()),
   channels: v.optional(v.number()),

@@ -142,7 +142,7 @@
     class="md:max-w-2xl h-dvh md:h-[90dvh] overflow-clip max-w-dvw flex flex-col z-60 p-0 max-md:border-0 rounded-none md:rounded-2xl bg-background"
   >
     <div
-      class="absolute top-1.5 left-1.5 right-1.5 z-10 rounded-lg bg-muted border border-input/15 px-2 py-3 flex justify-between items-start"
+      class="absolute top-1.5 left-1.5 right-1.5 z-10 rounded-lg bg-muted border border-muted-foreground/10 px-2 py-3 flex justify-between items-start"
     >
       <Dialog.Close
         class="opacity-70 transition-opacity hover:opacity-100 my-auto size-8 grid place-items-center"
@@ -223,7 +223,7 @@
     {/if}
 
     <div
-      class="absolute bottom-1.5 left-1.5 right-1.5 z-10 rounded-lg bg-muted border border-input/15 p-1.5 flex gap-1.5"
+      class="absolute bottom-1.5 left-1.5 right-1.5 z-10 rounded-lg bg-muted border border-muted-foreground/10 p-1.5 flex gap-1.5"
     >
       <Button
         variant="outline"

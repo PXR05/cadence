@@ -115,7 +115,7 @@
         <p>Invalid playlist ID</p>
       </div>
     {:else if !playlist}
-      <div class="delayed-loader flex items-center justify-center h-full">
+      <div class="delayed-loader flex items-center justify-center h-dvh">
         <LoaderIcon class="animate-spin text-muted-foreground" />
       </div>
     {:else if isMobile}

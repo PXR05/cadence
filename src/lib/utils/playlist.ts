@@ -21,12 +21,20 @@ export function isArtistPlaylist(playlistId: string): boolean {
   return playlistId.startsWith("artist_");
 }
 
-export function isAlbumPlaylist(playlistId: string): boolean {
-  return playlistId.startsWith("album_");
+export function isYoutubePlaylist(playlistId: string): boolean {
+  return playlistId.startsWith("youtube_PL");
 }
 
-export function isYoutubePlaylist(playlistId: string): boolean {
-  return playlistId.startsWith("youtube_");
+export function isYoutubeAlbumPlaylist(playlistId: string): boolean {
+  return playlistId.startsWith("youtube_OLAK5uy");
+}
+
+export function isYoutubeCollectionPlaylist(playlistId: string): boolean {
+  return (
+    isYoutubePlaylist(playlistId) ||
+    isYoutubeAlbumPlaylist(playlistId) ||
+    playlistId.startsWith("youtube_")
+  );
 }
 
 export function isTidalPlaylist(playlistId: string): boolean {
@@ -42,6 +50,14 @@ export function isTidalCollectionPlaylist(playlistId: string): boolean {
     isTidalPlaylist(playlistId) ||
     isTidalAlbumPlaylist(playlistId) ||
     playlistId.startsWith("tidal_")
+  );
+}
+
+export function isAlbumPlaylist(playlistId: string): boolean {
+  return (
+    playlistId.startsWith("album_") ||
+    isYoutubeAlbumPlaylist(playlistId) ||
+    isTidalAlbumPlaylist(playlistId)
   );
 }
 

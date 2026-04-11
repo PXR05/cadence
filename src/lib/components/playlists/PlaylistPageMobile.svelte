@@ -90,8 +90,8 @@
     ></div>
 
     <div
-      class="z-10 flex items-center justify-between rounded-4xl p-2
-    {!isScrolled
+      class="z-10 flex items-center justify-between rounded-4xl p-2 border border-muted-foreground/10
+      {!isScrolled
         ? 'border-transparent'
         : appearanceStore.disableBlur
           ? 'bg-muted'
@@ -101,7 +101,8 @@
       <Button
         variant="ghost"
         size="icon"
-        class="rounded-xl size-11 border border-transparent {isScrolled
+        class="rounded-xl size-11 border border-transparent 
+        {isScrolled
           ? ''
           : 'bg-muted/10 border-muted-foreground/10 backdrop-blur-md'}"
         title="Back"

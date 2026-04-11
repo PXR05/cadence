@@ -42,7 +42,9 @@
       playerStore.isShuffled = !playerStore.isShuffled;
     }}
     class="size-{size.button} max-md:rounded-xl grid place-items-center
-    {playerStore.isShuffled ? 'hover:bg-accent/50 bg-accent' : 'opacity-50'}
+    {playerStore.isShuffled
+      ? 'hover:bg-foreground/10 bg-foreground/10'
+      : 'opacity-50'}
     {variant === 'large' ? 'mr-auto' : 'ml-auto'}"
     style="color: {textColor};"
     aria-label="Shuffle tracks"
@@ -78,7 +80,7 @@
       trigger([{ duration: 10 }]);
       playerStore.togglePlayPause();
     }}
-    class="size-{size.primary} max-md:rounded-2xl grid place-items-center"
+    class="size-{size.primary} max-md:rounded-3xl grid place-items-center"
     style="color: {textColor};"
     aria-label={playerStore.isPlaying ? "Pause" : "Play"}
   >
@@ -124,7 +126,9 @@
       playerStore.isRepeated = !playerStore.isRepeated;
     }}
     class="size-{size.button} max-md:rounded-xl grid place-items-center
-    {playerStore.isRepeated ? 'hover:bg-accent/50 bg-accent' : 'opacity-50'}
+    {playerStore.isRepeated
+      ? 'hover:bg-foreground/10 bg-foreground/10'
+      : 'opacity-50'}
     {variant === 'large' ? 'ml-auto' : 'mr-auto'}"
     style="color: {textColor};"
     aria-label="Repeat track"

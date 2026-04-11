@@ -162,7 +162,7 @@
           class="w-full h-full rounded-full"
         ></div>
       </div>
-      
+
       <div
         style="transform: translate3d(calc({currentProgress}% - {height}px), 0, 0);
           transition: {isDragging || isPanelAnimating
@@ -184,7 +184,7 @@
             color: {monochrome
             ? 'var(--muted-foreground)'
             : playerStore.lightTrackColor};"
-          class="w-full flex justify-between gap-2 select-none pointer-events-none tabular-nums opacity-75"
+          class="w-full flex justify-between items-center gap-2 select-none pointer-events-none tabular-nums opacity-75"
         >
           <span draggable={false}>
             {formatTime(displayTime)}

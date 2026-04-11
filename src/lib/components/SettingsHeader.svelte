@@ -13,7 +13,7 @@
 <div style="--h: 5rem" class="sticky top-0 w-full p-1.5 md:p-2 z-50">
   <div class="_bg _color absolute inset-0 -z-10"></div>
   <div
-    class="flex-1 flex items-center flex-row gap-1.5 md:gap-2 rounded-xl p-1.5 md:p-2 border-input/15 {appearanceStore.disableBlur
+    class="flex-1 flex items-center flex-row gap-1.5 md:gap-2 rounded-xl p-1.5 md:p-2 border border-muted-foreground/10 {appearanceStore.disableBlur
       ? 'bg-muted'
       : 'bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md'}"
   >

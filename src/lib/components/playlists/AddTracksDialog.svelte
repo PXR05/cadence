@@ -104,7 +104,7 @@
     class="md:max-w-2xl h-dvh md:h-[90dvh] overflow-clip max-w-dvw flex flex-col z-60 p-0 max-md:border-0 rounded-none md:rounded-4xl bg-background"
   >
     <div
-      class="absolute top-1.5 left-1.5 right-1.5 z-10 rounded-4xl bg-muted border border-input/15 flex flex-col"
+      class="absolute top-1.5 left-1.5 right-1.5 z-10 rounded-4xl bg-muted border border-muted-foreground/10 flex flex-col"
     >
       <div class="px-2 py-3 flex justify-between items-center">
         <Dialog.Close
@@ -133,7 +133,7 @@
           bind:value={searchQuery}
           type="text"
           placeholder="search..."
-          class="flex-1 text-base h-auto transition-all px-3 py-3 outline-none bg-background! rounded-3xl border border-input/15
+          class="flex-1 text-base h-auto transition-all px-3 py-3 outline-none bg-background! rounded-3xl border border-muted-foreground/10
             {!isEmpty ? '' : 'pl-9'}"
           disabled={loading}
         />
@@ -221,7 +221,7 @@
     </VirtualScroll>
 
     <div
-      class="absolute bottom-1.5 left-1.5 right-1.5 z-10 rounded-4xl bg-muted border border-input/15 p-1.5 flex gap-1.5"
+      class="absolute bottom-1.5 left-1.5 right-1.5 z-10 rounded-4xl bg-muted border border-muted-foreground/10 p-1.5 flex gap-1.5"
     >
       <Button
         variant="outline"

@@ -14,13 +14,12 @@
   import { liveQuery } from "dexie";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
-  import { useSidebar } from "$lib/components/ui/sidebar";
 
   let createDialogOpen = $state(false);
 
   let offlineCount = liveQuery(() => offlineDb.tracks.count());
 
-  const specialPlaylists = $derived([
+  const allPlaylists = $derived([
     {
       id: SPECIAL_PLAYLIST_IDS.ALL_SONGS,
       name: "All Songs",
@@ -37,16 +36,7 @@
       updatedAt: new Date(),
       itemCount: $offlineCount || 0,
     },
-  ]);
-  const userPlaylists = $derived(playlistsStore.userPlaylists);
-  const youtubePlaylists = $derived(playlistsStore.youtubePlaylists);
-  const tidalPlaylists = $derived(playlistsStore.tidalPlaylists);
-
-  const allUserPlaylists = $derived([
-    ...specialPlaylists,
-    ...userPlaylists,
-    ...youtubePlaylists,
-    ...tidalPlaylists,
+    ...playlistsStore.allPlaylists,
   ]);
 
   async function handlePlaylistCreated() {
@@ -57,8 +47,6 @@
     playlistsStore.invalidate();
     await playlistsStore.loadAllPlaylists(true);
   }
-
-  const isSidebarCollapsed = $derived(useSidebar().state === "collapsed");
 </script>
 
 <svelte:head>
@@ -81,7 +69,7 @@
   <div
     class="p-4 pt-17 grid grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-4 @7xl:grid-cols-5 @9xl:grid-cols-6 gap-4 pb-72"
   >
-    {#each allUserPlaylists as playlist, i (playlist.id)}
+    {#each allPlaylists as playlist, i (playlist.id)}
       <div
         animate:flip={{ duration: appearanceStore.disableAnimations ? 0 : 150 }}
         transition:fade={{

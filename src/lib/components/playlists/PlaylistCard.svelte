@@ -41,7 +41,7 @@
 <a
   href="/playlist?id={playlist.id}"
   oncontextmenu={handleContextMenu}
-  class="relative rounded-xl overflow-clip aspect-square border hover:bg-muted/20 transition-colors flex flex-col
+  class="relative rounded-xl overflow-clip aspect-square bg-muted/50 hover:bg-muted/20 transition-colors flex flex-col
   {size === 'large' ? 'w-full shrink-0' : 'w-40 shrink-0'}
   "
 >
@@ -54,7 +54,7 @@
   />
   <div class="absolute bottom-0 w-full z-10 p-1.5">
     <div
-      class="flex items-center justify-between p-2 border border-input/15 rounded-md
+      class="flex items-center justify-between p-2 border border-muted-foreground/10 rounded-md
       {appearanceStore.disableBlur
         ? 'bg-muted'
         : 'bg-muted/80 dark:bg-muted/60 backdrop-blur-md'}"
@@ -71,9 +71,9 @@
         <Volume2Icon
           strokeWidth={1.5}
           absoluteStrokeWidth
-          class="size-5 shrink-0 {isPlaylistActive(playlist.id)
+          class="size-5 shrink-0 ml-1 mr-0.5 {isPlaylistActive(playlist.id)
             ? 'text-background'
-            : 'text-primary'}"
+            : 'text-foreground'}"
         />
       {/if}
     </div>

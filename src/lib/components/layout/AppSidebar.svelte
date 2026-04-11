@@ -10,7 +10,6 @@
   import { CreatePlaylistDialog } from "../playlists";
   import SidebarPlaylistItem from "./SidebarPlaylistItem.svelte";
   import { navItems } from "./navItems";
-  import { Button } from "../ui/button";
   import { goto } from "$app/navigation";
   import { playerStore } from "$lib/stores/player.svelte";
 
@@ -30,7 +29,7 @@
 
   let offlineCount = liveQuery(() => offlineDb.tracks.count());
 
-  const specialPlaylists = $derived([
+  const allPlaylists = $derived([
     {
       id: SPECIAL_PLAYLIST_IDS.ALL_SONGS,
       name: "All Songs",
@@ -47,16 +46,7 @@
       updatedAt: new Date(),
       itemCount: $offlineCount || 0,
     },
-  ]);
-  const userPlaylists = $derived(playlistsStore.userPlaylists);
-  const youtubePlaylists = $derived(playlistsStore.youtubePlaylists);
-  const tidalPlaylists = $derived(playlistsStore.tidalPlaylists);
-
-  const allUserPlaylists = $derived([
-    ...specialPlaylists,
-    ...userPlaylists,
-    ...youtubePlaylists,
-    ...tidalPlaylists,
+    ...playlistsStore.allPlaylists,
   ]);
 
   async function handlePlaylistCreated() {
@@ -110,7 +100,7 @@
 
     <Sidebar.GroupContent class="flex-1 h-full overflow-y-scroll">
       <Sidebar.Menu class="pb-40 gap-1 transition-all duration-200">
-        {#each allUserPlaylists as playlist (playlist.id)}
+        {#each allPlaylists as playlist (playlist.id)}
           <SidebarPlaylistItem {playlist} />
         {/each}
       </Sidebar.Menu>

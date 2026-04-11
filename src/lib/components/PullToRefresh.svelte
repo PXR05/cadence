@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { appearanceStore } from "$lib/stores/appearance.svelte";
   import type { WithElementRef } from "$lib/utils";
   import {
     ArrowDownIcon,
@@ -13,6 +14,7 @@
 
   type Props = {
     enabled?: boolean;
+    keepContentFixed?: boolean;
     stageOneThreshold?: number;
     stageTwoThreshold?: number;
     stageOneHold?: number;
@@ -28,6 +30,7 @@
 
   let {
     enabled = true,
+    keepContentFixed = true,
     stageOneThreshold = 72,
     stageTwoThreshold,
     stageOneHold = 88,
@@ -45,20 +48,20 @@
 
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
   const resolvedStageTwoThreshold = $derived(
-    stageTwoThreshold ?? stageOneThreshold * 2,
+    stageTwoThreshold ?? maxPullDistance,
   );
 
   let pullHostEl: HTMLElement | null = null;
   let pullIndicatorEl: HTMLElement | null = null;
+  let pullIndicatorBadgeEl: HTMLElement | null = null;
   let scrollContainerEl: HTMLElement | null = null;
   let pullFrameId: number | null = null;
+  let indicatorPulseAnimation: Animation | null = null;
   let currentPullOffset = 0;
   let pendingPullOffset = 0;
   let touchStartX = 0;
   let touchStartY = 0;
   let isPointerTracking = false;
-  let didPulseStageOne = false;
-  let didPulseStageTwo = false;
   let reloadTimeoutId: number | null = null;
   let gestureDirection: "undetermined" | "vertical" | "horizontal" =
     "undetermined";
@@ -71,21 +74,23 @@
   const showPullIndicator = $derived(
     shouldShowPullIndicatorByDistance || isStageOneRefreshing,
   );
-  const pullHintText = $derived.by(() => {
-    if (isStageOneRefreshing) {
-      return "Refreshing...";
-    }
+  const pullIconState = $derived.by<"idle" | "stage1" | "stage2" | "loading">(
+    () => {
+      if (isStageOneRefreshing) {
+        return "loading";
+      }
 
-    if (pullStage === 2) {
-      return "Release to reload";
-    }
+      if (pullStage === 2) {
+        return "stage2";
+      }
 
-    if (pullStage === 1) {
-      return "Release to refresh";
-    }
+      if (pullStage === 1) {
+        return "stage1";
+      }
 
-    return "Pull to refresh";
-  });
+      return "idle";
+    },
+  );
 
   onMount(() => {
     scrollContainerEl = findScrollContainer(pullHostEl);
@@ -155,6 +160,10 @@
     if (pullHostEl) {
       pullHostEl.style.transitionDuration = `${durationMs}ms`;
     }
+
+    if (pullIndicatorEl) {
+      pullIndicatorEl.style.transitionDuration = `${durationMs}ms`;
+    }
   }
 
   function applyPullOffset(nextOffset: number) {
@@ -162,11 +171,26 @@
     shouldShowPullIndicatorByDistance = nextOffset >= indicatorShowThresholdPx;
 
     if (pullHostEl) {
-      pullHostEl.style.transform = `translate3d(0, ${nextOffset}px, 0)`;
+      const hostOffset = keepContentFixed ? 0 : nextOffset;
+      pullHostEl.style.transform = `translate3d(0, ${hostOffset}px, 0)`;
     }
 
     if (pullIndicatorEl) {
-      const centeredTop = Math.max(indicatorMinTopMarginPx, nextOffset / 2);
+      const indicatorBaseOffset = keepContentFixed
+        ? (() => {
+            if (nextOffset <= stageOneHold) {
+              return nextOffset;
+            }
+
+            const extraPull = nextOffset - stageOneHold;
+            const slowedExtra = 18 * (1 - Math.exp(-extraPull / 72));
+            return stageOneHold + slowedExtra;
+          })()
+        : nextOffset / 2;
+      const centeredTop = Math.max(
+        indicatorMinTopMarginPx,
+        indicatorBaseOffset,
+      );
       const indicatorTranslateY = Math.max(
         0,
         centeredTop - indicatorMinTopMarginPx,
@@ -234,8 +258,13 @@
     );
   }
 
-  function pulseWebHaptics(stage: 1 | 2 | "commit") {
+  function pulseWebHaptics(stage: 0 | 1 | 2 | "commit") {
     if (typeof navigator === "undefined" || !("vibrate" in navigator)) {
+      return;
+    }
+
+    if (stage === 0) {
+      navigator.vibrate(6);
       return;
     }
 
@@ -250,6 +279,29 @@
     }
 
     navigator.vibrate(20);
+  }
+
+  function pulseIndicator(stage: 0 | 1 | 2 | "commit") {
+    if (!pullIndicatorBadgeEl) {
+      return;
+    }
+
+    indicatorPulseAnimation?.cancel();
+
+    const scalePeak =
+      stage === 2 ? 1.1 : stage === 1 ? 1.07 : stage === "commit" ? 1.12 : 1.04;
+
+    indicatorPulseAnimation = pullIndicatorBadgeEl.animate(
+      [
+        { transform: "scale(1)", offset: 0 },
+        { transform: `scale(${scalePeak})`, offset: 0.45 },
+        { transform: "scale(1)", offset: 1 },
+      ],
+      {
+        duration: stage === 2 || stage === "commit" ? 220 : 170,
+        easing: "cubic-bezier(0.22, 0.9, 0.2, 1)",
+      },
+    );
   }
 
   function handleTouchStart(event: TouchEvent) {
@@ -273,8 +325,6 @@
     touchStartX = touch.clientX;
     touchStartY = touch.clientY;
     isPointerTracking = true;
-    didPulseStageOne = false;
-    didPulseStageTwo = false;
     gestureDirection = "undetermined";
   }
 
@@ -337,15 +387,11 @@
       getResistedPullDistance(deltaY),
     );
     const nextStage = getPullStage(nextOffset);
+    const didStageChange = nextStage !== pullStage;
 
-    if (nextStage >= 1 && !didPulseStageOne) {
-      didPulseStageOne = true;
-      pulseWebHaptics(1);
-    }
-
-    if (nextStage >= 2 && !didPulseStageTwo) {
-      didPulseStageTwo = true;
-      pulseWebHaptics(2);
+    if (didStageChange) {
+      pulseIndicator(nextStage);
+      pulseWebHaptics(nextStage);
     }
 
     queuePullOffset(nextOffset);
@@ -367,13 +413,12 @@
 
     isPulling = false;
     const stageAtRelease = getPullStage(currentPullOffset);
-    didPulseStageOne = false;
-    didPulseStageTwo = false;
     gestureDirection = "undetermined";
 
     if (stageAtRelease === 2) {
       pullStage = 2;
       pulseWebHaptics("commit");
+      pulseIndicator("commit");
 
       if (reloadTimeoutId !== null) {
         window.clearTimeout(reloadTimeoutId);
@@ -410,8 +455,6 @@
     flushPullOffset();
     isPointerTracking = false;
     isPulling = false;
-    didPulseStageOne = false;
-    didPulseStageTwo = false;
     gestureDirection = "undetermined";
     pullStage = 0;
 
@@ -455,22 +498,51 @@
   <div
     bind:this={pullIndicatorEl}
     class="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center"
+    style="transform: translate3d(0, 0px, 0); transition-property: transform; transition-duration: 220ms; transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);"
   >
     <div
-      class="flex items-center gap-2 rounded-full border bg-background/90 px-3 py-1.5 text-xs text-muted-foreground shadow-sm transition-opacity duration-200 {showPullIndicator
-        ? 'opacity-100'
-        : 'opacity-0'}"
+      bind:this={pullIndicatorBadgeEl}
+      class="flex size-11 items-center justify-center rounded-full border border-muted-foreground/10 text-muted-foreground transition-opacity duration-200
+      {showPullIndicator ? 'opacity-100' : 'opacity-0'}
+      {appearanceStore.disableBlur
+        ? 'bg-muted'
+        : 'bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md'}
+        "
     >
-      {#if isStageOneRefreshing}
-        <LoaderIcon class="size-3.5 animate-spin" />
-      {:else if pullStage === 2}
-        <RotateCcwIcon class="size-3.5" />
-      {:else if pullStage === 1}
-        <RefreshCwIcon class="size-3.5" />
-      {:else}
-        <ArrowDownIcon class="size-3.5" />
-      {/if}
-      <span>{pullHintText}</span>
+      <div class="relative size-5">
+        <ArrowDownIcon
+          strokeWidth={2.5}
+          absoluteStrokeWidth
+          class="absolute inset-0 size-5 transition-all duration-200 ease-out {pullIconState ===
+          'idle'
+            ? 'opacity-100 scale-100 rotate-0'
+            : 'opacity-0 scale-150 -rotate-45'}"
+        />
+        <RotateCcwIcon
+          strokeWidth={2.5}
+          absoluteStrokeWidth
+          class="absolute inset-0 size-5 transition-all duration-200 ease-out {pullIconState ===
+          'stage1'
+            ? 'opacity-100 scale-100 rotate-0'
+            : 'opacity-0 scale-150 rotate-45'}"
+        />
+        <RefreshCwIcon
+          strokeWidth={2.5}
+          absoluteStrokeWidth
+          class="absolute inset-0 size-5 transition-all duration-200 ease-out {pullIconState ===
+          'stage2'
+            ? 'opacity-100 scale-100 rotate-0'
+            : 'opacity-0 scale-150 rotate-45'}"
+        />
+        <LoaderIcon
+          strokeWidth={2.5}
+          absoluteStrokeWidth
+          class="absolute inset-0 size-5 animate-spin transition-all duration-200 ease-out {pullIconState ===
+          'loading'
+            ? 'opacity-100 scale-100 rotate-0'
+            : 'opacity-0 scale-150 -rotate-45'}"
+        />
+      </div>
     </div>
   </div>
 

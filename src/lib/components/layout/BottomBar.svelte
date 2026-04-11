@@ -107,7 +107,7 @@
       clip-path: inset(calc({bgTopInset}) {bgInset}rem {bgInset}rem {bgInset}rem round var(--radius-4xl));
       will-change: clip-path;
     "
-    class="md:hidden absolute inset-0 rounded-4xl border border-input/15
+    class="md:hidden absolute inset-0 rounded-4xl border border-muted-foreground/10
       {appearanceStore.disableBlur
       ? 'bg-muted'
       : 'bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md'}
@@ -116,6 +116,7 @@
       : ''}
       "
   ></div>
+
   <div class="absolute bottom-0 left-0 right-0 z-60">
     <div
       class={playerStore.trackQueue.length === 0

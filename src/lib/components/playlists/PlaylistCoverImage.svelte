@@ -4,7 +4,7 @@
     isAlbumPlaylist,
     isArtistPlaylist,
     isTidalCollectionPlaylist,
-    isYoutubePlaylist,
+    isYoutubeCollectionPlaylist,
     SPECIAL_PLAYLIST_IDS,
   } from "$lib/utils/playlist";
   import {
@@ -48,7 +48,7 @@
     fallbackIconClass = "text-muted-foreground",
   }: Props = $props();
 
-  const isYoutube = $derived(isYoutubePlaylist(playlist.id));
+  const isYoutube = $derived(isYoutubeCollectionPlaylist(playlist.id));
   const isTidal = $derived(isTidalCollectionPlaylist(playlist.id));
   const isArtist = $derived(isArtistPlaylist(playlist.id));
   const isAlbum = $derived(isAlbumPlaylist(playlist.id));
