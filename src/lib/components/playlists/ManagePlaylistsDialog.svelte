@@ -12,6 +12,8 @@
   import { SvelteSet } from "svelte/reactivity";
   import type { Playlist } from "$lib/schemas";
   import { invalidateAll } from "$app/navigation";
+  import PlaylistCoverImage from "./PlaylistCoverImage.svelte";
+  import { appearanceStore } from "$lib/stores/appearance.svelte";
 
   interface Props {
     open: boolean;
@@ -133,33 +135,51 @@
   function handleOpenChange(isOpen: boolean) {
     onOpenChange(isOpen);
   }
-  const ROW_HEIGHT = 52;
+  const ROW_HEIGHT = 72;
 </script>
 
 <Dialog.Root {open} onOpenChange={handleOpenChange}>
   <Dialog.Content
     showCloseButton={false}
-    class="md:max-w-2xl h-dvh md:h-[90dvh] overflow-clip max-w-dvw flex flex-col z-60 p-0 max-md:border-0 rounded-none md:rounded-2xl bg-background"
+    class="md:max-w-2xl h-dvh md:h-[90dvh] overflow-clip max-w-dvw flex flex-col z-60 p-0 max-md:border-0 rounded-none md:rounded-4xl bg-background"
   >
     <div
-      class="absolute top-1.5 left-1.5 right-1.5 z-10 rounded-lg bg-muted border border-muted-foreground/10 px-2 py-3 flex justify-between items-start"
+      class="absolute z-10 inset-0 flex flex-col h-dvh md:h-[90dvh] pointer-events-none"
+      style="
+        background: linear-gradient(
+          to top,
+          color-mix(in oklab, var(--background) 100%, transparent) 0%,
+          color-mix(in oklab, var(--background) 0%, transparent) 10%,
+          color-mix(in oklab, var(--background) 0%, transparent) 90%,
+          color-mix(in oklab, var(--background) 100%, transparent) 100%
+        );
+      "
+    ></div>
+
+    <div
+      class="absolute top-1.5 left-1.5 right-1.5 z-10 rounded-3xl border border-muted-foreground/10 flex flex-col
+      {appearanceStore.disableBlur
+        ? 'bg-muted'
+        : 'bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md'}"
     >
-      <Dialog.Close
-        class="opacity-70 transition-opacity hover:opacity-100 my-auto size-8 grid place-items-center"
-      >
-        <ChevronDown />
-      </Dialog.Close>
+      <div class="px-2 py-3 flex justify-between items-start">
+        <Dialog.Close
+          class="opacity-70 transition-opacity hover:opacity-100 my-auto size-8 grid place-items-center"
+        >
+          <ChevronDown />
+        </Dialog.Close>
 
-      <Dialog.Header class="truncate">
-        <Dialog.Title class="text-center">Add to Playlists</Dialog.Title>
-        <Dialog.Description class="truncate text-center">
-          {trackTitle}
-        </Dialog.Description>
-      </Dialog.Header>
+        <Dialog.Header class="min-w-0">
+          <Dialog.Title class="text-center">Add to Playlists</Dialog.Title>
+          <Dialog.Description class="truncate text-center">
+            {trackTitle}
+          </Dialog.Description>
+        </Dialog.Header>
 
-      <Dialog.Close class="opacity-0 pointer-events-none">
-        <ChevronDown />
-      </Dialog.Close>
+        <Dialog.Close class="opacity-0 pointer-events-none">
+          <ChevronDown />
+        </Dialog.Close>
+      </div>
     </div>
 
     {#if loading}
@@ -178,8 +198,8 @@
       <VirtualScroll
         items={playlists}
         rowHeight={ROW_HEIGHT}
-        class="h-dvh md:h-[calc(90dvh-1rem)]"
-        topOffset={82}
+        class="h-dvh md:h-[90dvh]"
+        topOffset={80}
         leftPadding={8}
         rightPadding={8}
         itemGap={4}
@@ -198,22 +218,37 @@
             variant="ghost"
             onclick={() => togglePlaylist(playlist.id)}
             disabled={saving}
-            class="h-auto transition-none! w-full flex items-center gap-3 p-2 text-left group
+            class="h-auto rounded-2xl transition-none! w-full flex items-center gap-3 p-2 text-left group
               {isSelected ? 'bg-muted/60' : ''} {actualIndex ===
             playlists.length - 1
               ? 'mb-20'
               : ''}"
           >
             <div
-              class="size-4 border-2 border-muted-foreground shrink-0 grid place-items-center rounded-sm"
+              class="size-4 border-2 border-muted-foreground shrink-0 grid place-items-center rounded-full"
             >
               {#if isSelected}
-                <div class="size-2 bg-primary rounded-sm"></div>
+                <div class="size-2 bg-foreground rounded-full"></div>
               {/if}
             </div>
+
+            <div
+              class="size-14 border shrink-0 overflow-hidden rounded-lg bg-muted"
+            >
+              <PlaylistCoverImage
+                {playlist}
+                iconSize={20}
+                youtubeIconSize={18}
+                containerClass="relative grid place-items-center size-full"
+                iconWrapperClass="absolute inset-0 grid place-items-center"
+                imageClass="size-full object-cover relative z-10"
+                fallbackIconClass="text-muted-foreground"
+              />
+            </div>
+
             <div class="flex-1 min-w-0">
-              <p class="font-medium truncate text-sm">{playlist.name}</p>
-              <p class="text-xs text-muted-foreground truncate">
+              <p class="font-medium truncate text-base">{playlist.name}</p>
+              <p class="text-sm text-muted-foreground truncate">
                 {playlist.itemCount ?? 0} tracks
               </p>
             </div>
@@ -223,17 +258,24 @@
     {/if}
 
     <div
-      class="absolute bottom-1.5 left-1.5 right-1.5 z-10 rounded-lg bg-muted border border-muted-foreground/10 p-1.5 flex gap-1.5"
+      class="absolute bottom-1.5 left-1.5 right-1.5 z-10 rounded-4xl border border-muted-foreground/10 p-1.5 flex gap-1.5
+      {appearanceStore.disableBlur
+        ? 'bg-muted'
+        : 'bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md'}"
     >
       <Button
         variant="outline"
         onclick={() => handleOpenChange(false)}
         disabled={saving}
-        class="dark:bg-background h-11 flex-1"
+        class="dark:bg-foreground/10 h-11 flex-1 rounded-3xl"
       >
         Cancel
       </Button>
-      <Button onclick={handleSave} disabled={saving} class="h-11 flex-1">
+      <Button
+        onclick={handleSave}
+        disabled={saving}
+        class="h-11 flex-1 rounded-3xl bg-foreground hover:bg-foreground/90 text-background"
+      >
         {#if saving}
           <LoaderIcon class="animate-spin" size={14} />
           Saving...

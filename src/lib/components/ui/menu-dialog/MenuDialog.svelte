@@ -1,11 +1,11 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import { MediaQuery } from "svelte/reactivity";
   import * as Dialog from "$lib/components/ui/dialog";
   import * as Drawer from "$lib/components/ui/drawer";
   import { buttonVariants } from "$lib/components/ui/button";
   import { XIcon } from "@lucide/svelte";
   import { Image } from "../image";
+  import { innerWidth } from "svelte/reactivity/window";
 
   interface Props {
     open: boolean;
@@ -18,7 +18,7 @@
     children?: Snippet;
   }
 
-  let {
+  let { 
     open,
     onOpenChange,
     imageUrl,
@@ -29,7 +29,7 @@
     children,
   }: Props = $props();
 
-  const isDesktop = new MediaQuery("(min-width: 768px)");
+  const isDesktop = $derived((innerWidth.current ?? 0) >= 768);
 </script>
 
 {#snippet header()}
@@ -52,7 +52,7 @@
       <p class="font-medium truncate">{title}</p>
       <p class="text-sm text-muted-foreground truncate">{subtitle}</p>
     </div>
-    {#if isDesktop.current}
+    {#if isDesktop}
       <Dialog.Close class={buttonVariants({ variant: "ghost", size: "icon" })}>
         <XIcon class="size-5" />
       </Dialog.Close>
@@ -66,7 +66,7 @@
   </div>
 {/snippet}
 
-{#if isDesktop.current}
+{#if isDesktop}
   <Dialog.Root {open} {onOpenChange}>
     <Dialog.Content class="max-w-sm p-0 gap-0" showCloseButton={false}>
       {@render header()}

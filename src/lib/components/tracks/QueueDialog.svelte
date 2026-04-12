@@ -3,16 +3,16 @@
   import * as Drawer from "$lib/components/ui/drawer";
   import { playerStore } from "$lib/stores/player.svelte";
   import { ChevronDown } from "@lucide/svelte";
-  import { MediaQuery } from "svelte/reactivity";
   import { VirtualScroll } from "../ui/virtual-scroll";
   import QueueItem from "./QueueItem.svelte";
   import { useMenuDialogState } from "$lib/hooks";
+  import { innerWidth } from "svelte/reactivity/window";
 
   const dialogState = useMenuDialogState({
     paramName: "queue-dialog",
   });
 
-  const isDesktop = new MediaQuery("(min-width: 768px)");
+  const isDesktop = $derived((innerWidth.current ?? 0) >= 768);
 
   let virtualScroll: any = $state(null);
   const ROW_HEIGHT = 68;
@@ -23,7 +23,7 @@
   let isTouchActive = false;
 
   function handleTouchStart(e: TouchEvent) {
-    if (isDesktop.current) return;
+    if (isDesktop) return;
 
     const container = virtualScroll?.getContainerRef?.();
     if (!container) return;
@@ -35,7 +35,7 @@
   }
 
   function handleTouchMove(e: TouchEvent) {
-    if (!isTouchActive || isDesktop.current) return;
+    if (!isTouchActive || isDesktop) return;
 
     const container = virtualScroll?.getContainerRef?.();
     if (!container) return;
@@ -56,7 +56,7 @@
   }
 
   $effect(() => {
-    if (isDesktop.current) return;
+    if (isDesktop) return;
 
     const container = virtualScroll?.getContainerRef?.();
     if (!container) return;
@@ -100,7 +100,7 @@
   <div
     class="absolute top-1.5 left-1.5 right-1.5 z-10 rounded-lg bg-muted border border-muted-foreground/10 p-2 flex justify-between items-center"
   >
-    {#if isDesktop.current}
+    {#if isDesktop}
       <Dialog.Close
         class="opacity-70 transition-opacity hover:opacity-100 my-auto size-8 grid place-items-center"
       >
@@ -119,7 +119,7 @@
       queue
     </div>
 
-    {#if isDesktop.current}
+    {#if isDesktop}
       <Dialog.Close class="opacity-0 pointer-events-none">
         <ChevronDown />
       </Dialog.Close>
@@ -158,7 +158,7 @@
   </VirtualScroll>
 {/snippet}
 
-{#if isDesktop.current}
+{#if isDesktop}
   <Dialog.Root
     open={dialogState.isOpen}
     onOpenChange={dialogState.handleOpenChange}

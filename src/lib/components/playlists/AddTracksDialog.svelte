@@ -11,6 +11,7 @@
   import { playlistsStore } from "$lib/stores/playlists.svelte";
   import { invalidateAll } from "$app/navigation";
   import { Image } from "../ui/image";
+  import { appearanceStore } from "$lib/stores/appearance.svelte";
 
   interface Props {
     open: boolean;
@@ -104,7 +105,23 @@
     class="md:max-w-2xl h-dvh md:h-[90dvh] overflow-clip max-w-dvw flex flex-col z-60 p-0 max-md:border-0 rounded-none md:rounded-4xl bg-background"
   >
     <div
-      class="absolute top-1.5 left-1.5 right-1.5 z-10 rounded-4xl bg-muted border border-muted-foreground/10 flex flex-col"
+      class="absolute z-10 inset-0 flex flex-col h-dvh md:h-[90dvh] pointer-events-none"
+      style="
+        background: linear-gradient(
+          to top,
+          color-mix(in oklab, var(--background) 100%, transparent) 0%,
+          color-mix(in oklab, var(--background) 0%, transparent) 10%,
+          color-mix(in oklab, var(--background) 0%, transparent) 90%,
+          color-mix(in oklab, var(--background) 100%, transparent) 100%
+        );
+      "
+    ></div>
+
+    <div
+      class="absolute top-1.5 left-1.5 right-1.5 z-10 rounded-3xl border border-muted-foreground/10 flex flex-col
+      {appearanceStore.disableBlur
+        ? 'bg-muted'
+        : 'bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md'}"
     >
       <div class="px-2 py-3 flex justify-between items-center">
         <Dialog.Close
@@ -121,6 +138,7 @@
           <ChevronDown />
         </Dialog.Close>
       </div>
+
       <div class="flex items-center p-1.5">
         <SearchIcon
           size={16}
@@ -156,8 +174,8 @@
     <VirtualScroll
       items={filteredTracks}
       rowHeight={ROW_HEIGHT}
-      class="mt-30 h-[calc(100dvh-10rem)] md:h-[calc(90dvh-8rem)]"
-      topOffset={8}
+      class="h-dvh md:h-[90dvh]"
+      topOffset={120}
       leftPadding={8}
       rightPadding={8}
       itemGap={4}
@@ -221,13 +239,16 @@
     </VirtualScroll>
 
     <div
-      class="absolute bottom-1.5 left-1.5 right-1.5 z-10 rounded-4xl bg-muted border border-muted-foreground/10 p-1.5 flex gap-1.5"
+      class="absolute bottom-1.5 left-1.5 right-1.5 z-10 rounded-4xl border border-muted-foreground/10 p-1.5 flex gap-1.5
+      {appearanceStore.disableBlur
+        ? 'bg-muted'
+        : 'bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md'}"
     >
       <Button
         variant="outline"
         onclick={() => handleOpenChange(false)}
         disabled={loading}
-        class="dark:bg-background h-11 flex-1 rounded-3xl"
+        class="dark:bg-foreground/10 h-11 flex-1 rounded-3xl"
       >
         Cancel
       </Button>
