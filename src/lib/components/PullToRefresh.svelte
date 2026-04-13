@@ -7,10 +7,14 @@
     RefreshCwIcon,
     RotateCcwIcon,
   } from "@lucide/svelte";
-  import { onMount } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import type { Snippet } from "svelte";
   import type { HTMLAttributes } from "svelte/elements";
   import { innerWidth } from "svelte/reactivity/window";
+  import { createWebHaptics } from "web-haptics/svelte";
+
+  const { trigger, destroy } = createWebHaptics();
+  onDestroy(destroy);
 
   type Props = {
     enabled?: boolean;
@@ -48,7 +52,7 @@
 
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
   const resolvedStageTwoThreshold = $derived(
-    stageTwoThreshold ?? maxPullDistance,
+    stageTwoThreshold ?? (maxPullDistance * 0.8),
   );
 
   let pullHostEl: HTMLElement | null = null;
@@ -259,26 +263,39 @@
   }
 
   function pulseWebHaptics(stage: 0 | 1 | 2 | "commit") {
-    if (typeof navigator === "undefined" || !("vibrate" in navigator)) {
-      return;
-    }
-
     if (stage === 0) {
-      navigator.vibrate(6);
+      trigger([
+        {
+          duration: 5,
+        },
+      ]);
       return;
     }
 
     if (stage === 1) {
-      navigator.vibrate(8);
+      trigger([
+        {
+          duration: 10,
+        },
+      ]);
       return;
     }
 
     if (stage === 2) {
-      navigator.vibrate([10, 24, 14]);
+      trigger([
+        {
+          duration: 10,
+        },
+      ]);
       return;
     }
 
-    navigator.vibrate(20);
+    trigger([
+      {
+        duration: 5,
+        intensity: 1,
+      },
+    ]);
   }
 
   function pulseIndicator(stage: 0 | 1 | 2 | "commit") {
@@ -289,7 +306,7 @@
     indicatorPulseAnimation?.cancel();
 
     const scalePeak =
-      stage === 2 ? 1.1 : stage === 1 ? 1.07 : stage === "commit" ? 1.12 : 1.04;
+      stage === 2 ? 1.25 : stage === 1 ? 1.25 : stage === "commit" ? 1.5 : 1.25;
 
     indicatorPulseAnimation = pullIndicatorBadgeEl.animate(
       [

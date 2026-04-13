@@ -15,6 +15,9 @@
   import { slide } from "svelte/transition";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
   import { Skeleton } from "$lib/components/ui/skeleton";
+  import { createLocalStorageState } from "$lib/stores/localStorage.svelte";
+
+  const lastRefresh = createLocalStorageState("cadence.home_last_refresh", 0);
 
   const tracks = $derived(tracksStore.tracks);
   const isInitialLoad = $derived(tracksStore.isInitialLoad);
@@ -22,7 +25,9 @@
   const error = $derived(tracksStore.error);
   const currentId = $derived(playerStore.currentTrack?.id);
 
-  const recommendedTracks = $derived(tracksStore.getRandomTracks(10));
+  const recommendedTracks = $derived(
+    tracksStore.getRandomTracks(10, lastRefresh.value),
+  );
   const recentlyPlayed = $derived(historyStore.recentlyPlayed);
 
   const COLUMNS = 4;
@@ -35,6 +40,8 @@
   });
 
   async function refreshHomeData() {
+    lastRefresh.value = Date.now();
+
     const [tracksResult, playlistsResult] = await Promise.allSettled([
       tracksStore.loadAllTracks(),
       playlistsStore.loadAllPlaylists(),
