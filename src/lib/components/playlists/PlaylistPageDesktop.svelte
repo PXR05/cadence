@@ -7,6 +7,7 @@
   import PlaylistTrackList from "./PlaylistTrackList.svelte";
   import PlaylistSearch from "./PlaylistSearch.svelte";
   import { usePlaylistHeaderActions } from "./usePlaylistHeaderActions.svelte";
+  import { playerStore } from "$lib/stores/player.svelte";
 
   interface Props {
     playlist: PlaylistDetail;
@@ -64,6 +65,7 @@
   {hasAddButton}
   {items}
   {onAddTracks}
+  height={playerStore.trackQueue.length > 0 ? "calc(100dvh - 100px)" : "100dvh"}
   onScroll={(scrollTop) => {
     if (isScrolled && scrollTop < 154) {
       isScrolled = false;

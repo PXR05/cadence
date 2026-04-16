@@ -78,7 +78,7 @@
 </script>
 
 {#snippet menuItems()}
-  <div class="flex flex-col p-2 gap-4">
+  <div class="flex flex-col p-3 gap-4">
     <div class="grid gap-1">
       <p class="text-xs uppercase tracking-wide text-muted-foreground">
         Artists
@@ -111,7 +111,7 @@
 
     <div class="h-px bg-border"></div>
 
-    <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+    <div class="grid grid-cols-2 gap-2 text-sm">
       <p class="text-muted-foreground">Duration</p>
       <p class="text-right">{duration}</p>
 

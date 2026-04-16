@@ -74,7 +74,8 @@
   );
   const isResyncable = $derived(
     playlist
-      ? isYoutubeCollectionPlaylist(playlist.id) || isTidalCollectionPlaylist(playlist.id)
+      ? isYoutubeCollectionPlaylist(playlist.id) ||
+          isTidalCollectionPlaylist(playlist.id)
       : false,
   );
 
@@ -224,6 +225,74 @@
       editDialog.close();
     }
   }
+
+  const menuActionItems = $derived.by(() =>
+    [
+      {
+        key: "play",
+        label: "Play",
+        icon: PlayIcon,
+        onClick: handlePlay,
+        disabled: itemCount === 0,
+      },
+      {
+        key: "add-to-queue",
+        label: "Add to Queue",
+        icon: ListPlusIcon,
+        onClick: handleAddToQueue,
+        disabled: itemCount === 0,
+      },
+      {
+        key: "download-zip",
+        label: "Download as ZIP",
+        icon: DownloadIcon,
+        onClick: handleDownloadPlaylist,
+        disabled: offline.isDownloading || itemCount === 0,
+        dividerBefore: true,
+      },
+      {
+        key: "resync",
+        label:
+          playlist && isTidalAlbumPlaylist(playlist.id)
+            ? "Resync Album"
+            : "Resync Playlist",
+        icon: RefreshCwIcon,
+        onClick: handlePlaylistResync,
+        disabled: !isResyncable,
+        show:
+          playlist !== null &&
+          (isYoutubeCollectionPlaylist(playlist.id) ||
+            isTidalCollectionPlaylist(playlist.id)),
+      },
+      {
+        key: "offline",
+        label:
+          offline.isOffline || playlist?.id === SPECIAL_PLAYLIST_IDS.DOWNLOADED
+            ? "Remove Offline"
+            : "Make Available Offline",
+        icon:
+          offline.isOffline || playlist?.id === SPECIAL_PLAYLIST_IDS.DOWNLOADED
+            ? CloudOffIcon
+            : CloudDownloadIcon,
+        onClick:
+          offline.isOffline || playlist?.id === SPECIAL_PLAYLIST_IDS.DOWNLOADED
+            ? handleRemoveOffline
+            : handleMakeOffline,
+        disabled:
+          offline.isOffline || playlist?.id === SPECIAL_PLAYLIST_IDS.DOWNLOADED
+            ? offline.isDownloading
+            : offline.isDownloading || itemCount === 0,
+      },
+      {
+        key: "edit",
+        label: "Edit Playlist",
+        icon: PencilIcon,
+        onClick: handleEditPlaylist,
+        dividerBefore: true,
+        show: !isNonModifiable,
+      },
+    ].filter((item) => item.show ?? true),
+  );
 </script>
 
 {#snippet imageFallback()}
@@ -231,88 +300,21 @@
 {/snippet}
 
 {#snippet menuItems()}
-  <Button
-    variant="ghost"
-    class="justify-start gap-3 h-12"
-    onclick={handlePlay}
-    disabled={itemCount === 0}
-  >
-    <PlayIcon class="size-5" />
-    Play
-  </Button>
-
-  <Button
-    variant="ghost"
-    class="justify-start gap-3 h-12"
-    onclick={handleAddToQueue}
-    disabled={itemCount === 0}
-  >
-    <ListPlusIcon class="size-5" />
-    Add to Queue
-  </Button>
-
-  <div class="h-px bg-border my-1"></div>
-
-  <Button
-    variant="ghost"
-    class="justify-start gap-3 h-12"
-    onclick={handleDownloadPlaylist}
-    disabled={offline.isDownloading || itemCount === 0}
-  >
-    <DownloadIcon class="size-5" />
-    Download as ZIP
-  </Button>
-
-  {#if playlist && (isYoutubeCollectionPlaylist(playlist.id) || isTidalCollectionPlaylist(playlist.id))}
-    <Button
-      variant="ghost"
-      class="justify-start gap-3 h-12"
-      onclick={handlePlaylistResync}
-      disabled={!isResyncable}
-    >
-      <RefreshCwIcon class="size-5" />
-      {#if playlist && isTidalAlbumPlaylist(playlist.id)}
-        Resync Album
-      {:else}
-        Resync Playlist
-      {/if}
-    </Button>
-  {/if}
-
-  {#if offline.isOffline || playlist?.id === SPECIAL_PLAYLIST_IDS.DOWNLOADED}
-    <Button
-      variant="ghost"
-      class="justify-start gap-3 h-12"
-      onclick={handleRemoveOffline}
-      disabled={offline.isDownloading}
-    >
-      <CloudOffIcon class="size-5" />
-      Remove Offline
-    </Button>
-  {:else}
-    <Button
-      variant="ghost"
-      class="justify-start gap-3 h-12"
-      onclick={handleMakeOffline}
-      disabled={offline.isDownloading || itemCount === 0}
-    >
-      <CloudDownloadIcon class="size-5" />
-      Make Available Offline
-    </Button>
-  {/if}
-
-  {#if !isNonModifiable}
-    <div class="h-px bg-border my-1"></div>
+  {#each menuActionItems as item (item.key)}
+    {#if item.dividerBefore}
+      <div class="h-px bg-border my-1"></div>
+    {/if}
 
     <Button
       variant="ghost"
-      class="justify-start gap-3 h-12"
-      onclick={handleEditPlaylist}
+      class="rounded-3xl justify-start gap-3 h-12"
+      onclick={item.onClick}
+      disabled={item.disabled}
     >
-      <PencilIcon class="size-5" />
-      Edit Playlist
+      <item.icon class="size-5" />
+      {item.label}
     </Button>
-  {/if}
+  {/each}
 {/snippet}
 
 {#if playlist}

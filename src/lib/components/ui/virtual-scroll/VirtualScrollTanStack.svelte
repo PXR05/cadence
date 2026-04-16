@@ -12,6 +12,7 @@
     firstItemHeight?: number;
     overscan?: number;
     class?: string;
+    style?: string;
     containerClass?: string;
     contentClass?: string;
     topOffset?: number;
@@ -50,6 +51,7 @@
     rowHeight,
     firstItemHeight,
     overscan = 10,
+    style,
     class: className,
     containerClass,
     contentClass,
@@ -486,6 +488,7 @@
 
 <div
   class={"overflow-y-scroll " + (className ?? "")}
+  {style}
   bind:this={containerRef}
   role="list"
   aria-label="Virtualized list"

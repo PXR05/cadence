@@ -187,93 +187,86 @@
       deleteTrackDialog.close();
     }
   }
+
+  const menuActionItems = $derived.by(() =>
+    [
+      {
+        key: "play-next",
+        label: "Play Next",
+        icon: SkipForwardIcon,
+        onClick: handlePlayNext,
+      },
+      {
+        key: "add-to-queue",
+        label: "Add to Queue",
+        icon: PlusIcon,
+        onClick: handleAddToQueue,
+      },
+      {
+        key: "add-to-playlist",
+        label: "Add to Playlist",
+        icon: ListMusicIcon,
+        onClick: handleAddToPlaylist,
+        dividerBefore: true,
+      },
+      {
+        key: "track-info",
+        label: "Track Info",
+        icon: InfoIcon,
+        onClick: handleOpenTrackInfo,
+      },
+      {
+        key: "remove-from-playlist",
+        label: "Remove from Playlist",
+        icon: ListXIcon,
+        onClick: handleRemoveFromPlaylist,
+        show: Boolean(playlistId),
+      },
+      {
+        key: "download",
+        label: "Download",
+        icon: DownloadIcon,
+        onClick: handleDownload,
+        dividerBefore: true,
+      },
+      {
+        key: "toggle-offline",
+        label: trackMenuStore.isOffline
+          ? "Remove from Offline"
+          : "Make Available Offline",
+        icon: trackMenuStore.isOffline ? CloudOffIcon : CloudDownloadIcon,
+        onClick: handleToggleOffline,
+      },
+      {
+        key: "delete-track",
+        label: "Delete Track",
+        icon: Trash2Icon,
+        onClick: handleDeleteTrack,
+        dividerBefore: true,
+        isDanger: true,
+      },
+    ].filter((item) => item.show ?? true),
+  );
 </script>
 
 {#snippet menuItems()}
-  <Button
-    variant="ghost"
-    class="justify-start gap-3 h-12"
-    onclick={handlePlayNext}
-  >
-    <SkipForwardIcon class="size-5" />
-    Play Next
-  </Button>
+  {#each menuActionItems as item (item.key)}
+    {#if item.dividerBefore}
+      <div class="h-px bg-border my-1"></div>
+    {/if}
 
-  <Button
-    variant="ghost"
-    class="justify-start gap-3 h-12"
-    onclick={handleAddToQueue}
-  >
-    <PlusIcon class="size-5" />
-    Add to Queue
-  </Button>
-
-  <div class="h-px bg-border my-1"></div>
-
-  <Button
-    variant="ghost"
-    class="justify-start gap-3 h-12"
-    onclick={handleAddToPlaylist}
-  >
-    <ListMusicIcon class="size-5" />
-    Add to Playlist
-  </Button>
-
-  <Button
-    variant="ghost"
-    class="justify-start gap-3 h-12"
-    onclick={handleOpenTrackInfo}
-  >
-    <InfoIcon class="size-5" />
-    Track Info
-  </Button>
-
-  {#if playlistId}
     <Button
       variant="ghost"
-      class="justify-start gap-3 h-12"
-      onclick={handleRemoveFromPlaylist}
+      class="rounded-3xl justify-start gap-3 h-12 
+      {item.isDanger
+        ? 'text-destructive hover:text-destructive hover:bg-destructive/10'
+        : ''}"
+      onclick={item.onClick}
     >
-      <ListXIcon class="size-5" />
-      Remove from Playlist
+      <item.icon class="size-5" />
+      {item.label}
     </Button>
-  {/if}
-
-  <div class="h-px bg-border my-1"></div>
-
-  <Button
-    variant="ghost"
-    class="justify-start gap-3 h-12"
-    onclick={handleDownload}
-  >
-    <DownloadIcon class="size-5" />
-    Download
-  </Button>
-
-  <Button
-    variant="ghost"
-    class="justify-start gap-3 h-12"
-    onclick={handleToggleOffline}
-  >
-    {#if trackMenuStore.isOffline}
-      <CloudOffIcon class="size-5" />
-      Remove from Offline
-    {:else}
-      <CloudDownloadIcon class="size-5" />
-      Make Available Offline
-    {/if}
-  </Button>
-
-  <div class="h-px bg-border my-1"></div>
-
-  <Button
-    variant="ghost"
-    class="justify-start gap-3 h-12 text-destructive hover:text-destructive hover:bg-destructive/10"
-    onclick={handleDeleteTrack}
-  >
-    <Trash2Icon class="size-5" />
-    Delete Track
-  </Button>
+  {/each}
 {/snippet}
 
 {#if track}

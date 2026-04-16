@@ -10,6 +10,7 @@
   interface Props {
     playlist: PlaylistDetail;
     items: PlaylistItem[];
+    height?: string;
     hasAddButton?: boolean | null;
     useVirtualScroll?: boolean;
     header?: Snippet;
@@ -21,6 +22,7 @@
   let {
     playlist,
     items,
+    height = "100dvh",
     hasAddButton = false,
     useVirtualScroll = true,
     header,
@@ -39,7 +41,7 @@
   const ROW_HEIGHT = 72;
   const ADD_BUTTON_HEIGHT = 72;
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
-  const topOffset = $derived(isMobile ? 0 : 272 + 44 + 16);
+  const topOffset = $derived(isMobile ? 0 : 272 + 44 + 24);
   type VirtualRow = PlaylistItem | { __header: true } | { __addButton: true };
   const HEADER_ROW: VirtualRow = { __header: true };
   const ADD_BUTTON_ROW: VirtualRow = { __addButton: true };
@@ -108,12 +110,13 @@
     rowHeight={ROW_HEIGHT}
     {firstItemHeight}
     getItemKey={getVirtualRowKey}
-    class="h-dvh px-2 overflow-x-hidden"
+    class="px-2 overflow-x-hidden"
+    style="height: {height};"
     {topOffset}
     {onScroll}
   >
     {#snippet emptyState()}
-      <div class="h-dvh px-2" style="margin-top: {topOffset}px;">
+      <div class="px-2" style="margin-top: {topOffset}px; height: {height};">
         {@render emptyTracks()}
       </div>
     {/snippet}
@@ -141,7 +144,7 @@
     {/snippet}
   </VirtualScroll>
 {:else if items.length === 0}
-  <div class="h-dvh px-2" style="margin-top: {topOffset}px;">
+  <div class="px-2" style="margin-top: {topOffset}px; height: {height};">
     {#if hasVirtualHeader && header}
       {@render header()}
     {/if}
@@ -151,7 +154,7 @@
     {@render emptyTracks()}
   </div>
 {:else}
-  <div class="flex flex-col gap-2 px-2">
+  <div class="flex flex-col gap-2 px-2" style="height: {height};">
     {#if hasVirtualHeader && header}
       {@render header()}
     {/if}

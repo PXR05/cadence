@@ -11,6 +11,7 @@ import {
   getRemoteItemIdFromUrl,
   getRemoteProviderLabel,
 } from "$lib/utils/remote";
+import { authStore } from "./auth.svelte";
 import { tracksStore } from "./tracks.svelte";
 
 interface DownloadProgress {
@@ -60,7 +61,7 @@ class RemoteDownloadStore {
   private _queue = $state<QueueItem[]>([]);
   private _progress = $state<DownloadProgress | null>(null);
   private _isProcessing = false;
-  private _activeEventSource: EventSource | null = null;
+  private _activeAbortController: AbortController | null = null;
 
   constructor() {
     if (typeof window !== "undefined") {
@@ -338,45 +339,141 @@ class RemoteDownloadStore {
   ): Promise<void> {
     const params = new URLSearchParams({ url, stream });
     const audioBaseUrl = getAudioBaseUrl();
-    const eventSource = new EventSource(
-      `${audioBaseUrl}/upload/${provider}?${params}`,
-      {
-        withCredentials: true,
-      },
-    );
-    this._activeEventSource = eventSource;
+    const controller = new AbortController();
+    this._activeAbortController = controller;
 
-    return new Promise((resolve, reject) => {
-      eventSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data) as RemoteProgressEvent;
-          onProgress(data);
+    const clearController = () => {
+      if (this._activeAbortController === controller) {
+        this._activeAbortController = null;
+      }
+    };
 
-          if (data.type === "complete" || data.type === "cancelled") {
-            eventSource.close();
-            this._activeEventSource = null;
-            resolve();
-          } else if (data.type === "error") {
-            eventSource.close();
-            this._activeEventSource = null;
-            reject(new Error(data.message));
-          }
-        } catch (error) {
-          console.error("Error parsing SSE data:", error);
+    const processSseEvent = (
+      rawEvent: string,
+      resolve: () => void,
+      reject: (reason?: unknown) => void,
+    ): boolean => {
+      const lines = rawEvent.split(/\r?\n/);
+      const dataLines: string[] = [];
+
+      for (const line of lines) {
+        if (!line || line.startsWith(":")) continue;
+        if (line.startsWith("data:")) {
+          dataLines.push(line.slice(5).trimStart());
         }
-      };
+      }
 
-      eventSource.onerror = (event) => {
-        console.error("SSE connection error:", event);
-        eventSource.close();
-        this._activeEventSource = null;
+      if (dataLines.length === 0) return false;
+
+      try {
+        const data = JSON.parse(dataLines.join("\n")) as RemoteProgressEvent;
+        onProgress(data);
+
+        if (data.type === "complete" || data.type === "cancelled") {
+          clearController();
+          resolve();
+          return true;
+        }
+
+        if (data.type === "error") {
+          clearController();
+          reject(new Error(data.message));
+          return true;
+        }
+      } catch (error) {
+        console.error("Error parsing SSE data:", error);
+      }
+
+      return false;
+    };
+
+    return new Promise(async (resolve, reject) => {
+      try {
+        const response = await fetch(
+          `${audioBaseUrl}/upload/${provider}?${params}`,
+          {
+            method: "GET",
+            credentials: "include",
+            signal: controller.signal,
+            headers: {
+              Accept: "text/event-stream",
+              Authorization: `Bearer ${authStore.sessionId}`,
+            },
+          },
+        );
+
+        if (!response.ok) {
+          clearController();
+          reject(
+            new Error(
+              `Connection to server failed: ${response.status} ${response.statusText}`,
+            ),
+          );
+          return;
+        }
+
+        if (!response.body) {
+          clearController();
+          reject(new Error("Connection to server lost: empty response body"));
+          return;
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+
+          if (done) {
+            break;
+          }
+
+          buffer += decoder.decode(value, { stream: true });
+
+          let boundary = buffer.search(/\r?\n\r?\n/);
+          while (boundary >= 0) {
+            const rawEvent = buffer.slice(0, boundary);
+            const separatorLength =
+              buffer.slice(boundary, boundary + 2) === "\r\n" ? 4 : 2;
+            buffer = buffer.slice(boundary + separatorLength);
+
+            const isTerminal = processSseEvent(rawEvent, resolve, reject);
+            if (isTerminal) {
+              try {
+                await reader.cancel();
+              } catch {}
+              return;
+            }
+
+            boundary = buffer.search(/\r?\n\r?\n/);
+          }
+        }
+
+        const tail = buffer + decoder.decode();
+        if (tail.trim().length > 0) {
+          processSseEvent(tail, resolve, reject);
+        }
+
+        clearController();
+        reject(new Error("Connection to server lost"));
+      } catch (error) {
+        clearController();
+        if (controller.signal.aborted) {
+          reject(new Error("Connection to server lost: request was aborted"));
+          return;
+        }
+
+        console.error("SSE fetch connection error:", error);
         reject(
           new Error(
             "Connection to server lost" +
-              (event ? `: ${JSON.stringify(event)}` : ""),
+              (error instanceof Error && error.message
+                ? `: ${error.message}`
+                : ""),
           ),
         );
-      };
+      }
     });
   }
 
@@ -417,8 +514,8 @@ class RemoteDownloadStore {
     this._queue = [];
     this._currentDownload = null;
     this._progress = null;
-    this._activeEventSource?.close();
-    this._activeEventSource = null;
+    this._activeAbortController?.abort();
+    this._activeAbortController = null;
     this.saveToStorage();
   }
 

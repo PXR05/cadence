@@ -21,10 +21,17 @@
   );
 
   const downloadTranslate = $derived.by(() => {
-    if (isTopRoute && isMobile) {
-      return `-10rem`;
+    const hasQueue = playerStore.trackQueue.length > 0;
+    if (isMobile) {
+      if (isTopRoute && hasQueue) {
+        return "-10rem";
+      }
+      if (!isTopRoute && !hasQueue) {
+        return "-6.5rem";
+      }
+      return "-5.75rem";
     }
-    return `-6rem`;
+    return hasQueue ? `-6.5rem` : `0.5rem`;
   });
 
   const navMotionProgress = $derived.by(() => {
