@@ -327,7 +327,7 @@ class PlayerState {
     }
 
     if (this.currentTrack) {
-      this.updateMetadata(this.currentTrack);
+      this.updateMetadata(this.currentTrack, { resetProgress: false });
     }
 
     this.playerRef.addEventListener("loadedmetadata", () => {
@@ -559,16 +559,24 @@ class PlayerState {
     }
   }
 
-  async updateMetadata(track: AudioFile) {
+  async updateMetadata(
+    track: AudioFile,
+    opts?: {
+      resetProgress?: boolean;
+    },
+  ) {
+    const { resetProgress = true } = opts ?? {};
+
     this.initializeMediaSessionHandlers();
-    this.updateMediaSessionMetadata(track);
 
     const usingNative = this.shouldUseNativePlayback();
     const webRequestId = usingNative ? 0 : ++this.webLoadRequestId;
 
     if (!usingNative && this.playerRef) {
       this.isWebSourceChanging = true;
-      this.currentTime = 0;
+      if (resetProgress) {
+        this.currentTime = 0;
+      }
       this.duration = 0;
       this.playerRef.pause();
     }
@@ -579,6 +587,7 @@ class PlayerState {
     );
 
     if (usingNative) {
+      this.updateMediaSessionMetadata(track);
       this.nativeDomain.updateTrack(track, sourceTrack);
       this.loadTrackColor(track).catch((error) => {
         console.error("Failed to load track color:", error);
@@ -615,8 +624,11 @@ class PlayerState {
 
     this.isWebSourceChanging = true;
     this.playerRef.src = audioUrl;
-    this.playerRef.currentTime = 0;
+    if (resetProgress) {
+      this.playerRef.currentTime = 0;
+    }
     this.playerRef.load();
+    this.updateMediaSessionMetadata(track);
 
     if (audioUrl.startsWith("blob:")) {
       this.currentBlobUrl = audioUrl;
@@ -663,8 +675,6 @@ class PlayerState {
         this.currentTime = 0;
         this.syncCarouselToTrack(newIndex);
         this.initializeMediaSessionHandlers();
-        this.updateMediaSessionMetadata(newTrack);
-        this.setMediaSessionPlaybackState("playing");
         await this.updateMetadata(newTrack);
         if (requestId !== this.playRequestId) {
           return;

@@ -25,8 +25,9 @@ class AuthStore {
     null,
   );
   private sessionIdStore = createLocalStorageState<string | null>(
-    "cadence.sessionId",
+    "cadence.session_id",
     null,
+    "cadence.sessionId",
   );
 
   user = $state<User | null>(null);

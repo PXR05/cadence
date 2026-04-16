@@ -1,18 +1,5 @@
 import { buildBackendUrl } from "$lib/stores/apiUrl.svelte";
-
-function getSessionIdFromStorage(): string | null {
-  if (typeof window === "undefined") return null;
-
-  try {
-    const raw = localStorage.getItem("cadence.sessionId");
-    if (!raw) return null;
-
-    const parsed = JSON.parse(raw);
-    return typeof parsed === "string" && parsed.trim() ? parsed : null;
-  } catch {
-    return null;
-  }
-}
+import { authStore } from "$lib/stores/auth.svelte";
 
 export async function authFetch(
   path: string,
@@ -20,7 +7,7 @@ export async function authFetch(
 ): Promise<Response> {
   const url = buildBackendUrl(path);
   const headers = new Headers(init?.headers);
-  const sessionId = getSessionIdFromStorage();
+  const sessionId = authStore.sessionId;
 
   if (sessionId && !headers.has("Authorization")) {
     headers.set("Authorization", `Bearer ${sessionId}`);

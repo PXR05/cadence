@@ -1,4 +1,4 @@
-export function createLocalStorageState<T>(key: string, initialValue: T) {
+export function createLocalStorageState<T>(key: string, initialValue: T, oldKey?: string) {
   const isBrowser =
     typeof window !== "undefined" && typeof localStorage !== "undefined";
 
@@ -8,6 +8,13 @@ export function createLocalStorageState<T>(key: string, initialValue: T) {
       const item = localStorage.getItem(key);
       if (item !== null) {
         storedValue = JSON.parse(item);
+      } else if (oldKey) {
+        const oldItem = localStorage.getItem(oldKey);
+        if (oldItem !== null) {
+          storedValue = JSON.parse(oldItem);
+          localStorage.setItem(key, JSON.stringify(storedValue));
+          localStorage.removeItem(oldKey);
+        }
       }
     } catch (error) {
       console.warn(`Failed to load localStorage key "${key}":`, error);
@@ -47,7 +54,8 @@ export function createLocalStorageState<T>(key: string, initialValue: T) {
 
 export function createNestedLocalStorageState<T extends Record<string, any>>(
   key: string,
-  initialValue: T
+  initialValue: T,
+  oldKey?: string
 ) {
   const isBrowser =
     typeof window !== "undefined" && typeof localStorage !== "undefined";
@@ -58,6 +66,13 @@ export function createNestedLocalStorageState<T extends Record<string, any>>(
       const item = localStorage.getItem(key);
       if (item !== null) {
         storedValue = JSON.parse(item);
+      } else if (oldKey) {
+        const oldItem = localStorage.getItem(oldKey);
+        if (oldItem !== null) {
+          storedValue = JSON.parse(oldItem);
+          localStorage.setItem(key, JSON.stringify(storedValue));
+          localStorage.removeItem(oldKey);
+        }
       }
     } catch (error) {
       console.warn(`Failed to load localStorage key "${key}":`, error);
