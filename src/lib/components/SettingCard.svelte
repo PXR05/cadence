@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button";
-  import { Icon as LucideIcon, PowerIcon, PowerOffIcon } from "@lucide/svelte";
+  import { Icon as LucideIcon, Power as PowerIcon, PowerOff as PowerOffIcon } from "@lucide/svelte";
   import type { Snippet } from "svelte";
 
   interface Props {

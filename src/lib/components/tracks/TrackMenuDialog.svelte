@@ -10,15 +10,15 @@
   import { DeleteTrackDialog } from "../admin";
   import { Button } from "../ui/button";
   import {
-    DownloadIcon,
-    ListMusicIcon,
-    PlusIcon,
-    SkipForwardIcon,
-    CloudDownloadIcon,
-    CloudOffIcon,
-    Trash2Icon,
-    ListXIcon,
-    InfoIcon,
+    Download as DownloadIcon,
+    ListMusic as ListMusicIcon,
+    Plus as PlusIcon,
+    SkipForward as SkipForwardIcon,
+    CloudDownload as CloudDownloadIcon,
+    CloudOff as CloudOffIcon,
+    Trash2 as Trash2Icon,
+    ListX as ListXIcon,
+    Info as InfoIcon,
   } from "@lucide/svelte";
   import { toast } from "svelte-sonner";
   import { page } from "$app/state";

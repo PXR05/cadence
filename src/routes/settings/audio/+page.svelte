@@ -14,12 +14,12 @@
   import type { FilterType } from "$lib/stores/player.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
   import {
-    AudioWaveformIcon,
-    CableIcon,
-    PlusIcon,
-    PowerIcon,
-    PowerOffIcon,
-    XIcon,
+    AudioWaveform as AudioWaveformIcon,
+    Cable as CableIcon,
+    Plus as PlusIcon,
+    Power as PowerIcon,
+    PowerOff as PowerOffIcon,
+    X as XIcon,
   } from "@lucide/svelte";
 
   const filterTypes: FilterType[] = [

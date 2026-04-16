@@ -8,12 +8,12 @@
     SPECIAL_PLAYLIST_IDS,
   } from "$lib/utils/playlist";
   import {
-    CloudCheckIcon,
-    Disc3Icon,
-    LibraryIcon,
-    MusicIcon,
-    UserIcon,
-    SquarePlayIcon,
+    CloudCheck as CloudCheckIcon,
+    Disc3 as Disc3Icon,
+    Library as LibraryIcon,
+    Music as MusicIcon,
+    User as UserIcon,
+    SquarePlay as SquarePlayIcon,
   } from "@lucide/svelte";
   import { Image } from "../ui/image";
 

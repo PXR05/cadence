@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { RemoteSearchResult } from "$lib/schemas";
-  import { CheckIcon, ClockIcon } from "@lucide/svelte";
+  import {  Check as CheckIcon, Clock as ClockIcon } from "@lucide/svelte";
 
   interface Props {
     result: RemoteSearchResult;

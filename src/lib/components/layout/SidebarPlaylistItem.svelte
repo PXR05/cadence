@@ -5,7 +5,7 @@
   import type { Playlist } from "$lib/schemas";
   import { playlistMenuStore } from "$lib/stores/playlistMenu.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
-  import { Volume2Icon } from "@lucide/svelte";
+  import {  Volume2 as Volume2Icon } from "@lucide/svelte";
 
   interface Props {
     playlist: Playlist;

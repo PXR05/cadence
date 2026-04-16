@@ -5,10 +5,11 @@
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { trackMenuStore } from "$lib/stores/trackMenu.svelte";
   import type { AudioFile } from "$lib/schemas";
-  import { CloudCheckIcon, EllipsisVerticalIcon } from "@lucide/svelte";
+  import {  CloudCheck as CloudCheckIcon, EllipsisVertical as EllipsisVerticalIcon } from "@lucide/svelte";
   import { downloadStore } from "$lib/stores/download.svelte";
   import { onMount, onDestroy } from "svelte";
   import { Button } from "../ui/button";
+  // @ts-ignore
   import { createWebHaptics } from "web-haptics/svelte";
   import { Image } from "../ui/image";
 

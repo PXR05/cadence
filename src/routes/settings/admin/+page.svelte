@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
-  import { LoaderIcon } from "@lucide/svelte";
+  import { Loader as LoaderIcon } from "@lucide/svelte";
   import SettingsHeader from "$lib/components/SettingsHeader.svelte";
   import { UserManagement, TrackManagement } from "$lib/components/admin";
   import { authStore } from "$lib/stores/auth.svelte";

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { formatFileSize, formatDate } from "$lib/utils/format";
-  import { LoaderIcon, Trash2Icon } from "@lucide/svelte";
+  import { Loader as LoaderIcon, Trash2 as Trash2Icon } from "@lucide/svelte";
   import { TableCell, TableHead, TableRow } from "$lib/components/ui/table";
   import { Button } from "../ui/button";
   import type { AudioFile } from "$lib/schemas";

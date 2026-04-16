@@ -1,14 +1,15 @@
 <script lang="ts">
   import { playerStore } from "$lib/stores/player.svelte";
   import {
-    PauseIcon,
-    PlayIcon,
-    RepeatIcon,
-    ShuffleIcon,
-    SkipBackIcon,
-    SkipForwardIcon,
+     Pause as PauseIcon,
+    Play as PlayIcon,
+    Repeat as RepeatIcon,
+    Shuffle as ShuffleIcon,
+    SkipBack as SkipBackIcon,
+    SkipForward as SkipForwardIcon,
   } from "@lucide/svelte";
   import { Button } from "../ui/button";
+  // @ts-ignore
   import { createWebHaptics } from "web-haptics/svelte";
   import { onDestroy } from "svelte";
 

@@ -1,11 +1,7 @@
 <script lang="ts">
   import { getImageUrl } from "$lib/constants";
   import { playerStore } from "$lib/stores/player.svelte";
-  import {
-    GripHorizontalIcon,
-    Volume2Icon,
-    XIcon,
-  } from "@lucide/svelte";
+  import {  GripHorizontal as GripHorizontalIcon, Volume2 as Volume2Icon, X as XIcon } from "@lucide/svelte";
   import { Button } from "../ui/button";
   import { Swiper } from "../ui/swiper";
   import type { AudioFile } from "$lib/schemas";
@@ -46,10 +42,10 @@
   <Button
     variant="ghost"
     onclick={() => playerStore.playAtIndex(index)}
-    class="h-auto w-full flex items-center gap-3 p-2.5 text-left group rounded-lg
+    class="h-auto w-full flex items-center gap-3 p-2.5 text-left group rounded-2xl
    {isCurrentTrack ? 'bg-muted' : 'bg-background'}"
   >
-    <div class="relative rounded-sm size-12 shrink-0 overflow-hidden bg-muted">
+    <div class="relative rounded-md size-14 shrink-0 overflow-hidden bg-muted">
       <Image
         loading="lazy"
         crossorigin="use-credentials"

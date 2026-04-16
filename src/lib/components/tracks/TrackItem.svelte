@@ -5,10 +5,14 @@
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { downloadStore } from "$lib/stores/download.svelte";
   import { trackMenuStore } from "$lib/stores/trackMenu.svelte";
-  import { CloudCheckIcon, EllipsisVerticalIcon } from "@lucide/svelte";
+  import {
+    CloudCheck as CloudCheckIcon,
+    EllipsisVertical as EllipsisVerticalIcon,
+  } from "@lucide/svelte";
   import { onMount, onDestroy } from "svelte";
   import type { AudioFile, PlaylistDetail } from "$lib/schemas";
   import { Button } from "../ui/button";
+  // @ts-ignore
   import { createWebHaptics } from "web-haptics/svelte";
   import { innerWidth } from "svelte/reactivity/window";
   import { Image } from "../ui/image";
@@ -86,7 +90,7 @@
   onclick={handlePlay}
   oncontextmenu={handleContextMenu}
 >
-  <div class="rounded-md size-16 shrink-0 overflow-hidden">
+  <div class="rounded-md size-14 shrink-0 overflow-hidden">
     <Image
       loading="lazy"
       crossorigin="use-credentials"

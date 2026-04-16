@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button";
-  import { ArrowLeftIcon } from "@lucide/svelte";
+  import {  ArrowLeft as ArrowLeftIcon } from "@lucide/svelte";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
 
   interface Props {

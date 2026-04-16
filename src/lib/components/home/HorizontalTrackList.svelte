@@ -7,7 +7,7 @@
   import { vaulEase } from "$lib/utils";
   import { useSidebar } from "../ui/sidebar";
   import { Button } from "../ui/button";
-  import { ArrowLeftIcon, ArrowRightIcon } from "@lucide/svelte";
+  import {  ArrowLeft as ArrowLeftIcon, ArrowRight as ArrowRightIcon } from "@lucide/svelte";
   import { innerWidth } from "svelte/reactivity/window";
 
   interface Props {

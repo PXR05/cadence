@@ -2,11 +2,12 @@
   import * as Dialog from "$lib/components/ui/dialog";
   import * as Drawer from "$lib/components/ui/drawer";
   import { playerStore } from "$lib/stores/player.svelte";
-  import { ChevronDown } from "@lucide/svelte";
+  import { ChevronDown as ChevronDownIcon } from "@lucide/svelte";
   import { VirtualScroll } from "../ui/virtual-scroll";
   import QueueItem from "./QueueItem.svelte";
   import { useMenuDialogState } from "$lib/hooks";
   import { innerWidth } from "svelte/reactivity/window";
+  import { appearanceStore } from "$lib/stores/appearance.svelte";
 
   const dialogState = useMenuDialogState({
     paramName: "queue-dialog",
@@ -15,7 +16,7 @@
   const isDesktop = $derived((innerWidth.current ?? 0) >= 768);
 
   let virtualScroll: any = $state(null);
-  const ROW_HEIGHT = 68;
+  const ROW_HEIGHT = 72;
   let previousOpen = $state(false);
   let previousQueueIndex = $state(-1);
 
@@ -98,36 +99,44 @@
 
 {#snippet header()}
   <div
-    class="absolute top-1.5 left-1.5 right-1.5 z-10 rounded-lg bg-muted border border-muted-foreground/10 p-2 flex justify-between items-center"
+    class="absolute top-2 left-2 right-2 z-10 rounded-3xl border border-muted-foreground/10 flex flex-col
+    {appearanceStore.disableBlur
+      ? 'bg-muted'
+      : 'bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md'}"
   >
-    {#if isDesktop}
-      <Dialog.Close
-        class="opacity-70 transition-opacity hover:opacity-100 my-auto size-8 grid place-items-center"
-      >
-        <ChevronDown />
-      </Dialog.Close>
-    {:else}
-      <Drawer.Close
-        class="opacity-70 transition-opacity hover:opacity-100 my-auto size-8 grid place-items-center"
-      >
-        <ChevronDown />
-      </Drawer.Close>
-    {/if}
+    <div class="px-2 py-3 flex justify-between items-center">
+      {#if isDesktop}
+        <Dialog.Close
+          class="opacity-70 transition-opacity hover:opacity-100 my-auto size-8 grid place-items-center"
+        >
+          <ChevronDownIcon />
+        </Dialog.Close>
+      {:else}
+        <Drawer.Close
+          class="opacity-70 transition-opacity hover:opacity-100 my-auto size-8 grid place-items-center"
+        >
+          <ChevronDownIcon />
+        </Drawer.Close>
+      {/if}
 
-    <div class="flex items-center gap-2 text-sm text-muted-foreground">
-      {playerStore.queueLength} track{playerStore.queueLength !== 1 ? "s" : ""} in
-      queue
+      <Dialog.Header class="min-w-0">
+        <Dialog.Description class="text-center">
+          {playerStore.queueLength} track{playerStore.queueLength !== 1
+            ? "s"
+            : ""} in queue
+        </Dialog.Description>
+      </Dialog.Header>
+
+      {#if isDesktop}
+        <Dialog.Close class="opacity-0 pointer-events-none">
+          <ChevronDownIcon />
+        </Dialog.Close>
+      {:else}
+        <Drawer.Close class="opacity-0 pointer-events-none">
+          <ChevronDownIcon />
+        </Drawer.Close>
+      {/if}
     </div>
-
-    {#if isDesktop}
-      <Dialog.Close class="opacity-0 pointer-events-none">
-        <ChevronDown />
-      </Dialog.Close>
-    {:else}
-      <Drawer.Close class="opacity-0 pointer-events-none">
-        <ChevronDown />
-      </Drawer.Close>
-    {/if}
   </div>
 {/snippet}
 
@@ -136,8 +145,8 @@
     bind:this={virtualScroll}
     items={playerStore.trackQueue}
     rowHeight={ROW_HEIGHT}
-    class="overscroll-y-contain mt-8 md:mt-13 h-[calc(80dvh-3.5rem)] md:h-[calc(90dvh-3.5rem)]"
-    topOffset={8}
+    class="overscroll-y-contain h-dvh md:h-[90dvh]"
+    topOffset={isDesktop ? 72 : 54}
     leftPadding={8}
     rightPadding={8}
     itemGap={4}
@@ -165,8 +174,20 @@
   >
     <Dialog.Content
       showCloseButton={false}
-      class="md:max-w-2xl h-[90dvh] overflow-clip max-w-dvw flex flex-col z-60 p-0 max-md:border-0 rounded-none md:rounded-2xl bg-background"
+      class="md:max-w-2xl h-dvh md:h-[90dvh] overflow-clip max-w-dvw flex flex-col z-60 p-0 max-md:border-0 max-md:rounded-none bg-background"
     >
+      <div
+        class="absolute z-10 inset-0 flex flex-col h-dvh md:h-[90dvh] pointer-events-none"
+        style="
+          background: linear-gradient(
+            to top,
+            color-mix(in oklab, var(--background) 100%, transparent) 0%,
+            color-mix(in oklab, var(--background) 0%, transparent) 10%,
+            color-mix(in oklab, var(--background) 0%, transparent) 90%,
+            color-mix(in oklab, var(--background) 100%, transparent) 100%
+          );
+        "
+      ></div>
       {@render header()}
       {@render queueContent()}
     </Dialog.Content>
@@ -176,7 +197,19 @@
     open={dialogState.isOpen}
     onOpenChange={dialogState.handleOpenChange}
   >
-    <Drawer.Content class="overflow-clip p-0 rounded-t-2xl bg-background">
+    <Drawer.Content class="h-dvh overflow-clip p-0 rounded-t-2xl bg-background">
+      <div
+        class="absolute z-10 inset-0 flex flex-col h-dvh pointer-events-none"
+        style="
+          background: linear-gradient(
+            to top,
+            color-mix(in oklab, var(--background) 100%, transparent) 0%,
+            color-mix(in oklab, var(--background) 0%, transparent) 10%,
+            color-mix(in oklab, var(--background) 0%, transparent) 90%,
+            color-mix(in oklab, var(--background) 100%, transparent) 100%
+          );
+        "
+      ></div>
       {@render header()}
       {@render queueContent()}
     </Drawer.Content>

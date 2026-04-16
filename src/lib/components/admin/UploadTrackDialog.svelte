@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { LoaderIcon, LinkIcon, UploadIcon } from "@lucide/svelte";
+  import {  Loader as LoaderIcon, Link as LinkIcon, Upload as UploadIcon } from "@lucide/svelte";
   import {
     Dialog,
     DialogContent,

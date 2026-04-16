@@ -4,7 +4,7 @@
     PlaylistCard,
     PullToRefresh,
   } from "$lib/components";
-  import { PlusIcon } from "@lucide/svelte";
+  import { Plus as PlusIcon } from "@lucide/svelte";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
   import { SPECIAL_PLAYLIST_IDS } from "$lib/utils/playlist";
   import { flip } from "svelte/animate";

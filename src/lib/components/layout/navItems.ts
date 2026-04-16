@@ -1,8 +1,8 @@
 import {
-  SearchIcon,
-  SettingsIcon,
-  LibraryIcon,
-  HouseIcon,
+  Search as SearchIcon,
+  Settings as SettingsIcon,
+  Library as LibraryIcon,
+  House as HouseIcon,
 } from "@lucide/svelte";
 import type { Component } from "svelte";
 import { page } from "$app/state";

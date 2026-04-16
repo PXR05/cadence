@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from "$app/state";
   import * as Sidebar from "$lib/components/ui/sidebar";
-  import { ArrowLeftToLineIcon, PlusIcon } from "@lucide/svelte";
+  import {  ArrowLeftToLine as ArrowLeftToLineIcon, Plus as PlusIcon } from "@lucide/svelte";
   import { offlineDb } from "$lib/db/offline";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";

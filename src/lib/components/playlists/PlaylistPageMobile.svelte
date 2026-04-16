@@ -5,7 +5,7 @@
   import { usePlaylistHeaderActions } from "./usePlaylistHeaderActions.svelte";
   import PlaylistSearch from "./PlaylistSearch.svelte";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
-  import { ArrowLeftIcon, EllipsisIcon } from "@lucide/svelte";
+  import { ArrowLeft as ArrowLeftIcon, Ellipsis as EllipsisIcon } from "@lucide/svelte";
   import { Button } from "../ui/button";
   import { isArtistPlaylist, isSpecialPlaylist } from "$lib/utils/playlist";
 
@@ -16,6 +16,7 @@
     items: PlaylistItem[];
     searchQuery?: string;
     onAddTracks: () => void;
+    onOpenSort?: () => void;
     onListScroll?: (scrollTop: number) => void;
   }
 
@@ -26,6 +27,7 @@
     items,
     searchQuery = $bindable(""),
     onAddTracks,
+    onOpenSort = () => {},
     onListScroll,
   }: Props = $props();
 
@@ -76,9 +78,9 @@
 <div class="flex flex-col relative w-full overflow-x-hidden">
   <div class="fixed top-0 left-0 right-0 z-10 flex flex-col p-2">
     <div
-      class="absolute inset-0 transition-opacity duration-100 {isScrolled
-        ? 'opacity-100'
-        : 'opacity-0'}"
+      class="absolute inset-0 transition-all duration-100 {isScrolled
+        ? 'opacity-100 translate-y-0'
+        : 'opacity-0 -translate-y-full'}"
       style="
       background: linear-gradient(
         to bottom,
@@ -104,7 +106,9 @@
         class="rounded-xl size-11 border border-transparent 
         {isScrolled
           ? ''
-          : 'bg-muted/10 border-muted-foreground/10 backdrop-blur-md'}"
+          : appearanceStore.disableBlur
+            ? 'bg-muted/10 border-muted-foreground/10'
+            : 'bg-muted/10 border-muted-foreground/10 backdrop-blur-md'}"
         title="Back"
         onclick={() => history.back()}
       >
@@ -129,9 +133,12 @@
       <Button
         variant="ghost"
         size="icon"
-        class="rounded-xl size-11 border border-transparent {isScrolled
+        class="rounded-xl size-11 border border-transparent 
+        {isScrolled
           ? ''
-          : 'bg-muted/10 border-muted-foreground/10 backdrop-blur-md'}"
+          : appearanceStore.disableBlur
+            ? 'bg-muted/10 border-muted-foreground/10'
+            : 'bg-muted/10 border-muted-foreground/10 backdrop-blur-md'}"
         title="Menu"
         onclick={headerActions.handleMenu}
       >
@@ -159,12 +166,12 @@
             {playlist}
             onPlay={headerActions.handlePlay}
             onShuffle={headerActions.handleShuffle}
-            onAddTracks={hasAddButton ? onAddTracks : undefined}
+            {onAddTracks}
             onMenu={headerActions.handleMenu}
           />
         </div>
         <div class="py-4">
-          <PlaylistSearch bind:searchQuery />
+          <PlaylistSearch bind:searchQuery {onOpenSort} />
         </div>
       </div>
     {/snippet}

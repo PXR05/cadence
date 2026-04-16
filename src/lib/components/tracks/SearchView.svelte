@@ -3,13 +3,13 @@
   import { page } from "$app/state";
   import { goto } from "$app/navigation";
   import {
-    DatabaseIcon,
-    LoaderIcon,
-    MusicIcon,
-    PlusIcon,
-    SearchIcon,
-    XIcon,
-    SquarePlayIcon,
+    Database as DatabaseIcon,
+    Loader as LoaderIcon,
+    Music as MusicIcon,
+    Plus as PlusIcon,
+    Search as SearchIcon,
+    X as XIcon,
+    SquarePlay as SquarePlayIcon,
   } from "@lucide/svelte";
   import TrackItem from "./TrackItem.svelte";
   import RemoteTrackItem from "./RemoteTrackItem.svelte";

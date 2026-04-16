@@ -1,6 +1,6 @@
 <script lang="ts">
   import { toast } from "svelte-sonner";
-  import { UserPlusIcon } from "@lucide/svelte";
+  import {  UserPlus as UserPlusIcon } from "@lucide/svelte";
   import { Button } from "$lib/components/ui/button";
   import {
     listUsers,

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { RefreshCwIcon } from "@lucide/svelte";
+  import { RefreshCw as RefreshCwIcon } from "@lucide/svelte";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
 

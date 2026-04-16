@@ -2,10 +2,10 @@
   import PlaylistCoverImage from "$lib/components/playlists/PlaylistCoverImage.svelte";
   import type { PlaylistDetail } from "$lib/schemas";
   import {
-    ArrowLeft,
-    CloudCheckIcon,
-    EllipsisIcon,
-    PlayIcon,
+    ArrowLeft as ArrowLeftIcon,
+    CloudCheck as CloudCheckIcon,
+    Ellipsis as EllipsisIcon,
+    Play as PlayIcon,
   } from "@lucide/svelte";
   import { Button } from "../ui/button";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
@@ -49,7 +49,7 @@
         title="Back"
         onclick={() => history.back()}
       >
-        <ArrowLeft />
+        <ArrowLeftIcon />
       </Button>
 
       <div class="flex-1 flex items-center gap-2 truncate">
@@ -106,7 +106,7 @@
           title="Back"
           onclick={() => history.back()}
         >
-          <ArrowLeft />
+          <ArrowLeftIcon />
         </Button>
 
         <div class="flex max-lg:flex-col gap-2 truncate lg:items-end">

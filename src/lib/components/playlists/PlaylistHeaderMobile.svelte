@@ -8,9 +8,10 @@
     isTidalPlaylist,
     isYoutubePlaylist,
   } from "$lib/utils/playlist";
-  import { PlayIcon, PlusIcon, ShuffleIcon } from "@lucide/svelte";
+  import {  Play as PlayIcon, Plus as PlusIcon, Shuffle as ShuffleIcon } from "@lucide/svelte";
   import { Button } from "../ui/button";
   import { Image } from "../ui/image";
+  import { appearanceStore } from "$lib/stores/appearance.svelte";
 
   interface Props {
     playlist: PlaylistDetail;
@@ -132,7 +133,8 @@
       size="icon"
       onclick={onShuffle}
       disabled={playlist.items.length === 0}
-      class="font-medium size-12 backdrop-blur-md rounded-full bg-muted-foreground/10 border border-muted-foreground/10 text-foreground transition-colors duration-100 hover:bg-muted-foreground/15 disabled:opacity-50 disabled:cursor-not-allowed"
+      class="font-medium size-12 rounded-full bg-muted-foreground/10 border border-muted-foreground/10 text-foreground transition-colors duration-100 hover:bg-muted-foreground/15 disabled:opacity-50 disabled:cursor-not-allowed
+      {appearanceStore.disableBlur ? '' : 'backdrop-blur-md'}"
     >
       <ShuffleIcon size={16} />
     </Button>
@@ -150,7 +152,8 @@
       size="icon"
       onclick={onAddTracks}
       disabled={onAddTracks === undefined}
-      class="font-medium size-12 backdrop-blur-md rounded-full bg-muted-foreground/10 border border-muted-foreground/10 text-foreground transition-colors duration-100 hover:bg-muted-foreground/15"
+      class="font-medium size-12 rounded-full bg-muted-foreground/10 border border-muted-foreground/10 text-foreground transition-colors duration-100 hover:bg-muted-foreground/15 
+      {appearanceStore.disableBlur ? '' : 'backdrop-blur-md'}"
     >
       <PlusIcon size={16} />
     </Button>

@@ -4,7 +4,7 @@
   import { playlistMenuStore } from "$lib/stores/playlistMenu.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
   import { getPlaylistDisplayName } from "$lib/utils/playlist";
-  import { Volume2Icon } from "@lucide/svelte";
+  import { Volume2 as Volume2Icon } from "@lucide/svelte";
   import type { Playlist } from "$lib/schemas";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
 

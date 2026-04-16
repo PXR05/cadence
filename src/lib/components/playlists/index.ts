@@ -7,3 +7,4 @@ export { default as PlaylistPageMobile } from "./PlaylistPageMobile.svelte";
 export { default as PlaylistPageDesktop } from "./PlaylistPageDesktop.svelte";
 export { default as PlaylistTrackList } from "./PlaylistTrackList.svelte";
 export { default as PlaylistMenuDialog } from "./PlaylistMenuDialog.svelte";
+export { default as PlaylistSortDialog } from "./PlaylistSortDialog.svelte";

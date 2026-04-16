@@ -3,7 +3,7 @@
   import { Button } from "$lib/components/ui/button";
   import * as Dialog from "$lib/components/ui/dialog";
   import * as AlertDialog from "$lib/components/ui/alert-dialog";
-  import { LoaderIcon, TrashIcon, ImageIcon } from "@lucide/svelte";
+  import { Loader as LoaderIcon, Trash as TrashIcon, Image as ImageIcon } from "@lucide/svelte";
   import type { PlaylistDetail } from "$lib/schemas";
   import { Input } from "../ui/input";
   import { getPlaylistImageUrl } from "$lib/constants";

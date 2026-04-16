@@ -2,15 +2,16 @@
   import { appearanceStore } from "$lib/stores/appearance.svelte";
   import type { WithElementRef } from "$lib/utils";
   import {
-    ArrowDownIcon,
-    LoaderIcon,
-    RefreshCwIcon,
-    RotateCcwIcon,
+    ArrowDown as ArrowDownIcon,
+    Loader as LoaderIcon,
+    RefreshCw as RefreshCwIcon,
+    RotateCcw as RotateCcwIcon,
   } from "@lucide/svelte";
   import { onDestroy, onMount } from "svelte";
   import type { Snippet } from "svelte";
   import type { HTMLAttributes } from "svelte/elements";
   import { innerWidth } from "svelte/reactivity/window";
+  // @ts-ignore
   import { createWebHaptics } from "web-haptics/svelte";
 
   const { trigger, destroy } = createWebHaptics();
@@ -554,9 +555,9 @@
         <LoaderIcon
           strokeWidth={2.5}
           absoluteStrokeWidth
-          class="absolute inset-0 size-5 animate-spin transition-all duration-200 ease-out {pullIconState ===
+          class="absolute inset-0 size-5 transition-all duration-200 ease-out {pullIconState ===
           'loading'
-            ? 'opacity-100 scale-100 rotate-0'
+            ? 'opacity-100 scale-100 rotate-0 animate-spin'
             : 'opacity-0 scale-150 -rotate-45'}"
         />
       </div>

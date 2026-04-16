@@ -4,7 +4,7 @@
   import { page } from "$app/state";
   import * as Dialog from "$lib/components/ui/dialog";
   import { Button } from "$lib/components/ui/button";
-  import { ServerIcon } from "@lucide/svelte";
+  import { Server as ServerIcon } from "@lucide/svelte";
   import { untrack } from "svelte";
   import BackendUrlUpdateField from "$lib/components/BackendUrlUpdateField.svelte";
   import { apiUrlStore, getBackendUrl } from "$lib/stores/apiUrl.svelte";

@@ -2,26 +2,25 @@
   import { goto } from "$app/navigation";
   import { authStore } from "$lib/stores/auth.svelte";
   import { Button } from "$lib/components/ui/button";
-  import { ScrollArea } from "$lib/components/ui/scroll-area";
   import SettingCard from "$lib/components/SettingCard.svelte";
   import { onMount } from "svelte";
   import { mode, setMode, resetMode } from "mode-watcher";
   import {
-    AudioWaveformIcon,
-    ChevronRightIcon,
-    DownloadIcon,
-    EllipsisVerticalIcon,
-    LogOutIcon,
-    MoonIcon,
-    PaletteIcon,
-    ShieldIcon,
-    SunIcon,
-    UserIcon,
-    KeyRoundIcon,
-    MonitorIcon,
-    DatabaseIcon,
-    ServerIcon,
-    AlertTriangleIcon,
+    AudioWaveform as AudioWaveformIcon,
+    ChevronRight as ChevronRightIcon,
+    Download as DownloadIcon,
+    EllipsisVertical as EllipsisVerticalIcon,
+    LogOut as LogOutIcon,
+    Moon as MoonIcon,
+    Palette as PaletteIcon,
+    Shield as ShieldIcon,
+    Sun as SunIcon,
+    User as UserIcon,
+    KeyRound as KeyRoundIcon,
+    Monitor as MonitorIcon,
+    Database as DatabaseIcon,
+    Server as ServerIcon,
+    TriangleAlert as AlertTriangleIcon,
   } from "@lucide/svelte";
   import { Input } from "$lib/components/ui/input";
   import BackendUrlUpdateField from "$lib/components/BackendUrlUpdateField.svelte";

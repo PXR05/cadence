@@ -8,6 +8,7 @@
   import { PauseIcon, PlayIcon } from "@lucide/svelte";
   import { onDestroy, onMount } from "svelte";
   import { innerHeight, innerWidth } from "svelte/reactivity/window";
+  // @ts-ignore
   import { createWebHaptics } from "web-haptics/svelte";
   import { vaulEase } from "$lib/utils";
   import { Button } from "../ui/button";

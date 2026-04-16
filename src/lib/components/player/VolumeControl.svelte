@@ -1,6 +1,6 @@
 <script lang="ts">
   import { playerStore } from "$lib/stores/player.svelte";
-  import { Volume2Icon, VolumeXIcon } from "@lucide/svelte";
+  import { Volume2 as Volume2Icon, VolumeX as VolumeXIcon } from "@lucide/svelte";
   import { Button } from "../ui/button";
 
   function handleVolumeChange(e: Event) {

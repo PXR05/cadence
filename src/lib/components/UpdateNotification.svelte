@@ -2,7 +2,7 @@
   import { Button } from "$lib/components/ui/button";
     import { appearanceStore } from "$lib/stores/appearance.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
-  import { RefreshCwIcon } from "@lucide/svelte";
+  import {  RefreshCw as RefreshCwIcon } from "@lucide/svelte";
   import { fly } from "svelte/transition";
 
   interface Props {

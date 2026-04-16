@@ -25,7 +25,7 @@ export interface CachedPlaylist {
   id: string;
   name: string;
   userId: string;
-  coverImage?: string;
+  coverImage?: string | null;
   createdAt: Date;
   updatedAt: Date;
   itemCount?: number;
@@ -37,7 +37,7 @@ export interface CachedPlaylistDetail {
   id: string;
   name: string;
   userId: string;
-  coverImage?: string;
+  coverImage?: string | null;
   createdAt: Date;
   updatedAt: Date;
   items: PlaylistItem[];

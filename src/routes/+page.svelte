@@ -1,8 +1,8 @@
 <script lang="ts">
   import {
-    LoaderIcon,
-    SquareDashedIcon,
-    TriangleAlertIcon,
+    Loader as LoaderIcon,
+    SquareDashed as SquareDashedIcon,
+    TriangleAlert as TriangleAlertIcon,
   } from "@lucide/svelte";
   import { PullToRefresh } from "$lib/components";
   import TrackItem from "$lib/components/tracks/TrackItem.svelte";

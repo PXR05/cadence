@@ -1,6 +1,6 @@
 <script lang="ts">
   import { toast } from "svelte-sonner";
-  import { MusicIcon } from "@lucide/svelte";
+  import { Music as MusicIcon } from "@lucide/svelte";
   import { Button } from "$lib/components/ui/button";
   import { fetchTracks, deleteTrack } from "$lib/api";
   import { tracksStore } from "$lib/stores/tracks.svelte";

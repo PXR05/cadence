@@ -1,6 +1,6 @@
 <script lang="ts">
   import { downloadStore } from "$lib/stores/download.svelte";
-  import { XIcon } from "@lucide/svelte";
+  import {  X as XIcon } from "@lucide/svelte";
   import * as AlertDialog from "$lib/components/ui/alert-dialog";
   import { Button } from "../ui/button";
   import { appearanceStore } from "$lib/stores/appearance.svelte";

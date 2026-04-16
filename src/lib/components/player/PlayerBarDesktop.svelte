@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { CarouselAPI } from "$lib/components/ui/carousel/context";
   import { playerStore } from "$lib/stores/player.svelte";
-  import { EllipsisIcon, ListMusicIcon } from "@lucide/svelte";
+  import { Ellipsis as EllipsisIcon, ListMusic as ListMusicIcon } from "@lucide/svelte";
   import { Button } from "../ui/button";
   import PlaybackControls from "./PlaybackControls.svelte";
   import ProgressBar from "./PlayerProgressBar.svelte";

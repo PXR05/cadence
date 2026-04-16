@@ -8,7 +8,7 @@
     removeItemFromPlaylist,
   } from "$lib/api";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
-  import { LoaderIcon, ChevronDown } from "@lucide/svelte";
+  import { Loader as LoaderIcon, ChevronDown as ChevronDownIcon } from "@lucide/svelte";
   import { SvelteSet } from "svelte/reactivity";
   import type { Playlist } from "$lib/schemas";
   import { invalidateAll } from "$app/navigation";
@@ -141,7 +141,7 @@
 <Dialog.Root {open} onOpenChange={handleOpenChange}>
   <Dialog.Content
     showCloseButton={false}
-    class="md:max-w-2xl h-dvh md:h-[90dvh] overflow-clip max-w-dvw flex flex-col z-60 p-0 max-md:border-0 rounded-none md:rounded-4xl bg-background"
+    class="md:max-w-2xl h-dvh md:h-[90dvh] overflow-clip max-w-dvw flex flex-col z-60 p-0 max-md:border-0 max-md:rounded-none bg-background"
   >
     <div
       class="absolute z-10 inset-0 flex flex-col h-dvh md:h-[90dvh] pointer-events-none"
@@ -149,15 +149,15 @@
         background: linear-gradient(
           to top,
           color-mix(in oklab, var(--background) 100%, transparent) 0%,
-          color-mix(in oklab, var(--background) 0%, transparent) 10%,
-          color-mix(in oklab, var(--background) 0%, transparent) 90%,
+          color-mix(in oklab, var(--background) 0%, transparent) 15%,
+          color-mix(in oklab, var(--background) 0%, transparent) 85%,
           color-mix(in oklab, var(--background) 100%, transparent) 100%
         );
       "
     ></div>
 
     <div
-      class="absolute top-1.5 left-1.5 right-1.5 z-10 rounded-3xl border border-muted-foreground/10 flex flex-col
+      class="absolute top-2 left-2 right-2 z-10 rounded-3xl border border-muted-foreground/10 flex flex-col
       {appearanceStore.disableBlur
         ? 'bg-muted'
         : 'bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md'}"
@@ -166,7 +166,7 @@
         <Dialog.Close
           class="opacity-70 transition-opacity hover:opacity-100 my-auto size-8 grid place-items-center"
         >
-          <ChevronDown />
+          <ChevronDownIcon />
         </Dialog.Close>
 
         <Dialog.Header class="min-w-0">
@@ -177,7 +177,7 @@
         </Dialog.Header>
 
         <Dialog.Close class="opacity-0 pointer-events-none">
-          <ChevronDown />
+          <ChevronDownIcon />
         </Dialog.Close>
       </div>
     </div>
@@ -199,7 +199,7 @@
         items={playlists}
         rowHeight={ROW_HEIGHT}
         class="h-dvh md:h-[90dvh]"
-        topOffset={80}
+        topOffset={90}
         leftPadding={8}
         rightPadding={8}
         itemGap={4}
@@ -258,7 +258,7 @@
     {/if}
 
     <div
-      class="absolute bottom-1.5 left-1.5 right-1.5 z-10 rounded-4xl border border-muted-foreground/10 p-1.5 flex gap-1.5
+      class="absolute bottom-2 left-2 right-2 z-10 rounded-4xl border border-muted-foreground/10 p-1.5 flex gap-1.5
       {appearanceStore.disableBlur
         ? 'bg-muted'
         : 'bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md'}"

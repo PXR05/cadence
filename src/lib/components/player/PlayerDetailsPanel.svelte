@@ -6,9 +6,9 @@
   import { trackMenuStore } from "$lib/stores/trackMenu.svelte";
   import { shouldLoadItem } from "$lib/utils/queue";
   import {
-    ChevronDown,
-    ChevronUpIcon,
-    EllipsisIcon,
+    ChevronDown as ChevronDownIcon,
+    ChevronUp as ChevronUpIcon,
+    Ellipsis as EllipsisIcon,
   } from "@lucide/svelte";
   import { onMount } from "svelte";
   import { PlaybackControls, ProgressBar } from ".";
@@ -237,7 +237,7 @@
         class="transition-opacity hover:opacity-90 cursor-pointer"
         aria-label="Close player details"
       >
-        <ChevronDown class="size-5" />
+        <ChevronDownIcon class="size-5" />
       </Button>
 
       <button

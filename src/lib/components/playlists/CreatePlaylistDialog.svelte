@@ -3,7 +3,7 @@
   import { Button } from "$lib/components/ui/button";
   import { createPlaylist } from "$lib/api";
   import { Input } from "../ui/input";
-  import { LinkIcon, LoaderIcon, ListIcon } from "@lucide/svelte";
+  import { Link as LinkIcon, Loader as LoaderIcon, List as ListIcon } from "@lucide/svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { remoteDownloadStore } from "$lib/stores/remoteDownload.svelte";
   import {

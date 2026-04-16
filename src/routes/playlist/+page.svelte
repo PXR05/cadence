@@ -11,9 +11,10 @@
     PullToRefresh,
     PlaylistPageDesktop,
     PlaylistPageMobile,
+    PlaylistSortDialog,
   } from "$lib/components";
   import { innerWidth } from "svelte/reactivity/window";
-  import { LoaderIcon, TriangleAlertIcon } from "@lucide/svelte";
+  import { Loader as LoaderIcon, TriangleAlert as TriangleAlertIcon } from "@lucide/svelte";
   import type { PlaylistDetail, PlaylistItem } from "$lib/schemas";
   import { playerStore } from "$lib/stores/player.svelte.js";
   import { loadPlaylistForRoute } from "./load-playlist";
@@ -26,12 +27,16 @@
   let searchQuery = $state("");
   let isScrolled = $state(false);
   let mobileListScrollTop = $state(0);
+  let sortBy = $state<"custom" | "title" | "addedAt" | "artist">("custom");
+  let sortDirection = $state<"asc" | "desc">("asc");
 
   $effect(() => {
     playlist = undefined;
     searchQuery = "";
     isScrolled = false;
     mobileListScrollTop = 0;
+    sortBy = "custom";
+    sortDirection = "asc";
 
     data.playlist.then((resolved) => {
       playlist = resolved;
@@ -39,6 +44,7 @@
   });
 
   const addTracksDialog = useDialogState("add-tracks");
+  const sortDialog = useDialogState("sort");
 
   const existingTrackIds = $derived(
     new SvelteSet(playlist?.items.map((item) => item.audio.id) ?? []),
@@ -56,9 +62,13 @@
   );
 
   const filteredTracks = $derived(
-    searchQuery.trim()
-      ? filterTracks(playlist?.items ?? [], searchQuery)
-      : (playlist?.items ?? []),
+    sortTracks(
+      searchQuery.trim()
+        ? filterTracks(playlist?.items ?? [], searchQuery)
+        : (playlist?.items ?? []),
+      sortBy,
+      sortDirection,
+    ),
   );
 
   function filterTracks(items: PlaylistItem[], query: string) {
@@ -71,6 +81,50 @@
         artist.toLowerCase().includes(lowerQuery)
       );
     });
+  }
+
+  function sortTracks(
+    items: PlaylistItem[],
+    currentSortBy: "custom" | "title" | "addedAt" | "artist",
+    currentSortDirection: "asc" | "desc",
+  ) {
+    const sorted = [...items];
+
+    sorted.sort((a, b) => {
+      let result = 0;
+
+      if (currentSortBy === "custom") {
+        result = a.position - b.position;
+      } else if (currentSortBy === "addedAt") {
+        result = a.addedAt.getTime() - b.addedAt.getTime();
+      } else if (currentSortBy === "artist") {
+        const artistA = (a.audio.metadata?.artist || "").toLowerCase();
+        const artistB = (b.audio.metadata?.artist || "").toLowerCase();
+        result = artistA.localeCompare(artistB, undefined, {
+          sensitivity: "base",
+          numeric: true,
+        });
+      } else {
+        const titleA = (
+          a.audio.metadata?.title || a.audio.filename
+        ).toLowerCase();
+        const titleB = (
+          b.audio.metadata?.title || b.audio.filename
+        ).toLowerCase();
+        result = titleA.localeCompare(titleB, undefined, {
+          sensitivity: "base",
+          numeric: true,
+        });
+      }
+
+      if (result === 0) {
+        result = a.position - b.position;
+      }
+
+      return currentSortDirection === "asc" ? result : -result;
+    });
+
+    return sorted;
   }
 
   const isMobile = $derived((innerWidth.current ?? 0) <= 768);
@@ -128,6 +182,7 @@
         onListScroll={(scrollTop) => {
           mobileListScrollTop = scrollTop;
         }}
+        onOpenSort={() => sortDialog.open()}
         onAddTracks={() => addTracksDialog.open()}
       />
     {:else}
@@ -137,11 +192,31 @@
         bind:searchQuery
         {hasAddButton}
         items={filteredTracks}
+        onOpenSort={() => sortDialog.open()}
         onAddTracks={() => addTracksDialog.open()}
       />
     {/if}
   </div>
 </PullToRefresh>
+
+<PlaylistSortDialog
+  open={sortDialog.isOpen}
+  onOpenChange={(open) => {
+    if (open) {
+      sortDialog.open();
+    } else {
+      sortDialog.close();
+    }
+  }}
+  {sortBy}
+  {sortDirection}
+  onSortByChange={(value) => {
+    sortBy = value;
+  }}
+  onSortDirectionChange={(value) => {
+    sortDirection = value;
+  }}
+/>
 
 {#if playlist && playlistId && !isNonModifiable}
   <AddTracksDialog

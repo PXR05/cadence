@@ -10,15 +10,13 @@
   import { historyDb } from "$lib/db/history";
   import { onMount, onDestroy } from "svelte";
   import {
-    ArrowLeftIcon,
-    DatabaseIcon,
-    Trash2Icon,
-    RefreshCwIcon,
-    HardDriveIcon,
-    AlertTriangleIcon,
-    GlobeIcon,
-    ImageIcon,
-    PackageIcon,
+    Database as DatabaseIcon,
+    Trash2 as Trash2Icon,
+    RefreshCw as RefreshCwIcon,
+    HardDrive as HardDriveIcon,
+    TriangleAlert as AlertTriangleIcon,
+    Globe as GlobeIcon,
+    Package as PackageIcon,
   } from "@lucide/svelte";
   import { playerStore } from "$lib/stores/player.svelte";
 

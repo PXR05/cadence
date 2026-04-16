@@ -25,14 +25,14 @@
   import EditPlaylistDialog from "./EditPlaylistDialog.svelte";
   import { Button } from "../ui/button";
   import {
-    CloudDownloadIcon,
-    CloudOffIcon,
-    PencilIcon,
-    RefreshCwIcon,
-    DownloadIcon,
-    MusicIcon,
-    ListPlusIcon,
-    PlayIcon,
+    CloudDownload as CloudDownloadIcon,
+    CloudOff as CloudOffIcon,
+    Pencil as PencilIcon,
+    RefreshCw as RefreshCwIcon,
+    Download as DownloadIcon,
+    Music as MusicIcon,
+    ListPlus as ListPlusIcon,
+    Play as PlayIcon,
   } from "@lucide/svelte";
   import { toast } from "svelte-sonner";
   import { invalidateAll } from "$app/navigation";

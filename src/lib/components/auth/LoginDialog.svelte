@@ -2,7 +2,7 @@
   import { authStore } from "$lib/stores/auth.svelte";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
-  import { EyeIcon, EyeOffIcon } from "@lucide/svelte";
+  import { Eye as EyeIcon, EyeOff as EyeOffIcon } from "@lucide/svelte";
 
   let {
     onAuthenticated,

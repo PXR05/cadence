@@ -19,11 +19,11 @@
   import type { EqualizerPreset } from "$lib/stores/player.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
   import {
-    DownloadIcon,
-    PencilIcon,
-    PlusIcon,
-    Trash2Icon,
-    UploadIcon,
+    Download as DownloadIcon,
+    Pencil as PencilIcon,
+    Plus as PlusIcon,
+    Trash2 as Trash2Icon,
+    Upload as UploadIcon,
   } from "@lucide/svelte";
 
   let importInputRef: HTMLInputElement;
