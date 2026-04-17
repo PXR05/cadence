@@ -202,10 +202,6 @@ class RemoteDownloadStore {
     }
   }
 
-  async downloadFromUrl(provider: RemoteProvider, url: string): Promise<void> {
-    await this.addUrlToQueue(provider, url);
-  }
-
   private async processQueue() {
     if (this._isProcessing) return;
     if (this._currentDownload === null && this._queue.length === 0) return;

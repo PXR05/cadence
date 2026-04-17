@@ -86,7 +86,7 @@ export function buildRemoteCollectionUrl(
     return `https://music.youtube.com/playlist?list=${providerItemId}`;
   }
 
-  return `https://tidal.com/browse/${kind}/${providerItemId}`;
+  return `https://tidal.com/browse/${kind}/${providerItemId.replace("tidal_" + kind + "_", "").split("_")[0]}`;
 }
 
 export function isValidRemoteImportUrl(
@@ -119,8 +119,7 @@ export function detectRemoteProviderFromUrl(
     if (hostname.endsWith("tidal.com")) {
       return "tidal";
     }
-  } catch {
-  }
+  } catch {}
 
   if (/youtu\.be|youtube\.com/i.test(trimmedUrl)) {
     return "youtube";

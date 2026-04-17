@@ -75,7 +75,7 @@
     error = "";
 
     try {
-      await remoteDownloadStore.downloadFromUrl(provider, url);
+      await remoteDownloadStore.addUrlToQueue(provider, url);
       tracksStore.loadAllTracks(true);
       resetDialog();
       onOpenChange(false);

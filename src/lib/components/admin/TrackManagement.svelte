@@ -94,7 +94,7 @@
     const providerLabel = getRemoteProviderLabel(provider);
 
     try {
-      await remoteDownloadStore.downloadFromUrl(provider, url);
+      await remoteDownloadStore.addUrlToQueue(provider, url);
       setMessage("success", `Downloaded from ${providerLabel}`);
       await loadTracks(tracksCurrentPage);
       tracksStore.loadAllTracks(true);

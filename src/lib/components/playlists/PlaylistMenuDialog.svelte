@@ -158,7 +158,7 @@
     try {
       handleClose();
       if (isYoutubeCollectionPlaylist(playlist.id)) {
-        await remoteDownloadStore.downloadFromUrl(
+        await remoteDownloadStore.addUrlToQueue(
           "youtube",
           buildRemoteCollectionUrl(
             "youtube",
@@ -171,7 +171,7 @@
         const isTidalAlbum = isTidalAlbumPlaylist(playlist.id);
         const tidalType = isTidalAlbum ? "album" : "playlist";
         const tidalId = getTidalCollectionId(playlist.id);
-        await remoteDownloadStore.downloadFromUrl(
+        await remoteDownloadStore.addUrlToQueue(
           "tidal",
           buildRemoteCollectionUrl("tidal", tidalType, tidalId),
         );
