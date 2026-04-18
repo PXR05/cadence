@@ -1,7 +1,10 @@
 <script lang="ts">
   import { page } from "$app/state";
   import * as Sidebar from "$lib/components/ui/sidebar";
-  import {  ArrowLeftToLine as ArrowLeftToLineIcon, Plus as PlusIcon } from "@lucide/svelte";
+  import {
+    ArrowLeftToLine as ArrowLeftToLineIcon,
+    Plus as PlusIcon,
+  } from "@lucide/svelte";
   import { offlineDb } from "$lib/db/offline";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
@@ -67,6 +70,11 @@
               class="h-11.5 px-4"
               isActive={isActive(item.path)}
               tooltipContent={item.label}
+              onclick={() => {
+                if (item.action && isActive(item.path)) {
+                  item.action();
+                }
+              }}
             >
               {#snippet child({ props })}
                 <a href={item.path} {...props}>
@@ -99,7 +107,9 @@
     </Sidebar.GroupLabel>
 
     <Sidebar.GroupContent class="flex-1 h-full overflow-y-scroll">
-      <Sidebar.Menu class="pb-40 group-data-[collapsible=icon]:gap-2 gap-1 transition-all duration-200">
+      <Sidebar.Menu
+        class="pb-40 group-data-[collapsible=icon]:gap-2 gap-1 transition-all duration-200"
+      >
         {#each allPlaylists as playlist (playlist.id)}
           <SidebarPlaylistItem {playlist} />
         {/each}

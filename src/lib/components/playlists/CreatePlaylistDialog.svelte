@@ -36,9 +36,9 @@
     error = "";
 
     try {
-      await createPlaylist({ name: playlistName.trim() });
       resetDialog();
       onOpenChange(false);
+      await createPlaylist({ name: playlistName.trim() });
       onCreated?.();
     } catch (err) {
       error = err instanceof Error ? err.message : "Failed to create playlist";
@@ -75,10 +75,10 @@
     error = "";
 
     try {
-      await remoteDownloadStore.addUrlToQueue(provider, url);
-      tracksStore.loadAllTracks(true);
       resetDialog();
       onOpenChange(false);
+      await remoteDownloadStore.addUrlToQueue(provider, url);
+      tracksStore.loadAllTracks(true);
       onCreated?.();
     } catch (err) {
       error = err instanceof Error ? err.message : "Failed to import playlist";

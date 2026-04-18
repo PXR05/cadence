@@ -17,9 +17,9 @@
 
   const activeTabIndex = $derived(tabs.findIndex((tab) => isActive(tab.path)));
 
-  function handleTabClick(e: MouseEvent, tabIndex: number) {
+  async function handleTabClick(e: MouseEvent, tabIndex: number) {
     if (tabIndex === activeTabIndex) {
-      tabs[tabIndex].action?.();
+      await tabs[tabIndex].action?.();
       return;
     }
 
@@ -54,8 +54,7 @@
         draggable="false"
         animate:flip={{ duration: appearanceStore.disableAnimations ? 0 : 200 }}
         onclick={(e) => handleTabClick(e, i)}
-        class="relative flex-1 z-20 grid place-items-center cursor-pointer
-        {active ? 'pointer-events-none' : ''}"
+        class="relative flex-1 z-20 grid place-items-center cursor-pointer"
       >
         <div
           class="grid place-items-center"

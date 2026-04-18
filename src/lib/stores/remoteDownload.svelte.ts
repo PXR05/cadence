@@ -337,6 +337,9 @@ class RemoteDownloadStore {
     const audioBaseUrl = getAudioBaseUrl();
     const controller = new AbortController();
     this._activeAbortController = controller;
+    const maxReconnectAttempts = 3;
+    const baseReconnectDelayMs = 500;
+    const maxReconnectDelayMs = 5000;
 
     const clearController = () => {
       if (this._activeAbortController === controller) {
@@ -348,7 +351,7 @@ class RemoteDownloadStore {
       rawEvent: string,
       resolve: () => void,
       reject: (reason?: unknown) => void,
-    ): boolean => {
+    ): { isTerminal: boolean; processed: boolean } => {
       const lines = rawEvent.split(/\r?\n/);
       const dataLines: string[] = [];
 
@@ -359,7 +362,9 @@ class RemoteDownloadStore {
         }
       }
 
-      if (dataLines.length === 0) return false;
+      if (dataLines.length === 0) {
+        return { isTerminal: false, processed: false };
+      }
 
       try {
         const data = JSON.parse(dataLines.join("\n")) as RemoteProgressEvent;
@@ -368,91 +373,150 @@ class RemoteDownloadStore {
         if (data.type === "complete" || data.type === "cancelled") {
           clearController();
           resolve();
-          return true;
+          return { isTerminal: true, processed: true };
         }
 
         if (data.type === "error") {
           clearController();
           reject(new Error(data.message));
-          return true;
+          return { isTerminal: true, processed: true };
         }
       } catch (error) {
         console.error("Error parsing SSE data:", error);
       }
 
-      return false;
+      return { isTerminal: false, processed: true };
     };
 
+    const sleep = (ms: number) =>
+      new Promise<void>((resolve) => {
+        setTimeout(resolve, ms);
+      });
+
     return new Promise(async (resolve, reject) => {
+      let reconnectAttempts = 0;
+
       try {
-        const response = await fetch(
-          `${audioBaseUrl}/upload/${provider}?${params}`,
-          {
-            method: "GET",
-            credentials: "include",
-            signal: controller.signal,
-            headers: {
-              Accept: "text/event-stream",
-              Authorization: `Bearer ${authStore.sessionId}`,
+        while (!controller.signal.aborted) {
+          const response = await fetch(
+            `${audioBaseUrl}/upload/${provider}?${params}`,
+            {
+              method: "GET",
+              credentials: "include",
+              signal: controller.signal,
+              headers: {
+                Accept: "text/event-stream",
+                Authorization: `Bearer ${authStore.sessionId}`,
+              },
             },
-          },
-        );
-
-        if (!response.ok) {
-          clearController();
-          reject(
-            new Error(
-              `Connection to server failed: ${response.status} ${response.statusText}`,
-            ),
           );
-          return;
-        }
 
-        if (!response.body) {
-          clearController();
-          reject(new Error("Connection to server lost: empty response body"));
-          return;
-        }
-
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-
-        while (true) {
-          const { done, value } = await reader.read();
-
-          if (done) {
-            break;
+          if (!response.ok) {
+            clearController();
+            reject(
+              new Error(
+                `Connection to server failed: ${response.status} ${response.statusText}`,
+              ),
+            );
+            return;
           }
 
-          buffer += decoder.decode(value, { stream: true });
-
-          let boundary = buffer.search(/\r?\n\r?\n/);
-          while (boundary >= 0) {
-            const rawEvent = buffer.slice(0, boundary);
-            const separatorLength =
-              buffer.slice(boundary, boundary + 2) === "\r\n" ? 4 : 2;
-            buffer = buffer.slice(boundary + separatorLength);
-
-            const isTerminal = processSseEvent(rawEvent, resolve, reject);
-            if (isTerminal) {
-              try {
-                await reader.cancel();
-              } catch {}
+          if (!response.body) {
+            reconnectAttempts += 1;
+            if (reconnectAttempts > maxReconnectAttempts) {
+              clearController();
+              reject(
+                new Error("Connection to server lost: empty response body"),
+              );
               return;
             }
 
-            boundary = buffer.search(/\r?\n\r?\n/);
+            const delay = Math.min(
+              maxReconnectDelayMs,
+              baseReconnectDelayMs * 2 ** (reconnectAttempts - 1),
+            );
+            await sleep(delay);
+            continue;
           }
-        }
 
-        const tail = buffer + decoder.decode();
-        if (tail.trim().length > 0) {
-          processSseEvent(tail, resolve, reject);
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
+          let receivedAnyEvent = false;
+
+          while (!controller.signal.aborted) {
+            const { done, value } = await reader.read();
+
+            if (done) {
+              break;
+            }
+
+            buffer += decoder.decode(value, { stream: true });
+
+            let boundary = buffer.search(/\r?\n\r?\n/);
+            while (boundary >= 0) {
+              const rawEvent = buffer.slice(0, boundary);
+              const separatorLength =
+                buffer.slice(boundary, boundary + 2) === "\r\n" ? 4 : 2;
+              buffer = buffer.slice(boundary + separatorLength);
+
+              const { isTerminal, processed } = processSseEvent(
+                rawEvent,
+                resolve,
+                reject,
+              );
+              if (processed) {
+                receivedAnyEvent = true;
+                reconnectAttempts = 0;
+              }
+
+              if (isTerminal) {
+                try {
+                  await reader.cancel();
+                } catch {}
+                return;
+              }
+
+              boundary = buffer.search(/\r?\n\r?\n/);
+            }
+          }
+
+          const tail = buffer + decoder.decode();
+          if (tail.trim().length > 0) {
+            const { isTerminal, processed } = processSseEvent(
+              tail,
+              resolve,
+              reject,
+            );
+            if (processed) {
+              receivedAnyEvent = true;
+              reconnectAttempts = 0;
+            }
+            if (isTerminal) {
+              return;
+            }
+          }
+
+          reconnectAttempts += 1;
+          if (receivedAnyEvent) {
+            reconnectAttempts = 1;
+          }
+
+          if (reconnectAttempts > maxReconnectAttempts) {
+            clearController();
+            reject(new Error("Connection to server lost"));
+            return;
+          }
+
+          const delay = Math.min(
+            maxReconnectDelayMs,
+            baseReconnectDelayMs * 2 ** (reconnectAttempts - 1),
+          );
+          await sleep(delay);
         }
 
         clearController();
-        reject(new Error("Connection to server lost"));
+        reject(new Error("Connection to server lost: request was aborted"));
       } catch (error) {
         clearController();
         if (controller.signal.aborted) {

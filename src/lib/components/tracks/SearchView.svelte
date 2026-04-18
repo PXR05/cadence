@@ -337,6 +337,7 @@
           bind:ref={searchInput}
           bind:value={searchQuery}
           oninput={handleInput}
+          autofocus
           type="search"
           placeholder="search..."
           class="flex-1 text-base h-auto bg-transparent! border-0 transition-all p-3 pr-11 pl-20 outline-none font-mono placeholder:text-muted-foreground rounded-xl"
