@@ -590,7 +590,7 @@
         <Button
           variant="ghost"
           onclick={handlePlayPause}
-          class="size-12 grid place-items-center shrink-0 mr-2 p-0"
+          class="size-12 grid place-items-center shrink-0 mr-2 p-0 rounded-2xl"
           aria-label={playerStore.isPlaying ? "Pause" : "Play"}
         >
           {#if playerStore.isPlaying}

@@ -58,16 +58,10 @@
 </svelte:head>
 
 <PullToRefresh onStageOne={refreshPlaylists}>
-  <div
-    style="--h: 5rem;"
-    class="p-2 fixed top-0 left-0 right-0 z-30 transition-[left] duration-200"
-  >
-    <div class="_bg _color absolute inset-0 -z-10"></div>
-    <h2 class="text-2xl font-semibold p-2">Playlists</h2>
-  </div>
+  <h2 class="p-4 text-2xl font-semibold">Playlists</h2>
 
   <div
-    class="p-4 pt-17 grid grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-4 @7xl:grid-cols-5 @9xl:grid-cols-6 gap-4 pb-72"
+    class="p-4 pt-0 grid grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-4 @7xl:grid-cols-5 @9xl:grid-cols-6 gap-4 pb-72"
   >
     {#each allPlaylists as playlist, i (playlist.id)}
       <div
@@ -99,32 +93,3 @@
   onOpenChange={(open) => (createDialogOpen = open)}
   onCreated={handlePlaylistCreated}
 />
-
-<style>
-  ._bg {
-    &::before,
-    &::after {
-      pointer-events: none;
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: -1;
-      mask: linear-gradient(to top, transparent, black 90%);
-    }
-    &::before {
-      height: var(--h);
-    }
-    &::after {
-      height: calc(var(--h) - 1rem);
-    }
-  }
-
-  ._color {
-    &::before,
-    &::after {
-      background-color: var(--background);
-    }
-  }
-</style>

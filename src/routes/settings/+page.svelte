@@ -265,18 +265,10 @@
   </button>
 {/snippet}
 
-<div
-  style="--h: 5.5rem;"
-  class="p-2 fixed top-0 left-0 right-0 z-30 flex items-end justify-between transition-[left] duration-200
-  {isSidebarCollapsed ? 'md:left-16' : 'md:left-64'}
-  "
->
-  <div class="_bg _color absolute inset-0 -z-10"></div>
-  <h2 class="text-2xl font-semibold p-2">Settings</h2>
-</div>
+<h2 class="text-2xl font-semibold p-4">Settings</h2>
 
 <div class="h-dvh">
-  <div class="p-4 pt-16 h-full w-full space-y-4 mb-[50dvh]">
+  <div class="p-4 pt-0 h-full w-full space-y-4 mb-[50dvh]">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div
@@ -585,32 +577,3 @@
     </AlertDialog.Footer>
   </AlertDialog.Content>
 </AlertDialog.Root>
-
-<style>
-  ._bg {
-    &::before,
-    &::after {
-      pointer-events: none;
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: -1;
-      mask: linear-gradient(to top, transparent, black 90%);
-    }
-    &::before {
-      height: var(--h);
-    }
-    &::after {
-      height: calc(var(--h) - 1rem);
-    }
-  }
-
-  ._color {
-    &::before,
-    &::after {
-      background-color: var(--background);
-    }
-  }
-</style>
