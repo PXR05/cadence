@@ -6,8 +6,8 @@ on:
       - main
     paths:
       - "src/**"
+      - "static/**"
       - "package.json"
-      - "bun.lock"
       - "Dockerfile"
       - ".dockerignore"
       - ".gitignore"

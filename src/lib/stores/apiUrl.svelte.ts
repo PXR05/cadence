@@ -47,7 +47,9 @@ class ApiUrlStore {
     null,
   );
 
-  readonly defaultUrl = tryNormalize(import.meta.env.VITE_API_URL) ?? "";
+  readonly defaultUrl =
+    tryNormalize(import.meta.env.VITE_API_URL ?? process.env.VITE_API_URL) ??
+    "";
 
   customUrl = $state<string | null>(null);
 
