@@ -48,12 +48,14 @@ class ApiUrlStore {
     null,
   );
 
-  readonly defaultUrl = tryNormalize(env.PUBLIC_API_URL) ?? "";
+  readonly defaultUrl =
+    tryNormalize(env.PUBLIC_API_URL || process.env.PUBLIC_API_URL) ?? "";
 
   customUrl = $state<string | null>(null);
 
   constructor() {
     this.customUrl = tryNormalize(this.customUrlStorage.value);
+    console.log("Default API URL:", this.defaultUrl);
 
     if (this.customUrlStorage.value !== this.customUrl) {
       this.customUrlStorage.value = this.customUrl;
