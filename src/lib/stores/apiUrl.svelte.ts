@@ -55,7 +55,6 @@ class ApiUrlStore {
 
   constructor() {
     this.customUrl = tryNormalize(this.customUrlStorage.value);
-    console.log("Default API URL:", this.defaultUrl);
 
     if (this.customUrlStorage.value !== this.customUrl) {
       this.customUrlStorage.value = this.customUrl;

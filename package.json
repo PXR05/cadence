@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
+    "build:cf": "ADAPTER=cf vite build",
     "preview": "vite preview",
     "prepare": "svelte-kit sync || echo ''",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
@@ -14,8 +15,8 @@
   "devDependencies": {
     "@internationalized/date": "^3.12.1",
     "@lucide/svelte": "^1.8.0",
+    "@sveltejs/adapter-cloudflare": "^7.2.8",
     "@sveltejs/adapter-node": "^5.5.4",
-    "@sveltejs/adapter-static": "^3.0.10",
     "@sveltejs/kit": "^2.57.1",
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
     "@tailwindcss/vite": "^4.2.2",
@@ -37,8 +38,6 @@
   },
   "dependencies": {
     "@tanstack/svelte-virtual": "^3.13.23",
-    "@tauri-apps/api": "^2.10.1",
-    "@tauri-apps/plugin-haptics": "~2",
     "color.js": "^1.2.0",
     "colorjs.io": "^0.6.1",
     "dexie": "^4.4.2",
