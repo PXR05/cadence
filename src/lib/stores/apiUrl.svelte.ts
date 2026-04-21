@@ -1,4 +1,5 @@
 import { createLocalStorageState } from "./localStorage.svelte";
+import { PUBLIC_API_URL } from "$env/static/public";
 
 const STORAGE_KEY = "cadence.api_url";
 
@@ -47,9 +48,7 @@ class ApiUrlStore {
     null,
   );
 
-  readonly defaultUrl =
-    tryNormalize(import.meta.env.VITE_API_URL ?? process.env.VITE_API_URL) ??
-    "";
+  readonly defaultUrl = tryNormalize(PUBLIC_API_URL) ?? "";
 
   customUrl = $state<string | null>(null);
 
@@ -90,7 +89,7 @@ export function getBackendUrl(): string {
 
   if (!activeUrl) {
     throw new Error(
-      "Backend URL is not configured. Set VITE_API_URL or choose a custom backend URL.",
+      "Backend URL is not configured. Set PUBLIC_API_URL or choose a custom backend URL.",
     );
   }
 

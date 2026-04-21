@@ -16,7 +16,7 @@ If you only want to deploy and run the app, start with just the compose and env 
 2. Edit `.env` and set these values:
    - `PROTOCOL`
    - `DOMAIN`
-   - `VITE_API_URL` (pointing to your [AudioStream](https://github.com/PXR05/audiostream) instance)
+   - `PUBLIC_API_URL` (pointing to your [AudioStream](https://github.com/PXR05/audiostream) instance)
 
 3. Start the stack:
 
