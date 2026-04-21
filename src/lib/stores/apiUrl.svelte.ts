@@ -1,5 +1,5 @@
 import { createLocalStorageState } from "./localStorage.svelte";
-import { PUBLIC_API_URL } from "$env/static/public";
+import { env } from "$env/dynamic/public";
 
 const STORAGE_KEY = "cadence.api_url";
 
@@ -48,7 +48,7 @@ class ApiUrlStore {
     null,
   );
 
-  readonly defaultUrl = tryNormalize(PUBLIC_API_URL) ?? "";
+  readonly defaultUrl = tryNormalize(env.PUBLIC_API_URL) ?? "";
 
   customUrl = $state<string | null>(null);
 
