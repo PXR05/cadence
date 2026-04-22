@@ -20,7 +20,6 @@
     Monitor as MonitorIcon,
     Database as DatabaseIcon,
     Server as ServerIcon,
-    TriangleAlert as AlertTriangleIcon,
   } from "@lucide/svelte";
   import { Input } from "$lib/components/ui/input";
   import BackendUrlUpdateField from "$lib/components/BackendUrlUpdateField.svelte";
@@ -37,7 +36,7 @@
     normalizeApiUrl,
   } from "$lib/stores/apiUrl.svelte";
   import { applyApiUrlChange } from "$lib/utils/apiUrlChange";
-  import * as AlertDialog from "$lib/components/ui/alert-dialog";
+  import BackendUrlChangeConfirmDialog from "$lib/components/BackendUrlChangeConfirmDialog.svelte";
 
   const isAdmin = $derived(authStore.isAdmin);
   let accountMenuOpen = $state(false);
@@ -53,6 +52,8 @@
   let isInstalled = $state(false);
   let backendUrlInput = $state("");
   let pendingBackendUrl = $state("");
+  let pendingResetBackendContent = $state(true);
+  let resetBackendContentOnApply = $state(true);
   let backendUrlError = $state("");
   let isApplyingBackendUrl = $state(false);
   let backendChangeDialogOpen = $state(false);
@@ -174,7 +175,40 @@
     }
   }
 
-  function requestApplyBackendUrl(): void {
+  async function applyBackendUrlChange(
+    nextUrl: string,
+    resetContent: boolean,
+  ): Promise<void> {
+    isApplyingBackendUrl = true;
+    backendUrlError = "";
+
+    try {
+      const result = await applyApiUrlChange(nextUrl, {
+        resetContent,
+      });
+      backendUrlInput = result.activeUrl;
+
+      if (result.changed) {
+        if (result.resetContent) {
+          toast.success("Backend URL updated. Local content cache was reset.");
+        } else {
+          toast.success("Backend URL updated without clearing local content.");
+        }
+        goto("/");
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to update backend URL";
+      backendUrlError = message;
+      toast.error(message);
+    } finally {
+      isApplyingBackendUrl = false;
+      backendChangeDialogOpen = false;
+      pendingBackendUrl = "";
+    }
+  }
+
+  function requestApplyBackendUrl(options: { resetContent: boolean }): void {
     backendUrlError = "";
 
     let normalized: string;
@@ -200,32 +234,13 @@
       return;
     }
 
+    pendingResetBackendContent = options.resetContent;
     pendingBackendUrl = normalized;
     backendChangeDialogOpen = true;
   }
 
   async function handleConfirmBackendUrlChange(): Promise<void> {
-    isApplyingBackendUrl = true;
-    backendUrlError = "";
-
-    try {
-      const result = await applyApiUrlChange(pendingBackendUrl);
-      backendUrlInput = result.activeUrl;
-
-      if (result.changed) {
-        toast.success("Backend URL updated. Local content cache was reset.");
-        goto("/");
-      }
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to update backend URL";
-      backendUrlError = message;
-      toast.error(message);
-    } finally {
-      isApplyingBackendUrl = false;
-      backendChangeDialogOpen = false;
-      pendingBackendUrl = "";
-    }
+    await applyBackendUrlChange(pendingBackendUrl, pendingResetBackendContent);
   }
 
   const themeOptions = [
@@ -233,8 +248,6 @@
     { value: "dark", label: "Dark", icon: MoonIcon },
     { value: "system", label: "System", icon: MonitorIcon },
   ] as const;
-
-  const isSidebarCollapsed = $derived(useSidebar().state === "collapsed");
 </script>
 
 <svelte:head>
@@ -371,6 +384,7 @@
         </p>
         <BackendUrlUpdateField
           bind:value={backendUrlInput}
+          bind:resetContentOnApply={resetBackendContentOnApply}
           defaultValue={apiUrlStore.defaultUrl}
           isApplying={isApplyingBackendUrl}
           error={backendUrlError}
@@ -546,34 +560,9 @@
   </Dialog.Content>
 </Dialog.Root>
 
-<AlertDialog.Root bind:open={backendChangeDialogOpen}>
-  <AlertDialog.Content>
-    <AlertDialog.Header>
-      <div class="flex items-center gap-3 mb-2">
-        <div
-          class="size-10 rounded-full bg-destructive/10 flex items-center justify-center"
-        >
-          <AlertTriangleIcon class="size-5 text-destructive" />
-        </div>
-        <AlertDialog.Title>Apply New Backend URL?</AlertDialog.Title>
-      </div>
-      <AlertDialog.Description>
-        This will sign you out and clear cached content (tracks, playlists,
-        offline data, history, and download queues). Theme and visual
-        preferences are kept.
-      </AlertDialog.Description>
-    </AlertDialog.Header>
-    <AlertDialog.Footer>
-      <AlertDialog.Cancel disabled={isApplyingBackendUrl}>
-        Cancel
-      </AlertDialog.Cancel>
-      <AlertDialog.Action
-        class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-        onclick={handleConfirmBackendUrlChange}
-        disabled={isApplyingBackendUrl}
-      >
-        {isApplyingBackendUrl ? "Applying..." : "Apply & Reset"}
-      </AlertDialog.Action>
-    </AlertDialog.Footer>
-  </AlertDialog.Content>
-</AlertDialog.Root>
+<BackendUrlChangeConfirmDialog
+  bind:open={backendChangeDialogOpen}
+  isApplying={isApplyingBackendUrl}
+  resetContent={pendingResetBackendContent}
+  onConfirm={handleConfirmBackendUrlChange}
+/>

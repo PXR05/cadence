@@ -1,7 +1,7 @@
 import { createLocalStorageState } from "./localStorage.svelte";
-import { env } from "$env/dynamic/public";
 
 const STORAGE_KEY = "cadence.api_url";
+const DEFAULT_STORAGE_KEY = "cadence.api_url_default";
 
 function stripTrailingSlash(value: string): string {
   return value.endsWith("/") ? value.slice(0, -1) : value;
@@ -12,6 +12,26 @@ function tryNormalize(value: string | null | undefined): string | null {
 
   try {
     return normalizeApiUrl(value);
+  } catch {
+    return null;
+  }
+}
+
+async function resolveRuntimeDefaultUrl(): Promise<string | null> {
+  const processDefault = tryNormalize(
+    typeof process !== "undefined" ? process.env.PUBLIC_API_URL : undefined,
+  );
+  if (processDefault) {
+    return processDefault;
+  }
+
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const { env } = await import("$env/dynamic/public");
+    return tryNormalize(env.PUBLIC_API_URL);
   } catch {
     return null;
   }
@@ -47,17 +67,46 @@ class ApiUrlStore {
     STORAGE_KEY,
     null,
   );
+  private defaultUrlStorage = createLocalStorageState<string>(
+    DEFAULT_STORAGE_KEY,
+    "",
+  );
 
-  readonly defaultUrl =
-    tryNormalize(env.PUBLIC_API_URL || process.env.PUBLIC_API_URL) ?? "";
+  defaultUrl = $state<string>("");
 
   customUrl = $state<string | null>(null);
 
   constructor() {
+    this.defaultUrl = tryNormalize(this.defaultUrlStorage.value) ?? "";
+    if (this.defaultUrlStorage.value !== this.defaultUrl) {
+      this.defaultUrlStorage.value = this.defaultUrl;
+    }
+
     this.customUrl = tryNormalize(this.customUrlStorage.value);
 
     if (this.customUrlStorage.value !== this.customUrl) {
       this.customUrlStorage.value = this.customUrl;
+    }
+
+    void this.hydrateDefaultUrlFromRuntime();
+  }
+
+  private async hydrateDefaultUrlFromRuntime(): Promise<void> {
+    if (this.defaultUrl) {
+      return;
+    }
+
+    const runtimeDefault = await resolveRuntimeDefaultUrl();
+    if (!runtimeDefault) {
+      return;
+    }
+
+    this.defaultUrl = runtimeDefault;
+    this.defaultUrlStorage.value = runtimeDefault;
+
+    if (this.customUrl === runtimeDefault) {
+      this.customUrl = null;
+      this.customUrlStorage.value = null;
     }
   }
 

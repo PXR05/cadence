@@ -6,6 +6,7 @@
     FlowingGradient,
     Shader,
   } from "shaders/svelte";
+  import { onMount } from "svelte";
 
   type GradientColors = {
     colorA: string;
@@ -27,6 +28,13 @@
       : false,
   );
   let gradientColors = $state<GradientColors>(fallbackColors);
+  let visible = $state(false);
+
+  onMount(() => {
+    setTimeout(() => {
+      visible = true;
+    }, 0);
+  });
 
   let colorProbe: HTMLSpanElement | null = null;
 
@@ -134,16 +142,20 @@
   });
 </script>
 
-<div class="absolute inset-0 overflow-hidden" aria-hidden="true">
-  {#if browser && !prefersReducedMotion}
-    <Shader class="h-full w-full" colorSpace="srgb" disableTelemetry={true}>
+<div class="fixed inset-0 right-1/4 overflow-hidden" aria-hidden="true">
+  {#if browser && !prefersReducedMotion && visible}
+    <Shader
+      class="h-full w-full fade-in animate-in"
+      colorSpace="srgb"
+      disableTelemetry={true}
+    >
       <FlowingGradient
         colorA={gradientColors.colorA}
         colorB={gradientColors.colorB}
         colorC={gradientColors.colorC}
         colorD={gradientColors.colorD}
-        speed={0.9}
         distortion={0.5}
+        speed={1}
         seed={8}
       />
       <Dither

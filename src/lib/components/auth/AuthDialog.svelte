@@ -7,6 +7,7 @@
   import { Server as ServerIcon } from "@lucide/svelte";
   import { untrack } from "svelte";
   import BackendUrlUpdateField from "$lib/components/BackendUrlUpdateField.svelte";
+  import BackendUrlChangeConfirmDialog from "$lib/components/BackendUrlChangeConfirmDialog.svelte";
   import { apiUrlStore, getBackendUrl } from "$lib/stores/apiUrl.svelte";
   import { applyApiUrlChange } from "$lib/utils/apiUrlChange";
   import LoginDialog from "./LoginDialog.svelte";
@@ -35,9 +36,12 @@
 
   let mode = $state<AuthMode>(getModeFromUrl());
   let backendUrlInput = $state(getInitialBackendUrl());
+  let resetBackendContentOnApply = $state(true);
+  let pendingResetBackendContent = $state(true);
   let backendUrlError = $state("");
   let isApplyingBackendUrl = $state(false);
   let backendUrlDialogOpen = $state(false);
+  let backendChangeDialogOpen = $state(false);
 
   $effect(() => {
     const modeFromUrl = getModeFromUrl();
@@ -70,6 +74,7 @@
 
   function openBackendUrlDialog(): void {
     backendUrlInput = getInitialBackendUrl();
+    resetBackendContentOnApply = true;
     backendUrlError = "";
     backendUrlDialogOpen = true;
   }
@@ -81,12 +86,23 @@
     }
   }
 
-  async function handleApplyBackendUrl(): Promise<void> {
+  function requestApplyBackendUrl(options: { resetContent: boolean }): void {
+    pendingResetBackendContent = options.resetContent;
+
+    backendChangeDialogOpen = false;
+    setTimeout(() => {
+      backendChangeDialogOpen = true;
+    }, 0);
+  }
+
+  async function handleConfirmBackendUrlChange(): Promise<void> {
     isApplyingBackendUrl = true;
     backendUrlError = "";
 
     try {
-      const result = await applyApiUrlChange(backendUrlInput);
+      const result = await applyApiUrlChange(backendUrlInput, {
+        resetContent: pendingResetBackendContent,
+      });
       backendUrlInput = result.activeUrl;
       backendUrlDialogOpen = false;
     } catch (error) {
@@ -94,6 +110,7 @@
         error instanceof Error ? error.message : "Failed to update backend URL";
     } finally {
       isApplyingBackendUrl = false;
+      backendChangeDialogOpen = false;
     }
   }
 </script>
@@ -171,19 +188,24 @@
   <Dialog.Content class="md:max-w-md">
     <Dialog.Header>
       <Dialog.Title>Backend URL</Dialog.Title>
-      <Dialog.Description>
-        Update the server URL. Applying a change clears cached content and signs
-        out active sessions.
-      </Dialog.Description>
+      <Dialog.Description>Change the backend server URL.</Dialog.Description>
     </Dialog.Header>
 
     <BackendUrlUpdateField
       bind:value={backendUrlInput}
+      bind:resetContentOnApply={resetBackendContentOnApply}
       defaultValue={apiUrlStore.defaultUrl}
       isApplying={isApplyingBackendUrl}
       error={backendUrlError}
       onReset={resetBackendUrlInput}
-      onApply={handleApplyBackendUrl}
+      onApply={requestApplyBackendUrl}
     />
   </Dialog.Content>
 </Dialog.Root>
+
+<BackendUrlChangeConfirmDialog
+  bind:open={backendChangeDialogOpen}
+  isApplying={isApplyingBackendUrl}
+  resetContent={pendingResetBackendContent}
+  onConfirm={handleConfirmBackendUrlChange}
+/>

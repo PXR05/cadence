@@ -5,25 +5,31 @@
 
   let {
     value = $bindable(""),
+    resetContentOnApply = $bindable(true),
     defaultValue = "",
     disabled = false,
     isApplying = false,
     error = "",
     placeholder = "https://api.example.com",
+    resetContentLabel = "Clear local cached content after switching backend",
+    showResetContentOption = true,
     applyLabel = "Apply",
     applyingLabel = "Applying...",
     onApply,
     onReset,
   }: {
     value: string;
+    resetContentOnApply?: boolean;
     defaultValue?: string;
     disabled?: boolean;
     isApplying?: boolean;
     error?: string;
     placeholder?: string;
+    resetContentLabel?: string;
+    showResetContentOption?: boolean;
     applyLabel?: string;
     applyingLabel?: string;
-    onApply: () => void | Promise<void>;
+    onApply: (options: { resetContent: boolean }) => void | Promise<void>;
     onReset?: () => void;
   } = $props();
 
@@ -37,7 +43,7 @@
   );
 </script>
 
-<div class="space-y-2">
+<div class="space-y-3">
   <div class="flex items-center gap-2">
     <div class="relative flex-1">
       <Input
@@ -66,12 +72,24 @@
 
     <Button
       type="button"
-      onclick={() => onApply()}
+      onclick={() => onApply({ resetContent: resetContentOnApply })}
       disabled={disabled || isApplying}
     >
       {isApplying ? applyingLabel : applyLabel}
     </Button>
   </div>
+
+  {#if showResetContentOption}
+    <label class="flex items-start gap-2 text-xs text-muted-foreground mx-1">
+      <input
+        type="checkbox"
+        class="mt-0.5 accent-primary"
+        bind:checked={resetContentOnApply}
+        disabled={disabled || isApplying}
+      />
+      <span>{resetContentLabel}</span>
+    </label>
+  {/if}
 
   {#if error}
     <p class="text-xs text-red-500">{error}</p>

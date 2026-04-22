@@ -16,6 +16,11 @@ export interface ApplyApiUrlChangeResult {
   changed: boolean;
   activeUrl: string;
   usesDefaultUrl: boolean;
+  resetContent: boolean;
+}
+
+export interface ApplyApiUrlChangeOptions {
+  resetContent?: boolean;
 }
 
 function clearContentLocalStorage(): void {
@@ -33,15 +38,13 @@ async function clearWindowCaches(): Promise<void> {
     await Promise.allSettled(
       cacheNames.map((name) => window.caches.delete(name)),
     );
-  } catch {
-  }
+  } catch {}
 }
 
 async function resetBackendContentData(): Promise<void> {
   try {
     await downloadStore.cancelDownload();
-  } catch {
-  }
+  } catch {}
 
   downloadStore.resetState();
   remoteDownloadStore.clearQueue();
@@ -60,7 +63,9 @@ async function resetBackendContentData(): Promise<void> {
 
 export async function applyApiUrlChange(
   nextUrlInput: string,
+  options: ApplyApiUrlChangeOptions = {},
 ): Promise<ApplyApiUrlChangeResult> {
+  const resetContent = options.resetContent ?? true;
   const normalizedUrl = normalizeApiUrl(nextUrlInput);
   let currentUrl = "";
   try {
@@ -74,6 +79,7 @@ export async function applyApiUrlChange(
       changed: false,
       activeUrl: currentUrl,
       usesDefaultUrl: !apiUrlStore.hasCustomUrl,
+      resetContent: false,
     };
   }
 
@@ -88,12 +94,16 @@ export async function applyApiUrlChange(
     apiUrlStore.setCustomUrl(normalizedUrl);
   }
 
-  await resetBackendContentData();
+  if (resetContent) {
+    await resetBackendContentData();
+  }
+
   await authStore.refreshCookieAuthMode();
 
   return {
     changed: true,
     activeUrl: getBackendUrl(),
     usesDefaultUrl: !apiUrlStore.hasCustomUrl,
+    resetContent,
   };
 }
