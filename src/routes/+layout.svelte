@@ -32,7 +32,7 @@
     nativeBridgeStore.refreshNativeInfo();
 
     if (authStore.isAuthenticated) {
-      loadInitialData();
+      void loadInitialData();
     }
 
     if ("serviceWorker" in navigator) {
@@ -77,7 +77,14 @@
     }
   }
 
-  function loadInitialData() {
+  async function loadInitialData() {
+    await playerStore.hydrateEqPresetsFromBackend().catch((error) => {
+      console.error(
+        "Failed to hydrate EQ presets on app initialization:",
+        error,
+      );
+    });
+
     tracksStore
       .loadAllTracks()
       .then(() => console.log("Tracks loaded"))
@@ -162,7 +169,12 @@
 {#if showSplash}
   <SplashScreen onComplete={() => (showSplash = false)} />
 {:else if !authStore.isAuthenticated}
-  <AuthDialog onAuthenticated={loadInitialData} />
+  <AuthDialog
+    onAuthenticated={() => {
+      playerStore.onAuthStateChanged();
+      void loadInitialData();
+    }}
+  />
 {/if}
 
 {#if updateWorker}

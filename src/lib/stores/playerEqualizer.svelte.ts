@@ -46,15 +46,15 @@ interface ParsedEqPresetText {
 export const FLAT_EQUALIZER_PRESET_ID = "flat";
 export const FLAT_EQUALIZER_PRESET_NAME = "Flat";
 
-const MIN_PREAMP_DB = -30;
-const MAX_PREAMP_DB = 30;
-const MIN_BAND_FREQUENCY = 20;
-const MAX_BAND_FREQUENCY = 20000;
-const MIN_BAND_Q = 0.1;
-const MAX_BAND_Q = 10;
+export const MIN_PREAMP_DB = -30;
+export const MAX_PREAMP_DB = 30;
+export const MIN_BAND_FREQUENCY = 20;
+export const MAX_BAND_FREQUENCY = 20000;
+export const MIN_BAND_Q = 0.1;
+export const MAX_BAND_Q = 10;
 const DEFAULT_NEW_BAND_FREQUENCY = 1000;
-const MIN_BANDS = 1;
-const MAX_BANDS = 10;
+export const MIN_BANDS = 1;
+export const MAX_BANDS = 10;
 
 const FILTER_TYPE_TOKENS: Record<FilterType, string> = {
   peaking: "PK",
@@ -78,7 +78,7 @@ const TOKEN_TO_FILTER_TYPE: Record<string, FilterType> = {
   AP: "allpass",
 };
 
-const FILTER_TYPES: FilterType[] = [
+export const FILTER_TYPES: FilterType[] = [
   "lowshelf",
   "peaking",
   "highshelf",

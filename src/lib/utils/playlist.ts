@@ -53,14 +53,6 @@ export function isTidalCollectionPlaylist(playlistId: string): boolean {
   );
 }
 
-export function isAlbumPlaylist(playlistId: string): boolean {
-  return (
-    playlistId.startsWith("album_") ||
-    isYoutubeAlbumPlaylist(playlistId) ||
-    isTidalAlbumPlaylist(playlistId)
-  );
-}
-
 export function getTidalCollectionId(playlistId: string): string {
   if (isTidalPlaylist(playlistId)) {
     return playlistId.replace(/^tidal_playlist_?/, "");
@@ -75,6 +67,22 @@ export function getTidalCollectionId(playlistId: string): string {
   }
 
   return playlistId;
+}
+
+export function isAlbumPlaylist(playlistId: string): boolean {
+  return (
+    playlistId.startsWith("album_") ||
+    isYoutubeAlbumPlaylist(playlistId) ||
+    isTidalAlbumPlaylist(playlistId)
+  );
+}
+
+export function isPlaylistPlaylist(playlistId: string): boolean {
+  return (
+    playlistId.startsWith("playlist_") ||
+    isYoutubePlaylist(playlistId) ||
+    isTidalPlaylist(playlistId)
+  );
 }
 
 export const SPECIAL_PLAYLIST_IDS = {

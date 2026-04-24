@@ -14,8 +14,10 @@ import { tracksStore } from "./tracks.svelte";
 import { authStore } from "./auth.svelte";
 import { nativeBridgeStore } from "./nativeBridge.svelte";
 import { PlayerNativeDomain } from "./playerNative.svelte";
+import { PlayerEqPresetSync } from "./playerEqPresetSync.svelte";
 import {
   createDefaultEqualizerState,
+  FLAT_EQUALIZER_PRESET_ID,
   type FilterType,
   PlayerEqualizerDomain,
   type EqualizerBand,
@@ -85,6 +87,27 @@ class PlayerState {
     this.persistedState,
     this.audioEngine,
   );
+
+  private eqPresetSync = new PlayerEqPresetSync({
+    getSnapshot: () => ({
+      schemaVersion: 1,
+      presets: this.persistedState.equalizerPresets,
+    }),
+    applySnapshot: (snapshot) => {
+      const previousActivePresetId =
+        this.persistedState.activeEqualizerPresetId;
+      this.persistedState.equalizerPresets = snapshot.presets;
+      if (previousActivePresetId) {
+        this.persistedState.activeEqualizerPresetId = previousActivePresetId;
+      }
+      this.equalizerDomain.migrateState();
+
+      const activePresetId =
+        this.persistedState.activeEqualizerPresetId ?? FLAT_EQUALIZER_PRESET_ID;
+      this.equalizerDomain.applyEqualizerPreset(activePresetId);
+    },
+    isAuthenticated: () => authStore.isAuthenticated,
+  });
 
   private nativeDomain = new PlayerNativeDomain({
     shouldUseNativePlayback: () => this.shouldUseNativePlayback(),
@@ -275,6 +298,7 @@ class PlayerState {
   }
   set equalizerEnabled(value: boolean) {
     this.equalizerDomain.setEqualizerEnabled(value);
+    this.eqPresetSync.notifyLocalChange();
   }
 
   get preAmpDb() {
@@ -282,6 +306,7 @@ class PlayerState {
   }
   set preAmpDb(value: number) {
     this.equalizerDomain.setPreAmpDb(value);
+    this.eqPresetSync.notifyLocalChange();
   }
 
   get pureBypassEnabled() {
@@ -297,6 +322,14 @@ class PlayerState {
 
   get activeEqualizerPresetId() {
     return this.equalizerDomain.activeEqualizerPresetId;
+  }
+
+  get eqPresetSyncStatus() {
+    return this.eqPresetSync.status;
+  }
+
+  get eqPresetSyncError() {
+    return this.eqPresetSync.errorMessage;
   }
 
   initialize(player: HTMLAudioElement) {
@@ -389,10 +422,12 @@ class PlayerState {
 
   updateEqualizerBand(id: number, updates: Partial<EqualizerBand>) {
     this.equalizerDomain.updateEqualizerBand(id, updates);
+    this.eqPresetSync.notifyLocalChange();
   }
 
   toggleEqualizer() {
     this.equalizerDomain.toggleEqualizer();
+    this.eqPresetSync.notifyLocalChange();
   }
 
   togglePureBypass() {
@@ -401,10 +436,12 @@ class PlayerState {
 
   setPreAmpDb(value: number) {
     this.equalizerDomain.setPreAmpDb(value);
+    this.eqPresetSync.notifyLocalChange();
   }
 
   resetEqualizer() {
     this.equalizerDomain.resetEqualizer();
+    this.eqPresetSync.notifyLocalChange();
   }
 
   getEqualizerPresetById(presetId: string | null | undefined) {
@@ -412,23 +449,44 @@ class PlayerState {
   }
 
   createEqualizerPreset(name: string) {
-    return this.equalizerDomain.createEqualizerPreset(name);
+    const created = this.equalizerDomain.createEqualizerPreset(name);
+    this.eqPresetSync.notifyLocalChange();
+    return created;
   }
 
   saveCurrentEqualizerPreset(presetId: string, name?: string) {
-    return this.equalizerDomain.saveCurrentEqualizerPreset(presetId, name);
+    const saved = this.equalizerDomain.saveCurrentEqualizerPreset(
+      presetId,
+      name,
+    );
+    if (saved) {
+      this.eqPresetSync.notifyLocalChange();
+    }
+    return saved;
   }
 
   renameEqualizerPreset(presetId: string, name: string) {
-    return this.equalizerDomain.renameEqualizerPreset(presetId, name);
+    const renamed = this.equalizerDomain.renameEqualizerPreset(presetId, name);
+    if (renamed) {
+      this.eqPresetSync.notifyLocalChange();
+    }
+    return renamed;
   }
 
   applyEqualizerPreset(presetId: string) {
-    return this.equalizerDomain.applyEqualizerPreset(presetId);
+    const applied = this.equalizerDomain.applyEqualizerPreset(presetId);
+    if (applied) {
+      this.eqPresetSync.notifyLocalChange();
+    }
+    return applied;
   }
 
   deleteEqualizerPreset(presetId: string) {
-    return this.equalizerDomain.deleteEqualizerPreset(presetId);
+    const deleted = this.equalizerDomain.deleteEqualizerPreset(presetId);
+    if (deleted) {
+      this.eqPresetSync.notifyLocalChange();
+    }
+    return deleted;
   }
 
   exportEqualizerPresetToText(presetId?: string) {
@@ -436,7 +494,12 @@ class PlayerState {
   }
 
   importEqualizerPresetFromText(text: string, nameHint?: string) {
-    return this.equalizerDomain.importEqualizerPresetFromText(text, nameHint);
+    const imported = this.equalizerDomain.importEqualizerPresetFromText(
+      text,
+      nameHint,
+    );
+    this.eqPresetSync.notifyLocalChange();
+    return imported;
   }
 
   findAvailableFrequency(): number | null {
@@ -450,11 +513,32 @@ class PlayerState {
     Q?: number;
     enabled?: boolean;
   }): EqualizerBand | null {
-    return this.equalizerDomain.addEqualizerBand(options);
+    const createdBand = this.equalizerDomain.addEqualizerBand(options);
+    if (createdBand) {
+      this.eqPresetSync.notifyLocalChange();
+    }
+    return createdBand;
   }
 
   removeEqualizerBand(id: number): boolean {
-    return this.equalizerDomain.removeEqualizerBand(id);
+    const removed = this.equalizerDomain.removeEqualizerBand(id);
+    if (removed) {
+      this.eqPresetSync.notifyLocalChange();
+    }
+    return removed;
+  }
+
+  async hydrateEqPresetsFromBackend() {
+    await this.eqPresetSync.hydrateFromBackend();
+  }
+
+  onAuthStateChanged() {
+    if (!authStore.isAuthenticated) {
+      this.eqPresetSync.resetHydration();
+      return;
+    }
+
+    void this.hydrateEqPresetsFromBackend();
   }
 
   canUseFrequency(frequency: number, excludeBandId?: number): boolean {

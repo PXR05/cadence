@@ -21,3 +21,9 @@ export {
 } from "./playlist";
 
 export { searchRemote } from "./remote";
+
+export {
+  getUserSetting,
+  upsertUserSetting,
+  deleteUserSetting,
+} from "./settings";

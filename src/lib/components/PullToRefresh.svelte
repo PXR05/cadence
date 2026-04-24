@@ -521,7 +521,7 @@
     <div
       bind:this={pullIndicatorBadgeEl}
       class="flex size-11 items-center justify-center rounded-full border border-muted-foreground/10 text-muted-foreground transition-opacity duration-200
-      {showPullIndicator ? 'opacity-100' : 'opacity-0'}
+      {showPullIndicator ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}
       {appearanceStore.disableBlur
         ? 'bg-muted'
         : 'bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md'}

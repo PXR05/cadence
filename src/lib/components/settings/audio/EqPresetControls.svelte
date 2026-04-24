@@ -19,9 +19,14 @@
   import type { EqualizerPreset } from "$lib/stores/player.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
   import {
+    AlertCircle as AlertCircleIcon,
+    Check as CheckIcon,
+    CircleAlertIcon,
     Download as DownloadIcon,
+    LoaderIcon,
     Pencil as PencilIcon,
     Plus as PlusIcon,
+    RefreshCw as RefreshCwIcon,
     Trash2 as Trash2Icon,
     Upload as UploadIcon,
   } from "@lucide/svelte";
@@ -44,6 +49,39 @@
 
     return playerStore.equalizerPresets[0] ?? null;
   });
+
+  const syncStatusLabel = $derived.by<string>(() => {
+    if (playerStore.eqPresetSyncStatus === "error") {
+      return playerStore.eqPresetSyncError
+        ? `Preset sync failed: ${playerStore.eqPresetSyncError}`
+        : "Preset sync failed.";
+    }
+
+    if (playerStore.eqPresetSyncStatus === "syncing") {
+      return "Syncing presets to account...";
+    }
+
+    if (playerStore.eqPresetSyncStatus === "synced") {
+      return "Presets synced to account.";
+    }
+
+    return "";
+  });
+
+  const syncStatusIcon = $derived.by<"success" | "error" | "syncing" | null>(
+    () => {
+      if (playerStore.eqPresetSyncStatus === "error") {
+        return "error";
+      }
+      if (playerStore.eqPresetSyncStatus === "syncing") {
+        return "syncing";
+      }
+      if (playerStore.eqPresetSyncStatus === "synced") {
+        return "success";
+      }
+      return null;
+    },
+  );
 
   function setPresetStatus(
     message: string,
@@ -289,6 +327,24 @@
       Import
     </Button>
 
+    {#if syncStatusIcon}
+      <div
+        class="size-8 grid place-items-center rounded-md border bg-background dark:bg-input/30 dark:border-input"
+        role="status"
+        aria-live="polite"
+        title={syncStatusLabel}
+      >
+        <span class="sr-only">{syncStatusLabel}</span>
+        {#if syncStatusIcon === "error"}
+          <CircleAlertIcon class="size-4" aria-hidden="true" />
+        {:else if syncStatusIcon === "syncing"}
+          <LoaderIcon class="size-4 animate-spin" aria-hidden="true" />
+        {:else}
+          <CheckIcon class="size-4" aria-hidden="true" />
+        {/if}
+      </div>
+    {/if}
+
     <input
       bind:this={importInputRef}
       type="file"
@@ -300,7 +356,7 @@
 
   {#if presetStatus}
     <p
-      class="mt-1 text-xs"
+      class="ml-1 mt-1 text-xs"
       class:text-destructive={presetStatusTone === "error"}
       class:text-yellow-500={presetStatusTone === "warning"}
       class:text-muted-foreground={presetStatusTone === "success"}

@@ -39,7 +39,7 @@
 		<!-- <div
 			class="bg-muted mx-auto mt-4 hidden h-1 w-[60px] shrink-0 rounded-full group-data-[vaul-drawer-direction=bottom]/drawer-content:block"
 		></div> -->
-		<div class="mt-3"></div>
+		<div class="mt-4"></div>
 		{@render children?.()}
 	</DrawerPrimitive.Content>
 </DrawerPortal>
