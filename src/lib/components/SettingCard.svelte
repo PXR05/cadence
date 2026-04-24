@@ -23,7 +23,7 @@
 </script>
 
 <div class="border rounded-xl p-2 flex flex-col gap-2 bg-background md:bg-card">
-  <div class="flex items-center justify-between pl-2">
+  <div class="flex items-center justify-between pl-2 pt-2">
     <div class="flex items-center gap-3">
       <Icon class="size-5 text-muted-foreground" />
       <h2 class="font-medium">{title}</h2>

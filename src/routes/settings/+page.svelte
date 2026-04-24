@@ -29,7 +29,6 @@
   import MenuDialog from "$lib/components/ui/menu-dialog/MenuDialog.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
-  import { useSidebar } from "$lib/components/ui/sidebar";
   import {
     apiUrlStore,
     getBackendUrl,

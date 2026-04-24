@@ -19,6 +19,7 @@
     Package as PackageIcon,
   } from "@lucide/svelte";
   import { playerStore } from "$lib/stores/player.svelte";
+  import { PullToRefresh } from "$lib/components";
 
   interface TableInfo {
     name: string;
@@ -406,10 +407,14 @@
     }
   }
 
-  onMount(() => {
+  function loadAllInfo() {
     loadDatabaseInfo();
     loadSwCacheInfo();
     loadLocalStorageInfo();
+  }
+
+  onMount(() => {
+    loadAllInfo();
 
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.addEventListener("message", handleSwMessage);
@@ -431,80 +436,179 @@
   >
 </svelte:head>
 
-<SettingsHeader title="Local Storage" />
+<PullToRefresh onStageOne={loadAllInfo}>
+  <SettingsHeader title="Local Storage" />
 
-<div class="px-2 pb-4 pt-0.5 w-full space-y-2 mb-[50dvh]">
-  <SettingCard icon={DatabaseIcon} title="Database Management">
-    {#snippet headerActions()}
-      <Button
-        variant="ghost"
-        size="icon"
-        class="size-10"
-        onclick={() => loadDatabaseInfo()}
-        disabled={isLoadingDatabases}
-        title="Refresh"
-      >
-        <RefreshCwIcon
-          class="size-4 {isLoadingDatabases ? 'animate-spin' : ''}"
-        />
-      </Button>
-    {/snippet}
-    <div class="p-3 pt-1 space-y-4">
-      <p class="text-sm text-muted-foreground">
-        Manage cached data stored locally on your device
-      </p>
+  <div class="px-2 pb-4 pt-0.5 w-full space-y-2 mb-[50dvh]">
+    <SettingCard icon={DatabaseIcon} title="Database Management">
+      {#snippet headerActions()}
+        <Button
+          variant="ghost"
+          size="icon"
+          class="size-10"
+          onclick={() => loadDatabaseInfo()}
+          disabled={isLoadingDatabases}
+          title="Refresh"
+        >
+          <RefreshCwIcon
+            class="size-4 {isLoadingDatabases ? 'animate-spin' : ''}"
+          />
+        </Button>
+      {/snippet}
+      <div class="p-3 pt-1 space-y-4">
+        <p class="text-sm text-muted-foreground">
+          Manage cached data stored locally on your device
+        </p>
 
-      {#if isLoadingDatabases}
-        <div class="flex items-center justify-center py-8">
-          <RefreshCwIcon class="size-5 animate-spin text-muted-foreground" />
-        </div>
-      {:else}
-        <div class="space-y-3">
-          {#each databases as db}
+        {#if isLoadingDatabases}
+          <div class="flex items-center justify-center py-8">
+            <RefreshCwIcon class="size-5 animate-spin text-muted-foreground" />
+          </div>
+        {:else}
+          <div class="space-y-3">
+            {#each databases as db}
+              <div class="rounded-lg border bg-muted/30 overflow-hidden">
+                <!-- Database Header -->
+                <div
+                  class="flex items-center justify-between p-3 bg-muted/50 border-b"
+                >
+                  <div class="flex items-center gap-2">
+                    <HardDriveIcon class="size-4 text-muted-foreground" />
+                    <span class="font-medium text-sm">{db.displayName}</span>
+                    <span
+                      class="text-xs text-muted-foreground bg-background/50 px-1.5 py-0.5 rounded"
+                    >
+                      {db.totalSize}
+                    </span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    class="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onclick={() => openClearDialog("database", db.name)}
+                  >
+                    <Trash2Icon class="size-3 mr-1" />
+                    Clear All
+                  </Button>
+                </div>
+
+                <!-- Tables -->
+                <div class="divide-y divide-border/50">
+                  {#each db.tables as table}
+                    <div
+                      class="flex items-center justify-between p-2.5 px-3 hover:bg-muted/30 transition-colors"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div class="flex flex-col">
+                          <span class="text-sm capitalize">
+                            {table.name.replace(/([A-Z])/g, " $1").trim()}
+                          </span>
+                          <div class="flex items-center gap-2">
+                            <span class="text-xs text-muted-foreground">
+                              {table.count}
+                              {table.count === 1 ? "item" : "items"}
+                            </span>
+                            <span class="text-xs text-muted-foreground">•</span>
+                            <span class="text-xs text-muted-foreground">
+                              {table.estimatedSize}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        class="size-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        onclick={() =>
+                          openClearDialog("table", db.name, table.name)}
+                        disabled={table.count === 0}
+                      >
+                        <Trash2Icon class="size-3.5" />
+                      </Button>
+                    </div>
+                  {/each}
+                </div>
+              </div>
+            {/each}
+          </div>
+        {/if}
+      </div>
+    </SettingCard>
+
+    <!-- Service Worker Cache Management -->
+    {#if hasServiceWorker}
+      <SettingCard icon={GlobeIcon} title="Service Worker Cache">
+        {#snippet headerActions()}
+          <Button
+            variant="ghost"
+            size="icon"
+            class="size-10"
+            onclick={() => loadSwCacheInfo()}
+            disabled={isLoadingSwCaches}
+            title="Refresh"
+          >
+            <RefreshCwIcon
+              class="size-4 {isLoadingSwCaches ? 'animate-spin' : ''}"
+            />
+          </Button>
+        {/snippet}
+        <div class="p-3 pt-1 space-y-4">
+          <p class="text-sm text-muted-foreground">
+            Manage browser cache for app assets and images
+          </p>
+
+          {#if isLoadingSwCaches}
+            <div class="flex items-center justify-center py-8">
+              <RefreshCwIcon
+                class="size-5 animate-spin text-muted-foreground"
+              />
+            </div>
+          {:else}
             <div class="rounded-lg border bg-muted/30 overflow-hidden">
-              <!-- Database Header -->
+              <!-- Cache Header -->
               <div
                 class="flex items-center justify-between p-3 bg-muted/50 border-b"
               >
                 <div class="flex items-center gap-2">
-                  <HardDriveIcon class="size-4 text-muted-foreground" />
-                  <span class="font-medium text-sm">{db.displayName}</span>
+                  <GlobeIcon class="size-4 text-muted-foreground" />
+                  <span class="font-medium text-sm">Browser Cache</span>
                   <span
                     class="text-xs text-muted-foreground bg-background/50 px-1.5 py-0.5 rounded"
                   >
-                    {db.totalSize}
+                    {swTotalSize}
                   </span>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   class="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                  onclick={() => openClearDialog("database", db.name)}
+                  onclick={() => openClearDialog("sw-cache")}
+                  disabled={swCaches.length === 0}
                 >
                   <Trash2Icon class="size-3 mr-1" />
                   Clear All
                 </Button>
               </div>
 
-              <!-- Tables -->
+              <!-- Cache Items -->
               <div class="divide-y divide-border/50">
-                {#each db.tables as table}
+                {#each swCaches as cache}
+                  {@const IconComponent = cache.icon}
                   <div
                     class="flex items-center justify-between p-2.5 px-3 hover:bg-muted/30 transition-colors"
                   >
                     <div class="flex items-center gap-3">
+                      <IconComponent class="size-4 text-muted-foreground" />
                       <div class="flex flex-col">
-                        <span class="text-sm capitalize">
-                          {table.name.replace(/([A-Z])/g, " $1").trim()}
-                        </span>
+                        <span class="text-sm">{cache.displayName}</span>
                         <div class="flex items-center gap-2">
                           <span class="text-xs text-muted-foreground">
-                            {table.count}
-                            {table.count === 1 ? "item" : "items"}
+                            {cache.count}
+                            {cache.count === 1 ? "item" : "items"}
                           </span>
                           <span class="text-xs text-muted-foreground">•</span>
                           <span class="text-xs text-muted-foreground">
-                            {table.estimatedSize}
+                            {cache.size}
                           </span>
                         </div>
                       </div>
@@ -514,95 +618,96 @@
                       size="icon"
                       class="size-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                       onclick={() =>
-                        openClearDialog("table", db.name, table.name)}
-                      disabled={table.count === 0}
+                        openClearDialog(
+                          "sw-cache",
+                          undefined,
+                          undefined,
+                          cache.name,
+                        )}
+                      disabled={cache.count === 0}
                     >
                       <Trash2Icon class="size-3.5" />
                     </Button>
                   </div>
                 {/each}
+                {#if swCaches.length === 0}
+                  <div class="p-4 text-center text-sm text-muted-foreground">
+                    No cached data
+                  </div>
+                {/if}
               </div>
             </div>
-          {/each}
+          {/if}
         </div>
-      {/if}
-    </div>
-  </SettingCard>
+      </SettingCard>
+    {/if}
 
-  <!-- Service Worker Cache Management -->
-  {#if hasServiceWorker}
-    <SettingCard icon={GlobeIcon} title="Service Worker Cache">
+    <!-- Local Storage Management -->
+    <SettingCard icon={PackageIcon} title="Local Storage">
       {#snippet headerActions()}
         <Button
           variant="ghost"
           size="icon"
           class="size-10"
-          onclick={() => loadSwCacheInfo()}
-          disabled={isLoadingSwCaches}
+          onclick={() => loadLocalStorageInfo()}
+          disabled={isLoadingLocalStorage}
           title="Refresh"
         >
           <RefreshCwIcon
-            class="size-4 {isLoadingSwCaches ? 'animate-spin' : ''}"
+            class="size-4 {isLoadingLocalStorage ? 'animate-spin' : ''}"
           />
         </Button>
       {/snippet}
       <div class="p-3 pt-1 space-y-4">
         <p class="text-sm text-muted-foreground">
-          Manage browser cache for app assets and images
+          Manage browser local storage data and application settings
         </p>
 
-        {#if isLoadingSwCaches}
+        {#if isLoadingLocalStorage}
           <div class="flex items-center justify-center py-8">
             <RefreshCwIcon class="size-5 animate-spin text-muted-foreground" />
           </div>
         {:else}
           <div class="rounded-lg border bg-muted/30 overflow-hidden">
-            <!-- Cache Header -->
+            <!-- Local Storage Header -->
             <div
               class="flex items-center justify-between p-3 bg-muted/50 border-b"
             >
               <div class="flex items-center gap-2">
-                <GlobeIcon class="size-4 text-muted-foreground" />
-                <span class="font-medium text-sm">Browser Cache</span>
+                <PackageIcon class="size-4 text-muted-foreground" />
+                <span class="font-medium text-sm">Local Storage</span>
                 <span
                   class="text-xs text-muted-foreground bg-background/50 px-1.5 py-0.5 rounded"
                 >
-                  {swTotalSize}
+                  {localStorageTotalSize}
                 </span>
               </div>
               <Button
                 variant="ghost"
                 size="sm"
                 class="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                onclick={() => openClearDialog("sw-cache")}
-                disabled={swCaches.length === 0}
+                onclick={() => openClearDialog("localstorage")}
+                disabled={localStorageItems.length === 0}
               >
                 <Trash2Icon class="size-3 mr-1" />
                 Clear All
               </Button>
             </div>
 
-            <!-- Cache Items -->
+            <!-- Local Storage Items -->
             <div class="divide-y divide-border/50">
-              {#each swCaches as cache}
-                {@const IconComponent = cache.icon}
+              {#each localStorageItems as item}
                 <div
                   class="flex items-center justify-between p-2.5 px-3 hover:bg-muted/30 transition-colors"
                 >
-                  <div class="flex items-center gap-3">
-                    <IconComponent class="size-4 text-muted-foreground" />
-                    <div class="flex flex-col">
-                      <span class="text-sm">{cache.displayName}</span>
-                      <div class="flex items-center gap-2">
-                        <span class="text-xs text-muted-foreground">
-                          {cache.count}
-                          {cache.count === 1 ? "item" : "items"}
-                        </span>
-                        <span class="text-xs text-muted-foreground">•</span>
-                        <span class="text-xs text-muted-foreground">
-                          {cache.size}
-                        </span>
-                      </div>
+                  <div class="flex items-center gap-3 flex-1 min-w-0">
+                    <div class="flex flex-col flex-1 min-w-0">
+                      <span class="text-sm truncate" title={item.key}>
+                        {item.key}
+                      </span>
+                      <span class="text-xs text-muted-foreground">
+                        {item.size}
+                      </span>
                     </div>
                   </div>
                   <Button
@@ -611,20 +716,20 @@
                     class="size-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                     onclick={() =>
                       openClearDialog(
-                        "sw-cache",
+                        "localstorage",
                         undefined,
                         undefined,
-                        cache.name,
+                        undefined,
+                        item.key,
                       )}
-                    disabled={cache.count === 0}
                   >
                     <Trash2Icon class="size-3.5" />
                   </Button>
                 </div>
               {/each}
-              {#if swCaches.length === 0}
+              {#if localStorageItems.length === 0}
                 <div class="p-4 text-center text-sm text-muted-foreground">
-                  No cached data
+                  No local storage data
                 </div>
               {/if}
             </div>
@@ -632,104 +737,8 @@
         {/if}
       </div>
     </SettingCard>
-  {/if}
-
-  <!-- Local Storage Management -->
-  <SettingCard icon={PackageIcon} title="Local Storage">
-    {#snippet headerActions()}
-      <Button
-        variant="ghost"
-        size="icon"
-        class="size-10"
-        onclick={() => loadLocalStorageInfo()}
-        disabled={isLoadingLocalStorage}
-        title="Refresh"
-      >
-        <RefreshCwIcon
-          class="size-4 {isLoadingLocalStorage ? 'animate-spin' : ''}"
-        />
-      </Button>
-    {/snippet}
-    <div class="p-3 pt-1 space-y-4">
-      <p class="text-sm text-muted-foreground">
-        Manage browser local storage data and application settings
-      </p>
-
-      {#if isLoadingLocalStorage}
-        <div class="flex items-center justify-center py-8">
-          <RefreshCwIcon class="size-5 animate-spin text-muted-foreground" />
-        </div>
-      {:else}
-        <div class="rounded-lg border bg-muted/30 overflow-hidden">
-          <!-- Local Storage Header -->
-          <div
-            class="flex items-center justify-between p-3 bg-muted/50 border-b"
-          >
-            <div class="flex items-center gap-2">
-              <PackageIcon class="size-4 text-muted-foreground" />
-              <span class="font-medium text-sm">Local Storage</span>
-              <span
-                class="text-xs text-muted-foreground bg-background/50 px-1.5 py-0.5 rounded"
-              >
-                {localStorageTotalSize}
-              </span>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              class="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-              onclick={() => openClearDialog("localstorage")}
-              disabled={localStorageItems.length === 0}
-            >
-              <Trash2Icon class="size-3 mr-1" />
-              Clear All
-            </Button>
-          </div>
-
-          <!-- Local Storage Items -->
-          <div class="divide-y divide-border/50">
-            {#each localStorageItems as item}
-              <div
-                class="flex items-center justify-between p-2.5 px-3 hover:bg-muted/30 transition-colors"
-              >
-                <div class="flex items-center gap-3 flex-1 min-w-0">
-                  <div class="flex flex-col flex-1 min-w-0">
-                    <span class="text-sm truncate" title={item.key}>
-                      {item.key}
-                    </span>
-                    <span class="text-xs text-muted-foreground">
-                      {item.size}
-                    </span>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  class="size-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                  onclick={() =>
-                    openClearDialog(
-                      "localstorage",
-                      undefined,
-                      undefined,
-                      undefined,
-                      item.key,
-                    )}
-                >
-                  <Trash2Icon class="size-3.5" />
-                </Button>
-              </div>
-            {/each}
-            {#if localStorageItems.length === 0}
-              <div class="p-4 text-center text-sm text-muted-foreground">
-                No local storage data
-              </div>
-            {/if}
-          </div>
-        </div>
-      {/if}
-    </div>
-  </SettingCard>
-</div>
+  </div>
+</PullToRefresh>
 
 <AlertDialog.Root bind:open={clearDialogOpen}>
   <AlertDialog.Content>

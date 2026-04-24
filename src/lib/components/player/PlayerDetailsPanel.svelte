@@ -44,9 +44,6 @@
       track?.metadata?.artist?.includes(",") ? ", " : "、",
     ),
   );
-  const isLossless = $derived(
-    (track?.metadata?.format ?? "").trim().toLowerCase() === "flac",
-  );
 
   let managePlaylistsDialogOpen = $state(false);
   let panelElement: HTMLDivElement | null = $state(null);

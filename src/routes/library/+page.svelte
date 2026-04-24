@@ -166,7 +166,7 @@
   <h2 class="p-4 pb-0 text-2xl font-semibold">Playlists</h2>
 
   <div
-    class="p-4 flex gap-3 overflow-x-scroll items-center"
+    class="p-4 flex gap-3 overflow-x-scroll items-center hide-scrollbar"
     style="
       -webkit-mask-image: linear-gradient(to right, transparent 0%, black 1rem, black calc(100% - 1rem), transparent 100%);
       mask-image: linear-gradient(to right, transparent 0%, black 1rem, black calc(100% - 1rem), transparent 100%);

@@ -19,14 +19,12 @@
   import type { EqualizerPreset } from "$lib/stores/player.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
   import {
-    AlertCircle as AlertCircleIcon,
     Check as CheckIcon,
     CircleAlertIcon,
     Download as DownloadIcon,
     LoaderIcon,
     Pencil as PencilIcon,
     Plus as PlusIcon,
-    RefreshCw as RefreshCwIcon,
     Trash2 as Trash2Icon,
     Upload as UploadIcon,
   } from "@lucide/svelte";
