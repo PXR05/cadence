@@ -2,10 +2,9 @@
   import * as Dialog from "$lib/components/ui/dialog";
   import * as Drawer from "$lib/components/ui/drawer";
   import { playerStore } from "$lib/stores/player.svelte";
-  import { ChevronDown as ChevronDownIcon } from "@lucide/svelte";
   import { VirtualScroll } from "../ui/virtual-scroll";
   import QueueItem from "./QueueItem.svelte";
-  import { useMenuDialogState } from "$lib/hooks";
+  import { useDialogState, useMenuDialogState } from "$lib/hooks";
   import { innerWidth } from "svelte/reactivity/window";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
 
@@ -13,10 +12,12 @@
     paramName: "queue-dialog",
   });
 
+  const panelState = useDialogState("player-detail");
+
   const isDesktop = $derived((innerWidth.current ?? 0) >= 768);
 
   let virtualScroll: any = $state(null);
-  const ROW_HEIGHT = 72;
+  const ROW_HEIGHT = 74;
   let previousOpen = $state(false);
   let previousQueueIndex = $state(-1);
 
@@ -78,11 +79,7 @@
   });
 
   $effect(() => {
-    const isOpening = dialogState.isOpen && !previousOpen;
-    const queueIndexChanged =
-      playerStore.queueIndex !== previousQueueIndex &&
-      playerStore.queueIndex >= 0;
-    const shouldScroll = dialogState.isOpen && (isOpening || queueIndexChanged);
+    const shouldScroll = dialogState.isOpen && !previousOpen;
 
     if (shouldScroll && virtualScroll) {
       requestAnimationFrame(() => {
@@ -92,52 +89,36 @@
       });
     }
 
-    previousOpen = dialogState.isOpen;
-    previousQueueIndex = playerStore.queueIndex;
+    if (virtualScroll) {
+      previousOpen = dialogState.isOpen;
+      previousQueueIndex = playerStore.queueIndex;
+    }
   });
 </script>
 
 {#snippet header()}
-  <div
+  <button
+    onclick={() =>
+      dialogState.isOpen
+        ? dialogState.close()
+        : dialogState.open("queue-dialog")}
     class="absolute top-2 left-2 right-2 z-10 rounded-3xl border border-muted-foreground/10 flex flex-col
     {appearanceStore.disableBlur
       ? 'bg-muted'
       : 'bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md'}"
   >
     <div class="px-2 py-3 flex justify-between items-center">
-      {#if isDesktop}
-        <Dialog.Close
-          class="opacity-70 transition-opacity hover:opacity-100 my-auto size-8 grid place-items-center"
-        >
-          <ChevronDownIcon />
-        </Dialog.Close>
-      {:else}
-        <Drawer.Close
-          class="opacity-70 transition-opacity hover:opacity-100 my-auto size-8 grid place-items-center"
-        >
-          <ChevronDownIcon />
-        </Drawer.Close>
-      {/if}
+      <div class="size-8"></div>
 
-      <Dialog.Header class="min-w-0">
-        <Dialog.Description class="text-center">
-          {playerStore.queueLength} track{playerStore.queueLength !== 1
-            ? "s"
-            : ""} in queue
-        </Dialog.Description>
-      </Dialog.Header>
+      <p class="text-center text-sm text-muted-foreground min-w-0">
+        {playerStore.queueLength} track{playerStore.queueLength !== 1
+          ? "s"
+          : ""} in queue
+      </p>
 
-      {#if isDesktop}
-        <Dialog.Close class="opacity-0 pointer-events-none">
-          <ChevronDownIcon />
-        </Dialog.Close>
-      {:else}
-        <Drawer.Close class="opacity-0 pointer-events-none">
-          <ChevronDownIcon />
-        </Drawer.Close>
-      {/if}
+      <div class="size-8"></div>
     </div>
-  </div>
+  </button>
 {/snippet}
 
 {#snippet queueContent()}

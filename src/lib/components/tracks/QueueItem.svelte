@@ -42,8 +42,8 @@
   <Button
     variant="ghost"
     onclick={() => playerStore.playAtIndex(index)}
-    class="h-auto w-full flex items-center gap-3 p-2.5 text-left group rounded-2xl
-   {isCurrentTrack ? 'bg-muted' : 'bg-background'}"
+    class="h-auto w-full flex items-center gap-3 p-2.5 text-left group rounded-2xl border duration-0
+   {isCurrentTrack ? 'bg-muted border-muted-foreground/10' : 'bg-transparent border-transparent'}"
   >
     <div class="relative rounded-md size-14 shrink-0 overflow-hidden bg-muted">
       <Image
