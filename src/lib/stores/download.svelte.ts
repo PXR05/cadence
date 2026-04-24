@@ -363,12 +363,13 @@ class DownloadStore {
           this._abortController?.signal,
         );
         const filename = item.audio.metadata?.title
-          ? `${item.audio.metadata.artist || "Unknown"} - ${
+          ? `${(i + 1).toString().padStart(playlist.items.length.toString().length, "0")}. ${item.audio.metadata.artist || "Unknown"} - ${
               item.audio.metadata.title
             }.${item.audio.filename.split(".").pop()}`
           : item.audio.filename;
+        const cleanFilename = filename.replace(/[/\\?%*:|"<>]/g, "_");
 
-        zipFile.file(filename, blob);
+        zipFile.file(cleanFilename, blob);
         this._progress = {
           ...this._progress,
           current: i + 1,
