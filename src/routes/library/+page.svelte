@@ -166,7 +166,7 @@
   <h2 class="p-4 pb-0 text-2xl font-semibold">Playlists</h2>
 
   <div
-    class="p-4 flex gap-3 overflow-x-scroll items-center hide-scrollbar"
+    class="p-4 flex gap-4 overflow-x-scroll items-center hide-scrollbar"
     style="
       -webkit-mask-image: linear-gradient(to right, transparent 0%, black 1rem, black calc(100% - 1rem), transparent 100%);
       mask-image: linear-gradient(to right, transparent 0%, black 1rem, black calc(100% - 1rem), transparent 100%);
@@ -174,7 +174,7 @@
       mask-repeat: no-repeat;
     "
   >
-    <div class="flex gap-2">
+    <div class="flex gap-3">
       {#each typeFilters as t}
         <Button
           variant="outline"
@@ -191,7 +191,7 @@
 
     <span class="rounded w-0.5 h-5 bg-border">&nbsp;</span>
 
-    <div class="flex gap-2">
+    <div class="flex gap-3">
       {#each sourceFilters as s}
         <Button
           variant="outline"

@@ -126,7 +126,7 @@
     bind:this={virtualScroll}
     items={playerStore.trackQueue}
     rowHeight={ROW_HEIGHT}
-    class="overscroll-y-contain h-dvh md:h-[90dvh]"
+    class="overscroll-y-contain h-[80vh] md:h-[90dvh]"
     topOffset={isDesktop ? 72 : 54}
     leftPadding={8}
     rightPadding={8}
@@ -155,10 +155,10 @@
   >
     <Dialog.Content
       showCloseButton={false}
-      class="md:max-w-2xl h-dvh md:h-[90dvh] overflow-clip max-w-dvw flex flex-col z-60 p-0 max-md:border-0 max-md:rounded-none bg-background"
+      class="md:max-w-2xl h-[90dvh] overflow-clip max-w-dvw flex flex-col z-60 p-0 max-md:border-0 max-md:rounded-none bg-background"
     >
       <div
-        class="absolute z-10 inset-0 flex flex-col h-dvh md:h-[90dvh] pointer-events-none"
+        class="absolute z-10 inset-0 flex flex-col h-[90dvh] pointer-events-none"
         style="
           background: linear-gradient(
             to top,
@@ -178,9 +178,9 @@
     open={dialogState.isOpen}
     onOpenChange={dialogState.handleOpenChange}
   >
-    <Drawer.Content class="h-dvh overflow-clip p-0 rounded-t-2xl bg-background">
+    <Drawer.Content class="h-[80vh] overflow-clip p-0 rounded-t-2xl bg-background">
       <div
-        class="absolute z-10 inset-0 flex flex-col h-dvh pointer-events-none"
+        class="absolute z-10 inset-0 flex flex-col h-[80vh] pointer-events-none"
         style="
           background: linear-gradient(
             to top,

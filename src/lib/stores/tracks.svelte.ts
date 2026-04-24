@@ -147,7 +147,6 @@ class TracksStore {
       const lastFetchedAt = forceRefresh
         ? undefined
         : toLastFetchedAtQuery(this._lastFetchedAt);
-      const shouldReplace = forceRefresh || lastFetchedAt === undefined;
       const syncedTracks: AudioFile[] = [];
       const deletedIds = new Set<string>();
       let currentPage = 1;
@@ -167,14 +166,14 @@ class TracksStore {
           deletedIds.add(deletedId);
         }
 
-        hasMore = shouldReplace ? result.hasMore : false;
-        this.isLoadingMore = shouldReplace ? result.hasMore : false;
+        hasMore = result.hasMore;
+        this.isLoadingMore = result.hasMore;
         currentPage++;
       }
 
       const fetchMarker = createFetchMarker();
       await syncTracksCache(syncedTracks, Array.from(deletedIds), fetchMarker, {
-        replace: shouldReplace,
+        replace: true,
       });
       await this.refreshFromCache();
       this.isLoadingMore = false;
