@@ -116,7 +116,7 @@
     </div>
   {:else if error}
     <div
-      class="mx-auto w-full h-full grid place-items-center p-16 text-destructive text-center"
+      class="mx-auto w-full h-dvh grid place-items-center p-16 text-destructive text-center"
     >
       <div class="flex flex-col items-center text-destructive">
         <TriangleAlertIcon size={48} strokeWidth={1.5} class="mb-4" />
@@ -126,7 +126,7 @@
       </div>
     </div>
   {:else if tracks.length === 0}
-    <div class="mx-auto w-full h-full grid place-items-center p-16">
+    <div class="mx-auto w-full h-dvh grid place-items-center p-16">
       <div class="flex flex-col items-center text-muted-foreground">
         <SquareDashedIcon size={48} strokeWidth={1.5} class="mb-4 rotate-45" />
         <p class="text-center">No songs added yet.</p>
