@@ -46,6 +46,7 @@
   let confirmPassword = $state("");
   let isChangingPassword = $state(false);
 
+  let registration: ServiceWorkerRegistration | null = $state(null);
   let deferredPrompt: BeforeInstallPromptEvent | null = $state(null);
   let canInstall = $state(false);
   let isInstalled = $state(false);
@@ -61,6 +62,12 @@
     prompt(): Promise<void>;
     userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
   }
+
+  onMount(async () => {
+    if ("serviceWorker" in navigator) {
+      registration = await navigator.serviceWorker.ready;
+    }
+  });
 
   onMount(() => {
     try {
@@ -439,11 +446,19 @@
       </div>
     </SettingCard>
 
-    <p
-      class="w-fit text-xs text-muted-foreground bg-muted rounded-md px-2 py-1"
-    >
-      {import.meta.env.COMMIT_HASH} - {import.meta.env.BUILD_DATE}
-    </p>
+    <div class="flex items-center justify-between w-full">
+      <p
+        class="w-fit text-xs text-muted-foreground bg-muted rounded-md px-2 py-1"
+      >
+        {import.meta.env.COMMIT_HASH} - {import.meta.env.BUILD_DATE}
+      </p>
+      <button
+        onclick={async () => await registration?.update()}
+        class="md:hidden text-xs text-muted-foreground bg-muted rounded-md px-2 py-1"
+      >
+        force update
+      </button>
+    </div>
 
     <div class="h-64"></div>
   </div>
