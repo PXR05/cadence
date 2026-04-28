@@ -19,7 +19,6 @@
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
   import { innerWidth } from "svelte/reactivity/window";
-  import { page } from "$app/state";
   import { Toaster } from "$lib/components/ui/sonner";
   import * as Sidebar from "$lib/components/ui/sidebar";
 
@@ -154,11 +153,6 @@
       }
     }
   }
-
-  const isMobile = $derived((innerWidth.current ?? 0) <= 768);
-  const isTopRoute = $derived(page.url.pathname.split("/").length <= 2);
-
-  const navHeight = $derived(isMobile && isTopRoute ? 72 : 0);
 </script>
 
 <svelte:window onkeydown={(e) => handleKeyboardEvent(e)} />

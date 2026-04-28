@@ -122,9 +122,7 @@ export async function syncTracksCache(
   tracks: AudioFile[],
   deletedIds: string[],
   lastFetchedAt: string | null,
-  options: SyncOptions = {},
 ): Promise<void> {
-  const { replace = false } = options;
 
   await cacheDb.transaction(
     "rw",
@@ -132,15 +130,9 @@ export async function syncTracksCache(
     async () => {
       const existingTracks = await cacheDb.tracks.toArray();
       const existingById = new Map(existingTracks.map((track) => [track.id, track]));
-      const incomingIds = new Set(tracks.map((track) => track.id));
-      const idsToDelete = replace
-        ? existingTracks
-            .filter((track) => !incomingIds.has(track.id))
-            .map((track) => track.id)
-        : deletedIds;
 
-      if (idsToDelete.length > 0) {
-        await cacheDb.tracks.bulkDelete(idsToDelete);
+      if (deletedIds.length > 0) {
+        await cacheDb.tracks.bulkDelete(deletedIds);
       }
 
       if (tracks.length > 0) {
@@ -234,7 +226,7 @@ export async function saveTracksCache(
   tracks: AudioFile[],
   lastFetchedAt: string | null,
 ): Promise<void> {
-  await syncTracksCache(tracks, [], lastFetchedAt, { replace: true });
+  await syncTracksCache(tracks, [], lastFetchedAt);
 }
 
 export async function getTracksCache(): Promise<{

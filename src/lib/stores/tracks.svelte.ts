@@ -172,9 +172,7 @@ class TracksStore {
       }
 
       const fetchMarker = createFetchMarker();
-      await syncTracksCache(syncedTracks, Array.from(deletedIds), fetchMarker, {
-        replace: true,
-      });
+      await syncTracksCache(syncedTracks, Array.from(deletedIds), fetchMarker);
       await this.refreshFromCache();
       this.isLoadingMore = false;
       this.isInitialLoad = false;
