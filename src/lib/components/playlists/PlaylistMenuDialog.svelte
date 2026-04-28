@@ -67,9 +67,7 @@
 
   const isNonModifiable = $derived(
     playlist
-      ? isSpecialPlaylist(playlist.id) ||
-          isArtistPlaylist(playlist.id) ||
-          isAlbumPlaylist(playlist.id)
+      ? isSpecialPlaylist(playlist.id) || isArtistPlaylist(playlist.id)
       : true,
   );
   const isResyncable = $derived(
