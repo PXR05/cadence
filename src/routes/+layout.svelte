@@ -31,7 +31,7 @@
     nativeBridgeStore.refreshNativeInfo();
 
     if (authStore.isAuthenticated) {
-      void loadInitialData();
+      loadInitialData();
     }
 
     if ("serviceWorker" in navigator) {
@@ -76,14 +76,16 @@
     }
   }
 
-  async function loadInitialData() {
-    await playerStore.hydrateEqPresetsFromBackend().catch((error) => {
-      console.error(
-        "Failed to hydrate EQ presets on app initialization:",
-        error,
-      );
-    });
-
+  function loadInitialData() {
+    playerStore
+      .hydrateEqPresetsFromBackend()
+      .then(() => console.log("EQ presets loaded"))
+      .catch((error) => {
+        console.error(
+          "Failed to hydrate EQ presets on app initialization:",
+          error,
+        );
+      });
     tracksStore
       .loadAllTracks()
       .then(() => console.log("Tracks loaded"))
@@ -166,7 +168,7 @@
   <AuthDialog
     onAuthenticated={() => {
       playerStore.onAuthStateChanged();
-      void loadInitialData();
+      loadInitialData();
     }}
   />
 {/if}
