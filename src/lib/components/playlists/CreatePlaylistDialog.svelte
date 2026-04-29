@@ -3,7 +3,11 @@
   import { Button } from "$lib/components/ui/button";
   import { createPlaylist } from "$lib/api";
   import { Input } from "../ui/input";
-  import { Link as LinkIcon, Loader as LoaderIcon, List as ListIcon } from "@lucide/svelte";
+  import {
+    Link as LinkIcon,
+    Loader as LoaderIcon,
+    List as ListIcon,
+  } from "@lucide/svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { remoteDownloadStore } from "$lib/stores/remoteDownload.svelte";
   import {
@@ -18,7 +22,7 @@
     onCreated?: () => void;
   }
 
-  let { open = $bindable(), onOpenChange, onCreated }: Props = $props();
+  let { open, onOpenChange, onCreated }: Props = $props();
 
   let playlistName = $state("");
   let remoteUrl = $state("");
@@ -106,9 +110,9 @@
   const isRemoteValid = $derived(remoteUrl.trim() && !loading);
 </script>
 
-<Dialog.Root bind:open onOpenChange={handleOpenChange}>
-  <Dialog.Content class="sm:max-w-md p-4">
-    <Dialog.Header class="text-left">
+<Dialog.Root {open} onOpenChange={handleOpenChange}>
+  <Dialog.Content class="sm:max-w-md">
+    <Dialog.Header>
       <Dialog.Title>Create Playlist</Dialog.Title>
     </Dialog.Header>
 
@@ -194,7 +198,7 @@
       {/if}
     </div>
 
-    <div class="flex gap-2 justify-end">
+    <Dialog.Footer>
       <Button
         variant="outline"
         onclick={() => handleOpenChange(false)}
@@ -217,6 +221,6 @@
           {loading ? "Downloading..." : "Download"}
         </Button>
       {/if}
-    </div>
+    </Dialog.Footer>
   </Dialog.Content>
 </Dialog.Root>

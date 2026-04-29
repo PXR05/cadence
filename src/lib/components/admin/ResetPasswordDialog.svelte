@@ -1,11 +1,5 @@
 <script lang="ts">
-  import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-  } from "$lib/components/ui/dialog";
+  import * as Dialog from "$lib/components/ui/dialog";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
 
@@ -74,14 +68,14 @@
   });
 </script>
 
-<Dialog bind:open>
-  <DialogContent>
-    <DialogHeader>
-      <DialogTitle>Reset Password</DialogTitle>
-      <DialogDescription>
+<Dialog.Root bind:open>
+  <Dialog.Content>
+    <Dialog.Header>
+      <Dialog.Title>Reset Password</Dialog.Title>
+      <Dialog.Description>
         Set a new password for user <strong>{username}</strong>
-      </DialogDescription>
-    </DialogHeader>
+      </Dialog.Description>
+    </Dialog.Header>
 
     <form onsubmit={handleSubmit} class="space-y-4">
       <div class="space-y-2">
@@ -133,5 +127,5 @@
         </Button>
       </div>
     </form>
-  </DialogContent>
-</Dialog>
+  </Dialog.Content>
+</Dialog.Root>

@@ -1,12 +1,5 @@
 <script lang="ts">
-  import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-    DialogFooter,
-  } from "$lib/components/ui/dialog";
+  import * as Dialog from "$lib/components/ui/dialog";
   import { Button } from "$lib/components/ui/button";
 
   let {
@@ -20,18 +13,18 @@
   }>();
 </script>
 
-<Dialog bind:open>
-  <DialogContent>
-    <DialogHeader>
-      <DialogTitle>Delete User</DialogTitle>
-      <DialogDescription>
+<Dialog.Root bind:open>
+  <Dialog.Content>
+    <Dialog.Header>
+      <Dialog.Title>Delete User</Dialog.Title>
+      <Dialog.Description>
         Are you sure you want to delete user <strong>{username}</strong>? This
         action cannot be undone.
-      </DialogDescription>
-    </DialogHeader>
-    <DialogFooter>
+      </Dialog.Description>
+    </Dialog.Header>
+    <Dialog.Footer>
       <Button variant="outline" onclick={() => (open = false)}>Cancel</Button>
       <Button variant="destructive" onclick={onConfirm}>Delete</Button>
-    </DialogFooter>
-  </DialogContent>
-</Dialog>
+    </Dialog.Footer>
+  </Dialog.Content>
+</Dialog.Root>

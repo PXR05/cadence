@@ -16,14 +16,9 @@
   import {
     isAlbumPlaylist,
     isPlaylistPlaylist,
-    isTidalAlbumPlaylist,
-    isTidalPlaylist,
-    isYoutubeAlbumPlaylist,
-    isYoutubePlaylist,
     SPECIAL_PLAYLIST_IDS,
   } from "$lib/utils/playlist";
   import { flip } from "svelte/animate";
-  import { fade } from "svelte/transition";
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { offlineDb } from "$lib/db/offline";
   import { liveQuery } from "dexie";
@@ -31,8 +26,9 @@
   import { playerStore } from "$lib/stores/player.svelte";
   import type { Playlist } from "$lib/schemas";
   import { Button } from "$lib/components/ui/button";
+  import { useDialogState } from "$lib/hooks";
 
-  let createDialogOpen = $state(false);
+  const createDialog = useDialogState("create-playlist");
 
   let offlineCount = liveQuery(() => offlineDb.tracks.count());
 
@@ -151,6 +147,17 @@
   async function refreshPlaylists() {
     playlistsStore.invalidate();
     await playlistsStore.loadAllPlaylists(true);
+    Promise.all(
+      playlistsStore.allPlaylists.map((p) =>
+        playlistsStore.loadPlaylistDetail(p.id, true),
+      ),
+    )
+      .then(() => {
+        console.log("Playlist details refreshed");
+      })
+      .catch((err) => {
+        console.error("Failed to refresh playlist details", err);
+      });
   }
 </script>
 
@@ -218,7 +225,7 @@
       </div>
     {/each}
     <button
-      onclick={() => (createDialogOpen = true)}
+      onclick={createDialog.open}
       class="rounded-lg aspect-square w-full shrink-0 border hover:bg-muted/50 transition-colors grid place-items-center"
     >
       <PlusIcon
@@ -232,7 +239,8 @@
 </PullToRefresh>
 
 <CreatePlaylistDialog
-  bind:open={createDialogOpen}
-  onOpenChange={(open) => (createDialogOpen = open)}
+  open={createDialog.isOpen}
+  onOpenChange={(open) =>
+    !open && createDialog.isOpen ? createDialog.close() : null}
   onCreated={handlePlaylistCreated}
 />

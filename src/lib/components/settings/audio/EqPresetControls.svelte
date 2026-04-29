@@ -8,14 +8,7 @@
     Select as SelectRoot,
     SelectTrigger,
   } from "$lib/components/ui/select";
-  import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-  } from "$lib/components/ui/dialog";
+  import * as Dialog from "$lib/components/ui/dialog";
   import type { EqualizerPreset } from "$lib/stores/player.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
   import {
@@ -364,14 +357,14 @@
   {/if}
 </div>
 
-<Dialog bind:open={renameDialogOpen}>
-  <DialogContent>
-    <DialogHeader>
-      <DialogTitle>Rename Preset</DialogTitle>
-      <DialogDescription>
+<Dialog.Root bind:open={renameDialogOpen}>
+  <Dialog.Content>
+    <Dialog.Header>
+      <Dialog.Title>Rename Preset</Dialog.Title>
+      <Dialog.Description>
         Choose a new name for the selected preset.
-      </DialogDescription>
-    </DialogHeader>
+      </Dialog.Description>
+    </Dialog.Header>
 
     <Input
       type="text"
@@ -380,11 +373,11 @@
       autofocus
     />
 
-    <DialogFooter>
+    <Dialog.Footer>
       <Button variant="outline" onclick={() => (renameDialogOpen = false)}>
         Cancel
       </Button>
       <Button onclick={renameSelectedPreset}>Rename</Button>
-    </DialogFooter>
-  </DialogContent>
-</Dialog>
+    </Dialog.Footer>
+  </Dialog.Content>
+</Dialog.Root>

@@ -127,7 +127,7 @@
     items={playerStore.trackQueue}
     rowHeight={ROW_HEIGHT}
     class="overscroll-y-contain h-[80vh] md:h-[90dvh]"
-    topOffset={isDesktop ? 72 : 54}
+    topOffset={isDesktop ? 72 : 58}
     leftPadding={8}
     rightPadding={8}
     itemGap={4}

@@ -15,6 +15,7 @@
   import { navItems } from "./navItems";
   import { goto } from "$app/navigation";
   import { playerStore } from "$lib/stores/player.svelte";
+  import { useDialogState } from "$lib/hooks";
 
   function isActive(tabPath: string): boolean {
     if (tabPath === "/") return page.url.pathname === "/";
@@ -28,7 +29,7 @@
     return page.url.pathname.startsWith(tabPath);
   }
 
-  let createDialogOpen = $state(false);
+  const createDialog = useDialogState("create-playlist-sidebar");
 
   let offlineCount = liveQuery(() => offlineDb.tracks.count());
 
@@ -100,7 +101,7 @@
 
       <button
         class="absolute right-0 group-data-[collapsible=icon]:right-2 top-0 size-8 grid place-items-center rounded-sm hover:bg-sidebar-accent transition-colors"
-        onclick={() => (createDialogOpen = true)}
+        onclick={createDialog.open}
       >
         <PlusIcon class="size-4" />
       </button>
@@ -164,7 +165,8 @@
 </Sidebar.Root>
 
 <CreatePlaylistDialog
-  bind:open={createDialogOpen}
-  onOpenChange={(open) => (createDialogOpen = open)}
+  open={createDialog.isOpen}
+  onOpenChange={(open) =>
+    !open && createDialog.isOpen ? createDialog.close() : null}
   onCreated={handlePlaylistCreated}
 />

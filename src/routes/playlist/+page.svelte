@@ -14,7 +14,10 @@
     PlaylistSortDialog,
   } from "$lib/components";
   import { innerWidth } from "svelte/reactivity/window";
-  import { Loader as LoaderIcon, TriangleAlert as TriangleAlertIcon } from "@lucide/svelte";
+  import {
+    Loader as LoaderIcon,
+    TriangleAlert as TriangleAlertIcon,
+  } from "@lucide/svelte";
   import type { PlaylistDetail, PlaylistItem } from "$lib/schemas";
   import { playerStore } from "$lib/stores/player.svelte.js";
   import { loadPlaylistForRoute } from "./load-playlist";
@@ -52,9 +55,7 @@
 
   const isNonModifiable = $derived(
     playlist &&
-      (isSpecialPlaylist(playlist.id) ||
-        isArtistPlaylist(playlist.id) ||
-        isAlbumPlaylist(playlist.id)),
+      (isSpecialPlaylist(playlist.id) || isArtistPlaylist(playlist.id)),
   );
 
   const hasAddButton = $derived(

@@ -9,6 +9,7 @@ import { page } from "$app/state";
 import { createLocalStorageState } from "$lib/stores/localStorage.svelte";
 import { playlistsStore } from "$lib/stores/playlists.svelte";
 import { tracksStore } from "$lib/stores/tracks.svelte";
+import { playerStore } from "$lib/stores/player.svelte";
 
 export interface NavItem {
   path: string;
@@ -17,7 +18,10 @@ export interface NavItem {
   action?: () => void | Promise<void>;
 }
 
-export const lastRefresh = createLocalStorageState("cadence.home_last_refresh", 0);
+export const lastRefresh = createLocalStorageState(
+  "cadence.home_last_refresh",
+  0,
+);
 
 export const navItems: NavItem[] = [
   {
@@ -28,6 +32,7 @@ export const navItems: NavItem[] = [
       lastRefresh.value = Date.now();
 
       const [tracksResult, playlistsResult] = await Promise.allSettled([
+        playerStore.hydrateEqPresetsFromBackend(),
         tracksStore.loadAllTracks(),
         playlistsStore.loadAllPlaylists(),
       ]);
@@ -65,6 +70,17 @@ export const navItems: NavItem[] = [
     action: async () => {
       playlistsStore.invalidate();
       await playlistsStore.loadAllPlaylists(true);
+      Promise.all(
+        playlistsStore.allPlaylists.map((p) =>
+          playlistsStore.loadPlaylistDetail(p.id, true),
+        ),
+      )
+        .then(() => {
+          console.log("Playlist details refreshed");
+        })
+        .catch((err) => {
+          console.error("Failed to refresh playlist details", err);
+        });
     },
   },
   { path: "/settings", label: "Settings", icon: SettingsIcon },

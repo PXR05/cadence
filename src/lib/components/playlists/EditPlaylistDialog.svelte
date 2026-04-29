@@ -2,8 +2,11 @@
   import { updatePlaylist, deletePlaylist } from "$lib/api";
   import { Button } from "$lib/components/ui/button";
   import * as Dialog from "$lib/components/ui/dialog";
-  import * as AlertDialog from "$lib/components/ui/alert-dialog";
-  import { Loader as LoaderIcon, Trash as TrashIcon, Image as ImageIcon } from "@lucide/svelte";
+  import {
+    Loader as LoaderIcon,
+    Image as ImageIcon,
+    UploadIcon,
+  } from "@lucide/svelte";
   import type { PlaylistDetail } from "$lib/schemas";
   import { Input } from "../ui/input";
   import { getPlaylistImageUrl } from "$lib/constants";
@@ -23,8 +26,6 @@
   let editCoverImageFile = $state<File | null>(null);
   let editCoverImagePreview = $state<string | null>(null);
   let editLoading = $state(false);
-  let deleteDialogOpen = $state(false);
-  let deleteLoading = $state(false);
 
   $effect(() => {
     if (open) {
@@ -45,11 +46,6 @@
       editCoverImagePreview = e.target?.result as string;
     };
     reader.readAsDataURL(file);
-  }
-
-  function handleRemoveCoverImage() {
-    editCoverImageFile = null;
-    editCoverImagePreview = null;
   }
 
   async function handleSave() {
@@ -75,23 +71,23 @@
     }
   }
 
-  async function handleDelete() {
-    deleteLoading = true;
-    try {
-      await deletePlaylist(playlist.id);
-      deleteDialogOpen = false;
-      onOpenChange(false);
-      onDeleted();
-    } catch (error) {
-      console.error("Failed to delete playlist:", error);
-    } finally {
-      deleteLoading = false;
-    }
-  }
+  // async function handleDelete() {
+  //   deleteLoading = true;
+  //   try {
+  //     await deletePlaylist(playlist.id);
+  //     deleteDialogOpen = false;
+  //     onOpenChange(false);
+  //     onDeleted();
+  //   } catch (error) {
+  //     console.error("Failed to delete playlist:", error);
+  //   } finally {
+  //     deleteLoading = false;
+  //   }
+  // }
 </script>
 
 <Dialog.Root {open} {onOpenChange}>
-  <Dialog.Content class="max-w-md">
+  <Dialog.Content class="sm:max-w-md gap-0">
     <Dialog.Header class="text-left">
       <Dialog.Title>Edit Playlist</Dialog.Title>
     </Dialog.Header>
@@ -113,48 +109,62 @@
 
       <div class="space-y-2">
         <div class="text-sm font-medium">Cover Image</div>
-        {#if editCoverImagePreview}
-          <div
-            class="relative w-full aspect-square border rounded-lg overflow-hidden"
-          >
+        <label
+          class="relative group w-full aspect-square rounded-lg overflow-hidden border border-dashed flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors"
+        >
+          {#if editCoverImagePreview}
             <Image
               crossorigin="use-credentials"
               src={editCoverImagePreview}
               alt="Cover preview"
               class="w-full h-full object-cover"
             />
-            <Button
-              variant="destructive"
-              size="icon"
-              onclick={handleRemoveCoverImage}
-              class="absolute top-2 right-2 "
-              disabled={editLoading}
+            <div
+              class="absolute md:opacity-0 group-hover:opacity-100 inset-0 bg-black/50 transition-opacity grid place-items-center"
             >
-              <TrashIcon size={16} />
-            </Button>
-          </div>
-        {:else}
-          <label
-            class="w-full aspect-square border border-dashed flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors"
-          >
+              <UploadIcon strokeWidth={1.5} class="size-16" />
+            </div>
+          {:else}
             <ImageIcon size={32} class="text-muted-foreground mb-2" />
             <span class="text-sm text-muted-foreground">
               Click to upload cover image
             </span>
-            <input
-              type="file"
-              accept="image/*"
-              onchange={handleCoverImageChange}
-              class="hidden"
-              disabled={editLoading}
-            />
-          </label>
-        {/if}
+          {/if}
+          <input
+            type="file"
+            accept="image/*"
+            onchange={handleCoverImageChange}
+            class="hidden"
+            disabled={editLoading}
+          />
+        </label>
       </div>
     </div>
 
-    <Dialog.Footer class="flex-col sm:flex-row gap-2">
+    <Dialog.Footer>
       <Button
+        variant="outline"
+        onclick={() => onOpenChange(false)}
+        disabled={editLoading}
+        class="flex-1 sm:flex-none"
+      >
+        Cancel
+      </Button>
+      <Button
+        onclick={handleSave}
+        disabled={editLoading || !editName.trim()}
+        class="flex-1 sm:flex-none"
+      >
+        {#if editLoading}
+          <LoaderIcon class="animate-spin mr-2" size={16} />
+        {/if}
+        Save
+      </Button>
+    </Dialog.Footer>
+  </Dialog.Content>
+</Dialog.Root>
+
+<!-- <Button
         variant="destructive"
         onclick={() => (deleteDialogOpen = true)}
         disabled={editLoading}
@@ -163,29 +173,6 @@
         <TrashIcon size={16} class="mr-2" />
         Delete
       </Button>
-      <div class="flex gap-2 w-full sm:w-auto">
-        <Button
-          variant="outline"
-          onclick={() => onOpenChange(false)}
-          disabled={editLoading}
-          class="flex-1 sm:flex-none"
-        >
-          Cancel
-        </Button>
-        <Button
-          onclick={handleSave}
-          disabled={editLoading || !editName.trim()}
-          class="flex-1 sm:flex-none"
-        >
-          {#if editLoading}
-            <LoaderIcon class="animate-spin mr-2" size={16} />
-          {/if}
-          Save
-        </Button>
-      </div>
-    </Dialog.Footer>
-  </Dialog.Content>
-</Dialog.Root>
 
 <AlertDialog.Root
   open={deleteDialogOpen}
@@ -213,4 +200,4 @@
       </AlertDialog.Action>
     </AlertDialog.Footer>
   </AlertDialog.Content>
-</AlertDialog.Root>
+</AlertDialog.Root> -->

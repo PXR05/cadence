@@ -1,11 +1,5 @@
 <script lang="ts">
-  import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-  } from "$lib/components/ui/dialog";
+  import * as Dialog from "$lib/components/ui/dialog";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
 
@@ -81,14 +75,14 @@
   });
 </script>
 
-<Dialog bind:open>
-  <DialogContent>
-    <DialogHeader>
-      <DialogTitle>Create New User</DialogTitle>
-      <DialogDescription>
+<Dialog.Root bind:open>
+  <Dialog.Content>
+    <Dialog.Header>
+      <Dialog.Title>Create New User</Dialog.Title>
+      <Dialog.Description>
         Add a new user account with username and password
-      </DialogDescription>
-    </DialogHeader>
+      </Dialog.Description>
+    </Dialog.Header>
 
     <form onsubmit={handleSubmit} class="space-y-4">
       <div class="space-y-2">
@@ -152,5 +146,5 @@
         </Button>
       </div>
     </form>
-  </DialogContent>
-</Dialog>
+  </Dialog.Content>
+</Dialog.Root>

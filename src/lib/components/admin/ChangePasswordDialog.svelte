@@ -1,11 +1,5 @@
 <script lang="ts">
-  import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-  } from "$lib/components/ui/dialog";
+  import * as Dialog from "$lib/components/ui/dialog";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
 
@@ -21,7 +15,7 @@
     onConfirm: (
       userId: string,
       currentPassword: string,
-      newPassword: string
+      newPassword: string,
     ) => Promise<void>;
   }>();
 
@@ -86,14 +80,14 @@
   });
 </script>
 
-<Dialog bind:open>
-  <DialogContent>
-    <DialogHeader>
-      <DialogTitle>Change Password</DialogTitle>
-      <DialogDescription>
+<Dialog.Root bind:open>
+  <Dialog.Content>
+    <Dialog.Header>
+      <Dialog.Title>Change Password</Dialog.Title>
+      <Dialog.Description>
         Change password for user <strong>{username}</strong>
-      </DialogDescription>
-    </DialogHeader>
+      </Dialog.Description>
+    </Dialog.Header>
 
     <form onsubmit={handleSubmit} class="space-y-4">
       <div class="space-y-2">
@@ -160,5 +154,5 @@
         </Button>
       </div>
     </form>
-  </DialogContent>
-</Dialog>
+  </Dialog.Content>
+</Dialog.Root>

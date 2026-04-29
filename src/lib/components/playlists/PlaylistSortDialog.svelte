@@ -22,42 +22,45 @@
     onSortByChange,
     onSortDirectionChange,
   }: Props = $props();
+
+  const activeClass =
+    "bg-foreground dark:bg-foreground hover:bg-foreground/80 dark:hover:bg-foreground/80 text-background hover:text-background";
 </script>
 
 <Dialog.Root {open} {onOpenChange}>
-  <Dialog.Content class="max-w-[90dvw] p-5">
+  <Dialog.Content class="max-w-[90dvw]">
     <Dialog.Header class="text-left">
       <Dialog.Title>Sort Playlist</Dialog.Title>
     </Dialog.Header>
 
-    <div class="space-y-2">
+    <div class="space-y-2 text-muted-foreground">
       <div class="space-y-2">
         <p class="text-sm text-muted-foreground">Sort by</p>
         <div class="grid grid-cols-2 gap-2">
           <Button
-            variant={sortBy === "custom" ? "default" : "outline"}
-            class="rounded-xl"
+            variant="outline"
             onclick={() => onSortByChange("custom")}
+            class="rounded-xl {sortBy === 'custom' ? activeClass : ''}"
           >
             Default
           </Button>
           <Button
-            variant={sortBy === "title" ? "default" : "outline"}
-            class="rounded-xl"
+            variant="outline"
+            class="rounded-xl {sortBy === 'title' ? activeClass : ''}"
             onclick={() => onSortByChange("title")}
           >
             Alphabetical
           </Button>
           <Button
-            variant={sortBy === "addedAt" ? "default" : "outline"}
-            class="rounded-xl"
+            variant="outline"
+            class="rounded-xl {sortBy === 'addedAt' ? activeClass : ''}"
             onclick={() => onSortByChange("addedAt")}
           >
             Date Added
           </Button>
           <Button
-            variant={sortBy === "artist" ? "default" : "outline"}
-            class="rounded-xl"
+            variant="outline"
+            class="rounded-xl {sortBy === 'artist' ? activeClass : ''}"
             onclick={() => onSortByChange("artist")}
           >
             Artist
@@ -69,15 +72,15 @@
         <p class="text-sm text-muted-foreground">Order</p>
         <div class="grid grid-cols-2 gap-2">
           <Button
-            variant={sortDirection === "asc" ? "default" : "outline"}
-            class="rounded-xl"
+            variant="outline"
+            class="rounded-xl {sortDirection === 'asc' ? activeClass : ''}"
             onclick={() => onSortDirectionChange("asc")}
           >
             Ascending
           </Button>
           <Button
-            variant={sortDirection === "desc" ? "default" : "outline"}
-            class="rounded-xl"
+            variant="outline"
+            class="rounded-xl {sortDirection === 'desc' ? activeClass : ''}"
             onclick={() => onSortDirectionChange("desc")}
           >
             Descending

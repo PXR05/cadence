@@ -7,7 +7,6 @@
   import { remoteDownloadStore } from "$lib/stores/remoteDownload.svelte";
   import TrackTable from "./TrackTable.svelte";
   import DeleteTrackDialog from "./DeleteTrackDialog.svelte";
-  import UploadTrackDialog from "./UploadTrackDialog.svelte";
   import TrackPagination from "./TrackPagination.svelte";
   import type { AudioFile, RemoteProvider } from "$lib/schemas";
   import { getRemoteProviderLabel } from "$lib/utils/remote";
@@ -19,7 +18,6 @@
   let tracksCurrentPage = $state(1);
   let tracksTotalPages = $state(1);
   let deleteTrackDialogOpen = $state(false);
-  let uploadTrackDialogOpen = $state(false);
   let selectedTrack = $state<AudioFile | null>(null);
 
   function setMessage(type: "error" | "success", message: string) {
@@ -48,10 +46,6 @@
   onMount(() => {
     loadTracks();
   });
-
-  function openAddTrackDialog() {
-    uploadTrackDialogOpen = true;
-  }
 
   function openDeleteTrackDialog(track: AudioFile) {
     selectedTrack = track;
@@ -110,10 +104,6 @@
 
 <div class="flex justify-between items-center gap-2 w-full">
   <h2 class="text-2xl font-semibold p-2">Tracks</h2>
-  <Button onclick={openAddTrackDialog} class="gap-2">
-    <MusicIcon size={18} />
-    Add Track
-  </Button>
 </div>
 
 <TrackTable
@@ -131,14 +121,6 @@
     onPageChange={loadTracks}
   />
 {/if}
-
-<UploadTrackDialog
-  bind:open={uploadTrackDialogOpen}
-  loading={tracksLoading}
-  onUploadComplete={handleUploadComplete}
-  onUploadError={handleUploadError}
-  onRemoteUpload={handleRemoteUpload}
-/>
 
 <DeleteTrackDialog
   bind:open={deleteTrackDialogOpen}

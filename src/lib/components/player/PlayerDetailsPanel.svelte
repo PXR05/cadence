@@ -246,11 +246,16 @@
           {track?.metadata?.format?.toUpperCase()}
         </span>
         <span>
-          {#if track?.metadata?.bitDepth}
+          <!-- {#if track?.metadata?.bitDepth}
             {track?.metadata?.bitDepth}-bit
           {/if}
           {#if track?.metadata?.sampleRate}
             {(track.metadata.sampleRate / 1000).toFixed(1)} kHz
+            {/if} -->
+          {#if track?.metadata?.bitrate}
+            {track.metadata.bitrate >= 1000
+              ? (track.metadata.bitrate / 1000).toFixed(1) + " kbps"
+              : track.metadata.bitrate + " bps"}
           {/if}
         </span>
       </button>

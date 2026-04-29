@@ -1,11 +1,10 @@
 <script lang="ts">
-  import {  Loader as LoaderIcon, Link as LinkIcon, Upload as UploadIcon } from "@lucide/svelte";
   import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-  } from "../ui/dialog";
+    Loader as LoaderIcon,
+    Link as LinkIcon,
+    Upload as UploadIcon,
+  } from "@lucide/svelte";
+  import * as Dialog from "../ui/dialog";
   import { Button } from "../ui/button";
   import { Input } from "../ui/input";
   import type { RemoteProvider } from "$lib/schemas";
@@ -15,14 +14,16 @@
   interface Props {
     open?: boolean;
     loading?: boolean;
+    onOpenChange: (open: boolean) => void;
     onUploadComplete: (successCount: number, totalCount: number) => void;
     onUploadError: (error: string) => void;
     onRemoteUpload: (provider: RemoteProvider, url: string) => void;
   }
 
   let {
-    open = $bindable(false),
+    open = false,
     loading = false,
+    onOpenChange,
     onUploadComplete,
     onUploadError,
     onRemoteUpload,
@@ -118,7 +119,7 @@
 
       if (successCount > 0) {
         onUploadComplete(successCount, files.length);
-        open = false;
+        onOpenChange(false);
       } else {
         onUploadError("Failed to upload files");
       }
@@ -140,23 +141,23 @@
 
     onRemoteUpload(provider, url);
     remoteUrl = "";
-    open = false;
+    onOpenChange(false);
   }
 
   function handleCancel() {
-    open = false;
+    onOpenChange(false);
     remoteUrl = "";
     uploadMode = "file";
   }
 </script>
 
-<Dialog bind:open>
-  <DialogContent class="max-w-md">
-    <DialogHeader>
-      <DialogTitle>Add Track</DialogTitle>
-    </DialogHeader>
+<Dialog.Root {open} {onOpenChange}>
+  <Dialog.Content class="sm:max-w-md">
+    <Dialog.Header>
+      <Dialog.Title>Add Track</Dialog.Title>
+    </Dialog.Header>
 
-    <div class="space-y-4 pb-4">
+    <div class="space-y-4">
       <div class="flex gap-2">
         <Button
           variant={uploadMode === "file" ? "default" : "outline"}
@@ -220,6 +221,17 @@
               </div>
             </div>
           {/if}
+
+          <Dialog.Footer class="mt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onclick={handleCancel}
+              disabled={loading || isUploading}
+            >
+              Cancel
+            </Button>
+          </Dialog.Footer>
         </div>
       {:else}
         <form onsubmit={handleRemoteSubmit} class="space-y-4">
@@ -228,6 +240,7 @@
               <label for="remote-url" class="text-sm font-medium"
                 >Remote URL</label
               >
+
               <span
                 title={SUPPORTED_REMOTE_SOURCES}
                 class="inline-flex items-center justify-center size-4 rounded-full border border-muted-foreground/40 text-[10px] font-semibold text-muted-foreground cursor-help"
@@ -236,6 +249,7 @@
                 i
               </span>
             </div>
+
             <Input
               id="remote-url"
               type="url"
@@ -244,7 +258,8 @@
               disabled={loading || isUploading}
             />
           </div>
-          <div class="flex gap-2 justify-end">
+
+          <Dialog.Footer>
             <Button
               type="button"
               variant="outline"
@@ -262,9 +277,9 @@
               {/if}
               Download
             </Button>
-          </div>
+          </Dialog.Footer>
         </form>
       {/if}
     </div>
-  </DialogContent>
-</Dialog>
+  </Dialog.Content>
+</Dialog.Root>
