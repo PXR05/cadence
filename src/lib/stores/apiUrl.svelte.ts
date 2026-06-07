@@ -17,26 +17,6 @@ function tryNormalize(value: string | null | undefined): string | null {
   }
 }
 
-async function resolveRuntimeDefaultUrl(): Promise<string | null> {
-  const processDefault = tryNormalize(
-    typeof process !== "undefined" ? process.env.PUBLIC_API_URL : undefined,
-  );
-  if (processDefault) {
-    return processDefault;
-  }
-
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  try {
-    const { env } = await import("$env/dynamic/public");
-    return tryNormalize(env.PUBLIC_API_URL);
-  } catch {
-    return null;
-  }
-}
-
 export function normalizeApiUrl(value: string): string {
   const trimmed = value.trim();
   if (!trimmed) {
@@ -69,7 +49,8 @@ class ApiUrlStore {
   );
   private defaultUrlStorage = createLocalStorageState<string>(
     DEFAULT_STORAGE_KEY,
-    "",
+    import.meta.env.PUBLIC_API_URL ||
+      "https://audiostream.pxr.dpdns.org",
   );
 
   defaultUrl = $state<string>("");
@@ -86,27 +67,6 @@ class ApiUrlStore {
 
     if (this.customUrlStorage.value !== this.customUrl) {
       this.customUrlStorage.value = this.customUrl;
-    }
-
-    void this.hydrateDefaultUrlFromRuntime();
-  }
-
-  private async hydrateDefaultUrlFromRuntime(): Promise<void> {
-    if (this.defaultUrl) {
-      return;
-    }
-
-    const runtimeDefault = await resolveRuntimeDefaultUrl();
-    if (!runtimeDefault) {
-      return;
-    }
-
-    this.defaultUrl = runtimeDefault;
-    this.defaultUrlStorage.value = runtimeDefault;
-
-    if (this.customUrl === runtimeDefault) {
-      this.customUrl = null;
-      this.customUrlStorage.value = null;
     }
   }
 
