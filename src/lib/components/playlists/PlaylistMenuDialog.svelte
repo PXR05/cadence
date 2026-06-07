@@ -329,7 +329,10 @@
 
     <Button
       variant="ghost"
-      class="rounded-3xl justify-start gap-3 h-12"
+      class="rounded-3xl justify-start gap-3 h-12
+      {item.isDanger
+        ? 'text-destructive hover:text-destructive hover:bg-destructive/10'
+        : ''}"
       onclick={item.onClick}
       disabled={item.disabled}
     >
