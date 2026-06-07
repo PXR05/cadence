@@ -1,44 +1,49 @@
 <script lang="ts">
+  import { invalidateAll } from "$app/navigation";
+  import { deletePlaylist } from "$lib/api";
+  import * as AlertDialog from "$lib/components/ui/alert-dialog";
   import { MenuDialog } from "$lib/components/ui/menu-dialog";
-  import { playlistMenuStore } from "$lib/stores/playlistMenu.svelte";
-  import { playlistsStore } from "$lib/stores/playlists.svelte";
-  import { remoteDownloadStore } from "$lib/stores/remoteDownload.svelte";
-  import { playerStore } from "$lib/stores/player.svelte";
+  import { getPlaylistImageUrl } from "$lib/constants";
+  import { deleteOfflineImage } from "$lib/db/offline";
   import {
     useDialogState,
     useMenuDialogState,
     usePlaylistOffline,
   } from "$lib/hooks";
-  import { getPlaylistImageUrl } from "$lib/constants";
+  import { playerStore } from "$lib/stores/player.svelte";
+  import { playlistMenuStore } from "$lib/stores/playlistMenu.svelte";
+  import { playlistsStore } from "$lib/stores/playlists.svelte";
+  import { remoteDownloadStore } from "$lib/stores/remoteDownload.svelte";
   import {
-    getTidalCollectionId,
     getPlaylistDisplayName,
+    getTidalCollectionId,
     isArtistPlaylist,
-    isAlbumPlaylist,
     isSpecialPlaylist,
-    isYoutubeCollectionPlaylist,
     isTidalAlbumPlaylist,
     isTidalCollectionPlaylist,
+    isYoutubeCollectionPlaylist,
     SPECIAL_PLAYLIST_IDS,
   } from "$lib/utils/playlist";
   import { buildRemoteCollectionUrl } from "$lib/utils/remote";
-  import EditPlaylistDialog from "./EditPlaylistDialog.svelte";
-  import { Button } from "../ui/button";
   import {
     CloudDownload as CloudDownloadIcon,
     CloudOff as CloudOffIcon,
-    Pencil as PencilIcon,
-    RefreshCw as RefreshCwIcon,
     Download as DownloadIcon,
-    Music as MusicIcon,
     ListPlus as ListPlusIcon,
+    LoaderIcon,
+    Music as MusicIcon,
+    Pencil as PencilIcon,
     Play as PlayIcon,
+    RefreshCw as RefreshCwIcon,
+    Trash2Icon,
+    TrashIcon,
   } from "@lucide/svelte";
   import { toast } from "svelte-sonner";
-  import { invalidateAll } from "$app/navigation";
-  import { deleteOfflineImage } from "$lib/db/offline";
+  import { Button } from "../ui/button";
+  import EditPlaylistDialog from "./EditPlaylistDialog.svelte";
 
   const editDialog = useDialogState("edit-playlist");
+  const deleteDialog = useDialogState("delete-playlist");
 
   const dialogState = useMenuDialogState({
     paramName: "playlist-menu",
@@ -208,14 +213,25 @@
     invalidateAll();
   }
 
-  async function handlePlaylistDeleted() {
-    if (!playlist) return;
-    await playlistsStore.invalidatePlaylist(playlist.id);
-    playlistsStore.invalidate();
-    await deleteOfflineImage(playlist.id);
-    editDialog.close();
-    handleClose();
-    invalidateAll();
+  let deleteLoading = $state(false);
+  async function handleDelete() {
+    deleteLoading = true;
+    try {
+      if (!playlist) return;
+
+      await deletePlaylist(playlist.id);
+      deleteDialog.close();
+      deleteLoading = false;
+
+      await playlistsStore.invalidatePlaylist(playlist.id);
+      playlistsStore.invalidate();
+      await deleteOfflineImage(playlist.id);
+
+      handleClose();
+      invalidateAll();
+    } catch (error) {
+      console.error("Failed to delete playlist:", error);
+    }
   }
 
   function handleEditDialogOpenChange(open: boolean) {
@@ -289,6 +305,14 @@
         dividerBefore: true,
         show: !isNonModifiable,
       },
+      {
+        key: "delete-playlist",
+        label: "Delete Playlist",
+        icon: Trash2Icon,
+        onClick: deleteDialog.open,
+        show: !isNonModifiable,
+        isDanger: true,
+      },
     ].filter((item) => item.show ?? true),
   );
 </script>
@@ -332,9 +356,42 @@
           onOpenChange={handleEditDialogOpenChange}
           playlist={{ ...playlist, items: [] }}
           onUpdated={handlePlaylistUpdated}
-          onDeleted={handlePlaylistDeleted}
         />
       {/if}
     {/snippet}
   </MenuDialog>
+{/if}
+
+{#if playlist}
+  <AlertDialog.Root
+    open={deleteDialog.isOpen}
+    onOpenChange={(v) => {
+      if (!v && deleteDialog.isOpen) {
+        deleteDialog.close();
+      }
+    }}
+  >
+    <AlertDialog.Content>
+      <AlertDialog.Header>
+        <AlertDialog.Title>Delete Playlist</AlertDialog.Title>
+        <AlertDialog.Description>
+          Are you sure you want to delete "{playlist.name}"? This action cannot
+          be undone.
+        </AlertDialog.Description>
+      </AlertDialog.Header>
+      <AlertDialog.Footer>
+        <AlertDialog.Cancel disabled={deleteLoading}>Cancel</AlertDialog.Cancel>
+        <AlertDialog.Action
+          onclick={handleDelete}
+          disabled={deleteLoading}
+          class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+        >
+          {#if deleteLoading}
+            <LoaderIcon class="animate-spin mr-2" size={16} />
+          {/if}
+          Delete
+        </AlertDialog.Action>
+      </AlertDialog.Footer>
+    </AlertDialog.Content>
+  </AlertDialog.Root>
 {/if}

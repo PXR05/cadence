@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { updatePlaylist, deletePlaylist } from "$lib/api";
+  import { updatePlaylist } from "$lib/api";
   import { Button } from "$lib/components/ui/button";
   import * as Dialog from "$lib/components/ui/dialog";
   import {
@@ -17,10 +17,9 @@
     onOpenChange: (open: boolean) => void;
     playlist: PlaylistDetail;
     onUpdated: (playlist: { name: string; coverImage?: string | null }) => void;
-    onDeleted: () => void;
   }
 
-  let { open, onOpenChange, playlist, onUpdated, onDeleted }: Props = $props();
+  let { open, onOpenChange, playlist, onUpdated }: Props = $props();
 
   let editName = $state("");
   let editCoverImageFile = $state<File | null>(null);
@@ -70,20 +69,6 @@
       editLoading = false;
     }
   }
-
-  // async function handleDelete() {
-  //   deleteLoading = true;
-  //   try {
-  //     await deletePlaylist(playlist.id);
-  //     deleteDialogOpen = false;
-  //     onOpenChange(false);
-  //     onDeleted();
-  //   } catch (error) {
-  //     console.error("Failed to delete playlist:", error);
-  //   } finally {
-  //     deleteLoading = false;
-  //   }
-  // }
 </script>
 
 <Dialog.Root {open} {onOpenChange}>
@@ -163,41 +148,3 @@
     </Dialog.Footer>
   </Dialog.Content>
 </Dialog.Root>
-
-<!-- <Button
-        variant="destructive"
-        onclick={() => (deleteDialogOpen = true)}
-        disabled={editLoading}
-        class="w-full sm:w-auto sm:mr-auto"
-      >
-        <TrashIcon size={16} class="mr-2" />
-        Delete
-      </Button>
-
-<AlertDialog.Root
-  open={deleteDialogOpen}
-  onOpenChange={(open) => (deleteDialogOpen = open)}
->
-  <AlertDialog.Content>
-    <AlertDialog.Header>
-      <AlertDialog.Title>Delete Playlist</AlertDialog.Title>
-      <AlertDialog.Description>
-        Are you sure you want to delete "{playlist.name}"? This action cannot be
-        undone.
-      </AlertDialog.Description>
-    </AlertDialog.Header>
-    <AlertDialog.Footer>
-      <AlertDialog.Cancel disabled={deleteLoading}>Cancel</AlertDialog.Cancel>
-      <AlertDialog.Action
-        onclick={handleDelete}
-        disabled={deleteLoading}
-        class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-      >
-        {#if deleteLoading}
-          <LoaderIcon class="animate-spin mr-2" size={16} />
-        {/if}
-        Delete
-      </AlertDialog.Action>
-    </AlertDialog.Footer>
-  </AlertDialog.Content>
-</AlertDialog.Root> -->
