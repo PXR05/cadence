@@ -144,7 +144,7 @@ self.addEventListener("fetch", (event) => {
       }
     }
 
-    if (ASSETS.includes(url.pathname) || url.pathname.endsWith("/env.js")) {
+    if (ASSETS.includes(url.pathname)) {
       const response = await cache.match(url.pathname);
 
       if (response) {
@@ -161,14 +161,14 @@ self.addEventListener("fetch", (event) => {
         throw new Error("invalid response from fetch");
       }
 
-      const isAsset = ASSETS.includes(url.pathname) || url.pathname.endsWith("/env.js");
+      const isAsset = ASSETS.includes(url.pathname)
       if (response.status === 200 && isAsset) {
         cache.put(event.request, response.clone());
       }
 
       return response;
     } catch (err) {
-      const isAsset = ASSETS.includes(url.pathname) || url.pathname.endsWith("/env.js");
+      const isAsset = ASSETS.includes(url.pathname)
       if (isAsset) {
         const response = await cache.match(event.request);
         if (response) {
