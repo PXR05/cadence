@@ -4,6 +4,45 @@ import { getOfflineTrack } from "$lib/db/offline";
 
 interface GetAudioUrlOptions {
   useCustomAuthFetch?: boolean;
+  forceRefreshTicket?: boolean;
+}
+
+interface TicketInfo {
+  ticket: string;
+  expiresAt: number;
+}
+
+const activeTickets = new Map<string, TicketInfo>();
+
+export async function getOrFetchStreamTicket(
+  trackId: string,
+  forceRefresh = false,
+): Promise<string> {
+  const cached = activeTickets.get(trackId);
+  const BUFFER_MS = 30_000;
+
+  if (cached && !forceRefresh && Date.now() < cached.expiresAt - BUFFER_MS) {
+    return cached.ticket;
+  }
+
+  try {
+    const response = await authFetch(`/audio/${trackId}/ticket`, {
+      method: "POST",
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to get stream ticket: ${response.status} ${response.statusText}`,
+      );
+    }
+
+    const data: TicketInfo = await response.json();
+    activeTickets.set(trackId, data);
+    return data.ticket;
+  } catch (error) {
+    console.error(`Failed to acquire stream ticket for ${trackId}:`, error);
+    throw error;
+  }
 }
 
 export async function getAudioUrl(
@@ -27,20 +66,18 @@ export async function getAudioUrl(
     );
   }
 
-  if (options?.useCustomAuthFetch) {
-    const response = await authFetch(`/audio/${trackId}/stream`);
-
-    if (!response.ok) {
-      throw new Error(
-        `Failed to load audio stream: ${response.status} ${response.statusText}`,
-      );
-    }
-
-    const audioBlob = await response.blob();
-    return URL.createObjectURL(audioBlob);
+  try {
+    const ticket = await getOrFetchStreamTicket(
+      trackId,
+      options?.forceRefreshTicket,
+    );
+    const baseUrl = getStreamUrl(trackId);
+    const separator = baseUrl.includes("?") ? "&" : "?";
+    return `${baseUrl}${separator}ticket=${encodeURIComponent(ticket)}`;
+  } catch (error) {
+    console.warn(`Falling back to base stream URL for ${trackId}:`, error);
+    return getStreamUrl(trackId);
   }
-
-  return getStreamUrl(trackId);
 }
 
 export function revokeAudioUrl(url: string): void {

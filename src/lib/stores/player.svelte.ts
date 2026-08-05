@@ -386,6 +386,31 @@ class PlayerState {
       this.playNext();
     });
 
+    this.playerRef.addEventListener("error", async () => {
+      if (this.currentTrack && !this.shouldUseNativePlayback()) {
+        console.warn(
+          "Audio playback error encountered. Attempting stream ticket recovery...",
+        );
+        try {
+          const savedTime = this.currentTime;
+          const audioUrl = await getAudioUrl(this.currentTrack.id, {
+            forceRefreshTicket: true,
+          });
+          if (this.playerRef && this.currentTrack) {
+            this.isWebSourceChanging = true;
+            this.playerRef.src = audioUrl;
+            this.playerRef.currentTime = savedTime;
+            this.playerRef.load();
+            if (this.isPlaying) {
+              await this.playerRef.play().catch(() => {});
+            }
+          }
+        } catch (recoveryErr) {
+          console.error("Audio stream ticket recovery failed:", recoveryErr);
+        }
+      }
+    });
+
     this.setMediaSessionPlaybackState(this.isPlaying ? "playing" : "paused");
   }
 
