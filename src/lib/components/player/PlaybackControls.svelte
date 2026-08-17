@@ -1,7 +1,7 @@
 <script lang="ts">
   import { playerStore } from "$lib/stores/player.svelte";
   import {
-     Pause as PauseIcon,
+    Pause as PauseIcon,
     Play as PlayIcon,
     Repeat as RepeatIcon,
     Shuffle as ShuffleIcon,
@@ -46,7 +46,7 @@
     {playerStore.isShuffled
       ? 'hover:bg-foreground/10 bg-foreground/10'
       : 'opacity-50'}
-    {variant === 'large' ? 'mr-auto' : 'ml-auto'}"
+    {variant === 'large' ? 'mr-auto rounded-xl' : 'ml-auto'}"
     style="color: {textColor};"
     aria-label="Shuffle tracks"
   >
@@ -63,7 +63,9 @@
       trigger([{ duration: 10 }]);
       playerStore.playPrevious();
     }}
-    class="size-{size.button} max-md:rounded-xl grid place-items-center"
+    class="size-{size.button} max-md:rounded-xl grid place-items-center 
+      {variant === 'large' ? 'rounded-xl' : ''}
+    "
     style="color: {textColor};"
     aria-label="Previous track"
   >
@@ -81,7 +83,9 @@
       trigger([{ duration: 10 }]);
       playerStore.togglePlayPause();
     }}
-    class="size-{size.primary} max-md:rounded-3xl grid place-items-center"
+    class="size-{size.primary} max-md:rounded-3xl grid place-items-center
+      {variant === 'large' ? 'rounded-3xl' : ''}
+    "
     style="color: {textColor};"
     aria-label={playerStore.isPlaying ? "Pause" : "Play"}
   >
@@ -108,7 +112,9 @@
       trigger([{ duration: 10 }]);
       playerStore.playNext();
     }}
-    class="size-{size.button} max-md:rounded-xl grid place-items-center"
+    class="size-{size.button} max-md:rounded-xl grid place-items-center
+      {variant === 'large' ? 'rounded-xl' : ''}
+    "
     style="color: {textColor};"
     aria-label="Next track"
   >
@@ -130,7 +136,7 @@
     {playerStore.isRepeated
       ? 'hover:bg-foreground/10 bg-foreground/10'
       : 'opacity-50'}
-    {variant === 'large' ? 'ml-auto' : 'mr-auto'}"
+    {variant === 'large' ? 'ml-auto rounded-xl' : 'mr-auto'}"
     style="color: {textColor};"
     aria-label="Repeat track"
   >

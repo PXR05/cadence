@@ -11,6 +11,7 @@
     color?: string;
     compact?: boolean;
     openDialogOnClick?: boolean;
+    centered?: boolean;
   }
 
   let {
@@ -20,6 +21,7 @@
     color,
     compact = false,
     openDialogOnClick = true,
+    centered = false,
   }: Props = $props();
 
   const AUTO_SCROLL_PX_PER_SEC = 28;
@@ -274,11 +276,11 @@
   }
 </script>
 
-<div bind:this={rootElement} class="w-full min-w-0">
+<div bind:this={rootElement} class="w-full min-w-0 {centered ? 'text-center' : 'text-left'}">
   {#snippet trackInfoContent()}
     <div
       bind:this={titleViewport}
-      class="overflow-hidden"
+      class="overflow-hidden {centered ? 'flex justify-center' : ''}"
       role="group"
       aria-label="Auto-scrolling track title"
       style={titleMaskStyle()}
@@ -287,7 +289,7 @@
         bind:this={titleContent}
         class="whitespace-nowrap font-medium will-change-transform {compact
           ? 'text-base'
-          : 'text-xl'}"
+          : 'text-xl'} {centered ? 'text-center' : ''}"
         style="color: {color}; transform: translateX(-{titleOffset}px);"
       >
         {title}
@@ -296,7 +298,7 @@
 
     <div
       bind:this={artistsViewport}
-      class="overflow-hidden"
+      class="overflow-hidden {centered ? 'flex justify-center' : ''}"
       role="group"
       aria-label="Auto-scrolling artists"
       style={artistsMaskStyle()}
@@ -305,7 +307,7 @@
         bind:this={artistsContent}
         class="text-muted-foreground whitespace-nowrap will-change-transform {compact
           ? 'text-sm'
-          : ''}"
+          : ''} {centered ? 'text-center' : ''}"
         style="color: {color}; transform: translateX(-{artistsOffset}px);"
       >
         {#each artists as a, i}
@@ -322,7 +324,7 @@
               }}
               onkeydown={(e) =>
                 e.key === "Enter" && goto(`/playlist?id=artist_${a}`)}>{a}</span
-            >{#if i < artists.length - 1},&nbsp;{/if}
+              >{#if i < artists.length - 1},&nbsp;{/if}
           {/if}
         {/each}
       </p>
@@ -333,7 +335,7 @@
     <button
       type="button"
       data-allow-panel-drag
-      class="text-left grid w-full min-w-0 {compact
+      class="{centered ? 'text-center' : 'text-left'} grid w-full min-w-0 {compact
         ? 'gap-0.5'
         : 'mb-2 gap-1'} cursor-pointer"
       onclick={openInfoDialog}
@@ -345,7 +347,7 @@
   {:else}
     <div
       data-allow-panel-drag
-      class="text-left grid w-full min-w-0 {compact ? 'gap-0.5' : 'mb-2 gap-1'}"
+      class="{centered ? 'text-center' : 'text-left'} grid w-full min-w-0 {compact ? 'gap-0.5' : 'mb-2 gap-1'}"
       role="presentation"
     >
       {@render trackInfoContent()}

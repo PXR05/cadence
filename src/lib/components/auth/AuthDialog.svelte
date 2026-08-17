@@ -11,7 +11,6 @@
   import { apiUrlStore, getBackendUrl } from "$lib/stores/apiUrl.svelte";
   import { applyApiUrlChange } from "$lib/utils/apiUrlChange";
   import LoginDialog from "./LoginDialog.svelte";
-  import MonochromeAudioFlowField from "./MonochromeAudioFlowField.svelte";
   import RegisterDialog from "./RegisterDialog.svelte";
 
   let { onAuthenticated } = $props<{
@@ -117,7 +116,7 @@
 
 <div class="relative grid h-dvh overflow-hidden">
   <div class="relative hidden overflow-hidden bg-muted/40 p-6 md:flex">
-    <MonochromeAudioFlowField />
+    <!-- <MonochromeAudioFlowField /> -->
 
     <div class="relative z-10 space-y-4">
       <img

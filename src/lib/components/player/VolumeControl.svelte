@@ -1,7 +1,16 @@
 <script lang="ts">
   import { playerStore } from "$lib/stores/player.svelte";
-  import { Volume2 as Volume2Icon, VolumeX as VolumeXIcon } from "@lucide/svelte";
+  import {
+    Volume2 as Volume2Icon,
+    VolumeX as VolumeXIcon,
+  } from "@lucide/svelte";
   import { Button } from "../ui/button";
+
+  const {
+    side = "top",
+  }: {
+    side?: "top" | "bottom";
+  } = $props();
 
   function handleVolumeChange(e: Event) {
     const target = e.target as HTMLInputElement;
@@ -51,10 +60,14 @@
   </Button>
 
   <div
-    class="pointer-events-none absolute left-1/2 bottom-full -translate-x-1/2 h-40 w-20 flex items-end justify-center opacity-0 translate-y-2 transition-all duration-150 ease-out group-hover/volume:pointer-events-auto group-hover/volume:opacity-100 group-hover/volume:translate-y-0 group-focus-within/volume:pointer-events-auto group-focus-within/volume:opacity-100 group-focus-within/volume:translate-y-0"
+    class="pointer-events-none absolute left-1/2 -translate-x-1/2 h-34 w-20 flex items-end justify-center opacity-0 transition-all duration-150 ease-out group-hover/volume:pointer-events-auto group-hover/volume:opacity-100 group-focus-within/volume:pointer-events-auto group-focus-within/volume:opacity-100 group-hover/volume:translate-y-0 group-focus-within/volume:translate-y-0
+    {side === 'top' ? 'bottom-full translate-y-2' : ''}
+    {side === 'bottom' ? 'top-full -translate-y-2' : ''}"
   >
     <div
-      class="relative mb-2 h-32 w-8 rounded-lg border bg-muted grid place-items-center"
+      class="relative h-32 w-8 rounded-lg border bg-muted grid place-items-center
+      {side === 'top' ? 'mb-2' : ''}
+      {side === 'bottom' ? 'mt-2' : ''}"
     >
       <div
         class="absolute inset-y-3 left-1/2 -translate-x-1/2 w-1.5 rounded-lg overflow-clip pointer-events-none"
