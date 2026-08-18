@@ -30,7 +30,7 @@
   onMount(async () => {
     nativeBridgeStore.refreshNativeInfo();
 
-    if (authStore.isAuthenticated) {
+    if (authStore.canAccessApp) {
       loadInitialData();
     }
 
@@ -164,7 +164,7 @@
 
 {#if showSplash}
   <SplashScreen onComplete={() => (showSplash = false)} />
-{:else if !authStore.isAuthenticated}
+{:else if !authStore.canAccessApp}
   <AuthDialog
     onAuthenticated={() => {
       playerStore.onAuthStateChanged();
@@ -177,7 +177,7 @@
   <UpdateNotification onUpdate={handleUpdate} />
 {/if}
 
-{#if authStore.isAuthenticated}
+{#if authStore.canAccessApp}
   <TrackInfoDialog />
   <TrackMenuDialog />
   <PlaylistMenuDialog />

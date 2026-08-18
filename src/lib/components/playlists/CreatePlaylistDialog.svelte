@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as Dialog from "$lib/components/ui/dialog";
   import { Button } from "$lib/components/ui/button";
-  import { createPlaylist } from "$lib/api";
+  import { createPlaylist } from "$lib/backend/services/playlists";
   import { Input } from "../ui/input";
   import {
     Link as LinkIcon,
@@ -15,6 +15,7 @@
     getRemoteProviderLabel,
     isValidRemoteImportUrl,
   } from "$lib/utils/remote";
+  import { backendCapabilities } from "$lib/backend/config";
 
   interface Props {
     open: boolean;
@@ -29,6 +30,10 @@
   let loading = $state(false);
   let error = $state("");
   let mode = $state<"manual" | "remote">("manual");
+  const canImportRemote =
+    backendCapabilities.uploads.remote &&
+    (backendCapabilities.remoteProviders.youtube.import ||
+      backendCapabilities.remoteProviders.tidal.import);
 
   const SUPPORTED_IMPORT_SOURCES =
     "Supported sources:\n- YouTube playlist links\n- Tidal playlist or album links";
@@ -63,6 +68,11 @@
     if (!provider) {
       error =
         "Unsupported URL. Supported sources are YouTube playlists and Tidal playlists/albums.";
+      return;
+    }
+
+    if (!backendCapabilities.remoteProviders[provider].import) {
+      error = `${getRemoteProviderLabel(provider)} imports are disabled.`;
       return;
     }
 
@@ -118,7 +128,8 @@
 
     <div class="space-y-4">
       <div class="flex gap-2">
-        <Button
+        {#if canImportRemote}
+          <Button
           variant={mode === "manual" ? "default" : "outline"}
           onclick={() => {
             mode = "manual";
@@ -129,7 +140,8 @@
         >
           <ListIcon size={16} />
           Manual
-        </Button>
+          </Button>
+        {/if}
         <Button
           variant={mode === "remote" ? "default" : "outline"}
           onclick={() => {
@@ -163,7 +175,7 @@
             }}
           />
         </div>
-      {:else}
+      {:else if canImportRemote}
         <div>
           <div class="flex items-center gap-2 mb-2">
             <label for="remote-url" class="text-sm font-medium block">
@@ -213,7 +225,7 @@
           {/if}
           {loading ? "Creating..." : "Create"}
         </Button>
-      {:else}
+      {:else if canImportRemote}
         <Button onclick={handleCreateFromRemote} disabled={!isRemoteValid}>
           {#if loading}
             <LoaderIcon class="animate-spin mr-2" size={16} />

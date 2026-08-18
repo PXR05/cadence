@@ -30,12 +30,13 @@
   import { playerStore } from "$lib/stores/player.svelte";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
   import {
-    apiUrlStore,
+    backendRuntime as apiUrlStore,
     getBackendUrl,
-    normalizeApiUrl,
-  } from "$lib/stores/apiUrl.svelte";
-  import { applyApiUrlChange } from "$lib/utils/apiUrlChange";
+    normalizeBackendUrl as normalizeApiUrl,
+  } from "$lib/backend/runtime.svelte";
+  import { applyBackendUrlChange as applyApiUrlChange } from "$lib/backend/switchBackend";
   import BackendUrlChangeConfirmDialog from "$lib/components/BackendUrlChangeConfirmDialog.svelte";
+  import { backendCapabilities } from "$lib/backend/config";
 
   const isAdmin = $derived(authStore.isAdmin);
   let accountMenuOpen = $state(false);
@@ -288,7 +289,8 @@
 
 <div class="h-dvh">
   <div class="p-4 pt-0 h-full w-full space-y-4 mb-[50dvh]">
-    <div class="flex items-center justify-between">
+    {#if backendCapabilities.auth.enabled}
+      <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div
           class="size-14 rounded-xl bg-primary/10 flex items-center justify-center"
@@ -305,7 +307,7 @@
         </div>
       </div>
       <div>
-        {#if isAdmin}
+        {#if isAdmin && (backendCapabilities.auth.userManagement || backendCapabilities.library.delete || backendCapabilities.uploads.file || backendCapabilities.uploads.remote)}
           <Button
             variant="ghost"
             size="icon"
@@ -325,7 +327,8 @@
           <EllipsisVerticalIcon class="size-5" />
         </Button>
       </div>
-    </div>
+      </div>
+    {/if}
 
     {#if canInstall && !isInstalled}
       <button
@@ -383,7 +386,8 @@
       <ChevronRightIcon class="size-5 text-muted-foreground" />
     </button>
 
-    <SettingCard icon={ServerIcon} title="Backend URL">
+    {#if backendCapabilities.backendUrlSelection}
+      <SettingCard icon={ServerIcon} title="Backend URL">
       <div class="p-3 pt-1 space-y-3">
         <p class="text-sm text-muted-foreground">
           Change the backend server URL.
@@ -398,7 +402,8 @@
           onApply={requestApplyBackendUrl}
         />
       </div>
-    </SettingCard>
+      </SettingCard>
+    {/if}
 
     <!-- Theme Settings -->
     <SettingCard icon={PaletteIcon} title="Appearance">
@@ -465,7 +470,8 @@
 </div>
 
 <!-- Account Menu Dialog -->
-<MenuDialog
+{#if backendCapabilities.auth.enabled}
+  <MenuDialog
   open={accountMenuOpen}
   onOpenChange={(open) => (accountMenuOpen = open)}
   title={authStore.user?.username ?? "Account"}
@@ -475,14 +481,16 @@
     <UserIcon class="size-8 text-muted-foreground" />
   {/snippet}
   {#snippet menuItems()}
-    <Button
+    {#if backendCapabilities.auth.passwordChange}
+      <Button
       variant="ghost"
       class="w-full justify-start gap-3 h-12"
       onclick={openChangePasswordDialog}
     >
       <KeyRoundIcon class="size-5" />
       Change Password
-    </Button>
+      </Button>
+    {/if}
     <Button
       variant="ghost"
       class="w-full justify-start gap-3 h-12 text-destructive hover:text-destructive"
@@ -495,7 +503,8 @@
 </MenuDialog>
 
 <!-- Change Password Dialog -->
-<Dialog.Root
+  {#if backendCapabilities.auth.passwordChange}
+    <Dialog.Root
   bind:open={passwordDialogOpen}
   onOpenChange={(open) => {
     if (!open) resetPasswordForm();
@@ -572,11 +581,15 @@
       </Dialog.Footer>
     </form>
   </Dialog.Content>
-</Dialog.Root>
+    </Dialog.Root>
+  {/if}
+{/if}
 
-<BackendUrlChangeConfirmDialog
-  bind:open={backendChangeDialogOpen}
-  isApplying={isApplyingBackendUrl}
-  resetContent={pendingResetBackendContent}
-  onConfirm={handleConfirmBackendUrlChange}
-/>
+{#if backendCapabilities.backendUrlSelection}
+  <BackendUrlChangeConfirmDialog
+    bind:open={backendChangeDialogOpen}
+    isApplying={isApplyingBackendUrl}
+    resetContent={pendingResetBackendContent}
+    onConfirm={handleConfirmBackendUrlChange}
+  />
+{/if}

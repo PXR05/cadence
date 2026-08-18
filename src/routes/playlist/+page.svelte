@@ -21,6 +21,7 @@
   import type { PlaylistDetail, PlaylistItem } from "$lib/schemas";
   import { playerStore } from "$lib/stores/player.svelte.js";
   import { loadPlaylistForRoute } from "./load-playlist";
+  import { backendCapabilities } from "$lib/backend/config";
 
   let { data } = $props();
 
@@ -59,7 +60,10 @@
   );
 
   const hasAddButton = $derived(
-    !searchQuery.trim() && Boolean(playlist) && !isNonModifiable,
+    backendCapabilities.playlists.manageItems &&
+      !searchQuery.trim() &&
+      Boolean(playlist) &&
+      !isNonModifiable,
   );
 
   const filteredTracks = $derived(

@@ -4,7 +4,6 @@ export const REMOTE_PROVIDERS: RemoteProvider[] = ["youtube", "tidal"];
 
 type RemoteProviderConfig = {
   label: string;
-  searchEndpoint: string;
   buildItemUrl: (providerItemId: string) => string;
   getItemIdFromUrl: (url: string) => string | null;
   getCollectionKindFromUrl: (url: string) => RemoteCollectionKind | null;
@@ -13,7 +12,6 @@ type RemoteProviderConfig = {
 const remoteProviderConfig: Record<RemoteProvider, RemoteProviderConfig> = {
   youtube: {
     label: "YouTube",
-    searchEndpoint: "/audio/search/youtube",
     buildItemUrl: (providerItemId) =>
       `https://www.youtube.com/watch?v=${providerItemId}`,
     getItemIdFromUrl: (url) => {
@@ -29,7 +27,6 @@ const remoteProviderConfig: Record<RemoteProvider, RemoteProviderConfig> = {
   },
   tidal: {
     label: "Tidal",
-    searchEndpoint: "/audio/search/tidal",
     buildItemUrl: (providerItemId) =>
       `https://tidal.com/browse/track/${providerItemId}`,
     getItemIdFromUrl: (url) => {
@@ -50,10 +47,6 @@ const remoteProviderConfig: Record<RemoteProvider, RemoteProviderConfig> = {
 
 export function getRemoteProviderLabel(provider: RemoteProvider): string {
   return remoteProviderConfig[provider].label;
-}
-
-export function getRemoteSearchEndpoint(provider: RemoteProvider): string {
-  return remoteProviderConfig[provider].searchEndpoint;
 }
 
 export function buildRemoteItemUrl(

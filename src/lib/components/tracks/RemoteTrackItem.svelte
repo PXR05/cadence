@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { RemoteSearchResult } from "$lib/schemas";
+  import { backendCapabilities } from "$lib/backend/config";
   import {  Check as CheckIcon, Clock as ClockIcon } from "@lucide/svelte";
 
   interface Props {
@@ -9,9 +10,13 @@
   }
 
   let { result, isInQueue, onDownload }: Props = $props();
+  const canImport = $derived(
+    backendCapabilities.uploads.remote &&
+      backendCapabilities.remoteProviders[result.provider].import,
+  );
 
   function handleClick() {
-    if (!isInQueue) {
+    if (!isInQueue && canImport) {
       onDownload(result);
     }
   }
@@ -19,9 +24,9 @@
 
 <button
   onclick={handleClick}
-  disabled={isInQueue}
+  disabled={isInQueue || !canImport}
   class="relative flex items-center gap-4 w-full hover:bg-muted/50 rounded-xl p-2 select-none
-    {isInQueue ? 'cursor-default' : 'cursor-pointer'}"
+    {isInQueue || !canImport ? 'cursor-default' : 'cursor-pointer'}"
 >
   <div class="rounded-md size-16 shrink-0 overflow-hidden relative">
     <img

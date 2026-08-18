@@ -8,10 +8,14 @@
   import { untrack } from "svelte";
   import BackendUrlUpdateField from "$lib/components/BackendUrlUpdateField.svelte";
   import BackendUrlChangeConfirmDialog from "$lib/components/BackendUrlChangeConfirmDialog.svelte";
-  import { apiUrlStore, getBackendUrl } from "$lib/stores/apiUrl.svelte";
-  import { applyApiUrlChange } from "$lib/utils/apiUrlChange";
+  import {
+    backendRuntime as apiUrlStore,
+    getBackendUrl,
+  } from "$lib/backend/runtime.svelte";
+  import { applyBackendUrlChange as applyApiUrlChange } from "$lib/backend/switchBackend";
   import LoginDialog from "./LoginDialog.svelte";
   import RegisterDialog from "./RegisterDialog.svelte";
+  import { backendCapabilities } from "$lib/backend/config";
 
   let { onAuthenticated } = $props<{
     onAuthenticated: () => void;
@@ -28,7 +32,8 @@
   type AuthMode = "login" | "register";
 
   function getModeFromUrl(): AuthMode {
-    return page.url.searchParams.get("auth") === "register"
+    return backendCapabilities.auth.registration &&
+      page.url.searchParams.get("auth") === "register"
       ? "register"
       : "login";
   }
@@ -152,7 +157,8 @@
         <h2 class="text-2xl font-semibold">
           {mode === "login" ? "Sign In" : "Create Account"}
         </h2>
-        <Button
+        {#if backendCapabilities.backendUrlSelection}
+          <Button
           type="button"
           variant="outline"
           size="icon"
@@ -161,9 +167,10 @@
           disabled={isApplyingBackendUrl}
           title="Configure backend URL"
           aria-label="Configure backend URL"
-        >
-          <ServerIcon class="size-4" />
-        </Button>
+          >
+            <ServerIcon class="size-4" />
+          </Button>
+        {/if}
       </div>
 
       {#if mode === "login"}
@@ -172,7 +179,7 @@
           disabled={isApplyingBackendUrl}
           onSwitchToRegister={() => setMode("register")}
         />
-      {:else}
+      {:else if backendCapabilities.auth.registration}
         <RegisterDialog
           {onAuthenticated}
           disabled={isApplyingBackendUrl}
@@ -183,28 +190,30 @@
   </div>
 </div>
 
-<Dialog.Root bind:open={backendUrlDialogOpen}>
-  <Dialog.Content class="md:max-w-md">
-    <Dialog.Header>
-      <Dialog.Title>Backend URL</Dialog.Title>
-      <Dialog.Description>Change the backend server URL.</Dialog.Description>
-    </Dialog.Header>
+{#if backendCapabilities.backendUrlSelection}
+  <Dialog.Root bind:open={backendUrlDialogOpen}>
+    <Dialog.Content class="md:max-w-md">
+      <Dialog.Header>
+        <Dialog.Title>Backend URL</Dialog.Title>
+        <Dialog.Description>Change the backend server URL.</Dialog.Description>
+      </Dialog.Header>
 
-    <BackendUrlUpdateField
-      bind:value={backendUrlInput}
-      bind:resetContentOnApply={resetBackendContentOnApply}
-      defaultValue={apiUrlStore.defaultUrl}
-      isApplying={isApplyingBackendUrl}
-      error={backendUrlError}
-      onReset={resetBackendUrlInput}
-      onApply={requestApplyBackendUrl}
-    />
-  </Dialog.Content>
-</Dialog.Root>
+      <BackendUrlUpdateField
+        bind:value={backendUrlInput}
+        bind:resetContentOnApply={resetBackendContentOnApply}
+        defaultValue={apiUrlStore.defaultUrl}
+        isApplying={isApplyingBackendUrl}
+        error={backendUrlError}
+        onReset={resetBackendUrlInput}
+        onApply={requestApplyBackendUrl}
+      />
+    </Dialog.Content>
+  </Dialog.Root>
 
-<BackendUrlChangeConfirmDialog
-  bind:open={backendChangeDialogOpen}
-  isApplying={isApplyingBackendUrl}
-  resetContent={pendingResetBackendContent}
-  onConfirm={handleConfirmBackendUrlChange}
-/>
+  <BackendUrlChangeConfirmDialog
+    bind:open={backendChangeDialogOpen}
+    isApplying={isApplyingBackendUrl}
+    resetContent={pendingResetBackendContent}
+    onConfirm={handleConfirmBackendUrlChange}
+  />
+{/if}

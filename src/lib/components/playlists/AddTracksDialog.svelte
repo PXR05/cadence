@@ -4,8 +4,8 @@
   import { Input } from "$lib/components/ui/input";
   import { VirtualScroll } from "$lib/components/ui/virtual-scroll";
   import { tracksStore } from "$lib/stores/tracks.svelte";
-  import { getImageUrl } from "$lib/constants";
-  import { addItemToPlaylist } from "$lib/api";
+  import { getTrackImageUrl as getImageUrl } from "$lib/backend/services/media";
+  import { addItemToPlaylist } from "$lib/backend/services/playlists";
   import { Search as SearchIcon, Loader as LoaderIcon, X as XIcon, ChevronDown as ChevronDownIcon } from "@lucide/svelte";
   import { SvelteSet } from "svelte/reactivity";
   import { playlistsStore } from "$lib/stores/playlists.svelte";

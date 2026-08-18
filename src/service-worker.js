@@ -6,8 +6,42 @@
 
 import { build, files, prerendered, version } from "$service-worker";
 import Dexie from "dexie";
+import { backendConfig } from "$lib/backend/config";
 
-const IMAGE_URL_PATTERN = /^\/(?:audio|playlist)\/[^/]+\/image$/;
+const IMAGE_ID_SENTINEL = "cadence-image-resource-id";
+const IMAGE_PATH_TEMPLATES = [
+  backendConfig.routes.audio.image(IMAGE_ID_SENTINEL),
+  backendConfig.routes.playlists.image(IMAGE_ID_SENTINEL),
+].map((route) => new URL(route, globalThis.location.origin).pathname);
+
+/** @param {string} pathname */
+function getConfiguredImageId(pathname) {
+  if (!backendConfig.capabilities.media.images) return null;
+
+  for (const template of IMAGE_PATH_TEMPLATES) {
+    const marker = encodeURIComponent(IMAGE_ID_SENTINEL);
+    const markerIndex = template.indexOf(marker);
+    if (markerIndex < 0) continue;
+
+    const prefix = template.slice(0, markerIndex);
+    const suffix = template.slice(markerIndex + marker.length);
+    if (!pathname.startsWith(prefix) || !pathname.endsWith(suffix)) continue;
+
+    const encodedId = pathname.slice(
+      prefix.length,
+      suffix ? -suffix.length : undefined,
+    );
+    if (!encodedId) continue;
+
+    try {
+      return decodeURIComponent(encodedId);
+    } catch {
+      return encodedId;
+    }
+  }
+
+  return null;
+}
 
 const self = /** @type {ServiceWorkerGlobalScope} */ (
   /** @type {unknown} */ (globalThis.self)
@@ -102,7 +136,8 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(event.request.url);
   const isCrossOrigin = url.origin !== self.location.origin;
-  const isImageRequest = IMAGE_URL_PATTERN.test(url.pathname);
+  const imageRequestId = getConfiguredImageId(url.pathname);
+  const isImageRequest = imageRequestId !== null;
 
   if (isCrossOrigin && !isImageRequest) {
     return;
@@ -112,8 +147,7 @@ self.addEventListener("fetch", (event) => {
     const cache = await caches.open(CACHE);
 
     if (isImageRequest) {
-      const pathParts = url.pathname.split("/");
-      const trackId = pathParts[pathParts.length - 2];
+      const trackId = imageRequestId;
 
       if (trackId) {
         const imageBlob = await getImageFromIndexedDB(trackId);
@@ -203,10 +237,7 @@ self.addEventListener("message", (event) => {
       try {
         const url = new URL(imageUrl, self.location.origin);
 
-        if (!IMAGE_URL_PATTERN.test(url.pathname)) return;
-
-        const pathParts = url.pathname.split("/");
-        const trackId = pathParts[pathParts.length - 2];
+        const trackId = getConfiguredImageId(url.pathname);
 
         if (!trackId) return;
 

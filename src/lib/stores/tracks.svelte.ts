@@ -1,4 +1,5 @@
-import { deleteTrack, fetchTracks } from "$lib/api";
+import { deleteTrack, fetchTracks } from "$lib/backend/services/audio";
+import { backendCapabilities } from "$lib/backend/config";
 import {
   getTracksCache,
   syncTracksCache,
@@ -127,6 +128,11 @@ class TracksStore {
 
   async loadAllTracks(forceRefresh: boolean = false): Promise<void> {
     await this.initializeFromCache();
+
+    if (!backendCapabilities.library.enabled) {
+      this.isInitialLoad = false;
+      return;
+    }
 
     if (!forceRefresh && this.tracks.length > 0 && this.lastFetchedAt) {
       if ("onLine" in navigator && !navigator.onLine) {

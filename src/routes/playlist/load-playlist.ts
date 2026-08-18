@@ -1,4 +1,4 @@
-import { getImageUrl } from "$lib/constants";
+import { getTrackImageUrl as getImageUrl } from "$lib/backend/services/media";
 import { offlineDb } from "$lib/db/offline";
 import type { AudioFile, PlaylistDetail } from "$lib/schemas";
 import { playlistsStore } from "$lib/stores/playlists.svelte";

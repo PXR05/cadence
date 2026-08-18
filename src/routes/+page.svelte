@@ -69,7 +69,7 @@
   >
 </svelte:head>
 
-<PullToRefresh enabled={authStore.isAuthenticated} onStageOne={refreshHomeData}>
+<PullToRefresh enabled={authStore.canAccessApp} onStageOne={refreshHomeData}>
   {#if isInitialLoad}
     <div class="pt-4 grid pb-74 space-y-2">
       <div class="flex flex-col gap-2">

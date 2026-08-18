@@ -1,5 +1,9 @@
 import * as v from "valibot";
-import { getUserSetting, upsertUserSetting } from "$lib/api/settings";
+import {
+  getUserSetting,
+  upsertUserSetting,
+} from "$lib/backend/services/settings";
+import { backendCapabilities } from "$lib/backend/config";
 import { EqPresetsSettingPayloadSchema } from "$lib/schemas/settings";
 import type { EqualizerPreset } from "./playerEqualizer.svelte";
 
@@ -110,7 +114,7 @@ export class PlayerEqPresetSync {
   }
 
   async hydrateFromBackend() {
-    if (!this.options.isAuthenticated()) {
+    if (!backendCapabilities.settingsSync || !this.options.isAuthenticated()) {
       return;
     }
 
@@ -156,6 +160,7 @@ export class PlayerEqPresetSync {
 
   notifyLocalChange() {
     if (
+      !backendCapabilities.settingsSync ||
       !this.options.isAuthenticated() ||
       this.isHydrating ||
       this.isApplyingRemoteMerge
@@ -178,7 +183,7 @@ export class PlayerEqPresetSync {
   }
 
   private async syncToBackend() {
-    if (!this.options.isAuthenticated()) {
+    if (!backendCapabilities.settingsSync || !this.options.isAuthenticated()) {
       return;
     }
 

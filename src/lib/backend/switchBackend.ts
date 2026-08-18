@@ -1,8 +1,8 @@
 import {
-  apiUrlStore,
+  backendRuntime,
   getBackendUrl,
-  normalizeApiUrl,
-} from "$lib/stores/apiUrl.svelte";
+  normalizeBackendUrl,
+} from "./runtime.svelte";
 import { authStore } from "$lib/stores/auth.svelte";
 import { tracksStore } from "$lib/stores/tracks.svelte";
 import { playlistsStore } from "$lib/stores/playlists.svelte";
@@ -12,33 +12,15 @@ import { downloadStore } from "$lib/stores/download.svelte";
 import { remoteDownloadStore } from "$lib/stores/remoteDownload.svelte";
 import { offlineDb } from "$lib/db/offline";
 
-export interface ApplyApiUrlChangeResult {
+export interface ApplyBackendUrlChangeResult {
   changed: boolean;
   activeUrl: string;
   usesDefaultUrl: boolean;
   resetContent: boolean;
 }
 
-export interface ApplyApiUrlChangeOptions {
+export interface ApplyBackendUrlChangeOptions {
   resetContent?: boolean;
-}
-
-function clearContentLocalStorage(): void {
-  if (typeof window === "undefined") return;
-
-  localStorage.removeItem("cadence.download_queue");
-  localStorage.removeItem("cadence.remote_download");
-}
-
-async function clearWindowCaches(): Promise<void> {
-  if (typeof window === "undefined" || !("caches" in window)) return;
-
-  try {
-    const cacheNames = await window.caches.keys();
-    await Promise.allSettled(
-      cacheNames.map((name) => window.caches.delete(name)),
-    );
-  } catch {}
 }
 
 async function resetBackendContentData(): Promise<void> {
@@ -49,7 +31,6 @@ async function resetBackendContentData(): Promise<void> {
   downloadStore.resetState();
   remoteDownloadStore.clearQueue();
   playerStore.resetContentState();
-
   await Promise.allSettled([tracksStore.clear(), playlistsStore.clear()]);
   await Promise.allSettled([
     offlineDb.tracks.clear(),
@@ -57,53 +38,54 @@ async function resetBackendContentData(): Promise<void> {
     historyStore.clearHistory(),
   ]);
 
-  clearContentLocalStorage();
-  await clearWindowCaches();
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("cadence.download_queue");
+    localStorage.removeItem("cadence.remote_download");
+    if ("caches" in window) {
+      try {
+        const names = await window.caches.keys();
+        await Promise.allSettled(names.map((name) => window.caches.delete(name)));
+      } catch {}
+    }
+  }
 }
 
-export async function applyApiUrlChange(
+export async function applyBackendUrlChange(
   nextUrlInput: string,
-  options: ApplyApiUrlChangeOptions = {},
-): Promise<ApplyApiUrlChangeResult> {
+  options: ApplyBackendUrlChangeOptions = {},
+): Promise<ApplyBackendUrlChangeResult> {
   const resetContent = options.resetContent ?? true;
-  const normalizedUrl = normalizeApiUrl(nextUrlInput);
+  const normalizedUrl = normalizeBackendUrl(nextUrlInput);
   let currentUrl = "";
   try {
     currentUrl = getBackendUrl();
-  } catch {
-    currentUrl = "";
-  }
+  } catch {}
 
   if (currentUrl && normalizedUrl === currentUrl) {
     return {
       changed: false,
       activeUrl: currentUrl,
-      usesDefaultUrl: !apiUrlStore.hasCustomUrl,
+      usesDefaultUrl: !backendRuntime.hasCustomUrl,
       resetContent: false,
     };
   }
 
-  if (authStore.isAuthenticated) {
-    await authStore.logout();
-  }
+  if (authStore.isAuthenticated) await authStore.logout();
 
-  const defaultUrl = apiUrlStore.defaultUrl;
-  if (defaultUrl && normalizedUrl === defaultUrl) {
-    apiUrlStore.resetToDefault();
+  if (backendRuntime.defaultUrl && normalizedUrl === backendRuntime.defaultUrl) {
+    backendRuntime.resetToDefault();
   } else {
-    apiUrlStore.setCustomUrl(normalizedUrl);
+    backendRuntime.setCustomUrl(normalizedUrl);
   }
 
-  if (resetContent) {
-    await resetBackendContentData();
-  }
-
+  if (resetContent) await resetBackendContentData();
   await authStore.refreshCookieAuthMode();
 
   return {
     changed: true,
     activeUrl: getBackendUrl(),
-    usesDefaultUrl: !apiUrlStore.hasCustomUrl,
+    usesDefaultUrl: !backendRuntime.hasCustomUrl,
     resetContent,
   };
 }
+

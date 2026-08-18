@@ -1,4 +1,5 @@
-import { createLocalStorageState } from "./localStorage.svelte";
+import { createLocalStorageState } from "$lib/stores/localStorage.svelte";
+import { backendConfig } from "./config";
 
 const STORAGE_KEY = "cadence.api_url";
 const DEFAULT_STORAGE_KEY = "cadence.api_url_default";
@@ -9,19 +10,16 @@ function stripTrailingSlash(value: string): string {
 
 function tryNormalize(value: string | null | undefined): string | null {
   if (!value) return null;
-
   try {
-    return normalizeApiUrl(value);
+    return normalizeBackendUrl(value);
   } catch {
     return null;
   }
 }
 
-export function normalizeApiUrl(value: string): string {
+export function normalizeBackendUrl(value: string): string {
   const trimmed = value.trim();
-  if (!trimmed) {
-    throw new Error("Backend URL is required");
-  }
+  if (!trimmed) throw new Error("Backend URL is required");
 
   let parsed: URL;
   try {
@@ -38,33 +36,26 @@ export function normalizeApiUrl(value: string): string {
 
   parsed.hash = "";
   parsed.search = "";
-
   return stripTrailingSlash(parsed.toString());
 }
 
-class ApiUrlStore {
+class BackendRuntime {
   private customUrlStorage = createLocalStorageState<string | null>(
     STORAGE_KEY,
     null,
   );
   private defaultUrlStorage = createLocalStorageState<string>(
     DEFAULT_STORAGE_KEY,
-    import.meta.env.PUBLIC_API_URL ||
-      "https://audiostream.pxr.dpdns.org",
+    backendConfig.defaultBaseUrl,
   );
 
-  defaultUrl = $state<string>("");
-
+  defaultUrl = $state("");
   customUrl = $state<string | null>(null);
 
   constructor() {
-    this.defaultUrl = tryNormalize(this.defaultUrlStorage.value) ?? "";
-    if (this.defaultUrlStorage.value !== this.defaultUrl) {
-      this.defaultUrlStorage.value = this.defaultUrl;
-    }
-
+    this.defaultUrl = tryNormalize(backendConfig.defaultBaseUrl) ?? "";
+    this.defaultUrlStorage.value = this.defaultUrl;
     this.customUrl = tryNormalize(this.customUrlStorage.value);
-
     if (this.customUrlStorage.value !== this.customUrl) {
       this.customUrlStorage.value = this.customUrl;
     }
@@ -79,10 +70,9 @@ class ApiUrlStore {
   }
 
   setCustomUrl(value: string): void {
-    const normalized = normalizeApiUrl(value);
-    const shouldUseDefault = this.defaultUrl && normalized === this.defaultUrl;
-
-    this.customUrl = shouldUseDefault ? null : normalized;
+    const normalized = normalizeBackendUrl(value);
+    this.customUrl =
+      this.defaultUrl && normalized === this.defaultUrl ? null : normalized;
     this.customUrlStorage.value = this.customUrl;
   }
 
@@ -92,29 +82,22 @@ class ApiUrlStore {
   }
 }
 
-export const apiUrlStore = new ApiUrlStore();
+export const backendRuntime = new BackendRuntime();
 
 export function getBackendUrl(): string {
-  const activeUrl = apiUrlStore.url;
-
-  if (!activeUrl) {
+  if (!backendRuntime.url) {
     throw new Error(
       "Backend URL is not configured. Set PUBLIC_API_URL or choose a custom backend URL.",
     );
   }
-
-  return activeUrl;
+  return backendRuntime.url;
 }
 
 export function buildBackendUrl(path: string): string {
-  const baseUrl = stripTrailingSlash(getBackendUrl());
+  if (/^https?:\/\//i.test(path)) return path;
+
+  const baseUrl = `${stripTrailingSlash(getBackendUrl())}/`;
   const normalizedPath = path.replace(/^\/+/, "");
-
-  if (!normalizedPath) {
-    return baseUrl;
-  }
-
-  const url = new URL(normalizedPath, baseUrl);
-
-  return url.toString();
+  return normalizedPath ? new URL(normalizedPath, baseUrl).toString() : baseUrl;
 }
+

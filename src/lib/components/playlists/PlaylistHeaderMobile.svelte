@@ -1,6 +1,6 @@
 <script lang="ts">
   import PlaylistCoverImage from "$lib/components/playlists/PlaylistCoverImage.svelte";
-  import { getPlaylistImageUrl } from "$lib/constants";
+  import { getPlaylistImageUrl } from "$lib/backend/services/media";
   import type { PlaylistDetail } from "$lib/schemas";
   import {
     isArtistPlaylist,

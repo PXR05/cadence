@@ -1,23 +1,16 @@
 import { createLocalStorageState } from "./localStorage.svelte";
 import type { User } from "$lib/schemas/auth";
-import { authFetch } from "$lib/api/fetch";
-import { buildBackendUrl, getBackendUrl } from "$lib/stores/apiUrl.svelte";
-
-interface LoginResponse {
-  message: string;
-  user: User;
-  sessionId: string;
-}
-
-interface RegisterResponse {
-  message: string;
-  user: User;
-  sessionId: string;
-}
-
-interface GetCurrentUserResponse {
-  data: User;
-}
+import { backendCapabilities } from "$lib/backend/config";
+import { setBackendSessionProvider } from "$lib/backend/client";
+import { getBackendUrl } from "$lib/backend/runtime.svelte";
+import {
+  changePassword as changeBackendPassword,
+  getCurrentUser as fetchCurrentUser,
+  login as loginToBackend,
+  logout as logoutFromBackend,
+  probeCookieAuthentication,
+  register as registerWithBackend,
+} from "$lib/backend/services/auth";
 
 class AuthStore {
   private userStore = createLocalStorageState<User | null>(
@@ -37,7 +30,12 @@ class AuthStore {
   );
 
   constructor() {
-    if (typeof window !== "undefined" && this.user === null) {
+    setBackendSessionProvider(() => this.sessionId);
+    if (
+      typeof window !== "undefined" &&
+      backendCapabilities.auth.enabled &&
+      this.user === null
+    ) {
       this.getCurrentUser();
       void this.probeServerCookieAuth();
     }
@@ -57,11 +55,7 @@ class AuthStore {
     }
 
     try {
-      const response = await fetch(buildBackendUrl("/auth/me"), {
-        method: "GET",
-        credentials: "include",
-        mode: "cors",
-      });
+      const response = await probeCookieAuthentication();
 
       if (response.ok) {
         this.cookieAuthMode = "supported";
@@ -76,6 +70,7 @@ class AuthStore {
 
   async refreshCookieAuthMode(): Promise<void> {
     this.cookieAuthMode = "unknown";
+    if (!backendCapabilities.auth.enabled) return;
     await this.probeServerCookieAuth();
   }
 
@@ -103,6 +98,10 @@ class AuthStore {
     return this.user !== null;
   }
 
+  get canAccessApp(): boolean {
+    return !backendCapabilities.auth.enabled || this.isAuthenticated;
+  }
+
   get isAdmin(): boolean {
     return this.user?.role === "admin";
   }
@@ -121,20 +120,7 @@ class AuthStore {
 
   async login(username: string, password: string): Promise<void> {
     try {
-      const response = await authFetch("/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, password }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Login failed");
-      }
-
-      const data: LoginResponse = await response.json();
+      const data = await loginToBackend(username, password);
 
       this.user = data.user;
       this.saveUserToStorage(data.user);
@@ -149,20 +135,7 @@ class AuthStore {
 
   async register(username: string, password: string): Promise<void> {
     try {
-      const response = await authFetch("/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, password }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Registration failed");
-      }
-
-      const data: RegisterResponse = await response.json();
+      const data = await registerWithBackend(username, password);
 
       this.user = data.user;
       this.saveUserToStorage(data.user);
@@ -176,6 +149,7 @@ class AuthStore {
   }
 
   async getCurrentUser(): Promise<User | null> {
+    if (!backendCapabilities.auth.enabled) return null;
     this.restoreUserFromStorage();
 
     if ("onLine" in navigator && !navigator.onLine) {
@@ -183,22 +157,16 @@ class AuthStore {
     }
 
     try {
-      const response = await authFetch("/auth/me");
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          await this.logout();
-          return null;
-        }
-        throw new Error("Failed to get current user");
-      }
-
-      const data: GetCurrentUserResponse = await response.json();
-      this.user = data.data;
-      this.saveUserToStorage(data.data);
+      const user = await fetchCurrentUser();
+      this.user = user;
+      this.saveUserToStorage(user);
       void this.probeServerCookieAuth();
-      return data.data;
+      return user;
     } catch (error) {
+      if (error instanceof Response && error.status === 401) {
+        await this.logout();
+        return null;
+      }
       console.error("Failed to get current user:", error);
       return this.user;
     }
@@ -209,18 +177,7 @@ class AuthStore {
     newPassword: string,
   ): Promise<void> {
     try {
-      const response = await authFetch("/auth/change-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ currentPassword, newPassword }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to change password");
-      }
+      await changeBackendPassword(currentPassword, newPassword);
     } catch (error) {
       console.error("Failed to change password:", error);
       throw error;
@@ -237,9 +194,7 @@ class AuthStore {
 
     if (hadSession && "onLine" in navigator && navigator.onLine) {
       try {
-        await authFetch("/auth/logout", {
-          method: "POST",
-        });
+        await logoutFromBackend();
       } catch (error) {
         console.warn("Failed to revoke session on server:", error);
       }

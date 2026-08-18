@@ -1,9 +1,9 @@
 <script lang="ts">
   import { invalidateAll } from "$app/navigation";
-  import { deletePlaylist } from "$lib/api";
+  import { deletePlaylist } from "$lib/backend/services/playlists";
   import * as AlertDialog from "$lib/components/ui/alert-dialog";
   import { MenuDialog } from "$lib/components/ui/menu-dialog";
-  import { getPlaylistImageUrl } from "$lib/constants";
+  import { getPlaylistImageUrl } from "$lib/backend/services/media";
   import { deleteOfflineImage } from "$lib/db/offline";
   import {
     useDialogState,
@@ -41,6 +41,7 @@
   import { toast } from "svelte-sonner";
   import { Button } from "../ui/button";
   import EditPlaylistDialog from "./EditPlaylistDialog.svelte";
+  import { backendCapabilities } from "$lib/backend/config";
 
   const editDialog = useDialogState("edit-playlist");
   const deleteDialog = useDialogState("delete-playlist");
@@ -263,6 +264,7 @@
         onClick: handleDownloadPlaylist,
         disabled: offline.isDownloading || itemCount === 0,
         dividerBefore: true,
+        show: backendCapabilities.media.streaming,
       },
       {
         key: "resync",
@@ -275,8 +277,11 @@
         disabled: !isResyncable,
         show:
           playlist !== null &&
-          (isYoutubeCollectionPlaylist(playlist.id) ||
-            isTidalCollectionPlaylist(playlist.id)),
+          backendCapabilities.uploads.remote &&
+          ((isYoutubeCollectionPlaylist(playlist.id) &&
+            backendCapabilities.remoteProviders.youtube.import) ||
+            (isTidalCollectionPlaylist(playlist.id) &&
+              backendCapabilities.remoteProviders.tidal.import)),
       },
       {
         key: "offline",
@@ -296,6 +301,7 @@
           offline.isOffline || playlist?.id === SPECIAL_PLAYLIST_IDS.DOWNLOADED
             ? offline.isDownloading
             : offline.isDownloading || itemCount === 0,
+        show: backendCapabilities.offline,
       },
       {
         key: "edit",
@@ -303,14 +309,14 @@
         icon: PencilIcon,
         onClick: handleEditPlaylist,
         dividerBefore: true,
-        show: !isNonModifiable,
+        show: !isNonModifiable && backendCapabilities.playlists.edit,
       },
       {
         key: "delete-playlist",
         label: "Delete Playlist",
         icon: Trash2Icon,
         onClick: deleteDialog.open,
-        show: !isNonModifiable,
+        show: !isNonModifiable && backendCapabilities.playlists.delete,
         isDanger: true,
       },
     ].filter((item) => item.show ?? true),

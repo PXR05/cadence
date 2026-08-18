@@ -10,6 +10,7 @@ import { createLocalStorageState } from "$lib/stores/localStorage.svelte";
 import { playlistsStore } from "$lib/stores/playlists.svelte";
 import { tracksStore } from "$lib/stores/tracks.svelte";
 import { playerStore } from "$lib/stores/player.svelte";
+import { backendCapabilities } from "$lib/backend/config";
 
 export interface NavItem {
   path: string;
@@ -52,37 +53,45 @@ export const navItems: NavItem[] = [
       }
     },
   },
-  {
-    path: "/search",
-    label: "Search",
-    icon: SearchIcon,
-    action: () => {
-      const input = document.querySelector("input[type='search']");
-      if (input && input instanceof HTMLInputElement) {
-        input.focus();
-      }
-    },
-  },
-  {
-    path: "/library",
-    label: "Library",
-    icon: LibraryIcon,
-    action: async () => {
-      playlistsStore.invalidate();
-      await playlistsStore.loadAllPlaylists(true);
-      Promise.all(
-        playlistsStore.allPlaylists.map((p) =>
-          playlistsStore.loadPlaylistDetail(p.id, true),
-        ),
-      )
-        .then(() => {
-          console.log("Playlist details refreshed");
-        })
-        .catch((err) => {
-          console.error("Failed to refresh playlist details", err);
-        });
-    },
-  },
+  ...(backendCapabilities.library.search ||
+  backendCapabilities.remoteProviders.youtube.search ||
+  backendCapabilities.remoteProviders.tidal.search
+    ? [
+        {
+          path: "/search",
+          label: "Search",
+          icon: SearchIcon,
+          action: () => {
+            const input = document.querySelector("input[type='search']");
+            if (input && input instanceof HTMLInputElement) input.focus();
+          },
+        },
+      ]
+    : []),
+  ...(backendCapabilities.playlists.enabled ||
+  backendCapabilities.library.enabled ||
+  backendCapabilities.offline
+    ? [
+        {
+          path: "/library",
+          label: "Library",
+          icon: LibraryIcon,
+          action: async () => {
+            playlistsStore.invalidate();
+            await playlistsStore.loadAllPlaylists(true);
+            Promise.all(
+              playlistsStore.allPlaylists.map((p) =>
+                playlistsStore.loadPlaylistDetail(p.id, true),
+              ),
+            )
+              .then(() => console.log("Playlist details refreshed"))
+              .catch((err) =>
+                console.error("Failed to refresh playlist details", err),
+              );
+          },
+        },
+      ]
+    : []),
   { path: "/settings", label: "Settings", icon: SettingsIcon },
 ];
 

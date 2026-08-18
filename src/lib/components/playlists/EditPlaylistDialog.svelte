@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { updatePlaylist } from "$lib/api";
+  import { updatePlaylist } from "$lib/backend/services/playlists";
   import { Button } from "$lib/components/ui/button";
   import * as Dialog from "$lib/components/ui/dialog";
   import {
@@ -9,7 +9,7 @@
   } from "@lucide/svelte";
   import type { PlaylistDetail } from "$lib/schemas";
   import { Input } from "../ui/input";
-  import { getPlaylistImageUrl } from "$lib/constants";
+  import { getPlaylistImageUrl } from "$lib/backend/services/media";
   import { Image } from "../ui/image";
 
   interface Props {

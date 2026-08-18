@@ -1,11 +1,14 @@
 import { average } from "color.js";
-import { getStreamUrl, getImageUrl } from "$lib/constants";
+import {
+  getStreamUrl,
+  getTrackImageUrl as getImageUrl,
+} from "$lib/backend/services/media";
 import type { CarouselAPI } from "$lib/components/ui/carousel/context";
 import { createNestedLocalStorageState } from "./localStorage.svelte";
 import { getAudioUrl, revokeAudioUrl } from "$lib/utils/offline";
 import Color from "colorjs.io";
 import { updateTrackColor } from "$lib/db/cache";
-import { authFetch } from "$lib/api/fetch";
+import { fetchMediaUrl } from "$lib/backend/services/media";
 import { AudioEngine } from "./audioEngine";
 import type { AudioFile, PlaylistDetail } from "$lib/schemas";
 import { resolvePlaybackSource } from "$lib/utils/trackSources";
@@ -1092,11 +1095,7 @@ class PlayerState {
     }
 
     const imageUrl = getImageUrl(track.id);
-    const imageResponse = authStore.shouldUseCustomMediaAuthFetch
-      ? await authFetch(imageUrl)
-      : await fetch(imageUrl, {
-          credentials: "include",
-        });
+    const imageResponse = await fetchMediaUrl(imageUrl);
     const imageBlob = await imageResponse.blob();
     const imageBlobUrl = URL.createObjectURL(imageBlob);
 

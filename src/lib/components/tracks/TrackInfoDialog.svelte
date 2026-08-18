@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import { getImageUrl } from "$lib/constants";
+  import { getTrackImageUrl as getImageUrl } from "$lib/backend/services/media";
   import { MenuDialog } from "$lib/components/ui/menu-dialog";
   import { useMenuDialogState } from "$lib/hooks";
   import { trackInfoDialogStore } from "$lib/stores/trackInfoDialog.svelte";

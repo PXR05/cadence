@@ -9,7 +9,8 @@
   import { Input } from "../ui/input";
   import type { RemoteProvider } from "$lib/schemas";
   import { detectRemoteProviderFromUrl } from "$lib/utils/remote";
-  import { getAudioBaseUrl } from "$lib/constants";
+  import { uploadAudioFile } from "$lib/backend/services/uploads";
+  import { backendCapabilities } from "$lib/backend/config";
 
   interface Props {
     open?: boolean;
@@ -38,52 +39,18 @@
   let totalFiles = $state(0);
   let currentFileName = $state("");
   let currentFileProgress = $state(0);
-  let activeXHRUploads = new Map<string, XMLHttpRequest>();
-  let uploadMode = $state<"file" | "remote">("file");
+  const canUploadFile = backendCapabilities.uploads.file;
+  const canUploadRemote = backendCapabilities.uploads.remote;
+  let uploadMode = $state<"file" | "remote">(
+    canUploadFile ? "file" : "remote",
+  );
 
   async function uploadSingleFile(file: File): Promise<boolean> {
-    return new Promise((resolve) => {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const xhr = new XMLHttpRequest();
-      activeXHRUploads.set(file.name, xhr);
-
-      xhr.upload.addEventListener("progress", (event) => {
-        if (event.lengthComputable) {
-          currentFileProgress = (event.loaded / event.total) * 100;
-        }
-      });
-
-      xhr.addEventListener("load", () => {
-        activeXHRUploads.delete(file.name);
-        if (xhr.status >= 200 && xhr.status < 300) {
-          resolve(true);
-        } else {
-          resolve(false);
-        }
-      });
-
-      xhr.addEventListener("error", () => {
-        activeXHRUploads.delete(file.name);
-        resolve(false);
-      });
-
-      xhr.addEventListener("timeout", () => {
-        activeXHRUploads.delete(file.name);
-        resolve(false);
-      });
-
-      xhr.addEventListener("abort", () => {
-        activeXHRUploads.delete(file.name);
-        resolve(false);
-      });
-
-      xhr.timeout = 300000;
-
-      xhr.open("POST", `${getAudioBaseUrl()}/upload`);
-      xhr.withCredentials = true;
-      xhr.send(formData);
+    return uploadAudioFile(file, {
+      timeoutMs: 300_000,
+      onProgress: (percent) => {
+        currentFileProgress = percent;
+      },
     });
   }
 
@@ -138,6 +105,10 @@
       );
       return;
     }
+    if (!backendCapabilities.remoteProviders[provider].import) {
+      onUploadError(`${provider} imports are disabled`);
+      return;
+    }
 
     onRemoteUpload(provider, url);
     remoteUrl = "";
@@ -147,7 +118,7 @@
   function handleCancel() {
     onOpenChange(false);
     remoteUrl = "";
-    uploadMode = "file";
+    uploadMode = canUploadFile ? "file" : "remote";
   }
 </script>
 
@@ -159,25 +130,29 @@
 
     <div class="space-y-4">
       <div class="flex gap-2">
-        <Button
+        {#if canUploadFile}
+          <Button
           variant={uploadMode === "file" ? "default" : "outline"}
           onclick={() => (uploadMode = "file")}
           class="flex-1 gap-2"
         >
           <UploadIcon size={16} />
           Upload File
-        </Button>
-        <Button
+          </Button>
+        {/if}
+        {#if canUploadRemote}
+          <Button
           variant={uploadMode === "remote" ? "default" : "outline"}
           onclick={() => (uploadMode = "remote")}
           class="flex-1 gap-2"
         >
           <LinkIcon size={16} />
           Remote
-        </Button>
+          </Button>
+        {/if}
       </div>
 
-      {#if uploadMode === "file"}
+      {#if uploadMode === "file" && canUploadFile}
         <div class="space-y-2">
           <div class="text-sm font-medium">Select Audio Files</div>
           {#if !isUploading}
@@ -233,7 +208,7 @@
             </Button>
           </Dialog.Footer>
         </div>
-      {:else}
+      {:else if canUploadRemote}
         <form onsubmit={handleRemoteSubmit} class="space-y-4">
           <div class="space-y-2">
             <div class="flex items-center gap-2">

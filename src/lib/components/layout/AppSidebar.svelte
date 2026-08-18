@@ -16,6 +16,7 @@
   import { goto } from "$app/navigation";
   import { playerStore } from "$lib/stores/player.svelte";
   import { useDialogState } from "$lib/hooks";
+  import { backendCapabilities } from "$lib/backend/config";
 
   function isActive(tabPath: string): boolean {
     if (tabPath === "/") return page.url.pathname === "/";
@@ -34,23 +35,25 @@
   let offlineCount = liveQuery(() => offlineDb.tracks.count());
 
   const allPlaylists = $derived([
-    {
+    ...(backendCapabilities.library.enabled ? [{
       id: SPECIAL_PLAYLIST_IDS.ALL_SONGS,
       name: "All Songs",
       userId: "system",
       createdAt: new Date(),
       updatedAt: new Date(),
       itemCount: tracksStore.tracksCount,
-    },
-    {
+    }] : []),
+    ...(backendCapabilities.offline ? [{
       id: SPECIAL_PLAYLIST_IDS.DOWNLOADED,
       name: "Downloaded Songs",
       userId: "system",
       createdAt: new Date(),
       updatedAt: new Date(),
       itemCount: $offlineCount || 0,
-    },
-    ...playlistsStore.allPlaylists,
+    }] : []),
+    ...(backendCapabilities.playlists.enabled
+      ? playlistsStore.allPlaylists
+      : []),
   ]);
 
   async function handlePlaylistCreated() {
@@ -99,12 +102,14 @@
         >Playlists</span
       >
 
-      <button
+      {#if backendCapabilities.playlists.create}
+        <button
         class="absolute right-0 group-data-[collapsible=icon]:right-2 top-0 size-8 grid place-items-center rounded-sm hover:bg-sidebar-accent transition-colors"
         onclick={createDialog.open}
       >
         <PlusIcon class="size-4" />
-      </button>
+        </button>
+      {/if}
     </Sidebar.GroupLabel>
 
     <Sidebar.GroupContent class="flex-1 h-full overflow-y-scroll">
@@ -164,9 +169,11 @@
   </Sidebar.Content>
 </Sidebar.Root>
 
-<CreatePlaylistDialog
-  open={createDialog.isOpen}
-  onOpenChange={(open) =>
-    !open && createDialog.isOpen ? createDialog.close() : null}
-  onCreated={handlePlaylistCreated}
-/>
+{#if backendCapabilities.playlists.create}
+  <CreatePlaylistDialog
+    open={createDialog.isOpen}
+    onOpenChange={(open) =>
+      !open && createDialog.isOpen ? createDialog.close() : null}
+    onCreated={handlePlaylistCreated}
+  />
+{/if}

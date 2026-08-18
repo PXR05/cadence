@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { authFetch } from "$lib/api/fetch";
+  import { fetchMediaUrl } from "$lib/backend/services/media";
   import { authStore } from "$lib/stores/auth.svelte";
   import type { WithElementRef } from "$lib/utils";
   import { onDestroy } from "svelte";
@@ -179,9 +179,10 @@
       try {
         releaseSlot = await acquireFetchSlot(abortController.signal);
 
-        const response = await authFetch(imageSrc, {
-          signal: abortController.signal,
-        });
+        const response = await fetchMediaUrl(
+          imageSrc,
+          abortController.signal,
+        );
 
         if (!response.ok) {
           throw new Error(

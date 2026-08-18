@@ -2,7 +2,10 @@
   import { MenuDialog } from "$lib/components/ui/menu-dialog";
   import { trackMenuStore } from "$lib/stores/trackMenu.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
-  import { getImageUrl, getStreamUrl } from "$lib/constants";
+  import {
+    getTrackImageUrl as getImageUrl,
+    getStreamUrl,
+  } from "$lib/backend/services/media";
   import { playerStore } from "$lib/stores/player.svelte";
   import { downloadStore } from "$lib/stores/download.svelte";
   import { useDialogState, useMenuDialogState } from "$lib/hooks";
@@ -22,8 +25,12 @@
   } from "@lucide/svelte";
   import { toast } from "svelte-sonner";
   import { page } from "$app/state";
-  import { getPlaylistById, removeItemFromPlaylist } from "$lib/api/playlist";
+  import {
+    getPlaylistById,
+    removeItemFromPlaylist,
+  } from "$lib/backend/services/playlists";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
+  import { backendCapabilities } from "$lib/backend/config";
   import { invalidateAll, goto } from "$app/navigation";
   import { trackInfoDialogStore } from "$lib/stores/trackInfoDialog.svelte";
 
@@ -208,6 +215,9 @@
         icon: ListMusicIcon,
         onClick: handleAddToPlaylist,
         dividerBefore: true,
+        show:
+          backendCapabilities.playlists.enabled &&
+          backendCapabilities.playlists.manageItems,
       },
       {
         key: "track-info",
@@ -220,7 +230,8 @@
         label: "Remove from Playlist",
         icon: ListXIcon,
         onClick: handleRemoveFromPlaylist,
-        show: Boolean(playlistId),
+        show:
+          Boolean(playlistId) && backendCapabilities.playlists.manageItems,
       },
       {
         key: "download",
@@ -228,6 +239,7 @@
         icon: DownloadIcon,
         onClick: handleDownload,
         dividerBefore: true,
+        show: backendCapabilities.media.streaming,
       },
       {
         key: "toggle-offline",
@@ -236,6 +248,7 @@
           : "Make Available Offline",
         icon: trackMenuStore.isOffline ? CloudOffIcon : CloudDownloadIcon,
         onClick: handleToggleOffline,
+        show: backendCapabilities.offline,
       },
       {
         key: "delete-track",
@@ -244,6 +257,7 @@
         onClick: handleDeleteTrack,
         dividerBefore: true,
         isDanger: true,
+        show: backendCapabilities.library.delete,
       },
     ].filter((item) => item.show ?? true),
   );

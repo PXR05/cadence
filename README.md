@@ -72,6 +72,20 @@ If you want fast iteration while editing code.
 4. Open the app:
    - `http://localhost:5173` (Vite default)
 
+## Backend configuration
+
+Cadence's complete backend boundary is in
+`src/lib/backend`. Edit `src/lib/backend/config.ts` to change endpoint routes,
+authentication behavior, or the features supported by a backend. Features can
+be enabled independently, including registration, user administration, library
+search/delete, playlist mutation, file and remote uploads, offline downloads,
+settings sync, stream tickets, artwork, and individual YouTube/Tidal providers.
+
+`PUBLIC_API_URL` selects the build-time default server. When
+`backendUrlSelection` is enabled, users can choose a different server in the
+app without rebuilding it. See `src/lib/backend/README.md` for the contract and
+boundary rules.
+
 ## Compose Files
 
 - `compose.yaml`: production-style deployment using `ghcr.io/pxr05/cadence:latest`

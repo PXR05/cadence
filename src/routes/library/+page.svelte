@@ -27,6 +27,7 @@
   import type { Playlist } from "$lib/schemas";
   import { Button } from "$lib/components/ui/button";
   import { useDialogState } from "$lib/hooks";
+  import { backendCapabilities } from "$lib/backend/config";
 
   const createDialog = useDialogState("create-playlist");
 
@@ -65,6 +66,7 @@
   const sourceFilters = [
     {
       id: "local",
+      enabled: backendCapabilities.playlists.enabled,
       label: "Local",
       icon: DiamondIcon,
       onclick: () => {
@@ -77,6 +79,9 @@
     },
     {
       id: "youtube",
+      enabled:
+        backendCapabilities.remoteProviders.youtube.search ||
+        backendCapabilities.remoteProviders.youtube.import,
       label: "YouTube",
       icon: SquarePlayIcon,
       onclick: () => {
@@ -89,6 +94,9 @@
     },
     {
       id: "tidal",
+      enabled:
+        backendCapabilities.remoteProviders.tidal.search ||
+        backendCapabilities.remoteProviders.tidal.import,
       label: "Tidal",
       icon: MusicIcon,
       onclick: () => {
@@ -99,35 +107,46 @@
         }
       },
     },
-  ];
+  ].filter((filter) => filter.enabled);
 
   $effect(() => {
     let basePlaylists: Playlist[] = [];
     if (currentSource === "tidal") {
-      basePlaylists = playlistsStore.tidalPlaylists;
+      basePlaylists = backendCapabilities.remoteProviders.tidal.import
+        ? playlistsStore.tidalPlaylists
+        : [];
     } else if (currentSource === "youtube") {
-      basePlaylists = playlistsStore.youtubePlaylists;
+      basePlaylists = backendCapabilities.remoteProviders.youtube.import
+        ? playlistsStore.youtubePlaylists
+        : [];
     } else {
       basePlaylists = [
-        {
+        ...(backendCapabilities.library.enabled ? [{
           id: SPECIAL_PLAYLIST_IDS.ALL_SONGS,
           name: "All Songs",
           userId: "system",
           createdAt: new Date(),
           updatedAt: new Date(),
           itemCount: tracksStore.tracksCount,
-        },
-        {
+        }] : []),
+        ...(backendCapabilities.offline ? [{
           id: SPECIAL_PLAYLIST_IDS.DOWNLOADED,
           name: "Downloaded Songs",
           userId: "system",
           createdAt: new Date(),
           updatedAt: new Date(),
           itemCount: $offlineCount || 0,
-        },
-        ...(currentSource === "local"
-          ? playlistsStore.userPlaylists
-          : playlistsStore.allPlaylists),
+        }] : []),
+        ...(backendCapabilities.playlists.enabled
+          ? currentSource === "local"
+            ? playlistsStore.userPlaylists
+            : playlistsStore.allPlaylists.filter((playlist) =>
+                (!playlist.id.startsWith("youtube_") ||
+                  backendCapabilities.remoteProviders.youtube.import) &&
+                (!playlist.id.startsWith("tidal_") ||
+                  backendCapabilities.remoteProviders.tidal.import),
+              )
+          : []),
       ];
     }
 
@@ -224,7 +243,8 @@
         <PlaylistCard {playlist} size="large" />
       </div>
     {/each}
-    <button
+    {#if backendCapabilities.playlists.create}
+      <button
       onclick={createDialog.open}
       class="rounded-lg aspect-square w-full shrink-0 border hover:bg-muted/50 transition-colors grid place-items-center"
     >
@@ -234,13 +254,16 @@
         strokeWidth={2}
         class="text-muted-foreground"
       />
-    </button>
+      </button>
+    {/if}
   </div>
 </PullToRefresh>
 
-<CreatePlaylistDialog
-  open={createDialog.isOpen}
-  onOpenChange={(open) =>
-    !open && createDialog.isOpen ? createDialog.close() : null}
-  onCreated={handlePlaylistCreated}
-/>
+{#if backendCapabilities.playlists.create}
+  <CreatePlaylistDialog
+    open={createDialog.isOpen}
+    onOpenChange={(open) =>
+      !open && createDialog.isOpen ? createDialog.close() : null}
+    onCreated={handlePlaylistCreated}
+  />
+{/if}

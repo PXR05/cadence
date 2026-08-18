@@ -1,6 +1,6 @@
 <script lang="ts">
   import { downloadStore } from "$lib/stores/download.svelte";
-  import { getImageUrl } from "$lib/constants";
+  import { getTrackImageUrl as getImageUrl } from "$lib/backend/services/media";
   import { playerStore } from "$lib/stores/player.svelte";
   import { trackInfoDialogStore } from "$lib/stores/trackInfoDialog.svelte";
   import { trackMenuStore } from "$lib/stores/trackMenu.svelte";

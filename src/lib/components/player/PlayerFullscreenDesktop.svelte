@@ -1,9 +1,10 @@
 <script lang="ts">
   import * as Carousel from "$lib/components/ui/carousel";
   import type { CarouselAPI } from "$lib/components/ui/carousel/context";
-  import { getImageUrl } from "$lib/constants";
+  import { getTrackImageUrl as getImageUrl } from "$lib/backend/services/media";
   import type { AudioFile } from "$lib/schemas";
   import { downloadStore } from "$lib/stores/download.svelte";
+  import { appearanceStore } from "$lib/stores/appearance.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
   import { trackMenuStore } from "$lib/stores/trackMenu.svelte";
   import { shouldLoadItem } from "$lib/utils/queue";
@@ -16,6 +17,7 @@
     Shuffle as ShuffleIcon,
   } from "@lucide/svelte";
   import { onDestroy } from "svelte";
+  import { fade } from "svelte/transition";
   import QueueItem from "../tracks/QueueItem.svelte";
   import TrackInfo from "../tracks/TrackInfo.svelte";
   import { Button } from "../ui/button";
@@ -194,23 +196,33 @@
   onkeydown={handleKeydown}
 >
   {#if track}
-    <Image
-      loading="lazy"
-      crossorigin="use-credentials"
-      src={getImageUrl(track.id)}
-      alt={title}
-      class="absolute inset-0 size-full object-cover text-transparent brightness-110 dark:brightness-50 blur-3xl scale-120 pointer-events-none transition-opacity duration-700"
-    />
+    {#key track.id}
+      <div
+        class="absolute inset-0 pointer-events-none"
+        transition:fade={{
+          duration: appearanceStore.disableAnimations ? 0 : 500,
+        }}
+      >
+        <Image
+          loading="eager"
+          crossorigin="use-credentials"
+          src={getImageUrl(track.id)}
+          alt=""
+          aria-hidden="true"
+          class="size-full object-cover text-transparent brightness-110 dark:brightness-50 blur-3xl scale-120"
+        />
+      </div>
+    {/key}
   {/if}
 
   <div
     class="absolute inset-0 size-full pointer-events-none"
     style="
-      background: linear-gradient(
-        to top,
-        color-mix(in oklab, var(--background) 70%, transparent) 0%,
-        color-mix(in oklab, var(--background) 50%, transparent) 50%,
-        color-mix(in oklab, var(--background) 70%, transparent) 100%
+      background: radial-gradient(
+        circle at center,
+        color-mix(in oklab, var(--background) 0%, transparent) 0%,
+        color-mix(in oklab, var(--background) 20%, transparent) 50%,
+        color-mix(in oklab, var(--background) 80%, transparent) 100%
       );
     "
   ></div>

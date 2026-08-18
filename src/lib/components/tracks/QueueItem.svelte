@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getImageUrl } from "$lib/constants";
+  import { getTrackImageUrl as getImageUrl } from "$lib/backend/services/media";
   import { playerStore } from "$lib/stores/player.svelte";
   import {
     GripHorizontal as GripHorizontalIcon,

@@ -3,6 +3,7 @@
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import { Eye as EyeIcon, EyeOff as EyeOffIcon } from "@lucide/svelte";
+  import { backendCapabilities } from "$lib/backend/config";
 
   let {
     onAuthenticated,
@@ -103,16 +104,18 @@
     {isProcessing ? "Processing..." : "Sign In"}
   </Button>
 
-  <p class="text-center text-sm text-muted-foreground">
-    Don&apos;t have an account?
-    <Button
-      type="button"
-      variant="link"
-      class="h-auto p-0"
-      disabled={isProcessing || disabled}
-      onclick={onSwitchToRegister}
-    >
-      Register
-    </Button>
-  </p>
+  {#if backendCapabilities.auth.registration}
+    <p class="text-center text-sm text-muted-foreground">
+      Don&apos;t have an account?
+      <Button
+        type="button"
+        variant="link"
+        class="h-auto p-0"
+        disabled={isProcessing || disabled}
+        onclick={onSwitchToRegister}
+      >
+        Register
+      </Button>
+    </p>
+  {/if}
 </form>

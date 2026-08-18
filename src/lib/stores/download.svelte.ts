@@ -14,7 +14,12 @@ import {
 } from "$lib/db/cache";
 import type { PlaylistDetail } from "$lib/schemas";
 import zip from "jszip";
-import { authFetch } from "$lib/api/fetch";
+import {
+  fetchTrackImage,
+  fetchTrackStream,
+} from "$lib/backend/services/media";
+import { requireBackendCapability } from "$lib/backend/capabilities";
+import { backendCapabilities } from "$lib/backend/config";
 
 type DownloadProgress = {
   playlistId?: string;
@@ -96,6 +101,7 @@ class DownloadStore {
   }
 
   private async checkForPendingDownloads(): Promise<void> {
+    if (!backendCapabilities.media.streaming) return;
     if (this._currentDownload && !this._isProcessing) {
       console.log("Resuming pending download:", this._currentDownload.id);
       await this.processQueue();
@@ -160,14 +166,14 @@ class DownloadStore {
     audioId: string,
     signal?: AbortSignal,
   ): Promise<Blob> {
-    const response = await authFetch(`/audio/${audioId}/stream`, { signal });
+    const response = await fetchTrackStream(audioId, signal);
     if (!response.ok) throw new Error(`Failed to download track ${audioId}`);
     return response.blob();
   }
 
   private async downloadAndSaveImage(trackId: string): Promise<void> {
     try {
-      const response = await authFetch(`/audio/${trackId}/image`);
+      const response = await fetchTrackImage(trackId);
       if (response.ok) {
         const imageBlob = await response.blob();
         await saveImageOffline(trackId, imageBlob);
@@ -178,6 +184,7 @@ class DownloadStore {
   }
 
   async addPlaylistToDownloadQueue(playlist: PlaylistDetail): Promise<void> {
+    requireBackendCapability("media.streaming");
     const queueItem: QueueItem = {
       id: `playlist-download-${playlist.id}`,
       type: "playlist-download",
@@ -208,6 +215,7 @@ class DownloadStore {
     playlist: PlaylistDetail,
     playlistId: string,
   ): Promise<void> {
+    requireBackendCapability("offline");
     const queueItem: QueueItem = {
       id: `playlist-offline-${playlistId}`,
       type: "playlist-offline",
@@ -245,6 +253,7 @@ class DownloadStore {
     filename: string,
     size?: number,
   ): Promise<void> {
+    requireBackendCapability("offline");
     const queueItem: QueueItem = {
       id: `track-offline-${trackId}`,
       type: "track-offline",

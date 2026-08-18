@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getPlaylistImageUrl } from "$lib/constants";
+  import { getPlaylistImageUrl } from "$lib/backend/services/media";
   import {
     isAlbumPlaylist,
     isArtistPlaylist,

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import { getImageUrl } from "$lib/constants";
+  import { getTrackImageUrl as getImageUrl } from "$lib/backend/services/media";
   import { playerStore } from "$lib/stores/player.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { downloadStore } from "$lib/stores/download.svelte";

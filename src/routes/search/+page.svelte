@@ -2,7 +2,9 @@
   import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
   import { page } from "$app/state";
-  import { searchRemote, searchTracks } from "$lib/api";
+  import { searchRemote } from "$lib/backend/services/remote";
+  import { searchTracks } from "$lib/backend/services/audio";
+  import { backendCapabilities } from "$lib/backend/config";
   import UploadTrackDialog from "$lib/components/admin/UploadTrackDialog.svelte";
   import RemoteTrackItem from "$lib/components/tracks/RemoteTrackItem.svelte";
   import TrackItem from "$lib/components/tracks/TrackItem.svelte";
@@ -40,10 +42,15 @@
 
   const LIMIT = 10;
   const DEBOUNCE_MS = 300;
-  const REMOTE_PROVIDERS: RemoteProvider[] = ["youtube", "tidal"];
-  const SEARCH_PROVIDERS = ["local", ...REMOTE_PROVIDERS] as const;
-
-  type SearchProvider = (typeof SEARCH_PROVIDERS)[number];
+  type SearchProvider = "local" | RemoteProvider;
+  const REMOTE_PROVIDERS: RemoteProvider[] = (["youtube", "tidal"] as const)
+    .filter((provider) => backendCapabilities.remoteProviders[provider].search);
+  const SEARCH_PROVIDERS: SearchProvider[] = [
+    ...(backendCapabilities.library.search ? (["local"] as const) : []),
+    ...REMOTE_PROVIDERS,
+  ];
+  const canAddTracks =
+    backendCapabilities.uploads.file || backendCapabilities.uploads.remote;
 
   type RemoteResultsByProvider = Record<RemoteProvider, RemoteSearchResult[]>;
 
@@ -68,7 +75,7 @@
   }
 
   let searchQuery = $state("");
-  let searchProvider = $state<SearchProvider>("local");
+  let searchProvider = $state<SearchProvider>(SEARCH_PROVIDERS[0] ?? "local");
   let tracks = $state<AudioFile[]>([]);
   let remoteResultsByProvider = $state<RemoteResultsByProvider>(
     createEmptyRemoteResults(),
@@ -371,7 +378,8 @@
       </div>
     </div>
 
-    <Button
+    {#if canAddTracks}
+      <Button
       variant="outline"
       size="icon"
       class="mt-2 size-11 rounded-xl shrink-0 
@@ -381,21 +389,24 @@
       "
       onclick={uploadDialog.open}
       aria-label="Add track"
-    >
-      <PlusIcon size={20} />
-    </Button>
+      >
+        <PlusIcon size={20} />
+      </Button>
+    {/if}
   </div>
 </form>
 
-<UploadTrackDialog
-  open={uploadDialog.isOpen}
-  loading={uploadLoading}
-  onOpenChange={(open) =>
-    !open && uploadDialog.isOpen ? uploadDialog.close() : null}
-  onUploadComplete={handleUploadComplete}
-  onUploadError={handleUploadError}
-  onRemoteUpload={handleRemoteUpload}
-/>
+{#if canAddTracks}
+  <UploadTrackDialog
+    open={uploadDialog.isOpen}
+    loading={uploadLoading}
+    onOpenChange={(open) =>
+      !open && uploadDialog.isOpen ? uploadDialog.close() : null}
+    onUploadComplete={handleUploadComplete}
+    onUploadError={handleUploadError}
+    onRemoteUpload={handleRemoteUpload}
+  />
+{/if}
 
 <div class="flex flex-col mx-auto w-full h-full overflow-auto">
   <div class="flex-1 pt-32 md:pt-30">

@@ -1,5 +1,8 @@
-import { getStreamUrl } from "$lib/constants";
-import { authFetch } from "$lib/api/fetch";
+import {
+  getStreamTicket,
+  getStreamUrl,
+} from "$lib/backend/services/media";
+import { backendCapabilities } from "$lib/backend/config";
 import { getOfflineTrack } from "$lib/db/offline";
 
 interface GetAudioUrlOptions {
@@ -26,17 +29,7 @@ export async function getOrFetchStreamTicket(
   }
 
   try {
-    const response = await authFetch(`/audio/${trackId}/ticket`, {
-      method: "POST",
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        `Failed to get stream ticket: ${response.status} ${response.statusText}`,
-      );
-    }
-
-    const data: TicketInfo = await response.json();
+    const data: TicketInfo = await getStreamTicket(trackId);
     activeTickets.set(trackId, data);
     return data.ticket;
   } catch (error) {
@@ -49,6 +42,10 @@ export async function getAudioUrl(
   trackId: string,
   options?: GetAudioUrlOptions,
 ): Promise<string> {
+  if (!backendCapabilities.media.streamTickets) {
+    return getStreamUrl(trackId);
+  }
+
   try {
     const offlineTrack = await getOfflineTrack(trackId);
 

@@ -7,14 +7,19 @@
   import { authStore } from "$lib/stores/auth.svelte";
   import { Button } from "$lib/components/ui/button";
   import { playerStore } from "$lib/stores/player.svelte";
+  import { backendCapabilities } from "$lib/backend/config";
 
   const isAdmin = $derived(authStore.isAdmin);
   let loading = $state(true);
-  let activeTab = $state<"users" | "tracks">("tracks");
+  const canManageUsers = backendCapabilities.auth.userManagement;
+  const canManageTracks = backendCapabilities.library.delete;
+  let activeTab = $state<"users" | "tracks">(
+    canManageTracks ? "tracks" : "users",
+  );
 
   onMount(async () => {
     try {
-      if (!isAdmin) {
+      if (!isAdmin || (!canManageUsers && !canManageTracks)) {
         goto("/settings");
         return;
       }
@@ -51,26 +56,30 @@
   <div
     class="flex gap-2 sticky top-0 z-40 py-2 bg-background/80 backdrop-blur-sm"
   >
-    <Button
+    {#if canManageTracks}
+      <Button
       variant={activeTab === "tracks" ? "default" : "outline"}
       onclick={() => switchTab("tracks")}
       class="flex-1 h-11"
     >
       Tracks
-    </Button>
-    <Button
+      </Button>
+    {/if}
+    {#if canManageUsers}
+      <Button
       variant={activeTab === "users" ? "default" : "outline"}
       onclick={() => switchTab("users")}
       class="flex-1 h-11"
     >
       Users
-    </Button>
+      </Button>
+    {/if}
   </div>
 
   <div class="relative space-y-2">
-    {#if activeTab === "users"}
+    {#if activeTab === "users" && canManageUsers}
       <UserManagement />
-    {:else}
+    {:else if canManageTracks}
       <TrackManagement />
     {/if}
   </div>

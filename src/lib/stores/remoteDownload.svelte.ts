@@ -1,4 +1,8 @@
-import { getAudioBaseUrl } from "$lib/constants";
+import {
+  cancelRemoteImport,
+  openRemoteImportStream,
+} from "$lib/backend/services/uploads";
+import { backendCapabilities } from "$lib/backend/config";
 import type {
   RemoteCollectionKind,
   RemoteDownloadResponse,
@@ -11,7 +15,6 @@ import {
   getRemoteItemIdFromUrl,
   getRemoteProviderLabel,
 } from "$lib/utils/remote";
-import { authStore } from "./auth.svelte";
 import { tracksStore } from "./tracks.svelte";
 
 interface DownloadProgress {
@@ -119,6 +122,7 @@ class RemoteDownloadStore {
   }
 
   private async checkForPendingDownloads() {
+    if (!backendCapabilities.uploads.remote) return;
     if (this._currentDownload && !this._isProcessing) {
       const current = this._currentDownload;
       const label = getRemoteProviderLabel(current.provider);
@@ -132,6 +136,12 @@ class RemoteDownloadStore {
   }
 
   async addToQueue(result: RemoteSearchResult) {
+    if (
+      !backendCapabilities.uploads.remote ||
+      !backendCapabilities.remoteProviders[result.provider].import
+    ) {
+      throw new Error(`${getRemoteProviderLabel(result.provider)} import is disabled`);
+    }
     const queueItem: QueueItem = {
       provider: result.provider,
       type: "item",
@@ -167,6 +177,12 @@ class RemoteDownloadStore {
   }
 
   async addUrlToQueue(provider: RemoteProvider, url: string) {
+    if (
+      !backendCapabilities.uploads.remote ||
+      !backendCapabilities.remoteProviders[provider].import
+    ) {
+      throw new Error(`${getRemoteProviderLabel(provider)} import is disabled`);
+    }
     const collectionKind = getRemoteCollectionKindFromUrl(provider, url);
     const providerItemId =
       getRemoteItemIdFromUrl(provider, url) ||
@@ -333,8 +349,6 @@ class RemoteDownloadStore {
     stream: string,
     onProgress: (event: RemoteProgressEvent) => void,
   ): Promise<void> {
-    const params = new URLSearchParams({ url, stream });
-    const audioBaseUrl = getAudioBaseUrl();
     const controller = new AbortController();
     this._activeAbortController = controller;
     const maxReconnectAttempts = 3;
@@ -398,17 +412,11 @@ class RemoteDownloadStore {
 
       try {
         while (!controller.signal.aborted) {
-          const response = await fetch(
-            `${audioBaseUrl}/upload/${provider}?${params}`,
-            {
-              method: "GET",
-              credentials: "include",
-              signal: controller.signal,
-              headers: {
-                Accept: "text/event-stream",
-                Authorization: `Bearer ${authStore.sessionId}`,
-              },
-            },
+          const response = await openRemoteImportStream(
+            provider,
+            url,
+            stream,
+            controller.signal,
           );
 
           if (!response.ok) {
@@ -543,27 +551,7 @@ class RemoteDownloadStore {
     const { provider, streamId } = this._currentDownload;
 
     try {
-      const audioBaseUrl = getAudioBaseUrl();
-      const response = await fetch(
-        `${audioBaseUrl}/upload/${provider}/${streamId}`,
-        {
-          method: "DELETE",
-          credentials: "include",
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to cancel download: ${await response.text()}`);
-      }
-
-      const data = (await response.json()) as {
-        success: boolean;
-        message: string;
-      };
-
-      if (!data.success) {
-        throw new Error(data.message || "Failed to cancel download");
-      }
+      await cancelRemoteImport(provider, streamId);
     } catch (error) {
       console.error("Error requesting remote download cancellation:", error);
       throw error;

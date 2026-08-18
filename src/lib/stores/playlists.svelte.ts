@@ -1,4 +1,8 @@
-import { getUserPlaylists, getPlaylistById } from "$lib/api";
+import {
+  getUserPlaylists,
+  getPlaylistById,
+} from "$lib/backend/services/playlists";
+import { backendCapabilities } from "$lib/backend/config";
 import {
   getPlaylistsCache,
   savePlaylistCache,
@@ -10,7 +14,7 @@ import {
   clearPlaylistsCache,
 } from "$lib/db/cache";
 import { deleteOfflineImage, deleteOfflineImageByUrl } from "$lib/db/offline";
-import { getPlaylistImageUrl } from "$lib/constants";
+import { getPlaylistImageUrl } from "$lib/backend/services/media";
 import { downloadStore } from "$lib/stores/download.svelte";
 import type { Playlist, PlaylistDetail } from "$lib/schemas";
 import { SvelteMap, SvelteSet } from "svelte/reactivity";
@@ -105,6 +109,8 @@ class PlaylistsStore {
   async loadAllPlaylists(forceRefresh: boolean = false): Promise<void> {
     await this.initializeFromCache();
 
+    if (!backendCapabilities.playlists.enabled) return;
+
     if (!forceRefresh && this.allPlaylists.length > 0 && this.lastFetchedAt) {
       if ("onLine" in navigator && !navigator.onLine) {
         return;
@@ -157,6 +163,8 @@ class PlaylistsStore {
 
   async loadUserPlaylists(forceRefresh: boolean = false): Promise<void> {
     await this.initializeFromCache();
+
+    if (!backendCapabilities.playlists.enabled) return;
 
     if (!forceRefresh && this.userPlaylists.length > 0) {
       return;
@@ -316,6 +324,11 @@ class PlaylistsStore {
     id: string,
     forceRefresh: boolean = false,
   ): Promise<PlaylistDetail> {
+    if (!backendCapabilities.playlists.enabled) {
+      const cached = await getCachedPlaylistDetail(id);
+      if (cached) return cached;
+      throw new Error("Backend playlists are disabled");
+    }
     this._loadingPlaylistIds.add(id);
 
     try {

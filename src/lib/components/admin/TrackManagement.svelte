@@ -2,7 +2,7 @@
   import { toast } from "svelte-sonner";
   import { Music as MusicIcon } from "@lucide/svelte";
   import { Button } from "$lib/components/ui/button";
-  import { fetchTracks, deleteTrack } from "$lib/api";
+  import { fetchTracks, deleteTrack } from "$lib/backend/services/audio";
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { remoteDownloadStore } from "$lib/stores/remoteDownload.svelte";
   import TrackTable from "./TrackTable.svelte";
