@@ -1,15 +1,12 @@
 <script lang="ts">
   import { toast } from "svelte-sonner";
-  import { Music as MusicIcon } from "@lucide/svelte";
-  import { Button } from "$lib/components/ui/button";
+  import { Disc3 as Disc3Icon } from "@lucide/svelte";
   import { fetchTracks, deleteTrack } from "$lib/backend/services/audio";
   import { tracksStore } from "$lib/stores/tracks.svelte";
-  import { remoteDownloadStore } from "$lib/stores/remoteDownload.svelte";
   import TrackTable from "./TrackTable.svelte";
   import DeleteTrackDialog from "./DeleteTrackDialog.svelte";
   import TrackPagination from "./TrackPagination.svelte";
-  import type { AudioFile, RemoteProvider } from "$lib/schemas";
-  import { getRemoteProviderLabel } from "$lib/utils/remote";
+  import type { AudioFile } from "$lib/schemas";
   import { onMount } from "svelte";
 
   let tracksLoading = $state(false);
@@ -71,56 +68,48 @@
     }
   }
 
-  async function handleUploadComplete(
-    successCount: number,
-    totalCount: number,
-  ) {
-    setMessage("success", `Uploaded ${successCount}/${totalCount} files`);
-    await loadTracks(tracksCurrentPage);
-    tracksStore.loadAllTracks(true);
-  }
-
-  function handleUploadError(error: string) {
-    setMessage("error", error);
-  }
-
-  async function handleRemoteUpload(provider: RemoteProvider, url: string) {
-    const providerLabel = getRemoteProviderLabel(provider);
-
-    try {
-      await remoteDownloadStore.addUrlToQueue(provider, url);
-      setMessage("success", `Downloaded from ${providerLabel}`);
-      await loadTracks(tracksCurrentPage);
-      tracksStore.loadAllTracks(true);
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : `Failed to download from ${providerLabel}`;
-      setMessage("error", errorMessage);
-    }
-  }
 </script>
 
-<div class="flex justify-between items-center gap-2 w-full">
-  <h2 class="text-2xl font-semibold p-2">Tracks</h2>
-</div>
+<section class="space-y-3" aria-labelledby="track-management-title">
+  <div class="flex items-center gap-3 px-1 py-2">
+    <div class="grid size-10 shrink-0 place-items-center rounded-xl bg-muted">
+      <Disc3Icon class="size-5 text-muted-foreground" />
+    </div>
+    <div class="min-w-0">
+      <div class="flex items-center gap-2">
+        <h2 id="track-management-title" class="font-semibold">
+          Music library
+        </h2>
+        {#if !tracksInitialLoading}
+          <span
+            class="rounded-full bg-muted px-2 py-0.5 text-xs tabular-nums text-muted-foreground"
+          >
+            {tracks.length} shown
+          </span>
+        {/if}
+      </div>
+      <p class="truncate text-sm text-muted-foreground">
+        Review and remove tracks stored on the server
+      </p>
+    </div>
+  </div>
 
-<TrackTable
-  {tracks}
-  loading={tracksLoading}
-  initialLoading={tracksInitialLoading}
-  onDelete={openDeleteTrackDialog}
-/>
-
-{#if tracksTotalPages > 1}
-  <TrackPagination
-    currentPage={tracksCurrentPage}
-    totalPages={tracksTotalPages}
+  <TrackTable
+    {tracks}
     loading={tracksLoading}
-    onPageChange={loadTracks}
+    initialLoading={tracksInitialLoading}
+    onDelete={openDeleteTrackDialog}
   />
-{/if}
+
+  {#if tracksTotalPages > 1}
+    <TrackPagination
+      currentPage={tracksCurrentPage}
+      totalPages={tracksTotalPages}
+      loading={tracksLoading}
+      onPageChange={loadTracks}
+    />
+  {/if}
+</section>
 
 <DeleteTrackDialog
   bind:open={deleteTrackDialogOpen}

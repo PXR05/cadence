@@ -1,6 +1,9 @@
 <script lang="ts">
   import { toast } from "svelte-sonner";
-  import {  UserPlus as UserPlusIcon } from "@lucide/svelte";
+  import {
+    UserPlus as UserPlusIcon,
+    Users as UsersIcon,
+  } from "@lucide/svelte";
   import { Button } from "$lib/components/ui/button";
   import {
     listUsers,
@@ -146,31 +149,53 @@
   }
 </script>
 
-<div class="flex justify-between items-center gap-2 w-full">
-  <h2 class="text-2xl font-semibold p-2">Users</h2>
-  <Button onclick={openCreateUserDialog} class="gap-2">
-    <UserPlusIcon size={18} />
-    Create User
-  </Button>
-</div>
+<section class="space-y-3" aria-labelledby="user-management-title">
+  <div class="flex items-center justify-between gap-3 px-1 py-2">
+    <div class="flex min-w-0 items-center gap-3">
+      <div class="grid size-10 shrink-0 place-items-center rounded-xl bg-muted">
+        <UsersIcon class="size-5 text-muted-foreground" />
+      </div>
+      <div class="min-w-0">
+        <div class="flex items-center gap-2">
+          <h2 id="user-management-title" class="font-semibold">People</h2>
+          {#if !usersInitialLoading}
+            <span
+              class="rounded-full bg-muted px-2 py-0.5 text-xs tabular-nums text-muted-foreground"
+            >
+              {users.length} shown
+            </span>
+          {/if}
+        </div>
+        <p class="truncate text-sm text-muted-foreground">
+          Accounts with access to this server
+        </p>
+      </div>
+    </div>
+    <Button onclick={openCreateUserDialog} class="shrink-0 gap-2">
+      <UserPlusIcon class="size-4" />
+      <span class="hidden sm:inline">Create user</span>
+      <span class="sm:hidden">Add</span>
+    </Button>
+  </div>
 
-<UserTable
-  {users}
-  loading={usersLoading}
-  initialLoading={usersInitialLoading}
-  onDelete={openDeleteDialog}
-  onResetPassword={openResetPasswordDialog}
-  onChangePassword={openChangePasswordDialog}
-/>
-
-{#if usersTotalPages > 1}
-  <TrackPagination
-    currentPage={usersCurrentPage}
-    totalPages={usersTotalPages}
+  <UserTable
+    {users}
     loading={usersLoading}
-    onPageChange={loadUsers}
+    initialLoading={usersInitialLoading}
+    onDelete={openDeleteDialog}
+    onResetPassword={openResetPasswordDialog}
+    onChangePassword={openChangePasswordDialog}
   />
-{/if}
+
+  {#if usersTotalPages > 1}
+    <TrackPagination
+      currentPage={usersCurrentPage}
+      totalPages={usersTotalPages}
+      loading={usersLoading}
+      onPageChange={loadUsers}
+    />
+  {/if}
+</section>
 
 <DeleteUserDialog
   bind:open={deleteDialogOpen}

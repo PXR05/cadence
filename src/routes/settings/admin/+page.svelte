@@ -1,7 +1,12 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
-  import { Loader as LoaderIcon } from "@lucide/svelte";
+  import {
+    Disc3 as Disc3Icon,
+    Loader as LoaderIcon,
+    ShieldCheck as ShieldCheckIcon,
+    Users as UsersIcon,
+  } from "@lucide/svelte";
   import SettingsHeader from "$lib/components/SettingsHeader.svelte";
   import { UserManagement, TrackManagement } from "$lib/components/admin";
   import { authStore } from "$lib/stores/auth.svelte";
@@ -40,47 +45,61 @@
       : "Admin"} | Cadence</title>
 </svelte:head>
 
+<SettingsHeader title="Administration" />
+
 {#if loading}
-  <div class="absolute inset-0 m-auto flex items-center justify-center h-full">
-    <LoaderIcon class="animate-spin text-muted-foreground" size={24} />
+  <div class="flex min-h-80 items-center justify-center">
+    <LoaderIcon class="size-6 animate-spin text-muted-foreground" />
+  </div>
+{:else}
+  <div class="w-full space-y-3 px-2 pb-4 pt-0.5 mb-[50dvh]">
+    {#if canManageTracks && canManageUsers}
+      <nav
+        class="grid grid-cols-2 gap-1 rounded-xl border bg-muted/40 p-1"
+        aria-label="Administration sections"
+      >
+        <Button
+          variant="ghost"
+          onclick={() => switchTab("tracks")}
+          aria-pressed={activeTab === "tracks"}
+          class="h-12 justify-start gap-3 rounded-lg px-3 {activeTab ===
+          'tracks'
+            ? 'bg-background text-foreground shadow-sm hover:bg-background'
+            : 'text-muted-foreground'}"
+        >
+          <Disc3Icon class="size-5" />
+          <span class="text-left leading-tight">
+            <span class="block font-medium">Library</span>
+            <span class="hidden text-xs font-normal text-muted-foreground sm:block">
+              Manage tracks
+            </span>
+          </span>
+        </Button>
+        <Button
+          variant="ghost"
+          onclick={() => switchTab("users")}
+          aria-pressed={activeTab === "users"}
+          class="h-12 justify-start gap-3 rounded-lg px-3 {activeTab === 'users'
+            ? 'bg-background text-foreground shadow-sm hover:bg-background'
+            : 'text-muted-foreground'}"
+        >
+          <UsersIcon class="size-5" />
+          <span class="text-left leading-tight">
+            <span class="block font-medium">People</span>
+            <span class="hidden text-xs font-normal text-muted-foreground sm:block">
+              Manage access
+            </span>
+          </span>
+        </Button>
+      </nav>
+    {/if}
+
+    <div class="min-w-0">
+      {#if activeTab === "users" && canManageUsers}
+        <UserManagement />
+      {:else if canManageTracks}
+        <TrackManagement />
+      {/if}
+    </div>
   </div>
 {/if}
-
-<SettingsHeader title="Admin Dashboard" />
-
-<div
-  class="px-2 pb-4 pt-0.5 w-full space-y-2 mb-[50dvh] transition-opacity {loading
-    ? 'opacity-0'
-    : ''}"
->
-  <div
-    class="flex gap-2 sticky top-0 z-40 py-2 bg-background/80 backdrop-blur-sm"
-  >
-    {#if canManageTracks}
-      <Button
-      variant={activeTab === "tracks" ? "default" : "outline"}
-      onclick={() => switchTab("tracks")}
-      class="flex-1 h-11"
-    >
-      Tracks
-      </Button>
-    {/if}
-    {#if canManageUsers}
-      <Button
-      variant={activeTab === "users" ? "default" : "outline"}
-      onclick={() => switchTab("users")}
-      class="flex-1 h-11"
-    >
-      Users
-      </Button>
-    {/if}
-  </div>
-
-  <div class="relative space-y-2">
-    {#if activeTab === "users" && canManageUsers}
-      <UserManagement />
-    {:else if canManageTracks}
-      <TrackManagement />
-    {/if}
-  </div>
-</div>
