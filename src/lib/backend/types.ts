@@ -29,6 +29,7 @@ export interface BackendCapabilities {
   };
   uploads: {
     file: boolean;
+    fileRequiresAdmin?: boolean;
     remote: boolean;
   };
   offline: boolean;

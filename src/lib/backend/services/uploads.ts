@@ -1,3 +1,5 @@
+import * as v from "valibot";
+import { UploadResponseSchema, type UploadResponse } from "$lib/schemas/audio";
 import type { RemoteProvider } from "$lib/schemas";
 import { backendConfig } from "../config";
 import { backendRequest, createBackendHeaders } from "../client";
@@ -10,12 +12,16 @@ export interface UploadFileOptions {
   onProgress?: (percent: number) => void;
 }
 
-export function uploadAudioFile(
+function sendAudioFile(
   file: File,
   options: UploadFileOptions = {},
-): Promise<boolean> {
+): Promise<XMLHttpRequest> {
   requireBackendCapability("uploads.file");
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
+    if (options.signal?.aborted) {
+      reject(new Error("Upload cancelled"));
+      return;
+    }
     const formData = new FormData();
     formData.append("file", file);
     const xhr = new XMLHttpRequest();
@@ -26,16 +32,29 @@ export function uploadAudioFile(
       }
     });
 
+    const abort = () => xhr.abort();
+    xhr.addEventListener(
+      "loadend",
+      () => options.signal?.removeEventListener("abort", abort),
+      { once: true },
+    );
     for (const eventName of ["error", "timeout", "abort"] as const) {
-      xhr.addEventListener(eventName, () => resolve(false), { once: true });
+      xhr.addEventListener(
+        eventName,
+        () => reject(new Error(`Upload ${eventName}`)),
+        { once: true },
+      );
     }
     xhr.addEventListener(
       "load",
-      () => resolve(xhr.status >= 200 && xhr.status < 300),
+      () => {
+        if (xhr.status >= 200 && xhr.status < 300) resolve(xhr);
+        else reject(new Error(`Upload failed (${xhr.status})`));
+      },
       { once: true },
     );
 
-    options.signal?.addEventListener("abort", () => xhr.abort(), {
+    options.signal?.addEventListener("abort", abort, {
       once: true,
     });
     xhr.timeout = options.timeoutMs ?? 300_000;
@@ -46,6 +65,31 @@ export function uploadAudioFile(
     }
     xhr.send(formData);
   });
+}
+
+export async function uploadAudioFile(
+  file: File,
+  options: UploadFileOptions = {},
+): Promise<boolean> {
+  requireBackendCapability("uploads.file");
+  try {
+    await sendAudioFile(file, options);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function uploadAudioFileWithResult(
+  file: File,
+  options: UploadFileOptions = {},
+): Promise<UploadResponse> {
+  const xhr = await sendAudioFile(file, options);
+  const result = v.parse(UploadResponseSchema, JSON.parse(xhr.responseText));
+  if (!result.success || !result.id) {
+    throw new Error(result.message || "Upload did not return a track ID");
+  }
+  return result;
 }
 
 export async function openRemoteImportStream(

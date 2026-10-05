@@ -42,6 +42,7 @@ export const backendConfig: BackendConfig = {
     },
     uploads: {
       file: true,
+      fileRequiresAdmin: true,
       remote: true,
     },
     offline: true,

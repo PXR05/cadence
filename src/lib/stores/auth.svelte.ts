@@ -106,6 +106,11 @@ class AuthStore {
     return this.user?.role === "admin";
   }
 
+  get canUploadFiles(): boolean {
+    return backendCapabilities.uploads.file &&
+      (!backendCapabilities.uploads.fileRequiresAdmin || this.isAdmin);
+  }
+
   get canUseServerCookieAuth(): boolean {
     return this.cookieAuthMode === "supported";
   }

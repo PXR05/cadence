@@ -11,6 +11,7 @@
   import { detectRemoteProviderFromUrl } from "$lib/utils/remote";
   import { uploadAudioFile } from "$lib/backend/services/uploads";
   import { backendCapabilities } from "$lib/backend/config";
+  import { authStore } from "$lib/stores/auth.svelte";
 
   interface Props {
     open?: boolean;
@@ -39,11 +40,13 @@
   let totalFiles = $state(0);
   let currentFileName = $state("");
   let currentFileProgress = $state(0);
-  const canUploadFile = backendCapabilities.uploads.file;
+  const canUploadFile = $derived(authStore.canUploadFiles);
   const canUploadRemote = backendCapabilities.uploads.remote;
-  let uploadMode = $state<"file" | "remote">(
-    canUploadFile ? "file" : "remote",
-  );
+  let uploadMode = $state<"file" | "remote">("file");
+
+  $effect(() => {
+    if (!canUploadFile) uploadMode = "remote";
+  });
 
   async function uploadSingleFile(file: File): Promise<boolean> {
     return uploadAudioFile(file, {
@@ -55,6 +58,11 @@
   }
 
   async function handleFileChange(e: Event) {
+    if (!canUploadFile) {
+      onUploadError("File uploads are unavailable for your account.");
+      return;
+    }
+    if (loading || isUploading) return;
     const input = e.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       const files = Array.from(input.files);

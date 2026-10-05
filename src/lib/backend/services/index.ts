@@ -5,3 +5,4 @@ export * from "./remote";
 export * from "./settings";
 export * from "./media";
 export * from "./uploads";
+export * from "./folderPlaylist";

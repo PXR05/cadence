@@ -25,6 +25,7 @@
     RemoteSearchResult,
   } from "$lib/schemas";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
+  import { authStore } from "$lib/stores/auth.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
   import { remoteDownloadStore } from "$lib/stores/remoteDownload.svelte";
   import { getRemoteProviderLabel } from "$lib/utils/remote";
@@ -49,8 +50,9 @@
     ...(backendCapabilities.library.search ? (["local"] as const) : []),
     ...REMOTE_PROVIDERS,
   ];
-  const canAddTracks =
-    backendCapabilities.uploads.file || backendCapabilities.uploads.remote;
+  const canAddTracks = $derived(
+    authStore.canUploadFiles || backendCapabilities.uploads.remote,
+  );
 
   type RemoteResultsByProvider = Record<RemoteProvider, RemoteSearchResult[]>;
 
