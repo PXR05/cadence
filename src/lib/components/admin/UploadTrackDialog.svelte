@@ -50,7 +50,6 @@
 
   async function uploadSingleFile(file: File): Promise<boolean> {
     return uploadAudioFile(file, {
-      timeoutMs: 300_000,
       onProgress: (percent) => {
         currentFileProgress = percent;
       },

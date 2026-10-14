@@ -396,7 +396,7 @@
           </div>
           {#if loading}
             <div class="space-y-2" role="status">
-              <p class="text-sm truncate">
+              <p class="text-sm truncate sm:max-w-[calc(25rem)] max-h-[calc(100dvh-5rem)]">
                 {#if currentFileIndex}
                   Uploading {currentFileIndex}/{currentBatchSize}: {currentFileName}
                 {:else}
