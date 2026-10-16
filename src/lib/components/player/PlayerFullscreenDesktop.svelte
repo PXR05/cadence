@@ -33,7 +33,7 @@
   let { onClose }: Props = $props();
 
   let isQueueOpen = $state(false);
-  let controlsVisible = $state(true);
+  let isControlsVisible = $state(true);
   let isHoveringControls = $state(false);
   let hideTimer: ReturnType<typeof setTimeout> | null = null;
   let virtualScroll: any = $state(null);
@@ -53,13 +53,13 @@
   );
 
   function showControlsAndResetTimer() {
-    controlsVisible = true;
+    isControlsVisible = true;
     if (hideTimer) {
       clearTimeout(hideTimer);
     }
     hideTimer = setTimeout(() => {
       if (!isHoveringControls) {
-        controlsVisible = false;
+        isControlsVisible = false;
       }
     }, 3500);
   }
@@ -184,7 +184,7 @@
 
 <div
   class="fixed inset-0 z-50 overflow-hidden bg-background select-none flex flex-col transition-all duration-200
-  {!controlsVisible ? 'cursor-none' : 'cursor-default'}"
+  {!isControlsVisible ? 'cursor-none' : 'cursor-default'}"
   onmousemove={showControlsAndResetTimer}
   onmousedown={showControlsAndResetTimer}
   ontouchstart={showControlsAndResetTimer}
@@ -229,7 +229,7 @@
 
   <header
     class="relative z-30 flex items-center justify-between px-8 pt-6 transition-all duration-200 ease-out
-    {controlsVisible
+    {isControlsVisible
       ? 'opacity-100 translate-y-0 pointer-events-auto'
       : 'opacity-0 -translate-y-2 pointer-events-none'}"
     onmouseenter={() => (isHoveringControls = true)}
@@ -245,7 +245,7 @@
       variant="ghost"
       size="icon"
       onclick={onClose}
-      class="size-10 rounded-full bg-foreground/10 hover:bg-foreground/20 backdrop-blur-md transition-all cursor-pointer"
+      class="size-10 rounded-full hover:bg-foreground/20! hover:backdrop-blur-md transition-all cursor-pointer"
       aria-label="Exit fullscreen"
     >
       <Minimize2Icon size={20} />
@@ -255,13 +255,13 @@
       <VolumeControl side="bottom" />
 
       <Button
-        variant={isQueueOpen ? "secondary" : "ghost"}
+        variant="ghost"
         size="icon"
         onclick={() => (isQueueOpen = !isQueueOpen)}
-        class="size-10 rounded-full backdrop-blur-md transition-all cursor-pointer
+        class="size-10 rounded-full transition-all cursor-pointer
         {isQueueOpen
-          ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-md'
-          : 'bg-foreground/10 hover:bg-foreground/20'}"
+          ? 'bg-foreground/20! backdrop-blur-md hover:bg-foreground/30!'
+          : 'hover:bg-foreground/20! hover:backdrop-blur-md'}"
         aria-label={isQueueOpen ? "Close queue" : "Open queue"}
       >
         <ListMusicIcon size={20} />
@@ -311,9 +311,9 @@
                       >
                         <div class="h-6"></div>
 
-                        <div class="flex items-center justify-center">
+                        <div class="flex items-center justify-center pointer-events-auto">
                           <div
-                            class="size-16 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-xs border border-white/20 flex items-center justify-center text-white shadow-lg transition-transform duration-200 group-hover:scale-105"
+                            class="size-16 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-xs border border-white/15 flex items-center justify-center text-white transition-transform duration-200 group-hover:scale-105"
                           >
                             {#if playerStore.isPlaying}
                               <PauseIcon size={30} fill="currentColor" />
@@ -334,7 +334,7 @@
                             }}
                             class="size-10 rounded-full grid place-items-center backdrop-blur-xs transition-all cursor-pointer border
                             {playerStore.isShuffled
-                              ? 'bg-white/30 text-white border-white/40 ring-1 ring-white/30 shadow-md'
+                              ? 'bg-white/30 text-white border-white/40 ring-1 ring-white/30'
                               : 'bg-white/10 text-white/70 hover:text-white hover:bg-white/20 border-white/15'}"
                             aria-label="Toggle shuffle"
                           >
@@ -357,7 +357,7 @@
                             }}
                             class="size-10 rounded-full grid place-items-center backdrop-blur-xs transition-all cursor-pointer border
                             {playerStore.isRepeated
-                              ? 'bg-white/30 text-white border-white/40 ring-1 ring-white/30 shadow-md'
+                              ? 'bg-white/30 text-white border-white/40 ring-1 ring-white/30'
                               : 'bg-white/10 text-white/70 hover:text-white hover:bg-white/20 border-white/15'}"
                             aria-label="Toggle repeat"
                           >
