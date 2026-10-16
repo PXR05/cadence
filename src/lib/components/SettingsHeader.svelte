@@ -1,21 +1,31 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button";
-  import {  ArrowLeft as ArrowLeftIcon } from "@lucide/svelte";
+  import { ArrowLeft as ArrowLeftIcon } from "@lucide/svelte";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
+  import { cn } from "$lib/utils";
 
   interface Props {
     title: string;
+    containerClass?: string;
+    class?: string;
   }
 
-  let { title }: Props = $props();
+  let { title, class: className, containerClass }: Props = $props();
 </script>
 
-<div style="--h: 5rem" class="sticky top-0 w-full p-1.5 md:p-2 z-50">
+<div
+  style="--h: 5rem"
+  class={cn("sticky top-0 w-full p-1.5 md:p-2 z-50", containerClass)}
+>
   <div class="_bg _color absolute inset-0 -z-10"></div>
   <div
-    class="flex-1 flex items-center flex-row gap-1.5 md:gap-2 rounded-xl p-1.5 md:p-2 border border-muted-foreground/10 {appearanceStore.disableBlur
-      ? 'bg-muted'
-      : 'bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md'}"
+    class={cn(
+      "flex-1 flex items-center flex-row gap-1.5 md:gap-2 rounded-xl p-1.5 md:p-2 border border-muted-foreground/10",
+      appearanceStore.disableBlur
+        ? "bg-muted"
+        : "bg-muted-foreground/10 dark:bg-muted/60 backdrop-blur-md",
+      className,
+    )}
   >
     <Button
       variant="ghost"

@@ -1,169 +1,110 @@
 <script lang="ts">
   import {
+    ArtistCard,
     CreatePlaylistDialog,
+    LibraryFilters,
+    LibrarySectionHeader,
     PlaylistCard,
     PullToRefresh,
   } from "$lib/components";
-  import {
-    DiamondIcon,
-    Disc3Icon,
-    ListMusicIcon,
-    MusicIcon,
-    Plus as PlusIcon,
-    SquarePlayIcon,
-  } from "@lucide/svelte";
+  import { Plus as PlusIcon } from "@lucide/svelte";
   import { playlistsStore } from "$lib/stores/playlists.svelte";
-  import {
-    isAlbumPlaylist,
-    isPlaylistPlaylist,
-    SPECIAL_PLAYLIST_IDS,
-  } from "$lib/utils/playlist";
-  import { flip } from "svelte/animate";
   import { tracksStore } from "$lib/stores/tracks.svelte";
   import { offlineDb } from "$lib/db/offline";
   import { liveQuery } from "dexie";
-  import { appearanceStore } from "$lib/stores/appearance.svelte";
   import { playerStore } from "$lib/stores/player.svelte";
-  import type { Playlist } from "$lib/schemas";
-  import { Button } from "$lib/components/ui/button";
   import { useDialogState } from "$lib/hooks";
   import { backendCapabilities } from "$lib/backend/config";
+  import { getBasePlaylists } from "$lib/utils/library";
+  import { getArtistsFromTracks } from "$lib/utils/artists";
+  import { appearanceStore } from "$lib/stores/appearance.svelte";
+  import { flip } from "svelte/animate";
+  import { innerWidth } from "svelte/reactivity/window";
 
   const createDialog = useDialogState("create-playlist");
 
+  const PREVIEW_ROWS = $derived((innerWidth.current ?? 0) >= 1024 ? 2 : 3);
+
   let offlineCount = liveQuery(() => offlineDb.tracks.count());
 
-  let allPlaylists: Playlist[] = $state([]);
+  let searchQuery = $state("");
+  const query = $derived(searchQuery.trim().toLowerCase());
+  const isEmpty = $derived(searchQuery.trim().length === 0);
 
-  let currentType = $state("");
-  let currentSource = $state("");
-  const typeFilters = [
-    {
-      id: "playlists",
-      label: "Playlists",
-      icon: ListMusicIcon,
-      onclick: () => {
-        if (currentType === "playlists") {
-          currentType = "";
-        } else {
-          currentType = "playlists";
-        }
-      },
-    },
-    {
-      id: "albums",
-      label: "Albums",
-      icon: Disc3Icon,
-      onclick: () => {
-        if (currentType === "albums") {
-          currentType = "";
-        } else {
-          currentType = "albums";
-        }
-      },
-    },
-  ];
-  const sourceFilters = [
-    {
-      id: "local",
-      enabled: backendCapabilities.playlists.enabled,
-      label: "Local",
-      icon: DiamondIcon,
-      onclick: () => {
-        if (currentSource === "local") {
-          currentSource = "";
-        } else {
-          currentSource = "local";
-        }
-      },
-    },
-    {
-      id: "youtube",
-      enabled:
-        backendCapabilities.remoteProviders.youtube.search ||
-        backendCapabilities.remoteProviders.youtube.import,
-      label: "YouTube",
-      icon: SquarePlayIcon,
-      onclick: () => {
-        if (currentSource === "youtube") {
-          currentSource = "";
-        } else {
-          currentSource = "youtube";
-        }
-      },
-    },
-    {
-      id: "tidal",
-      enabled:
-        backendCapabilities.remoteProviders.tidal.search ||
-        backendCapabilities.remoteProviders.tidal.import,
-      label: "Tidal",
-      icon: MusicIcon,
-      onclick: () => {
-        if (currentSource === "tidal") {
-          currentSource = "";
-        } else {
-          currentSource = "tidal";
-        }
-      },
-    },
-  ].filter((filter) => filter.enabled);
+  const allPlaylists = $derived(
+    getBasePlaylists(
+      playlistsStore,
+      "",
+      tracksStore.tracksCount,
+      $offlineCount || 0,
+    ),
+  );
 
-  $effect(() => {
-    let basePlaylists: Playlist[] = [];
-    if (currentSource === "tidal") {
-      basePlaylists = backendCapabilities.remoteProviders.tidal.import
-        ? playlistsStore.tidalPlaylists
-        : [];
-    } else if (currentSource === "youtube") {
-      basePlaylists = backendCapabilities.remoteProviders.youtube.import
-        ? playlistsStore.youtubePlaylists
-        : [];
-    } else {
-      basePlaylists = [
-        ...(backendCapabilities.library.enabled ? [{
-          id: SPECIAL_PLAYLIST_IDS.ALL_SONGS,
-          name: "All Songs",
-          userId: "system",
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          itemCount: tracksStore.tracksCount,
-        }] : []),
-        ...(backendCapabilities.offline ? [{
-          id: SPECIAL_PLAYLIST_IDS.DOWNLOADED,
-          name: "Downloaded Songs",
-          userId: "system",
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          itemCount: $offlineCount || 0,
-        }] : []),
-        ...(backendCapabilities.playlists.enabled
-          ? currentSource === "local"
-            ? playlistsStore.userPlaylists
-            : playlistsStore.allPlaylists.filter((playlist) =>
-                (!playlist.id.startsWith("youtube_") ||
-                  backendCapabilities.remoteProviders.youtube.import) &&
-                (!playlist.id.startsWith("tidal_") ||
-                  backendCapabilities.remoteProviders.tidal.import),
-              )
-          : []),
-      ];
-    }
+  const allArtists = $derived(getArtistsFromTracks(tracksStore.tracks));
 
-    if (currentType === "playlists") {
-      allPlaylists = basePlaylists.filter((p) => isPlaylistPlaylist(p.id));
-    } else if (currentType === "albums") {
-      allPlaylists = basePlaylists.filter((p) => isAlbumPlaylist(p.id));
-    } else {
-      allPlaylists = basePlaylists;
-    }
-  });
+  const filteredPlaylists = $derived(
+    query
+      ? allPlaylists.filter((p) => p.name.toLowerCase().includes(query))
+      : allPlaylists,
+  );
+  const filteredArtists = $derived(
+    query
+      ? allArtists.filter((a) => a.name.toLowerCase().includes(query))
+      : allArtists,
+  );
 
-  async function handlePlaylistCreated() {
-    await refreshPlaylists();
+  let playlistGrid: HTMLDivElement | null = $state(null);
+  let artistGrid: HTMLDivElement | null = $state(null);
+  let playlistCols = $state(2);
+  let artistCols = $state(2);
+
+  function columnCount(el: HTMLElement | null): number {
+    if (!el) return 2;
+    const cols = getComputedStyle(el)
+      .gridTemplateColumns.split(" ")
+      .filter(Boolean).length;
+    return cols > 0 ? cols : 2;
   }
 
-  async function refreshPlaylists() {
+  $effect(() => {
+    const update = () => {
+      playlistCols = columnCount(playlistGrid);
+      artistCols = columnCount(artistGrid);
+    };
+    update();
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(update);
+    if (playlistGrid) ro.observe(playlistGrid);
+    if (artistGrid) ro.observe(artistGrid);
+    return () => ro.disconnect();
+  });
+
+  const playlistPreview = $derived(
+    filteredPlaylists.slice(
+      0,
+      Math.max(
+        1,
+        playlistCols * PREVIEW_ROWS -
+          (backendCapabilities.playlists.create ? 1 : 0),
+      ),
+    ),
+  );
+  const artistPreview = $derived(
+    [...filteredArtists]
+      .sort(
+        (a, b) =>
+          b.trackCount - a.trackCount ||
+          a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+      )
+      .slice(0, Math.max(1, artistCols * PREVIEW_ROWS)),
+  );
+
+  async function handlePlaylistCreated() {
+    await refreshLibrary();
+  }
+
+  async function refreshLibrary() {
+    await tracksStore.loadAllTracks(true);
     playlistsStore.invalidate();
     await playlistsStore.loadAllPlaylists(true);
     Promise.all(
@@ -188,74 +129,69 @@
   >
 </svelte:head>
 
-<PullToRefresh onStageOne={refreshPlaylists}>
-  <h2 class="p-4 pb-0 text-2xl font-semibold">Playlists</h2>
+<PullToRefresh onStageOne={refreshLibrary}>
+  <h2 class="p-4 pb-0 text-2xl font-semibold">Library</h2>
 
-  <div
-    class="p-4 flex gap-4 overflow-x-scroll items-center hide-scrollbar"
-    style="
-      -webkit-mask-image: linear-gradient(to right, transparent 0%, black 1rem, black calc(100% - 1rem), transparent 100%);
-      mask-image: linear-gradient(to right, transparent 0%, black 1rem, black calc(100% - 1rem), transparent 100%);
-      -webkit-mask-repeat: no-repeat;
-      mask-repeat: no-repeat;
-    "
-  >
-    <div class="flex gap-3">
-      {#each typeFilters as t}
-        <Button
-          variant="outline"
-          size="sm"
-          class="flex items-center gap-1 shrink-0 
-            {currentType === t.id ? 'bg-accent!' : 'text-muted-foreground'}"
-          onclick={t.onclick}
-        >
-          <t.icon size={16} />
-          {t.label}
-        </Button>
-      {/each}
-    </div>
+  <LibraryFilters
+    bind:searchQuery
+    searchPlaceholder="Search playlists and artists..."
+    showTypeFilters={false}
+    showSourceFilters={false}
+  />
 
-    <span class="rounded w-0.5 h-5 bg-border">&nbsp;</span>
+  <div class="pb-72">
+    <LibrarySectionHeader title="Playlists" href="/library/playlists" />
 
-    <div class="flex gap-3">
-      {#each sourceFilters as s}
-        <Button
-          variant="outline"
-          size="sm"
-          class="flex items-center gap-1 shrink-0 
-            {currentSource === s.id ? 'bg-accent!' : 'text-muted-foreground'}"
-          onclick={s.onclick}
-        >
-          <s.icon size={16} />
-          {s.label}
-        </Button>
-      {/each}
-    </div>
-  </div>
-
-  <div
-    class="p-4 pt-0 grid grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-4 @7xl:grid-cols-5 @9xl:grid-cols-6 gap-4 pb-72"
-  >
-    {#each allPlaylists as playlist (playlist.id)}
-      <div
-        animate:flip={{ duration: appearanceStore.disableAnimations ? 0 : 150 }}
-      >
-        <PlaylistCard {playlist} size="large" />
-      </div>
-    {/each}
-    {#if backendCapabilities.playlists.create}
-      <button
-      onclick={createDialog.open}
-      class="rounded-lg aspect-square w-full shrink-0 border hover:bg-muted/50 transition-colors grid place-items-center"
+    <div
+      bind:this={playlistGrid}
+      class="p-4 grid grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-4 @7xl:grid-cols-5 @9xl:grid-cols-6 gap-4"
     >
-      <PlusIcon
-        size={48}
-        absoluteStrokeWidth
-        strokeWidth={2}
-        class="text-muted-foreground"
-      />
-      </button>
-    {/if}
+      {#each playlistPreview as playlist (playlist.id)}
+        <div
+          animate:flip={{ duration: appearanceStore.disableAnimations ? 0 : 150 }}
+        >
+          <PlaylistCard {playlist} size="large" />
+        </div>
+      {/each}
+      {#if backendCapabilities.playlists.create && isEmpty}
+        <button
+          onclick={createDialog.open}
+          class="rounded-lg aspect-square w-full shrink-0 border hover:bg-muted/50 transition-colors grid place-items-center"
+        >
+          <PlusIcon
+            size={48}
+            absoluteStrokeWidth
+            strokeWidth={2}
+            class="text-muted-foreground"
+          />
+        </button>
+      {/if}
+      {#if playlistPreview.length === 0}
+        <p class="col-span-full text-sm text-muted-foreground">
+          No playlists found.
+        </p>
+      {/if}
+    </div>
+
+    <LibrarySectionHeader title="Artists" href="/library/artists" />
+
+    <div
+      bind:this={artistGrid}
+      class="p-4 grid grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-4 @7xl:grid-cols-5 @9xl:grid-cols-6 gap-4"
+    >
+      {#each artistPreview as artist (artist.name.toLowerCase())}
+        <div
+          animate:flip={{ duration: appearanceStore.disableAnimations ? 0 : 150 }}
+        >
+          <ArtistCard {artist} />
+        </div>
+      {/each}
+      {#if artistPreview.length === 0}
+        <p class="col-span-full text-sm text-muted-foreground">
+          No artists found.
+        </p>
+      {/if}
+    </div>
   </div>
 </PullToRefresh>
 
