@@ -22,6 +22,7 @@ interface PlayerNativeDomainOptions {
     durationSeconds?: number,
   ) => void;
   setIsPlaying: (isPlaying: boolean) => void;
+  setIsBuffering: (isBuffering: boolean) => void;
   setMediaSessionPlaybackState: (state: MediaSessionPlaybackState) => void;
   playNext: () => void;
 }
@@ -147,13 +148,20 @@ export class PlayerNativeDomain {
           event.payload.durationSeconds,
         );
 
+        if (event.payload.playbackState === "buffering") {
+          this.options.setIsBuffering(true);
+          return;
+        }
+
         if (event.payload.playbackState === "playing") {
+          this.options.setIsBuffering(false);
           this.options.setIsPlaying(true);
           this.options.setMediaSessionPlaybackState("playing");
           return;
         }
 
         if (event.payload.playbackState === "ended") {
+          this.options.setIsBuffering(false);
           this.options.setIsPlaying(false);
           this.options.setMediaSessionPlaybackState("paused");
           this.options.playNext();
@@ -165,6 +173,7 @@ export class PlayerNativeDomain {
           event.payload.playbackState === "idle" ||
           event.payload.playbackState === "error"
         ) {
+          this.options.setIsBuffering(false);
           this.options.setIsPlaying(false);
           this.options.setMediaSessionPlaybackState("paused");
         }
@@ -183,6 +192,7 @@ export class PlayerNativeDomain {
           return;
         }
 
+        this.options.setIsBuffering(false);
         this.options.applyNativeTiming(
           event.payload.positionSeconds,
           event.payload.durationSeconds,
@@ -190,12 +200,14 @@ export class PlayerNativeDomain {
         return;
       }
       case "player.ended": {
+        this.options.setIsBuffering(false);
         this.options.setIsPlaying(false);
         this.options.setMediaSessionPlaybackState("paused");
         this.options.playNext();
         return;
       }
       case "player.error": {
+        this.options.setIsBuffering(false);
         this.options.setIsPlaying(false);
         this.options.setMediaSessionPlaybackState("paused");
         console.error(

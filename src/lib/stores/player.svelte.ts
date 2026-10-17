@@ -55,10 +55,13 @@ interface PersistedPlayerState {
 
 class PlayerState {
   isPlaying: boolean = $state(false);
+  isBuffering: boolean = $state(false);
   duration: number = $state(0);
+  bufferedTime: number = $state(0);
   private audioEngine = new AudioEngine();
   private playerRef: HTMLAudioElement | null = $state(null);
   private isWebSourceChanging = false;
+  private isStartingPlayback = false;
   private webLoadRequestId = 0;
   private playRequestId = 0;
   private carousels = new Map<
@@ -125,6 +128,9 @@ class PlayerState {
       this.applyNativeTiming(positionSeconds, durationSeconds),
     setIsPlaying: (isPlaying: boolean) => {
       this.isPlaying = isPlaying;
+    },
+    setIsBuffering: (isBuffering: boolean) => {
+      this.isBuffering = isBuffering;
     },
     setMediaSessionPlaybackState: (state: MediaSessionPlaybackState) =>
       this.setMediaSessionPlaybackState(state),
@@ -246,6 +252,12 @@ class PlayerState {
 
   get progress() {
     return this.duration ? this.currentTime / this.duration : 0;
+  }
+
+  get bufferedProgress() {
+    return this.duration
+      ? Math.min(1, Math.max(0, this.bufferedTime / this.duration))
+      : 0;
   }
 
   get bitPerfectSupported() {
@@ -372,6 +384,54 @@ class PlayerState {
         this.playerRef!.currentTime = this.currentTime;
       }
       this.isWebSourceChanging = false;
+      this.updateBufferedTime();
+      if (!this.isPlaying && !this.isStartingPlayback) {
+        this.isBuffering = false;
+      }
+    });
+
+    this.playerRef.addEventListener("progress", () => {
+      this.updateBufferedTime();
+    });
+
+    this.playerRef.addEventListener("loadeddata", () => {
+      this.updateBufferedTime();
+    });
+
+    this.playerRef.addEventListener("canplaythrough", () => {
+      this.updateBufferedTime();
+    });
+
+    this.playerRef.addEventListener("waiting", () => {
+      if (this.currentTrack && !this.shouldUseNativePlayback()) {
+        this.isBuffering = true;
+      }
+    });
+
+    this.playerRef.addEventListener("canplay", () => {
+      this.updateBufferedTime();
+      if (!this.isWebSourceChanging && !this.isStartingPlayback) {
+        this.isBuffering = false;
+      }
+    });
+
+    this.playerRef.addEventListener("playing", () => {
+      this.updateBufferedTime();
+      if (!this.isWebSourceChanging) {
+        this.isBuffering = false;
+      }
+    });
+
+    this.playerRef.addEventListener("seeked", () => {
+      this.updateBufferedTime();
+      if (
+        !this.isWebSourceChanging &&
+        !this.isStartingPlayback &&
+        this.playerRef &&
+        this.playerRef.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA
+      ) {
+        this.isBuffering = false;
+      }
     });
 
     this.playerRef.addEventListener("timeupdate", () => {
@@ -381,10 +441,12 @@ class PlayerState {
         this.playerRef.currentTime >= 0
       ) {
         this.currentTime = this.playerRef.currentTime;
+        this.updateBufferedTime();
       }
     });
 
     this.playerRef.addEventListener("ended", () => {
+      this.isBuffering = false;
       this.isPlaying = false;
       this.playNext();
     });
@@ -394,6 +456,7 @@ class PlayerState {
         console.warn(
           "Audio playback error encountered. Attempting stream ticket recovery...",
         );
+        this.isBuffering = true;
         try {
           const savedTime = this.currentTime;
           const audioUrl = await getAudioUrl(this.currentTrack.id, {
@@ -405,12 +468,19 @@ class PlayerState {
             this.playerRef.currentTime = savedTime;
             this.playerRef.load();
             if (this.isPlaying) {
-              await this.playerRef.play().catch(() => {});
+              await this.playerRef.play().catch(() => {
+                this.isBuffering = false;
+              });
             }
+          } else {
+            this.isBuffering = false;
           }
         } catch (recoveryErr) {
+          this.isBuffering = false;
           console.error("Audio stream ticket recovery failed:", recoveryErr);
         }
+      } else {
+        this.isBuffering = false;
       }
     });
 
@@ -596,6 +666,39 @@ class PlayerState {
     }
   }
 
+  private updateBufferedTime() {
+    if (!this.playerRef || this.isWebSourceChanging) {
+      this.bufferedTime = 0;
+      return;
+    }
+
+    const { buffered, currentTime, duration } = this.playerRef;
+    if (!buffered || buffered.length === 0) {
+      this.bufferedTime = 0;
+      return;
+    }
+
+    let bufferedEnd = 0;
+    for (let i = 0; i < buffered.length; i++) {
+      if (
+        buffered.start(i) <= currentTime + 0.5 &&
+        buffered.end(i) >= currentTime
+      ) {
+        bufferedEnd = buffered.end(i);
+        break;
+      }
+    }
+
+    if (bufferedEnd === 0) {
+      bufferedEnd = buffered.end(buffered.length - 1);
+    }
+
+    this.bufferedTime =
+      duration && Number.isFinite(duration)
+        ? Math.min(bufferedEnd, duration)
+        : bufferedEnd;
+  }
+
   get maxBands(): number {
     return this.equalizerDomain.maxBands;
   }
@@ -684,6 +787,9 @@ class PlayerState {
     const usingNative = this.shouldUseNativePlayback();
     const webRequestId = usingNative ? 0 : ++this.webLoadRequestId;
 
+    this.isBuffering = true;
+    this.bufferedTime = 0;
+
     if (!usingNative && this.playerRef) {
       this.isWebSourceChanging = true;
       if (resetProgress) {
@@ -693,62 +799,73 @@ class PlayerState {
       this.playerRef.pause();
     }
 
-    const sourceTrack = await resolvePlaybackSource(
-      track,
-      tracksStore.getSourcesForTrack(track),
-    );
+    try {
+      const sourceTrack = await resolvePlaybackSource(
+        track,
+        tracksStore.getSourcesForTrack(track),
+      );
 
-    if (usingNative) {
+      if (usingNative) {
+        this.updateMediaSessionMetadata(track);
+        this.nativeDomain.updateTrack(track, sourceTrack);
+        this.loadTrackColor(track).catch((error) => {
+          console.error("Failed to load track color:", error);
+        });
+        return;
+      }
+
+      if (!this.playerRef) {
+        this.isBuffering = false;
+        return;
+      }
+      if (
+        webRequestId !== this.webLoadRequestId ||
+        this.currentTrack?.id !== track.id
+      ) {
+        return;
+      }
+
+      if (this.currentBlobUrl) {
+        revokeAudioUrl(this.currentBlobUrl);
+        this.currentBlobUrl = null;
+      }
+
+      const audioUrl = await getAudioUrl(sourceTrack.id, {
+        useCustomAuthFetch: authStore.shouldUseCustomMediaAuthFetch,
+      });
+
+      if (
+        webRequestId !== this.webLoadRequestId ||
+        this.currentTrack?.id !== track.id
+      ) {
+        if (audioUrl.startsWith("blob:")) {
+          revokeAudioUrl(audioUrl);
+        }
+        return;
+      }
+
+      this.isWebSourceChanging = true;
+      this.playerRef.src = audioUrl;
+      if (resetProgress) {
+        this.playerRef.currentTime = 0;
+      }
+      this.playerRef.load();
       this.updateMediaSessionMetadata(track);
-      this.nativeDomain.updateTrack(track, sourceTrack);
+
+      if (audioUrl.startsWith("blob:")) {
+        this.currentBlobUrl = audioUrl;
+      }
+
       this.loadTrackColor(track).catch((error) => {
         console.error("Failed to load track color:", error);
       });
-      return;
-    }
-
-    if (!this.playerRef) return;
-    if (
-      webRequestId !== this.webLoadRequestId ||
-      this.currentTrack?.id !== track.id
-    ) {
-      return;
-    }
-
-    if (this.currentBlobUrl) {
-      revokeAudioUrl(this.currentBlobUrl);
-      this.currentBlobUrl = null;
-    }
-
-    const audioUrl = await getAudioUrl(sourceTrack.id, {
-      useCustomAuthFetch: authStore.shouldUseCustomMediaAuthFetch,
-    });
-
-    if (
-      webRequestId !== this.webLoadRequestId ||
-      this.currentTrack?.id !== track.id
-    ) {
-      if (audioUrl.startsWith("blob:")) {
-        revokeAudioUrl(audioUrl);
+    } catch (error) {
+      if (usingNative || webRequestId === this.webLoadRequestId) {
+        this.isWebSourceChanging = false;
+        this.isBuffering = false;
       }
-      return;
+      throw error;
     }
-
-    this.isWebSourceChanging = true;
-    this.playerRef.src = audioUrl;
-    if (resetProgress) {
-      this.playerRef.currentTime = 0;
-    }
-    this.playerRef.load();
-    this.updateMediaSessionMetadata(track);
-
-    if (audioUrl.startsWith("blob:")) {
-      this.currentBlobUrl = audioUrl;
-    }
-
-    this.loadTrackColor(track).catch((error) => {
-      console.error("Failed to load track color:", error);
-    });
   }
 
   async play(opts?: {
@@ -759,68 +876,93 @@ class PlayerState {
     const { track, index, forceTrackReload = false } = opts || {};
     const requestId = ++this.playRequestId;
     if (this.playerRef || this.shouldUseNativePlayback()) {
-      await this.audioEngine.resumeContext();
-
-      let newTrack: AudioFile | undefined = undefined;
-      let newIndex: number | undefined = undefined;
-
-      if (track && this.currentTrack?.id !== track.id) {
-        newTrack = track;
-        newIndex = this.trackQueue.findIndex((t) => t.id === track.id);
-      } else if (
-        index !== undefined &&
-        this.trackQueue[index] &&
-        (forceTrackReload ||
-          this.currentTrack?.id !== this.trackQueue[index].id)
-      ) {
-        newTrack = this.trackQueue[index];
-        newIndex = index;
-      }
-
-      if (
-        (track !== undefined || index !== undefined) &&
-        newIndex !== undefined &&
-        newTrack !== undefined
-      ) {
-        this.currentTrack = newTrack;
-        this.queueIndex = newIndex;
-        this.currentTime = 0;
-        this.syncCarouselToTrack(newIndex);
-        this.initializeMediaSessionHandlers();
-        await this.updateMetadata(newTrack);
-        if (requestId !== this.playRequestId) {
-          return;
-        }
-
-        await historyStore.addToHistory(newTrack.id, this.currentPlaylist?.id);
-        if (requestId !== this.playRequestId) {
-          return;
-        }
-      } else if (index !== undefined && this.trackQueue[index]) {
-        this.queueIndex = index;
-        this.syncCarouselToTrack(index, true);
-      }
-
-      if (requestId !== this.playRequestId) {
-        return;
-      }
-
-      this.isPlaying = true;
-      this.setMediaSessionPlaybackState("playing");
-
-      if (this.shouldUseNativePlayback()) {
-        this.nativeDomain.play({ track, index }, this.currentTime);
-        return;
-      }
-
+      this.isStartingPlayback = true;
       try {
-        await this.playerRef!.play();
-      } catch (error) {
-        const replayed = await this.retryWebPlayAfterLoad();
-        if (!replayed) {
-          console.error("Failed to play audio:", error);
-          this.isPlaying = false;
-          this.setMediaSessionPlaybackState("paused");
+        await this.audioEngine.resumeContext();
+
+        let newTrack: AudioFile | undefined = undefined;
+        let newIndex: number | undefined = undefined;
+
+        if (track && this.currentTrack?.id !== track.id) {
+          newTrack = track;
+          newIndex = this.trackQueue.findIndex((t) => t.id === track.id);
+        } else if (
+          index !== undefined &&
+          this.trackQueue[index] &&
+          (forceTrackReload ||
+            this.currentTrack?.id !== this.trackQueue[index].id)
+        ) {
+          newTrack = this.trackQueue[index];
+          newIndex = index;
+        }
+
+        if (
+          (track !== undefined || index !== undefined) &&
+          newIndex !== undefined &&
+          newTrack !== undefined
+        ) {
+          this.isBuffering = true;
+          this.currentTrack = newTrack;
+          this.queueIndex = newIndex;
+          this.currentTime = 0;
+          this.syncCarouselToTrack(newIndex);
+          this.initializeMediaSessionHandlers();
+          await this.updateMetadata(newTrack);
+          if (requestId !== this.playRequestId) {
+            return;
+          }
+
+          await historyStore.addToHistory(
+            newTrack.id,
+            this.currentPlaylist?.id,
+          );
+          if (requestId !== this.playRequestId) {
+            return;
+          }
+        } else if (index !== undefined && this.trackQueue[index]) {
+          this.queueIndex = index;
+          this.syncCarouselToTrack(index, true);
+        }
+
+        if (requestId !== this.playRequestId) {
+          return;
+        }
+
+        if (
+          !this.shouldUseNativePlayback() &&
+          this.playerRef &&
+          this.playerRef.readyState < HTMLMediaElement.HAVE_FUTURE_DATA
+        ) {
+          this.isBuffering = true;
+        }
+
+        this.isPlaying = true;
+        this.setMediaSessionPlaybackState("playing");
+
+        if (this.shouldUseNativePlayback()) {
+          this.nativeDomain.play({ track, index }, this.currentTime);
+          return;
+        }
+
+        try {
+          await this.playerRef!.play();
+          if (requestId === this.playRequestId) {
+            this.isBuffering = false;
+          }
+        } catch (error) {
+          const replayed = await this.retryWebPlayAfterLoad();
+          if (requestId === this.playRequestId) {
+            this.isBuffering = false;
+            if (!replayed) {
+              console.error("Failed to play audio:", error);
+              this.isPlaying = false;
+              this.setMediaSessionPlaybackState("paused");
+            }
+          }
+        }
+      } finally {
+        if (requestId === this.playRequestId) {
+          this.isStartingPlayback = false;
         }
       }
     }
@@ -865,7 +1007,11 @@ class PlayerState {
   }
 
   pause() {
-    if (!this.isPlaying) return;
+    if (!this.isPlaying && !this.isStartingPlayback) return;
+
+    this.playRequestId++;
+    this.isStartingPlayback = false;
+    this.isBuffering = false;
 
     if (this.shouldUseNativePlayback()) {
       this.isPlaying = false;
@@ -882,6 +1028,7 @@ class PlayerState {
   }
 
   togglePlayPause() {
+    if (this.isBuffering) return;
     if (this.isPlaying) {
       this.pause();
     } else {
@@ -1054,6 +1201,10 @@ class PlayerState {
     this.currentTrack = null;
     this.currentTime = 0;
     this.duration = 0;
+    this.bufferedTime = 0;
+    this.isBuffering = false;
+    this.isWebSourceChanging = false;
+    this.isStartingPlayback = false;
     this.shuffledIndices = undefined;
     this.isShuffled = false;
     this.persistedState.trackColor = null;

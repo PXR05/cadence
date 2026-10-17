@@ -1,6 +1,7 @@
 <script lang="ts">
   import { playerStore } from "$lib/stores/player.svelte";
   import {
+    Loader as LoaderIcon,
     Pause as PauseIcon,
     Play as PlayIcon,
     Repeat as RepeatIcon,
@@ -38,6 +39,7 @@
 <div class="flex items-center gap-4">
   <Button
     variant="ghost"
+    disabled={playerStore.isBuffering}
     onclick={() => {
       trigger([{ duration: 8 }]);
       playerStore.isShuffled = !playerStore.isShuffled;
@@ -59,6 +61,7 @@
 
   <Button
     variant="ghost"
+    disabled={playerStore.isBuffering}
     onclick={() => {
       trigger([{ duration: 10 }]);
       playerStore.playPrevious();
@@ -79,6 +82,7 @@
 
   <Button
     variant="ghost"
+    disabled={playerStore.isBuffering}
     onclick={() => {
       trigger([{ duration: 10 }]);
       playerStore.togglePlayPause();
@@ -87,9 +91,20 @@
       {variant === 'large' ? 'rounded-3xl' : ''}
     "
     style="color: {textColor};"
-    aria-label={playerStore.isPlaying ? "Pause" : "Play"}
+    aria-label={playerStore.isBuffering
+      ? "Loading"
+      : playerStore.isPlaying
+        ? "Pause"
+        : "Play"}
+    aria-busy={playerStore.isBuffering}
   >
-    {#if playerStore.isPlaying}
+    {#if playerStore.isBuffering}
+      <LoaderIcon
+        absoluteStrokeWidth
+        strokeWidth={2}
+        class="size-{size.primaryIcon} animate-spin"
+      />
+    {:else if playerStore.isPlaying}
       <PauseIcon
         absoluteStrokeWidth
         strokeWidth={2}
@@ -108,6 +123,7 @@
 
   <Button
     variant="ghost"
+    disabled={playerStore.isBuffering}
     onclick={() => {
       trigger([{ duration: 10 }]);
       playerStore.playNext();
@@ -128,6 +144,7 @@
 
   <Button
     variant="ghost"
+    disabled={playerStore.isBuffering}
     onclick={() => {
       trigger([{ duration: 8 }]);
       playerStore.isRepeated = !playerStore.isRepeated;

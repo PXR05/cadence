@@ -10,6 +10,7 @@
   import { shouldLoadItem } from "$lib/utils/queue";
   import {
     ListMusic as ListMusicIcon,
+    Loader as LoaderIcon,
     Minimize2 as Minimize2Icon,
     Pause as PauseIcon,
     Play as PlayIcon,
@@ -287,7 +288,9 @@
               {@const isCurrentTrack = queueTrack.id === track?.id}
               <Carousel.Item
                 class="flex items-center justify-center"
-                onclick={() => playerStore.togglePlayPause()}
+                onclick={() => {
+                  if (!playerStore.isBuffering) playerStore.togglePlayPause();
+                }}
                 oncontextmenu={(e) => handleCarouselContextMenu(e, queueTrack)}
               >
                 {#if shouldLoadItem(i)}
@@ -307,15 +310,22 @@
                     {#if isCurrentTrack}
                       <div
                         class="absolute inset-0 bg-black/50 opacity-0 backdrop-blur-xs transition-opacity duration-200 flex flex-col justify-between p-5 pointer-events-none
-                        {!isDraggingCarousel ? 'group-hover:opacity-100' : ''}"
+                        {playerStore.isBuffering
+                          ? 'opacity-100'
+                          : !isDraggingCarousel
+                            ? 'group-hover:opacity-100'
+                            : ''}"
                       >
                         <div class="h-6"></div>
 
                         <div class="flex items-center justify-center pointer-events-auto">
                           <div
-                            class="size-16 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-xs border border-white/15 flex items-center justify-center text-white transition-transform duration-200 group-hover:scale-105"
+                            class="size-16 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-xs border border-white/15 flex items-center justify-center text-white transition-transform duration-200 group-hover:scale-105
+                            {playerStore.isBuffering ? 'opacity-50 pointer-events-none' : ''}"
                           >
-                            {#if playerStore.isPlaying}
+                            {#if playerStore.isBuffering}
+                              <LoaderIcon size={30} class="animate-spin" />
+                            {:else if playerStore.isPlaying}
                               <PauseIcon size={30} fill="currentColor" />
                             {:else}
                               <PlayIcon size={30} fill="currentColor" />
@@ -328,11 +338,12 @@
                         >
                           <button
                             type="button"
+                            disabled={playerStore.isBuffering}
                             onclick={(e) => {
                               e.stopPropagation();
                               playerStore.isShuffled = !playerStore.isShuffled;
                             }}
-                            class="size-10 rounded-full grid place-items-center backdrop-blur-xs transition-all cursor-pointer border
+                            class="size-10 rounded-full grid place-items-center backdrop-blur-xs transition-all cursor-pointer border disabled:opacity-50 disabled:pointer-events-none
                             {playerStore.isShuffled
                               ? 'bg-white/30 text-white border-white/40 ring-1 ring-white/30'
                               : 'bg-white/10 text-white/70 hover:text-white hover:bg-white/20 border-white/15'}"
@@ -351,11 +362,12 @@
 
                           <button
                             type="button"
+                            disabled={playerStore.isBuffering}
                             onclick={(e) => {
                               e.stopPropagation();
                               playerStore.isRepeated = !playerStore.isRepeated;
                             }}
-                            class="size-10 rounded-full grid place-items-center backdrop-blur-xs transition-all cursor-pointer border
+                            class="size-10 rounded-full grid place-items-center backdrop-blur-xs transition-all cursor-pointer border disabled:opacity-50 disabled:pointer-events-none
                             {playerStore.isRepeated
                               ? 'bg-white/30 text-white border-white/40 ring-1 ring-white/30'
                               : 'bg-white/10 text-white/70 hover:text-white hover:bg-white/20 border-white/15'}"

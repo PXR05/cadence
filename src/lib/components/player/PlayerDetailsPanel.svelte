@@ -150,7 +150,9 @@
       <Carousel.Content>
         {#each playerStore.trackQueue as queueTrack, i}
           <Carousel.Item
-            onclick={() => playerStore.togglePlayPause()}
+            onclick={() => {
+              if (!playerStore.isBuffering) playerStore.togglePlayPause();
+            }}
             oncontextmenu={(e) => handleCarouselContextMenu(e, queueTrack)}
             onlongpress={() => openCarouselTrackMenu(queueTrack)}
           >

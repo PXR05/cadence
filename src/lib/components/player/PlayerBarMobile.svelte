@@ -5,7 +5,11 @@
   import { playerStore } from "$lib/stores/player.svelte";
   import { appearanceStore } from "$lib/stores/appearance.svelte";
   import { playerDetailMotionStore } from "$lib/stores/playerDetailMotion.svelte";
-  import { PauseIcon, PlayIcon } from "@lucide/svelte";
+  import {
+    Loader as LoaderIcon,
+    Pause as PauseIcon,
+    Play as PlayIcon,
+  } from "@lucide/svelte";
   import { onDestroy, onMount } from "svelte";
   import { innerHeight, innerWidth } from "svelte/reactivity/window";
   // @ts-ignore
@@ -589,11 +593,23 @@
       {#if playerStore.currentTrack}
         <Button
           variant="ghost"
+          disabled={playerStore.isBuffering}
           onclick={handlePlayPause}
           class="size-12 grid place-items-center shrink-0 mr-2 p-0 rounded-2xl"
-          aria-label={playerStore.isPlaying ? "Pause" : "Play"}
+          aria-label={playerStore.isBuffering
+            ? "Loading"
+            : playerStore.isPlaying
+              ? "Pause"
+              : "Play"}
+          aria-busy={playerStore.isBuffering}
         >
-          {#if playerStore.isPlaying}
+          {#if playerStore.isBuffering}
+            <LoaderIcon
+              absoluteStrokeWidth
+              strokeWidth={2}
+              class="size-6 animate-spin"
+            />
+          {:else if playerStore.isPlaying}
             <PauseIcon
               absoluteStrokeWidth
               strokeWidth={2}

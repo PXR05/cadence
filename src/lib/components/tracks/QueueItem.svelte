@@ -3,6 +3,7 @@
   import { playerStore } from "$lib/stores/player.svelte";
   import {
     GripHorizontal as GripHorizontalIcon,
+    Loader as LoaderIcon,
     Volume2 as Volume2Icon,
     X as XIcon,
   } from "@lucide/svelte";
@@ -63,9 +64,16 @@
         alt={track.metadata?.title ?? track.filename ?? track.id}
         class="size-full object-cover"
       />
-      {#if isCurrentTrack && playerStore.isPlaying}
+      {#if isCurrentTrack && (playerStore.isPlaying || playerStore.isBuffering)}
         <div class="absolute inset-0 grid place-items-center bg-background/80">
-          <Volume2Icon class="size-5" style="color: {textColor};" />
+          {#if playerStore.isBuffering}
+            <LoaderIcon
+              class="size-5 animate-spin"
+              style="color: {textColor};"
+            />
+          {:else}
+            <Volume2Icon class="size-5" style="color: {textColor};" />
+          {/if}
         </div>
       {/if}
     </div>

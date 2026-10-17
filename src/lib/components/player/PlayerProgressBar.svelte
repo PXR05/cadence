@@ -31,6 +31,8 @@
       : playerStore.progress * 100,
   );
 
+  const bufferedProgress = $derived(playerStore.bufferedProgress * 100);
+
   const displayTime = $derived(pendingSeekPosition ?? playerStore.currentTime);
 
   function calculateSeekPosition(clientX: number): number | null {
@@ -152,6 +154,17 @@
       >
         <div
           style="
+          transform: translate3d({-100 + bufferedProgress}%, 0, 0);
+          transition: {isPanelAnimating
+            ? 'none'
+            : 'transform 200ms ease-out'};
+          background-color: {monochrome
+            ? 'color-mix(in oklab, var(--foreground) 35%, transparent)'
+            : `color-mix(in oklab, ${playerStore.lightTrackColor} 35%, transparent)`};"
+          class="absolute inset-0 w-full h-full rounded-full"
+        ></div>
+        <div
+          style="
           transform: translate3d({-100 + currentProgress}%, 0, 0);
           transition: {isDragging || isPanelAnimating
             ? 'none'
@@ -159,7 +172,7 @@
           background-color: {monochrome
             ? 'var(--foreground)'
             : playerStore.lightTrackColor};"
-          class="w-full h-full rounded-full"
+          class="relative w-full h-full rounded-full"
         ></div>
       </div>
 
