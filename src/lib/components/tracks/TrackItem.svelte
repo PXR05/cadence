@@ -2,7 +2,6 @@
   import { goto } from "$app/navigation";
   import { getTrackImageUrl as getImageUrl } from "$lib/backend/services/media";
   import { playerStore } from "$lib/stores/player.svelte";
-  import { tracksStore } from "$lib/stores/tracks.svelte";
   import { downloadStore } from "$lib/stores/download.svelte";
   import { trackMenuStore } from "$lib/stores/trackMenu.svelte";
   import {
@@ -68,8 +67,7 @@
         playlist.items.findIndex((item) => item.audio.id === track.id) ?? index;
       playerStore.setQueue(tracks, actualIndex, playlist);
     } else {
-      const shuffledTracks = tracksStore.getShuffledTracks(track);
-      playerStore.setQueue(shuffledTracks, 0);
+      await playerStore.startRadio(track);
     }
   }
 

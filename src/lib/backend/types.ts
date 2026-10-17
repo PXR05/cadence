@@ -12,6 +12,7 @@ export interface BackendCapabilities {
     search: boolean;
     suggestions: boolean;
     random: boolean;
+    radio: boolean;
     delete: boolean;
   };
   playlists: {
@@ -58,6 +59,8 @@ export interface BackendRoutes {
     search: string;
     suggestions: string;
     random: string;
+    radio: string;
+    radioStatus: string;
     stream: (id: string) => string;
     ticket: (id: string) => string;
     image: (id: string) => string;

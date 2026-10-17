@@ -1,4 +1,8 @@
-import { deleteTrack, fetchTracks } from "$lib/backend/services/audio";
+import {
+  deleteTrack,
+  fetchRadioTracks,
+  fetchTracks,
+} from "$lib/backend/services/audio";
 import { backendCapabilities } from "$lib/backend/config";
 import {
   getTracksCache,
@@ -208,6 +212,18 @@ class TracksStore {
     }
   }
 
+  private normalizeTrack(track: AudioFile): AudioFile {
+    return {
+      ...track,
+      metadata: track.metadata
+        ? {
+            ...track.metadata,
+            artist: this.deduplicateArtists(track.metadata.artist ?? "Unknown"),
+          }
+        : undefined,
+    };
+  }
+
   getShuffledTracks(firstTrack?: AudioFile): AudioFile[] {
     const shuffled = [...this.tracks];
 
@@ -217,14 +233,131 @@ class TracksStore {
     }
 
     if (firstTrack) {
-      const index = shuffled.findIndex((t) => t.id === firstTrack.id);
+      const index = shuffled.findIndex(
+        (t) =>
+          t.id === firstTrack.id ||
+          (Boolean(firstTrack.isrc) &&
+            firstTrack.isrc !== "NO_ISRC" &&
+            t.isrc === firstTrack.isrc),
+      );
       if (index > 0) {
         shuffled.splice(index, 1);
+        shuffled.unshift(firstTrack);
+      } else if (index === -1) {
         shuffled.unshift(firstTrack);
       }
     }
 
     return shuffled;
+  }
+
+  async fetchRadioQueue(
+    seedTrack: AudioFile,
+    limit: number = 50,
+  ): Promise<{ tracks: AudioFile[]; isFallback: boolean }> {
+    await this.initializeFromCache();
+
+    const isOffline =
+      typeof navigator !== "undefined" &&
+      "onLine" in navigator &&
+      !navigator.onLine;
+
+    if (!backendCapabilities.library.radio || isOffline) {
+      return {
+        tracks: this.getShuffledTracks(seedTrack),
+        isFallback: true,
+      };
+    }
+
+    try {
+      const response = await fetchRadioTracks({
+        seed: seedTrack.id,
+        limit,
+      });
+
+      const byId = new Map<string, AudioFile>();
+      const byIsrc = new Map<string, AudioFile>();
+      for (const cached of this._tracks) {
+        byId.set(cached.id, cached);
+        if (cached.isrc && cached.isrc !== "NO_ISRC") {
+          byIsrc.set(cached.isrc, cached);
+        }
+      }
+
+      const normalizedSeed =
+        byId.get(seedTrack.id) ??
+        (seedTrack.isrc && seedTrack.isrc !== "NO_ISRC"
+          ? byIsrc.get(seedTrack.isrc)
+          : undefined) ??
+        this.normalizeTrack(seedTrack);
+
+      const seenIds = new Set<string>([seedTrack.id, normalizedSeed.id]);
+      for (const variant of this.getSourcesForTrack(normalizedSeed)) {
+        seenIds.add(variant.id);
+      }
+
+      const seenIsrcs = new Set<string>();
+      if (normalizedSeed.isrc && normalizedSeed.isrc !== "NO_ISRC") {
+        seenIsrcs.add(normalizedSeed.isrc);
+      }
+
+      const radioTracks: AudioFile[] = [];
+      for (const rawFile of response.files) {
+        const hasValidIsrc = Boolean(rawFile.isrc && rawFile.isrc !== "NO_ISRC");
+        const resolved =
+          byId.get(rawFile.id) ??
+          (hasValidIsrc ? byIsrc.get(rawFile.isrc!) : undefined) ??
+          this.normalizeTrack(rawFile);
+
+        if (seenIds.has(rawFile.id) || seenIds.has(resolved.id)) {
+          continue;
+        }
+        if (
+          resolved.isrc &&
+          resolved.isrc !== "NO_ISRC" &&
+          seenIsrcs.has(resolved.isrc)
+        ) {
+          continue;
+        }
+
+        seenIds.add(rawFile.id);
+        seenIds.add(resolved.id);
+        if (resolved.isrc && resolved.isrc !== "NO_ISRC") {
+          seenIsrcs.add(resolved.isrc);
+        }
+
+        radioTracks.push(resolved);
+      }
+
+      if (radioTracks.length === 0) {
+        return {
+          tracks: this.getShuffledTracks(normalizedSeed),
+          isFallback: true,
+        };
+      }
+
+      return {
+        tracks: [normalizedSeed, ...radioTracks],
+        isFallback: false,
+      };
+    } catch (err) {
+      console.warn(
+        "Failed to fetch radio queue, falling back to shuffled tracks:",
+        err,
+      );
+      return {
+        tracks: this.getShuffledTracks(seedTrack),
+        isFallback: true,
+      };
+    }
+  }
+
+  async getRadioTracks(
+    seedTrack: AudioFile,
+    limit: number = 50,
+  ): Promise<AudioFile[]> {
+    const result = await this.fetchRadioQueue(seedTrack, limit);
+    return result.tracks;
   }
 
   getRandomTracks(count: number = 10, seed?: number): AudioFile[] {

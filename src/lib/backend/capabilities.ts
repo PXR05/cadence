@@ -10,6 +10,7 @@ export type BackendCapabilityPath =
   | "library.search"
   | "library.suggestions"
   | "library.random"
+  | "library.radio"
   | "library.delete"
   | "playlists"
   | "playlists.create"

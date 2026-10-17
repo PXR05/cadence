@@ -96,6 +96,35 @@ export const FetchRandomTracksOptionsSchema = v.object({
   firstTrackId: v.optional(v.string()),
 });
 
+export const FetchRadioOptionsSchema = v.object({
+  seed: v.string(),
+  limit: v.optional(v.number()),
+  lambda: v.optional(v.number()),
+  temperature: v.optional(v.number()),
+  seedNonce: v.optional(v.string()),
+  artistCooldown: v.optional(v.number()),
+  albumCooldown: v.optional(v.number()),
+});
+
+export const RadioResponseSchema = v.object({
+  files: v.array(AudioFileSchema),
+  seedId: v.string(),
+  model: v.string(),
+  dim: v.number(),
+  coverage: v.number(),
+  indexedCount: v.number(),
+  totalCount: v.number(),
+});
+
+export const RadioStatusResponseSchema = v.object({
+  model: v.string(),
+  dim: v.number(),
+  sampleRate: v.number(),
+  indexedCount: v.number(),
+  totalCount: v.number(),
+  coverage: v.number(),
+});
+
 export type AudioListResponse = v.InferOutput<typeof AudioListResponseSchema>;
 export type SearchSuggestion = v.InferOutput<typeof SearchSuggestionSchema>;
 export type UploadResponse = v.InferOutput<typeof UploadResponseSchema>;
@@ -118,3 +147,9 @@ export type SearchSuggestionsOptions = v.InferOutput<
 export type FetchRandomTracksOptions = v.InferOutput<
   typeof FetchRandomTracksOptionsSchema
 >;
+export type FetchRadioOptions = v.InferOutput<typeof FetchRadioOptionsSchema>;
+export type RadioResponse = v.InferOutput<typeof RadioResponseSchema>;
+export type RadioStatusResponse = v.InferOutput<
+  typeof RadioStatusResponseSchema
+>;
+

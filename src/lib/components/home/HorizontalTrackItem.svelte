@@ -2,7 +2,6 @@
   import { goto } from "$app/navigation";
   import { getTrackImageUrl as getImageUrl } from "$lib/backend/services/media";
   import { playerStore } from "$lib/stores/player.svelte";
-  import { tracksStore } from "$lib/stores/tracks.svelte";
   import { trackMenuStore } from "$lib/stores/trackMenu.svelte";
   import type { AudioFile } from "$lib/schemas";
   import {  CloudCheck as CloudCheckIcon, EllipsisVertical as EllipsisVerticalIcon } from "@lucide/svelte";
@@ -36,8 +35,7 @@
     if (playerStore.currentTrack?.id === track.id) {
       playerStore.play();
     } else {
-      const shuffledTracks = tracksStore.getShuffledTracks(track);
-      playerStore.setQueue(shuffledTracks, 0);
+      void playerStore.startRadio(track);
     }
   }
 

@@ -2,10 +2,15 @@ import * as v from "valibot";
 import {
   AudioListResponseSchema,
   DeleteTrackResponseSchema,
+  RadioResponseSchema,
+  RadioStatusResponseSchema,
   SearchSuggestionsResponseSchema,
   type AudioFile,
+  type FetchRadioOptions,
   type FetchRandomTracksOptions,
   type FetchTracksOptions,
+  type RadioResponse,
+  type RadioStatusResponse,
   type SearchSuggestionsOptions,
   type SearchTracksOptions,
 } from "$lib/schemas/audio";
@@ -110,6 +115,57 @@ export async function fetchRandomTracks(
     throw new Error(`Failed to fetch random tracks: ${response.statusText}`);
   }
   return mapTrackList(await response.json(), page, limit);
+}
+
+export async function fetchRadioTracks(
+  options: FetchRadioOptions,
+): Promise<RadioResponse> {
+  requireBackendCapability("library.radio");
+  const {
+    seed,
+    limit = 50,
+    lambda,
+    temperature,
+    seedNonce,
+    artistCooldown,
+    albumCooldown,
+  } = options;
+  const params = new URLSearchParams({
+    seed,
+    limit: String(limit),
+  });
+  if (lambda !== undefined) params.set("lambda", String(lambda));
+  if (temperature !== undefined) params.set("temperature", String(temperature));
+  if (seedNonce !== undefined) params.set("seedNonce", seedNonce);
+  if (artistCooldown !== undefined) {
+    params.set("artistCooldown", String(artistCooldown));
+  }
+  if (albumCooldown !== undefined) {
+    params.set("albumCooldown", String(albumCooldown));
+  }
+
+  const response = await backendRequest(
+    `${backendConfig.routes.audio.radio}?${params}`,
+    {
+      signal:
+        typeof AbortSignal !== "undefined" && "timeout" in AbortSignal
+          ? AbortSignal.timeout(8000)
+          : undefined,
+    },
+  );
+  if (!response.ok) {
+    throw new Error(`Failed to fetch radio tracks: ${await response.text()}`);
+  }
+  return v.parse(RadioResponseSchema, await response.json());
+}
+
+export async function fetchRadioStatus(): Promise<RadioStatusResponse> {
+  requireBackendCapability("library.radio");
+  const response = await backendRequest(backendConfig.routes.audio.radioStatus);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch radio status: ${response.statusText}`);
+  }
+  return v.parse(RadioStatusResponseSchema, await response.json());
 }
 
 export async function deleteTrack(id: string) {

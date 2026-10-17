@@ -64,6 +64,8 @@ class PlayerState {
   private isStartingPlayback = false;
   private webLoadRequestId = 0;
   private playRequestId = 0;
+  private radioRequestId = 0;
+  private pendingRadioFallbackIds = new Set<string>();
   private carousels = new Map<
     string,
     { api: CarouselAPI; handler: () => void }
@@ -1093,6 +1095,8 @@ class PlayerState {
     startIndex: number = 0,
     playlist: PlaylistDetail | null = null,
   ) {
+    this.radioRequestId++;
+    this.pendingRadioFallbackIds.clear();
     this.currentPlaylist = playlist;
     this.isShuffled = false;
     this.trackQueue = tracks;
@@ -1104,8 +1108,95 @@ class PlayerState {
     }
   }
 
+  async startRadio(seedTrack: AudioFile, limit: number = 50) {
+    const initialFallbackQueue = tracksStore.getShuffledTracks(seedTrack);
+    this.setQueue(
+      initialFallbackQueue.length > 0 ? initialFallbackQueue : [seedTrack],
+      0,
+    );
+
+    this.pendingRadioFallbackIds = new Set(
+      initialFallbackQueue.slice(1).map((t) => t.id),
+    );
+    const requestId = ++this.radioRequestId;
+
+    const { tracks: radioQueue, isFallback } =
+      await tracksStore.fetchRadioQueue(seedTrack, limit);
+    if (requestId !== this.radioRequestId) {
+      return;
+    }
+
+    const fallbackIds = new Set(this.pendingRadioFallbackIds);
+    this.pendingRadioFallbackIds.clear();
+
+    if (isFallback && initialFallbackQueue.length > 1) {
+      return;
+    }
+
+    const splitIndex = Math.max(1, this.queueIndex + 1);
+    const currentRawQueue = this.persistedState.trackQueue;
+    const playedPrefix = currentRawQueue.slice(0, splitIndex);
+    if (playedPrefix.length === 1 && radioQueue[0]) {
+      playedPrefix[0] = radioQueue[0];
+    } else if (playedPrefix.length === 0) {
+      playedPrefix.push(radioQueue[0] ?? seedTrack);
+    }
+
+    const manualAdditions = currentRawQueue
+      .slice(splitIndex)
+      .filter((t) => !fallbackIds.has(t.id));
+
+    const seenIds = new Set<string>([
+      seedTrack.id,
+      ...playedPrefix.map((t) => t.id),
+      ...manualAdditions.map((t) => t.id),
+    ]);
+    const seenIsrcs = new Set<string>();
+    for (const prefixTrack of playedPrefix) {
+      if (prefixTrack.isrc && prefixTrack.isrc !== "NO_ISRC") {
+        seenIsrcs.add(prefixTrack.isrc);
+      }
+    }
+    for (const manualTrack of manualAdditions) {
+      if (manualTrack.isrc && manualTrack.isrc !== "NO_ISRC") {
+        seenIsrcs.add(manualTrack.isrc);
+      }
+    }
+
+    const radioTail = radioQueue.slice(1).filter((track) => {
+      if (seenIds.has(track.id)) return false;
+      if (track.isrc && track.isrc !== "NO_ISRC" && seenIsrcs.has(track.isrc)) {
+        return false;
+      }
+      seenIds.add(track.id);
+      if (track.isrc && track.isrc !== "NO_ISRC") {
+        seenIsrcs.add(track.isrc);
+      }
+      return true;
+    });
+
+    const nextQueue = [...playedPrefix, ...manualAdditions, ...radioTail];
+    this.trackQueue = nextQueue;
+
+    if (this.isShuffled) {
+      this.shuffledIndices = this.shuffleQueue();
+      if (this.shuffledIndices && this.currentTrack) {
+        const currentOriginalIdx = nextQueue.findIndex(
+          (t) => t.id === this.currentTrack?.id,
+        );
+        if (currentOriginalIdx !== -1) {
+          this.queueIndex =
+            this.shuffledIndices.indexOf(currentOriginalIdx) ?? 0;
+        }
+      }
+    }
+
+    this.syncCarouselToTrack(this.queueIndex, true);
+  }
+
   addToQueue(track: AudioFile) {
     this.cachedShuffledQueue = null;
+    this.pendingRadioFallbackIds.delete(track.id);
 
     if (this.trackQueue.length === 0 || !this.currentTrack) {
       this.setQueue([track], 0);
@@ -1118,6 +1209,9 @@ class PlayerState {
     if (tracks.length === 0) return;
 
     this.cachedShuffledQueue = null;
+    for (const track of tracks) {
+      this.pendingRadioFallbackIds.delete(track.id);
+    }
 
     if (this.trackQueue.length === 0 || !this.currentTrack) {
       this.setQueue(tracks, 0);
@@ -1128,6 +1222,7 @@ class PlayerState {
 
   addNextInQueue(track: AudioFile) {
     this.cachedShuffledQueue = null;
+    this.pendingRadioFallbackIds.delete(track.id);
 
     if (this.trackQueue.length === 0 || !this.currentTrack) {
       this.setQueue([track], 0);
@@ -1185,6 +1280,8 @@ class PlayerState {
   }
 
   clearQueue() {
+    this.radioRequestId++;
+    this.pendingRadioFallbackIds.clear();
     this.trackQueue = [];
     this.queueIndex = -1;
     this.currentPlaylist = null;

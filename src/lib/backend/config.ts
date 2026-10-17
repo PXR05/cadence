@@ -25,6 +25,7 @@ export const backendConfig: BackendConfig = {
       search: true,
       suggestions: true,
       random: true,
+      radio: true,
       delete: true,
     },
     playlists: {
@@ -71,6 +72,8 @@ export const backendConfig: BackendConfig = {
       search: "/audio/search",
       suggestions: "/audio/search/suggestions",
       random: "/audio/random",
+      radio: "/audio/radio",
+      radioStatus: "/audio/radio/status",
       stream: (id) => `/audio/${encodeURIComponent(id)}/stream`,
       ticket: (id) => `/audio/${encodeURIComponent(id)}/ticket`,
       image: (id) => `/audio/${encodeURIComponent(id)}/image`,
