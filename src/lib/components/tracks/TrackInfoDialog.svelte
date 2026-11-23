@@ -5,6 +5,7 @@
   import { useMenuDialogState } from "$lib/hooks";
   import { trackInfoDialogStore } from "$lib/stores/trackInfoDialog.svelte";
   import { tracksStore } from "$lib/stores/tracks.svelte";
+  import { splitArtistNames } from "$lib/utils/artists";
   import { formatTime } from "$lib/utils/format";
 
   const dialogState = useMenuDialogState({
@@ -22,11 +23,7 @@
   const title = $derived(
     track?.metadata?.title ?? track?.filename ?? "Unknown",
   );
-  const artists = $derived(
-    (track?.metadata?.artist ?? "Unknown Artist").split(
-      track?.metadata?.artist?.includes(",") ? ", " : "、",
-    ),
-  );
+  const artists = $derived(splitArtistNames(track?.metadata?.artist));
   const albumName = $derived(track?.metadata?.album?.trim() || "Unknown Album");
   const subtitle = $derived(albumName);
   const imageUrl = $derived(track ? getImageUrl(track.id) : "");

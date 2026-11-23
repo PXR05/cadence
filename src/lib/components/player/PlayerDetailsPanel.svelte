@@ -18,6 +18,7 @@
   import * as Carousel from "../ui/carousel";
   import type { CarouselAPI } from "../ui/carousel/context";
   import { Image } from "../ui/image";
+    import { splitArtistNames } from "$lib/utils/artists";
 
   interface Props {
     onQueueOpen: () => void;
@@ -39,11 +40,7 @@
 
   const track = $derived(playerStore.currentTrack);
   const title = $derived(track?.metadata?.title ?? track?.filename ?? "");
-  const artists = $derived(
-    (track?.metadata?.artist ?? "Unknown").split(
-      track?.metadata?.artist?.includes(",") ? ", " : "、",
-    ),
-  );
+  const artists = $derived(splitArtistNames(track?.metadata?.artist));
 
   let managePlaylistsDialogOpen = $state(false);
   let panelElement: HTMLDivElement | null = $state(null);

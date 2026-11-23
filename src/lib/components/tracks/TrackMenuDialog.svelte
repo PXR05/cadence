@@ -33,6 +33,7 @@
   import { backendCapabilities } from "$lib/backend/config";
   import { invalidateAll, goto } from "$app/navigation";
   import { trackInfoDialogStore } from "$lib/stores/trackInfoDialog.svelte";
+    import { splitArtistNames } from "$lib/utils/artists";
 
   const managePlaylistDialog = useDialogState("manage-playlists");
   const deleteTrackDialog = useDialogState("delete-track");
@@ -289,7 +290,7 @@
     onOpenChange={dialogState.handleOpenChange}
     {imageUrl}
     {title}
-    subtitle={artist}
+    subtitle={splitArtistNames(artist).join(", ")}
     {menuItems}
   >
     {#snippet children()}

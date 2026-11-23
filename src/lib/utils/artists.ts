@@ -11,9 +11,8 @@ export type LibraryType = "" | "playlists" | "albums";
 
 export function splitArtistNames(raw: string | undefined | null): string[] {
   if (!raw) return ["Unknown"];
-  const delimiter = raw.includes(",") ? "," : "、";
   const names = raw
-    .split(delimiter)
+    .split(";")
     .map((n) => n.trim())
     .filter((n) => n.length > 0);
   const unique = Array.from(new Set(names));

@@ -11,6 +11,7 @@
   // @ts-ignore
   import { createWebHaptics } from "web-haptics/svelte";
   import { Image } from "../ui/image";
+    import { splitArtistNames } from "$lib/utils/artists";
 
   const { trigger, destroy } = createWebHaptics();
   onDestroy(destroy);
@@ -22,11 +23,7 @@
   const { track }: Props = $props();
 
   const title = $derived(track.metadata?.title ?? track.filename);
-  const artists = $derived(
-    (track.metadata?.artist ?? "Unknown").split(
-      track.metadata?.artist?.includes(",") ? ", " : "、",
-    ),
-  );
+  const artists = $derived(splitArtistNames(track.metadata?.artist));
   const isCurrentTrack = $derived(playerStore.currentTrack?.id === track.id);
 
   function handlePlay() {

@@ -26,6 +26,7 @@
   import { VirtualScroll } from "../ui/virtual-scroll";
   import { formatTime } from "$lib/utils/format";
   import VolumeControl from "./VolumeControl.svelte";
+    import { splitArtistNames } from "$lib/utils/artists";
 
   interface Props {
     onClose: () => void;
@@ -47,11 +48,7 @@
 
   const track = $derived(playerStore.currentTrack);
   const title = $derived(track?.metadata?.title ?? track?.filename ?? "");
-  const artists = $derived(
-    (track?.metadata?.artist ?? "Unknown").split(
-      track?.metadata?.artist?.includes(",") ? ", " : "、",
-    ),
-  );
+  const artists = $derived(splitArtistNames(track?.metadata?.artist));
 
   function showControlsAndResetTimer() {
     isControlsVisible = true;

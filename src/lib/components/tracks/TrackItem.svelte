@@ -15,6 +15,7 @@
   import { createWebHaptics } from "web-haptics/svelte";
   import { innerWidth } from "svelte/reactivity/window";
   import { Image } from "../ui/image";
+    import { splitArtistNames } from "$lib/utils/artists";
 
   const { trigger, destroy } = createWebHaptics();
   onDestroy(destroy);
@@ -37,9 +38,7 @@
 
   const title = $derived(track.metadata?.title ?? track.filename);
   const artists = $derived(
-    (track.metadata?.artist ?? "Unknown").split(
-      track.metadata?.artist?.includes(",") ? ", " : "、",
-    ),
+    splitArtistNames(track.metadata?.artist)
   );
   const album = $derived(
     track.metadata?.album ?? track.metadata?.title ?? "Unknown",

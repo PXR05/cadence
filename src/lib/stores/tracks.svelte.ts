@@ -13,6 +13,7 @@ import {
 import type { AudioFile } from "$lib/schemas";
 import { deduplicateByIsrc } from "$lib/utils/trackSources";
 import { downloadStore } from "./download.svelte";
+import { splitArtistNames } from "$lib/utils/artists";
 
 function toLastFetchedAtQuery(
   lastFetchedAt: string | null,
@@ -83,11 +84,9 @@ class TracksStore {
   }
 
   private deduplicateArtists(artists: string): string {
-    const artistList = (artists ?? "Unknown").split(
-      artists?.includes(",") ? ", " : "、",
-    );
+    const artistList = splitArtistNames(artists)
     const uniqueArtists = Array.from(new Set(artistList));
-    return uniqueArtists.join(", ");
+    return uniqueArtists.join("; ");
   }
 
   private applyDeduplication(rawTracks: AudioFile[]): AudioFile[] {
@@ -95,9 +94,9 @@ class TracksStore {
       ...track,
       metadata: track.metadata
         ? {
-            ...track.metadata,
-            artist: this.deduplicateArtists(track.metadata.artist ?? "Unknown"),
-          }
+          ...track.metadata,
+          artist: this.deduplicateArtists(track.metadata.artist ?? "Unknown"),
+        }
         : undefined,
     }));
     const { deduplicated, sourcesByIsrc } = deduplicateByIsrc(fixedRaw);
@@ -217,9 +216,9 @@ class TracksStore {
       ...track,
       metadata: track.metadata
         ? {
-            ...track.metadata,
-            artist: this.deduplicateArtists(track.metadata.artist ?? "Unknown"),
-          }
+          ...track.metadata,
+          artist: this.deduplicateArtists(track.metadata.artist ?? "Unknown"),
+        }
         : undefined,
     };
   }

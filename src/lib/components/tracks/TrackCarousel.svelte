@@ -9,6 +9,7 @@
   import type { AudioFile } from "$lib/schemas";
   import TrackInfo from "./TrackInfo.svelte";
   import { Image } from "../ui/image";
+    import { splitArtistNames } from "$lib/utils/artists";
 
   interface Props {
     onTrackClick?: () => void;
@@ -48,9 +49,7 @@
       <Carousel.Content>
         {#each playerStore.trackQueue as track, i}
           {@const trackTitle = track.metadata?.title ?? track.filename ?? ""}
-          {@const trackArtists = (track.metadata?.artist ?? "Unknown").split(
-            track.metadata?.artist?.includes(",") ? ", " : "、",
-          )}
+          {@const trackArtists = splitArtistNames(track.metadata?.artist)}
           <Carousel.Item
             onclick={onTrackClick}
             oncontextmenu={(e) => handleContextMenu(e, track)}
